@@ -4,21 +4,26 @@ defmodule Plug.Mixfile do
   def project do
     [ app: :plug,
       version: "0.0.1",
-      elixir: "~> 0.11.3-dev",
-      deps: deps ]
+      elixir: "~> 0.11.2",
+      deps: deps(Mix.env) ]
   end
 
   # Configuration for the OTP application
   def application do
-    [mod: { Plug, [] }]
+    []
   end
 
-  # Returns the list of dependencies in the format:
-  # { :foobar, git: "https://github.com/elixir-lang/foobar.git", tag: "0.1" }
-  #
-  # To specify particular versions, regardless of the tag, do:
-  # { :barbat, "~> 0.1", github: "elixir-lang/barbat.git" }
-  defp deps do
-    []
+  def deps(:prod) do
+    [ { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true } ]
+  end
+
+  def deps(:docs) do
+    deps(:prod) ++
+      [ { :ex_doc, github: "elixir-lang/ex_doc" } ]
+  end
+
+  def deps(_) do
+    deps(:prod) ++
+      [ { :hackney, github: "benoitc/hackney" } ]
   end
 end
