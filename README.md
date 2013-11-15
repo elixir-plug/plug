@@ -13,7 +13,6 @@ A connection is represented by the `Plug.Conn` record:
 Plug.Conn[
   host: "www.example.com",
   path_info: ["bar", "baz"],
-  script_name: ["foo"],
   assigns: [],
   ...
 ]

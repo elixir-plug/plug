@@ -23,7 +23,13 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     apply __MODULE__, function, [conn]
   rescue
     exception ->
-      send(conn, 500, exception.message <> "\n" <> Exception.format_stacktrace)
+      receive do
+        { :plug_conn, :sent } ->
+          :erlang.raise(:error, exception, :erlang.get_stacktrace)
+      after
+        0 ->
+          send(conn, 500, exception.message <> "\n" <> Exception.format_stacktrace)
+      end
   end
 
   ## Tests
@@ -31,14 +37,12 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def root(Conn[] = conn) do
     assert conn.method == "HEAD"
     assert conn.path_info == []
-    assert conn.script_name == []
     conn
   end
 
   def build(Conn[] = conn) do
     assert { Plug.Adapters.Cowboy.Connection, _ } = conn.adapter
     assert conn.path_info == ["build", "foo", "bar"]
-    assert conn.script_name == []
     assert conn.scheme == :http
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
@@ -53,16 +57,25 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def send_200(conn) do
-    send(conn, 200, "OK")
+    assert conn.state == :unsent
+    conn = send(conn, 200, "OK")
+    assert conn.state == :sent
+    conn
   end
 
   def send_500(conn) do
-    send(conn, 500, "ERROR")
+    conn
+    |> delete_resp_header("cache-control")
+    |> put_resp_header("x-sample", "value")
+    |> send(500, "ERROR")
   end
 
-  test "sends a response" do
-    assert { 200, _, "OK" }    = request :get, "/send_200"
-    assert { 500, _, "ERROR" } = request :get, "/send_500"
+  test "sends a response with status, headers and body" do
+    assert { 200, headers, "OK" } = request :get, "/send_200"
+    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
+    assert { 500, headers, "ERROR" } = request :get, "/send_500"
+    assert headers["cache-control"] == nil
+    assert headers["x-sample"] == "value"
   end
 
   ## Helpers

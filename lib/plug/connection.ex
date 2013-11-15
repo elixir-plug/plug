@@ -1,21 +1,39 @@
 defrecord Plug.Conn,
-    assigns: [], path_info: [], script_name: [], adapter: nil,
-    host: nil, scheme: nil, port: nil, method: nil do
+    adapter: nil,
+    assigns: [],
+    host: nil,
+    method: nil,
+    path_info: [],
+    port: nil,
+    resp_body: "",
+    resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
+    scheme: nil,
+    state: :unsent,
+    status: nil do
 
-  @type assigns  :: Keyword.t
-  @type segments :: [binary]
   @type adapter  :: { module, term }
-  @type host     :: binary
-  @type scheme   :: :http | :https
-  @type port     :: 0..65535
-  @type status   :: non_neg_integer
-  @type headers  :: [{ binary, binary }]
+  @type assigns  :: Keyword.t
   @type body     :: binary
+  @type headers  :: [{ binary, binary }]
+  @type host     :: binary
   @type method   :: binary
+  @type port     :: 0..65535
+  @type scheme   :: :http | :https
+  @type segments :: [binary]
+  @type state    :: :unsent | :sent
+  @type status   :: non_neg_integer
 
-  record_type assigns: assigns, path_info: segments, script_name: segments,
-              adapter: adapter, host: host, scheme: scheme, port: port,
-              method: method
+  record_type adapter: adapter,
+              assigns: assigns,
+              host: host,
+              method: method,
+              path_info: segments,
+              port: port,
+              resp_body: body | nil,
+              resp_headers: headers,
+              scheme: scheme,
+              state: state,
+              status: status
 
   @moduledoc """
   The connection record.
@@ -24,17 +42,34 @@ defrecord Plug.Conn,
   all connection manipulation should be done via the functions
   in `Plug.Connection` module.
 
-  ## Fields
+  ## Request fields
 
-  Those fields can be accessed directly by the user.
+  Those fields contain request information:
 
-  * `assigns` - store user data that is shared in the application code
-  * `path_info` - path info information split into segments
-  * `script_name` - script name information split into segments
-  * `host` - the requested host
-  * `port` - the requested port
-  * `scheme` - the request scheme
-  * `method` - the request method
+  * `host` - the requested host as a binary, example: `"www.example.com"`
+  * `method` - the request method as a binary, example: `"GET"`
+  * `path_info` - the path split into segments, example: `["hello", "world"]`
+  * `port` - the requested port as an integer, example: `80`
+  * `scheme` - the request scheme as an atom, example: `:http`
+
+  ## Response fields
+
+  Those fields contain response information:
+
+  * `resp_body` - the response body, by default is an empty string, set to nil after sening
+  * `resp_content_type` - the response content-type, by default is nil
+  * `resp_charset` - the response charset, defaults to "utf-8"
+  * `resp_headers` - the response headers as a dict,
+                     by default `cache-control` is set to `"max-age=0, private, must-revalidate"`
+  * `status` - the response status
+
+  ## Connection fields
+
+  * `assigns` - shared user data as a dict
+  * `state` - the connection state
+
+  The connection state is used to track the connection lifecycle. It starts
+  as `:unsent` but is changed to `:sent` as soon as the response is sent.
 
   ## Private fields
 
@@ -49,7 +84,14 @@ defmodule Plug.Connection do
   Functions for manipulating the connection.
   """
 
+  defexception NotSentError,
+    message: "no response was set nor sent from the connection"
+
+  defexception AlreadySentError,
+    message: "the response was already sent"
+
   alias Plug.Conn
+  @already_sent { :plug_conn, :sent }
 
   @doc """
   Assigns a new key and value in the connection.
@@ -69,12 +111,75 @@ defmodule Plug.Connection do
   end
 
   @doc """
-  Sends to the client the given status and body.
+  Sends a response to the client. It is expected that the connection
+  state is set to `:unsent`, otherwise `Plug.Connection.AlreadySentError`
+  is raised.
+
+  If is also expected for the status to be set to an integer.
   """
-  @spec send(Conn.t, Conn.status, Conn.body) :: Conn.t
-  def send(Conn[adapter: { adapter, payload }] = conn, status, body) when
-      is_integer(status) and is_binary(body) do
-    payload = adapter.send(payload, status, [], body)
-    conn.adapter({ adapter, payload })
+  @spec send(Conn.t) :: Conn.t | no_return
+  def send(conn)
+
+  def send(Conn[status: nil]) do
+    raise ArgumentError, message: "cannot send a response when there is no status code"
+  end
+
+  def send(Conn[adapter: { adapter, payload }, state: :unsent] = conn) do
+    self() <- @already_sent
+    payload = adapter.send(payload, conn.status, conn.resp_headers, conn.resp_body)
+    conn.adapter({ adapter, payload }).state(:sent).resp_body(nil)
+  end
+
+  def send(Conn[]) do
+    raise AlreadySentError
+  end
+
+  @doc """
+  Sends a response to the client the given status and body.
+  See `send/1` for more information.
+  """
+  @spec send(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
+  def send(Conn[] = conn, status, body) when is_integer(status) and is_binary(body) do
+    send(conn.status(status).resp_body(body))
+  end
+
+  @doc """
+  Sets the response to given status and body.
+  """
+  @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
+  def resp(Conn[] = conn, status, resp_body) when is_integer(status) and is_binary(resp_body) do
+    conn.status(status).resp_body(resp_body)
+  end
+
+  @doc """
+  Puts a new response header.
+  Previous entries of the same headers are removed.
+  """
+  @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
+  def put_resp_header(Conn[resp_headers: headers] = conn, key, value) do
+    conn.resp_headers(:lists.keystore(key, 1, headers, { key, value }))
+  end
+
+  @doc """
+  Deletes a response header.
+  """
+  @spec delete_resp_header(Conn.t, binary) :: Conn.t
+  def delete_resp_header(Conn[resp_headers: headers] = conn, key) do
+    conn.resp_headers(:lists.keydelete(key, 1, headers))
+  end
+
+  @doc """
+  Puts the content-type response header taking into
+  account the charset.
+  """
+  @spec put_resp_content_type(Conn.t, binary, binary | nil) :: Conn.t
+  def put_resp_content_type(conn, content_type, charset // "utf-8") do
+    value =
+      if nil?(charset) do
+        content_type
+      else
+        content_type <> "; charset=" <> charset
+      end
+    put_resp_header(conn, "content-type", value)
   end
 end

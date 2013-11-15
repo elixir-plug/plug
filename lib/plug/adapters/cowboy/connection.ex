@@ -1,8 +1,8 @@
 defmodule Plug.Adapters.Cowboy.Connection do
-  @behaviour Plug.Connection.Spec
+  @behaviour Plug.Connection.Adapter
   @moduledoc false
 
-  def build(req, transport) do
+  def conn(req, transport) do
     { path, req } = :cowboy_req.path req
     { host, req } = :cowboy_req.host req
     { port, req } = :cowboy_req.port req
