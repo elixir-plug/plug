@@ -2,7 +2,7 @@
 
 Plug is:
 
-1. An specification for composable modules in between web applications
+1. A specification for composable modules in between web applications
 2. A connection specification and adapters for different web servers in the Erlang VM
 
 ## Connection
