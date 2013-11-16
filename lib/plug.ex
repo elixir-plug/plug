@@ -12,6 +12,6 @@ defmodule Plug do
   `Plug.Conn`.
 
   When defined over modules, it is common for those functions to
-  be named `plug/2` and `plug/3`.
+  be named `call/2` and `call/3`.
   """
 end
