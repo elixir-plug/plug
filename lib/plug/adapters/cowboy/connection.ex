@@ -7,14 +7,16 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { host, req } = :cowboy_req.host req
     { port, req } = :cowboy_req.port req
     { meth, req } = :cowboy_req.method req
+    { qs, req }   = :cowboy_req.qs req
 
     Plug.Conn[
       adapter: { __MODULE__, req },
       host: host,
-      port: port,
       method: meth,
-      scheme: scheme(transport),
-      path_info: split_path(path)
+      path_info: split_path(path),
+      port: port,
+      query_string: qs,
+      scheme: scheme(transport)
     ]
   end
 

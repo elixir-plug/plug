@@ -37,12 +37,14 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def root(Conn[] = conn) do
     assert conn.method == "HEAD"
     assert conn.path_info == []
+    assert conn.query_string == "foo=bar&baz=bat"
     conn
   end
 
   def build(Conn[] = conn) do
     assert { Plug.Adapters.Cowboy.Connection, _ } = conn.adapter
     assert conn.path_info == ["build", "foo", "bar"]
+    assert conn.query_string == ""
     assert conn.scheme == :http
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
@@ -51,7 +53,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   test "builds a connection" do
-    assert_ok request :head, "/"
+    assert_ok request :head, "/?foo=bar&baz=bat"
     assert_ok request :get, "/build/foo/bar"
     assert_ok request :get, "//build//foo//bar"
   end
@@ -76,6 +78,10 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 500, headers, "ERROR" } = request :get, "/send_500"
     assert headers["cache-control"] == nil
     assert headers["x-sample"] == "value"
+  end
+
+  test "sends skips body on head" do
+    assert { 200, _, "" } = request :head, "/send_200"
   end
 
   ## Helpers

@@ -2,15 +2,17 @@ defmodule Plug.Adapters.Test.Connection do
   @behaviour Plug.Connection.Adapter
   @moduledoc false
 
-  def conn(method, path) do
+  def conn(method, uri) do
+    uri = URI.parse(uri)
     method = method |> to_string |> String.upcase
     Plug.Conn[
       adapter: { __MODULE__, { method, nil } },
-      host: "www.example.com",
-      port: 80,
+      host: uri.host || "www.example.com",
       method: method,
-      scheme: :http,
-      path_info: split_path(path)
+      path_info: split_path(uri.path),
+      port: uri.port || 80,
+      query_string: uri.query || "",
+      scheme: (uri.scheme || "http") |> String.downcase |> binary_to_atom
     ]
   end
 

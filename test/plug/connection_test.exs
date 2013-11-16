@@ -11,9 +11,33 @@ defmodule Plug.ConnectionTest do
     assert conn.assigns[:hello] == :world
   end
 
+  test "scheme/1, host/1 and port/1" do
+    conn = conn(:get, "/")
+    assert conn.scheme == :http
+    assert conn.host == "www.example.com"
+    assert conn.port == 80
+
+    conn = conn(:get, "https://127.0.0.1/")
+    assert conn.scheme == :https
+    assert conn.host == "127.0.0.1"
+    assert conn.port == 443
+
+    conn = conn(:get, "//example.com:8080/")
+    assert conn.scheme == :http
+    assert conn.host == "example.com"
+    assert conn.port == 8080
+  end
+
   test "path_info/1" do
     assert conn(:get, "/foo/bar").path_info == %w(foo bar)s
-    assert conn(:get, "//foo//bar").path_info == %w(foo bar)s
+    assert conn(:get, "/foo/bar/").path_info == %w(foo bar)s
+    assert conn(:get, "/foo//bar").path_info == %w(foo bar)s
+  end
+
+  test "query_string/1" do
+    assert conn(:get, "/").query_string == ""
+    assert conn(:get, "/foo?barbat").query_string == "barbat"
+    assert conn(:get, "/foo/bar?bar=bat").query_string == "bar=bat"
   end
 
   test "status/1, resp_headers/1 and resp_body/1" do

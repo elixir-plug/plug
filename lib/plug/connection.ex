@@ -5,6 +5,7 @@ defrecord Plug.Conn,
     method: nil,
     path_info: [],
     port: nil,
+    query_string: nil,
     resp_body: "",
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
     scheme: nil,
@@ -51,6 +52,7 @@ defrecord Plug.Conn,
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `port` - the requested port as an integer, example: `80`
   * `scheme` - the request scheme as an atom, example: `:http`
+  * `query_string` - the request query string
 
   ## Response fields
 
