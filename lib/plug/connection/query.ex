@@ -10,11 +10,10 @@ defmodule Plug.Connection.Query do
       iex> decode("foo=bar")["foo"]
       "bar"
 
-  If a value is given more than once, the first value is taken
-  into account:
+  If a value is given more than once, the last value wins:
 
       iex> decode("foo=bar&foo=baz")["foo"]
-      "bar"
+      "baz"
 
   Nested structures can be created via `[key]`:
 
@@ -29,7 +28,7 @@ defmodule Plug.Connection.Query do
   """
 
   @doc """
-  Decodes the given string.
+  Decodes the given binary.
   """
   def decode("") do
     []
@@ -68,48 +67,61 @@ defmodule Plug.Connection.Query do
         [key]
       end
 
-    assign_parts parts, acc, value
+    assign_parts parts, value, acc
   end
 
   # We always assign the value in the last segment.
   # `age=17` would match here.
-  defp assign_parts([key], acc, value) do
-    put(key, value, acc)
+  defp assign_parts([key], value, acc) do
+    case :lists.keyfind(key, 1, acc) do
+      { _, _ } -> acc
+      false -> put(key, value, acc)
+    end
   end
 
   # The current segment is a list. We simply prepend
   # the item to the list or create a new one if it does
   # not yet. This assumes that items are iterated in
   # reverse order.
-  defp assign_parts([key,""|t], acc, value) do
-    current =
-      case :lists.keyfind(key, 1, acc) do
-        { ^key, [h|t] } when not is_tuple(h) -> [h|t]
-        _ -> []
-      end
-
-    if value = assign_list_parts(t, value) do
-      put(key, [value|current], acc)
-    else
-      put(key, current, acc)
+  defp assign_parts([key,""|t], value, acc) do
+    case :lists.keyfind(key, 1, acc) do
+      { ^key, [h|_] = current } when not is_tuple(h) ->
+        replace(key, assign_list(t, current, value), acc)
+      false ->
+        put(key, assign_list(t, [], value), acc)
+      _ ->
+        acc
     end
   end
 
   # The current segment is a parent segment of a
   # dict. We need to create a dictionary and then
   # continue looping.
-  defp assign_parts([key|t], acc, value) do
-    child =
-      case :lists.keyfind(key, 1, acc) do
-        { ^key, [h|_] = val } when is_tuple(h) -> val
-        _ -> []
-      end
-
-    put(key, assign_parts(t, child, value), acc)
+  defp assign_parts([key|t], value, acc) do
+    case :lists.keyfind(key, 1, acc) do
+      { ^key, [h|_] = current } when is_tuple(h) ->
+        replace(key, assign_parts(t, value, current), acc)
+      false ->
+        put(key, assign_parts(t, value, []), acc)
+      _ ->
+        acc
+    end
   end
 
-  defp assign_list_parts([], value), do: value
-  defp assign_list_parts(t, value),  do: assign_parts(t, [], value)
+  defp assign_list(t, current, value) do
+    if value = assign_list(t, value), do: [value|current], else: current
+  end
 
-  defp put(key, value, acc), do: [{ key, value }|:lists.keydelete(key, 1, acc)]
+  defp assign_list([], value), do: value
+  defp assign_list(t, value),  do: assign_parts(t, value, [])
+
+  @compile { :inline, put: 3, replace: 3 }
+
+  defp put(key, value, acc) do
+    [{ key, value }|acc]
+  end
+
+  defp replace(key, value, acc) do
+    [{ key, value }|:lists.keydelete(key, 1, acc)]
+  end
 end

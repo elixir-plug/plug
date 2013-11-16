@@ -31,17 +31,17 @@ defmodule Plug.Connection.QueryTest do
 
     assert decode("x[y][z]=1")["x"]["y"]["z"] == "1"
     assert decode("x[y][z][]=1")["x"]["y"]["z"] == ["1"]
-    assert decode("x[y][z]=1&x[y][z]=2")["x"]["y"]["z"] == "1"
+    assert decode("x[y][z]=1&x[y][z]=2")["x"]["y"]["z"] == "2"
     assert decode("x[y][z][]=1&x[y][z][]=2")["x"]["y"]["z"] == ["1", "2"]
 
     assert (decode("x[y][][z]=1")["x"]["y"] |> Enum.first)["z"] == "1"
     assert (decode("x[y][][z][]=1")["x"]["y"] |> Enum.first)["z"] |> Enum.first == "1"
   end
 
-  test "first always win on bad queries" do
-    assert decode("x[y]=1&x[]=1")["x"]["y"] == "1"
-    assert decode("x[y]=1&x[y][][w]=2")["x"]["y"] == "1"
-    assert decode("x[y]=1&x=1")["x"]["y"] == "1"
+  test "last always wins on bad queries" do
+    assert decode("x[]=1&x[y]=1")["x"]["y"] == "1"
+    assert decode("x[y][][w]=2&x[y]=1")["x"]["y"] == "1"
+    assert decode("x=1&x[y]=1")["x"]["y"] == "1"
   end
 
   test "decode_pair simple queries" do
@@ -61,10 +61,10 @@ defmodule Plug.Connection.QueryTest do
 
   test "decode_pair query no override" do
     params = decode_pair [{ "foo", "bar" }, { "foo", "baz" }]
-    assert params["foo"] == "bar"
+    assert params["foo"] == "baz"
 
     params = decode_pair [{ "users[name]", "bar" }, { "users[name]", "baz" }]
-    assert params["users"]["name"] == "bar"
+    assert params["users"]["name"] == "baz"
   end
 
   test "decode_pair many-levels nested query" do
