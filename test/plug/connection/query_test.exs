@@ -1,0 +1,88 @@
+defmodule Plug.Connection.QueryTest do
+  use ExUnit.Case, async: true
+
+  import Plug.Connection.Query, only: [decode: 1]
+  doctest Plug.Connection.Query
+
+  test "decode queries" do
+    params = decode "foo=bar&baz=bat"
+    assert params["foo"] == "bar"
+    assert params["baz"] == "bat"
+
+    params = decode "users[name]=hello&users[age]=17"
+    assert params["users"]["name"] == "hello"
+    assert params["users"]["age"]  == "17"
+
+    params = decode("my+weird+field=q1%212%22%27w%245%267%2Fz8%29%3F")
+    assert params["my weird field"] == "q1!2\"'w$5&7/z8)?"
+
+    assert decode("=")[""] == ""
+    assert decode("key=")["key"] == ""
+    assert decode("=value")[""] == "value"
+
+    assert decode("foo[]")["foo"]  == []
+    assert decode("foo[]=")["foo"] == [""]
+    assert decode("foo[]=bar&foo[]=baz")["foo"] == ["bar", "baz"]
+    assert decode("foo[]=bar&foo[]=baz")["foo"] == ["bar", "baz"]
+
+    params = decode("foo[]=bar&foo[]=baz&bat[]=1&bat[]=2")
+    assert params["foo"] == ["bar", "baz"]
+    assert params["bat"] == ["1", "2"]
+
+    assert decode("x[y][z]=1")["x"]["y"]["z"] == "1"
+    assert decode("x[y][z][]=1")["x"]["y"]["z"] == ["1"]
+    assert decode("x[y][z]=1&x[y][z]=2")["x"]["y"]["z"] == "1"
+    assert decode("x[y][z][]=1&x[y][z][]=2")["x"]["y"]["z"] == ["1", "2"]
+
+    assert (decode("x[y][][z]=1")["x"]["y"] |> Enum.first)["z"] == "1"
+    assert (decode("x[y][][z][]=1")["x"]["y"] |> Enum.first)["z"] |> Enum.first == "1"
+  end
+
+  test "first always win on bad queries" do
+    assert decode("x[y]=1&x[]=1")["x"]["y"] == "1"
+    assert decode("x[y]=1&x[y][][w]=2")["x"]["y"] == "1"
+    assert decode("x[y]=1&x=1")["x"]["y"] == "1"
+  end
+
+  test "decode_pair simple queries" do
+    params = decode_pair [{ "foo", "bar" }, { "baz", "bat" }]
+    assert params["foo"] == "bar"
+    assert params["baz"] == "bat"
+  end
+
+  test "decode_pair one-level nested query" do
+    params = decode_pair [{ "users[name]", "hello" }]
+    assert params["users"]["name"] == "hello"
+
+    params = decode_pair [{ "users[name]", "hello" }, { "users[age]", "17" }]
+    assert params["users"]["name"] == "hello"
+    assert params["users"]["age"]  == "17"
+  end
+
+  test "decode_pair query no override" do
+    params = decode_pair [{ "foo", "bar" }, { "foo", "baz" }]
+    assert params["foo"] == "bar"
+
+    params = decode_pair [{ "users[name]", "bar" }, { "users[name]", "baz" }]
+    assert params["users"]["name"] == "bar"
+  end
+
+  test "decode_pair many-levels nested query" do
+    params = decode_pair [{ "users[name]", "hello" }]
+    assert params["users"]["name"] == "hello"
+
+    params = decode_pair [{ "users[name]", "hello" }, { "users[age]", "17" }, { "users[address][street]", "Mourato" }]
+    assert params["users"]["name"]              == "hello"
+    assert params["users"]["age"]               == "17"
+    assert params["users"]["address"]["street"] == "Mourato"
+  end
+
+  test "decode_pair list query" do
+    params = decode_pair [{ "foo[]", "bar" }, { "foo[]", "baz" }]
+    assert params["foo"] == ["bar", "baz"]
+  end
+
+  defp decode_pair(pairs) do
+    Enum.reduce Enum.reverse(pairs), [], &Plug.Connection.Query.decode_pair(&1, &2)
+  end
+end
