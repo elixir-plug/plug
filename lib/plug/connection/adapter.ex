@@ -14,7 +14,9 @@ defmodule Plug.Connection.Adapter do
   defcallback send(payload, Conn.status, Conn.headers, Conn.body) :: payload
 
   @doc """
-  Streams the request body.
+  Reads the request body in data chunks.
+  The limit of the data to be read can be given as an argument.
   """
-  defcallback stream_body(payload) :: { :ok, data :: binary, payload } | { :done, payload }
+  defcallback read(payload, limit :: pos_integer) ::
+              { :ok, data :: binary, payload } | { :done, payload }
 end

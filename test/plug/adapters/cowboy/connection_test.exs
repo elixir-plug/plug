@@ -53,9 +53,19 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   test "builds a connection" do
-    assert_ok request :head, "/?foo=bar&baz=bat"
-    assert_ok request :get, "/build/foo/bar"
-    assert_ok request :get, "//build//foo//bar"
+    assert { 204, _, _ } = request :head, "/?foo=bar&baz=bat"
+    assert { 204, _, _ } = request :get, "/build/foo/bar"
+    assert { 204, _, _ } = request :get, "//build//foo//bar"
+  end
+
+  def headers(conn) do
+    assert conn.req_headers["foo"] == "bar"
+    assert conn.req_headers["baz"] == "bat"
+    conn
+  end
+
+  test "stores request headers" do
+    assert { 204, _, _ } = request :get, "/headers", [{ "foo", "bar" }, { "baz", "bat" }]
   end
 
   def send_200(conn) do
@@ -85,11 +95,6 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   ## Helpers
-
-  defp assert_ok({ 204, _, _ }), do: :ok
-  defp assert_ok({ status, _, body }) do
-    flunk "Expected ok response, got status #{inspect status} with body #{inspect body}"
-  end
 
   defp request(verb, path, headers // [], body // "") do
     { :ok, status, headers, client } =

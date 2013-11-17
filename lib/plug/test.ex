@@ -8,9 +8,9 @@ defmodule Plug.Test do
   @doc """
   Creates a test connection.
   """
-  @spec conn(atom | binary, binary) :: Conn.t
-  def conn(method, path) do
-    Plug.Adapters.Test.Connection.conn(method, path)
+  @spec conn(atom | binary, binary, binary | list, Keyword.t) :: Conn.t
+  def conn(method, path, params_or_body // [], opts // []) do
+    Plug.Adapters.Test.Connection.conn(method, path, params_or_body, opts)
   end
 
   @doc """

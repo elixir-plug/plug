@@ -114,4 +114,10 @@ defmodule Plug.ConnectionTest do
     assert conn.resp_body == nil
     assert sent_body(conn) == "HELLO"
   end
+
+  test "req_headers/1" do
+    conn = conn(:get, "/foo", [], headers: [{ "foo", "bar" }, { "baz", "bat" }])
+    assert conn.req_headers["foo"] == "bar"
+    assert conn.req_headers["baz"] == "bat"
+  end
 end

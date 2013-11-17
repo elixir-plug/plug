@@ -6,6 +6,7 @@ defrecord Plug.Conn,
     path_info: [],
     port: nil,
     query_string: nil,
+    req_headers: [],
     resp_body: "",
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
     scheme: nil,
@@ -30,6 +31,7 @@ defrecord Plug.Conn,
               method: method,
               path_info: segments,
               port: port,
+              req_headers: [],
               resp_body: body | nil,
               resp_headers: headers,
               scheme: scheme,
@@ -43,6 +45,9 @@ defrecord Plug.Conn,
   all connection manipulation should be done via the functions
   in `Plug.Connection` module.
 
+  Both request and response headers are expected to have
+  lower-cased keys.
+
   ## Request fields
 
   Those fields contain request information:
@@ -51,8 +56,9 @@ defrecord Plug.Conn,
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `port` - the requested port as an integer, example: `80`
+  * `req_headers` - the request headers as a list, example: `[{ "content-type", "text/plain" }]`
   * `scheme` - the request scheme as an atom, example: `:http`
-  * `query_string` - the request query string
+  * `query_string` - the request query string as a binary, example: `"foo=bar"`
 
   ## Response fields
 

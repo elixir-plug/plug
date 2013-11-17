@@ -7,6 +7,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { host, req } = :cowboy_req.host req
     { port, req } = :cowboy_req.port req
     { meth, req } = :cowboy_req.method req
+    { hdrs, req } = :cowboy_req.headers req
     { qs, req }   = :cowboy_req.qs req
 
     Plug.Conn[
@@ -16,6 +17,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
       path_info: split_path(path),
       port: port,
       query_string: qs,
+      req_headers: hdrs,
       scheme: scheme(transport)
     ]
   end
@@ -25,8 +27,8 @@ defmodule Plug.Adapters.Cowboy.Connection do
     req
   end
 
-  def stream_body(req) do
-    :cowboy_req.stream_body(req)
+  def read(req, limit) do
+    :cowboy_req.stream_body(limit, req)
   end
 
   defp scheme(:tcp), do: :http
