@@ -2,6 +2,7 @@ defmodule Plug.Connection.CookiesTest do
   use ExUnit.Case, async: true
 
   import Plug.Connection.Cookies
+  doctest Plug.Connection.Cookies
 
   test "decode cookies" do
     assert decode("key1=value1, key2=value2") ==

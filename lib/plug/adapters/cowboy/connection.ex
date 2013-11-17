@@ -25,6 +25,10 @@ defmodule Plug.Adapters.Cowboy.Connection do
     req
   end
 
+  def stream_body(req) do
+    :cowboy_req.stream_body(req)
+  end
+
   defp scheme(:tcp), do: :http
   defp scheme(:ssl), do: :https
 

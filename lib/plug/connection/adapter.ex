@@ -12,4 +12,9 @@ defmodule Plug.Connection.Adapter do
   not return
   """
   defcallback send(payload, Conn.status, Conn.headers, Conn.body) :: payload
+
+  @doc """
+  Streams the request body.
+  """
+  defcallback stream_body(payload) :: { :ok, data :: binary, payload } | { :done, payload }
 end

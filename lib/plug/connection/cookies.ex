@@ -8,6 +8,12 @@ defmodule Plug.Connection.Cookies do
 
   If a cookie is invalid, it is automatically
   discarded from the result.
+
+  ## Examples
+
+      iex> decode("key1=value1, key2=value2")
+      [{ "key1", "value1" }, { "key2", "value2" }]
+
   """
   def decode(cookie) do
     decode_each(:binary.split(cookie, [";", ","], [:global]))
