@@ -94,6 +94,28 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 200, _, "" } = request :head, "/send_200"
   end
 
+  def stream_req_body(conn) do
+    { adapter, state } = conn.adapter
+    expected = :binary.copy("abcdefghij", 100_000)
+    assert { ^expected, state } = read_req_body({ :ok, "", state }, "", adapter)
+    assert { :done, state } = adapter.stream_req_body(state, 100_000)
+    conn.adapter({ adapter, state })
+  end
+
+  defp read_req_body({ :ok, buffer, state }, acc, adapter) do
+    read_req_body(adapter.stream_req_body(state, 100_000), acc <> buffer, adapter)
+  end
+
+  defp read_req_body({ :done, state }, acc, _adapter) do
+    { acc, state }
+  end
+
+  test "reads body" do
+    body = :binary.copy("abcdefghij", 100_000)
+    assert { 204, _, "" } = request :get, "/stream_req_body", [], body
+    assert { 204, _, "" } = request :post, "/stream_req_body", [], body
+  end
+
   ## Helpers
 
   defp request(verb, path, headers // [], body // "") do

@@ -120,4 +120,14 @@ defmodule Plug.ConnectionTest do
     assert conn.req_headers["foo"] == "bar"
     assert conn.req_headers["baz"] == "bat"
   end
+
+  test "adapter/1 and stream_req_body/2" do
+    conn = conn(:get, "/", "abcdefgh")
+    { adapter, state } = conn.adapter
+    assert { :ok, "abcde", state } = adapter.stream_req_body(state, 5)
+    assert { :ok, "fgh", state } = adapter.stream_req_body(state, 5)
+    assert { :done, state } = adapter.stream_req_body(state, 5)
+    assert { :done, state } = adapter.stream_req_body(state, 5)
+    conn.adapter({ adapter, state })
+  end
 end

@@ -17,7 +17,7 @@ defmodule Plug.Test do
   Returns the body sent during testing.
   """
   @spec sent_body(Conn.t) :: Conn.body | nil
-  def sent_body(Conn[adapter: { Plug.Adapters.Test.Connection, { _, body } }]) do
-    body
+  def sent_body(Conn[adapter: { Plug.Adapters.Test.Connection, state }]) do
+    Plug.Adapters.Test.Connection.sent_body(state)
   end
 end

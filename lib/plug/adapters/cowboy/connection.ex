@@ -22,12 +22,12 @@ defmodule Plug.Adapters.Cowboy.Connection do
     ]
   end
 
-  def send(req, status, headers, body) do
+  def send_resp(req, status, headers, body) do
     { :ok, req } = :cowboy_req.reply(status, headers, body, req)
     req
   end
 
-  def read(req, limit) do
+  def stream_req_body(req, limit) do
     :cowboy_req.stream_body(limit, req)
   end
 

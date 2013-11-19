@@ -134,7 +134,7 @@ defmodule Plug.Connection do
 
   def send(Conn[adapter: { adapter, payload }, state: :unsent] = conn) do
     self() <- @already_sent
-    payload = adapter.send(payload, conn.status, conn.resp_headers, conn.resp_body)
+    payload = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
     conn.adapter({ adapter, payload }).state(:sent).resp_body(nil)
   end
 
