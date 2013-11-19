@@ -3,15 +3,21 @@ defmodule Plug do
   Specification for a plug.
 
   A plug is any Elixir function that receives two arguments: a
-  `Plug.Conn` record and a set of keywords options.
+  `Plug.Conn` record and a set of keywords options. This function
+  must return a tuple, where the first element is an atom and
+  the second one is the updated `Plug.Conn`.
 
-  There is a second kind of plugs called wrappers. They work the
-  same as regular plugs except that they are expected to define
-  a function with three arguments, where the third argument is a
-  function that receives a `Plug.Conn` record and returns a
-  `Plug.Conn`.
+  While the first element can be any atom, two values have specific
+  meaning to plug:
 
-  When defined over modules, it is common for those functions to
-  be named `call/2` and `call/3`.
+  * `:ok` - pass the connection to the next plug in the stack
+  * `:halt` - halts the current and all other stacks
+
+  Any other values means the connection should halt but it can
+  be handled by some of other part of the stack that will be
+  able to forward the connection to possibly another stack.
+
+  When defined in a module, it is common for the plug function
+  to be named `call/2`.
   """
 end

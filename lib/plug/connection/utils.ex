@@ -83,6 +83,9 @@ defmodule Plug.Connection.Utils do
       iex> params("foo=bar")
       [{"foo","bar"}]
 
+      iex> params("  foo=bar  ")
+      [{"foo","bar"}]
+
       iex> params("FOO=bar")
       [{"foo","bar"}]
 

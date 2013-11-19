@@ -30,13 +30,15 @@ defmodule Plug.Connection.Query do
   @doc """
   Decodes the given binary.
   """
-  def decode("") do
-    []
+  def decode(query, initial // [])
+
+  def decode("", initial) do
+    initial
   end
 
-  def decode(query) do
+  def decode(query, initial) do
     decoder = URI.query_decoder(query)
-    Enum.reduce(Enum.reverse(decoder), [], &decode_pair(&1, &2))
+    Enum.reduce(Enum.reverse(decoder), initial, &decode_pair(&1, &2))
   end
 
   @doc """

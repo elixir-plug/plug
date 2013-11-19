@@ -24,6 +24,8 @@ defrecord Plug.Conn,
   @type segments :: [binary]
   @type state    :: :unsent | :sent
   @type status   :: non_neg_integer
+  @type param    :: binary | [{ binary, param }] | [param]
+  @type params   :: [{ binary, param }]
 
   record_type adapter: adapter,
               assigns: assigns,
