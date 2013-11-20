@@ -76,7 +76,7 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   def parse(conn, _type, _subtype, _headers, _opts) do
-    { :halt, conn }
+    { :next, conn }
   end
 
   defp handle_headers(headers) do

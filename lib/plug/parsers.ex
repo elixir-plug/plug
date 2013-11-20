@@ -48,7 +48,10 @@ defmodule Plug.Parsers do
   handle the given content type, `{ :halt, conn }` otherwise.
   """
   defcallback parse(Conn.t, type :: binary, subtype :: binary,
-                    headers :: Keyword.t, opts :: Keyword.t) :: { :ok | :halt, Conn.t }
+                    headers :: Keyword.t, opts :: Keyword.t) ::
+                    { :ok, Conn.params, Conn.t } |
+                    { :too_large, Conn.t } |
+                    { :skip, Conn.t }
 
   # TODO: Add upload manager
   def call(Conn[req_headers: req_headers] = conn, opts) do
@@ -72,7 +75,7 @@ defmodule Plug.Parsers do
     case h.parse(conn, type, subtype, headers, opts) do
       { :ok, post, Conn[params: get] = conn } ->
         { :ok, conn.params(merge_params(get, post)) }
-      { :halt, conn } ->
+      { :next, conn } ->
         reduce(conn, t, type, subtype, headers, opts)
       { :too_large, conn } ->
         raise Plug.Parsers.RequestTooLargeError, conn: conn
