@@ -20,4 +20,21 @@ defmodule Plug.Test do
   def sent_body(Conn[adapter: { Plug.Adapters.Test.Connection, state }]) do
     Plug.Adapters.Test.Connection.sent_body(state)
   end
+
+  @doc """
+  Puts a new request header.
+  Previous entries of the same headers are removed.
+  """
+  @spec put_req_header(Conn.t, binary, binary) :: Conn.t
+  def put_req_header(Conn[req_headers: headers] = conn, key, value) do
+    conn.req_headers(:lists.keystore(key, 1, headers, { key, value }))
+  end
+
+  @doc """
+  Deletes a request header.
+  """
+  @spec delete_req_header(Conn.t, binary) :: Conn.t
+  def delete_req_header(Conn[req_headers: headers] = conn, key) do
+    conn.req_headers(:lists.keydelete(key, 1, headers))
+  end
 end

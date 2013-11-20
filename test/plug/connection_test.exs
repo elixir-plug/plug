@@ -121,7 +121,7 @@ defmodule Plug.ConnectionTest do
     assert conn.req_headers["baz"] == "bat"
   end
 
-  test "fetch_params/1" do
+  test "params/1 && fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == Plug.Connection.Unfetched[aspect: :params]
     conn = fetch_params(conn)
@@ -129,5 +129,15 @@ defmodule Plug.ConnectionTest do
 
     conn = conn(:get, "/foo") |> fetch_params
     assert conn.params == []
+  end
+
+  test "req_cookies/1 && fetch_params/1" do
+    conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
+    assert conn.req_cookies == Plug.Connection.Unfetched[aspect: :cookies]
+    conn = fetch_cookies(conn)
+    assert conn.req_cookies == [{ "foo", "bar" }, { "baz", "bat" }]
+
+    conn = conn(:get, "/foo") |> fetch_cookies
+    assert conn.req_cookies == []
   end
 end

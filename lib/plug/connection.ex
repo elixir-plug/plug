@@ -9,6 +9,7 @@ defrecord Plug.Conn,
     path_info: [],
     port: nil,
     query_string: nil,
+    req_cookies: Unfetched[aspect: :cookies],
     req_headers: [],
     resp_body: "",
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
@@ -19,6 +20,7 @@ defrecord Plug.Conn,
   @type adapter  :: { module, term }
   @type assigns  :: Keyword.t
   @type body     :: binary
+  @type cookies  :: [{ binary, binary }]
   @type headers  :: [{ binary, binary }]
   @type host     :: binary
   @type method   :: binary
@@ -36,6 +38,7 @@ defrecord Plug.Conn,
               params: params | Unfetched.t,
               path_info: segments,
               port: 0..65535,
+              req_cookies: cookies | Unfetched.t,
               req_headers: [],
               resp_body: body | nil,
               resp_headers: headers,
@@ -213,7 +216,23 @@ defmodule Plug.Connection do
     conn.params(Plug.Connection.Query.decode(query_string))
   end
 
-  def fetch_params(Conn[params: _] = conn) do
+  def fetch_params(Conn[] = conn) do
+    conn
+  end
+
+  @doc """
+  Fetches cookies from the request headers.
+  """
+  @spec fetch_cookies(Conn.t) :: Conn.t
+  def fetch_cookies(Conn[req_cookies: Plug.Connection.Unfetched[], req_headers: req_headers] = conn) do
+    cookies =
+      lc { "cookie", cookie } inlist req_headers,
+         kv inlist Plug.Connection.Cookies.decode(cookie),
+         do: kv
+    conn.req_cookies(cookies)
+  end
+
+  def fetch_cookies(Conn[] = conn) do
     conn
   end
 end
