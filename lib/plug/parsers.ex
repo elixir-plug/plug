@@ -55,6 +55,7 @@ defmodule Plug.Parsers do
   # TODO: Support test connections
   # TODO: Add upload manager
   def call(Conn[req_headers: req_headers] = conn, opts) do
+    conn = Plug.Connection.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       { "content-type", ct } ->
         case Plug.Connection.Utils.content_type(ct) do

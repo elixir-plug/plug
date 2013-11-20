@@ -1,8 +1,11 @@
+alias Plug.Connection.Unfetched
+
 defrecord Plug.Conn,
     adapter: nil,
     assigns: [],
     host: nil,
     method: nil,
+    params: Unfetched[aspect: :params],
     path_info: [],
     port: nil,
     query_string: nil,
@@ -31,6 +34,7 @@ defrecord Plug.Conn,
               assigns: assigns,
               host: host,
               method: method,
+              params: params | Unfetched.t,
               path_info: segments,
               port: port,
               req_headers: [],
@@ -61,6 +65,13 @@ defrecord Plug.Conn,
   * `req_headers` - the request headers as a list, example: `[{ "content-type", "text/plain" }]`
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
+
+  ## Fetchable request fields
+
+  Those fields contain request information but they need to be explicitly fetched.
+  Before fetching those fields return a `Plug.Connection.Unfetched` record.
+
+  * `params` - the request params
 
   ## Response fields
 
@@ -191,5 +202,19 @@ defmodule Plug.Connection do
         content_type <> "; charset=" <> charset
       end
     put_resp_header(conn, "content-type", value)
+  end
+
+  @doc """
+  Fetches parameters from the query string. This function does not
+  fetch parameters from the body. To fetch parameters from the body,
+  use the `Plug.Parsers` plug.
+  """
+  @spec fetch_params(Conn.t) :: Conn.t
+  def fetch_params(Conn[params: Plug.Connection.Unfetched[], query_string: query_string] = conn) do
+    conn.params(Plug.Connection.Query.decode(query_string))
+  end
+
+  def fetch_params(Conn[params: _] = conn) do
+    conn
   end
 end

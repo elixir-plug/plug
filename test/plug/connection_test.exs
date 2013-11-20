@@ -130,4 +130,14 @@ defmodule Plug.ConnectionTest do
     assert { :done, state } = adapter.stream_req_body(state, 5)
     conn.adapter({ adapter, state })
   end
+
+  test "fetch_params/1" do
+    conn = conn(:get, "/foo?a=b&c=d")
+    assert conn.params == Plug.Connection.Unfetched[aspect: :params]
+    conn = fetch_params(conn)
+    assert conn.params == [{ "a", "b" }, { "c", "d" }]
+
+    conn = conn(:get, "/foo") |> fetch_params
+    assert conn.params == []
+  end
 end
