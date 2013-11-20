@@ -2,12 +2,12 @@ defmodule Plug.ParsersTest do
   use ExUnit.Case, async: true
 
   import Plug.Test
-  
+
   def parse(conn, opts // []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
     Plug.Parsers.call(conn, opts)
   end
-  
+
   test "raises when no parsers is given" do
     assert_raise ArgumentError, fn ->
       parse(conn(:get, "/"), parsers: nil)

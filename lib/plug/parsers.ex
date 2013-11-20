@@ -37,6 +37,18 @@ defmodule Plug.Parsers do
   * `Plug.Parsers.URLENCODED`
   * `Plug.Parsers.MULTIPART`
 
+  ## File handling
+
+  In case a file is uploaded via any of the parsers, Plug will
+  stream the uploaded contents to a file in a temporary directory,
+  avoiding loading the whole file into memory. For such, it is
+  required that the `:plug` application is started.
+
+  In those cases, the parameter will return a `Plug.Upload.File[]`
+  record with information about the file and its content type.
+
+  You can customize the temporary directory by setting the `PLUG_TMPDIR`
+  environment variable in your system.
   """
 
   alias Plug.Conn
@@ -53,7 +65,6 @@ defmodule Plug.Parsers do
                     { :too_large, Conn.t } |
                     { :skip, Conn.t }
 
-  # TODO: Add upload manager
   def call(Conn[req_headers: req_headers] = conn, opts) do
     conn = Plug.Connection.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do

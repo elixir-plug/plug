@@ -20,4 +20,11 @@ defmodule Plug do
   When defined in a module, it is common for the plug function
   to be named `call/2`.
   """
+
+  use Application.Behaviour
+
+  @doc false
+  def start(_type, _args) do
+    Plug.Supervisor.start_link
+  end
 end

@@ -10,7 +10,7 @@ defmodule Plug.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    []
+    [mod: { Plug, [] }]
   end
 
   def deps(:prod) do

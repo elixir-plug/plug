@@ -1,64 +1,3 @@
-defmodule Plug.TempHack do
-  @moduledoc false
-
-  @doc """
-  Create a temporary directory usually
-  used to store uploaded files.
-  """
-  def tmp_dir do
-    { mega, _, _ } = :erlang.now
-    dir = "plug-#{mega}"
-
-    write_env_tmp_dir('TMPDIR', dir) ||
-      write_env_tmp_dir('TMP', dir)  ||
-      write_env_tmp_dir('TEMP', dir) ||
-      write_tmp_dir("/tmp/" <> dir)  ||
-      write_tmp_dir(Path.expand(dir)) ||
-      raise "cannot create temporary directory"
-  end
-
-  defp write_env_tmp_dir(env, dir) do
-    case :os.getenv(env) do
-      false -> nil
-      tmp   -> write_tmp_dir Path.join(tmp, dir)
-    end
-  end
-
-  defp write_tmp_dir(dir) do
-    case File.mkdir_p(dir) do
-      :ok -> dir
-      { :error, _ } -> nil
-    end
-  end
-
-  @doc """
-  Creates a file with random name at the given temporary
-  directory. It returns the name of the file and the result
-  of the executed callback as a tuple.
-
-  In case the file could not be created after 10 attemps,
-  it raises an exception.
-  """
-  @max_attempts 10
-
-  def random_file(prefix) do
-    random_file(prefix, tmp_dir(), 0)
-  end
-
-  defp random_file(prefix, tmp_dir, attempts) when attempts < @max_attempts do
-    { mega, sec, mili } = :erlang.now()
-    path = Path.join(tmp_dir, "#{prefix}-#{mega}-#{sec}-#{mili}")
-    case :file.open(path, [:write, :exclusive, :binary]) do
-      { :error, :eaccess } -> random_file(prefix, tmp_dir, attempts + 1)
-      { :ok, file } -> { :ok, file, path }
-    end
-  end
-
-  defp random_file(_, tmp_dir, attempts) do
-    raise "Could not create random file at #{tmp_dir} after #{attempts} attempts. What gives?"
-  end
-end
-
 defmodule Plug.Parsers.MULTIPART do
   @moduledoc false
   alias Plug.Conn
@@ -102,7 +41,8 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp handle_disposition_params(name, params, headers) do
     if filename = params["filename"] do
-      { :ok, file, path } = Plug.TempHack.random_file("multipart")
+      path = Plug.Upload.random_file!("multipart")
+      file = File.open!(path, [:write, :binary])
       { :file, name, file, Plug.Upload.File[filename: filename, path: path,
                                             content_type: headers["content-type"]] }
     else
