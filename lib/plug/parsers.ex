@@ -30,12 +30,22 @@ defmodule Plug.Parsers do
   * `:limit` - the request size limit we accept to parse.
                Defaults to 8_000_000 bytes.
 
+  ## Examples
+
+      Plug.Parsers.call(conn, parsers:
+                        [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
+
   ## Built-in parsers
 
   Plug ships with the following parsers:
 
-  * `Plug.Parsers.URLENCODED`
-  * `Plug.Parsers.MULTIPART`
+  * `Plug.Parsers.URLENCODED` - parses "application/x-www-form-urlencoded" requests
+  * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
+
+  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` if
+  the request cannot be parsed by any of the given types and raise
+  `Plug.Parsers.RequestTooLargeError` if the request goes over the
+  given limit.
 
   ## File handling
 

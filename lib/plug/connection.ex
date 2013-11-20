@@ -22,7 +22,6 @@ defrecord Plug.Conn,
   @type headers  :: [{ binary, binary }]
   @type host     :: binary
   @type method   :: binary
-  @type port     :: 0..65535
   @type scheme   :: :http | :https
   @type segments :: [binary]
   @type state    :: :unsent | :sent
@@ -36,7 +35,7 @@ defrecord Plug.Conn,
               method: method,
               params: params | Unfetched.t,
               path_info: segments,
-              port: port,
+              port: 0..65535,
               req_headers: [],
               resp_body: body | nil,
               resp_headers: headers,
