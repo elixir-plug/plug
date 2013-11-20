@@ -50,9 +50,6 @@ defmodule Plug.Parsers do
   defcallback parse(Conn.t, type :: binary, subtype :: binary,
                     headers :: Keyword.t, opts :: Keyword.t) :: { :ok | :halt, Conn.t }
 
-  # TODO: Parse get params
-  # TODO: Check for unfetched
-  # TODO: Support test connections
   # TODO: Add upload manager
   def call(Conn[req_headers: req_headers] = conn, opts) do
     conn = Plug.Connection.fetch_params(conn)

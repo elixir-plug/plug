@@ -121,16 +121,6 @@ defmodule Plug.ConnectionTest do
     assert conn.req_headers["baz"] == "bat"
   end
 
-  test "adapter/1 and stream_req_body/2" do
-    conn = conn(:get, "/", "abcdefgh")
-    { adapter, state } = conn.adapter
-    assert { :ok, "abcde", state } = adapter.stream_req_body(state, 5)
-    assert { :ok, "fgh", state } = adapter.stream_req_body(state, 5)
-    assert { :done, state } = adapter.stream_req_body(state, 5)
-    assert { :done, state } = adapter.stream_req_body(state, 5)
-    conn.adapter({ adapter, state })
-  end
-
   test "fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == Plug.Connection.Unfetched[aspect: :params]

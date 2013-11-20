@@ -2,17 +2,16 @@ defmodule Plug.Adapters.Test.Connection do
   @behaviour Plug.Connection.Adapter
   @moduledoc false
 
-  defrecord State, [:method, :req_body, :resp_body]
+  defrecord State, [:method, :params, :req_body, :resp_body]
 
   ## Test helpers
 
   def conn(method, uri, body_or_params // [], opts // []) do
     uri     = URI.parse(uri)
     method  = method |> to_string |> String.upcase
-    headers = opts[:headers] || []
 
-    { body, _params } = body_or_params(body_or_params)
-    state = State[method: method, req_body: body, resp_body: nil]
+    { body, params, headers } = body_or_params(body_or_params, opts[:headers] || [])
+    state = State[method: method, params: params, req_body: body]
 
     Plug.Conn[
       adapter: { __MODULE__, state },
@@ -45,12 +44,30 @@ defmodule Plug.Adapters.Test.Connection do
     { :ok, data, state.req_body(rest) }
   end
 
+  def parse_req_multipart(State[params: multipart] = state, _limit, params, _callback) do
+    { :ok, Dict.merge(params, multipart), state.params(nil) }
+  end
+
   ## Private helpers
 
-  defp body_or_params(body) when is_binary(body),
-    do: { body, nil }
-  defp body_or_params(params) when is_list(params),
-    do: { "", params }
+  defp body_or_params(body, headers) when is_binary(body) do
+    unless headers["content-type"] do
+      raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
+    end
+    { body, nil, headers }
+  end
+
+  defp body_or_params(params, headers) when is_list(params) do
+    headers = Dict.put(headers, "content-type", "multipart/mixed; charset: utf-8")
+    { "", stringify_params(params), headers }
+  end
+
+  defp stringify_params([{ k, v }|t]),
+    do: [{ to_string(k), stringify_params(v) }|stringify_params(t)]
+  defp stringify_params([h|t]),
+    do: [stringify_params(h)|stringify_params(t)]
+  defp stringify_params(other),
+    do: other
 
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
