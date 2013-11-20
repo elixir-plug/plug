@@ -12,24 +12,26 @@ defrecord Plug.Conn,
     req_cookies: Unfetched[aspect: :cookies],
     req_headers: [],
     resp_body: "",
+    resp_cookies: [],
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
     scheme: nil,
     state: :unsent,
     status: nil do
 
-  @type adapter  :: { module, term }
-  @type assigns  :: Keyword.t
-  @type body     :: binary
-  @type cookies  :: [{ binary, binary }]
-  @type headers  :: [{ binary, binary }]
-  @type host     :: binary
-  @type method   :: binary
-  @type scheme   :: :http | :https
-  @type segments :: [binary]
-  @type state    :: :unsent | :sent
-  @type status   :: non_neg_integer
-  @type param    :: binary | [{ binary, param }] | [param]
-  @type params   :: [{ binary, param }]
+  @type adapter      :: { module, term }
+  @type assigns      :: Keyword.t
+  @type body         :: binary
+  @type cookies      :: [{ binary, binary }]
+  @type headers      :: [{ binary, binary }]
+  @type host         :: binary
+  @type method       :: binary
+  @type scheme       :: :http | :https
+  @type segments     :: [binary]
+  @type state        :: :unsent | :sent
+  @type status       :: non_neg_integer
+  @type param        :: binary | [{ binary, param }] | [param]
+  @type params       :: [{ binary, param }]
+  @type resp_cookies :: [{ binary, Keyword.t }]
 
   record_type adapter: adapter,
               assigns: assigns,
@@ -41,6 +43,7 @@ defrecord Plug.Conn,
               req_cookies: cookies | Unfetched.t,
               req_headers: [],
               resp_body: body | nil,
+              resp_cookies: resp_cookies,
               resp_headers: headers,
               scheme: scheme,
               state: state,
@@ -74,14 +77,16 @@ defrecord Plug.Conn,
   Before fetching those fields return a `Plug.Connection.Unfetched` record.
 
   * `params` - the request params
+  * `req_cookies` - the request cookies
 
   ## Response fields
 
   Those fields contain response information:
 
   * `resp_body` - the response body, by default is an empty string, set to nil after sening
-  * `resp_content_type` - the response content-type, by default is nil
   * `resp_charset` - the response charset, defaults to "utf-8"
+  * `resp_content_type` - the response content-type, by default is nil
+  * `resp_cookies` - the response cookies with their name and options
   * `resp_headers` - the response headers as a dict,
                      by default `cache-control` is set to `"max-age=0, private, must-revalidate"`
   * `status` - the response status
@@ -149,12 +154,19 @@ defmodule Plug.Connection do
 
   def send(Conn[adapter: { adapter, payload }, state: :unsent] = conn) do
     self() <- @already_sent
-    payload = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
-    conn.adapter({ adapter, payload }).state(:sent).resp_body(nil)
+    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
+    payload = adapter.send_resp(payload, conn.status, headers, conn.resp_body)
+    conn.adapter({ adapter, payload }).state(:sent).resp_body(nil).resp_headers(headers)
   end
 
   def send(Conn[]) do
     raise AlreadySentError
+  end
+
+  defp merge_headers(headers, cookies) do
+    Enum.reduce(cookies, headers, fn { key, opts }, acc ->
+      [{ "set-cookie", Plug.Connection.Cookies.encode(key, opts) }|acc]
+    end)
   end
 
   @doc """
@@ -179,7 +191,7 @@ defmodule Plug.Connection do
   Previous entries of the same headers are removed.
   """
   @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
-  def put_resp_header(Conn[resp_headers: headers] = conn, key, value) do
+  def put_resp_header(Conn[resp_headers: headers] = conn, key, value) when is_binary(key) and is_binary(value) do
     conn.resp_headers(:lists.keystore(key, 1, headers, { key, value }))
   end
 
@@ -187,7 +199,7 @@ defmodule Plug.Connection do
   Deletes a response header.
   """
   @spec delete_resp_header(Conn.t, binary) :: Conn.t
-  def delete_resp_header(Conn[resp_headers: headers] = conn, key) do
+  def delete_resp_header(Conn[resp_headers: headers] = conn, key) when is_binary(key) do
     conn.resp_headers(:lists.keydelete(key, 1, headers))
   end
 
@@ -196,7 +208,8 @@ defmodule Plug.Connection do
   account the charset.
   """
   @spec put_resp_content_type(Conn.t, binary, binary | nil) :: Conn.t
-  def put_resp_content_type(conn, content_type, charset // "utf-8") do
+  def put_resp_content_type(conn, content_type, charset // "utf-8") when
+      is_binary(content_type) and (is_binary(charset) or nil?(charset)) do
     value =
       if nil?(charset) do
         content_type
@@ -234,5 +247,37 @@ defmodule Plug.Connection do
 
   def fetch_cookies(Conn[] = conn) do
     conn
+  end
+
+  @doc """
+  Puts a response cookie.
+
+  ## Options
+
+  * `:domain` - the domain the cookie applies to;
+  * `:max_age` - the cookie max-age;
+  * `:path` - the path the cookie applies to;
+  * `:secure` - if the cookie must be sent only over https;
+
+  """
+  @spec put_resp_cookie(Conn.t, binary, binary, Keyword.t) :: Conn.t
+  def put_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, value, opts // []) when
+      is_binary(key) and is_binary(value) and is_list(opts) do
+    conn.resp_cookies(List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] }))
+  end
+
+  @epoch { { 1970, 1, 1 }, { 0, 0, 0 } }
+
+  @doc """
+  Deletes a response cookie.
+
+  Deleting a cookie requires the same options as to when the cookie was put.
+  Check `put_resp_cookie/4` for more information.
+  """
+  @spec delete_resp_cookie(Conn.t, binary, Keyword.t) :: Conn.t
+  def delete_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, opts // []) when
+      is_binary(key) and is_list(opts) do
+    opts = opts |> Keyword.put_new(:universal_time, @epoch) |> Keyword.put_new(:max_age, 0)
+    conn.resp_cookies(List.keystore(resp_cookies, key, 0, { key, opts }))
   end
 end

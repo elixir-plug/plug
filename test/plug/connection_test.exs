@@ -140,4 +140,22 @@ defmodule Plug.ConnectionTest do
     conn = conn(:get, "/foo") |> fetch_cookies
     assert conn.req_cookies == []
   end
+
+  test "put_resp_cookies/4 and delete_resp_cookies/3" do
+    conn = conn(:get, "/") |> send(200, "ok")
+    refute conn.resp_headers["set-cookie"]
+
+    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send(200, "ok")
+    assert conn.resp_cookies["foo"] ==
+           [value: "baz", path: "/baz"]
+    assert conn.resp_headers["set-cookie"] ==
+           "foo=baz; path=/baz; HttpOnly"
+
+    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz") |>
+           delete_resp_cookie("foo", path: "/baz") |> send(200, "ok")
+    assert conn.resp_cookies["foo"] ==
+           [max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"]
+    assert conn.resp_headers["set-cookie"] ==
+           "foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"
+  end
 end
