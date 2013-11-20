@@ -27,7 +27,7 @@ defmodule Plug.Adapters.Test.ConnectionTest do
   test "parse_req_multipart/4" do
     conn = conn(:get, "/", a: "b", c: [[d: "e"], "f"])
     { adapter, state } = conn.adapter
-    assert { :ok, params, state } = adapter.parse_req_multipart(state, 1_000_000, [{ "a", "oops" }], fn _ -> end)
+    assert { :ok, params, state } = adapter.parse_req_multipart(state, 1_000_000, fn _ -> end)
     assert params == [{ "a", "b" }, { "c", [[{ "d", "e" }], "f"] }]
     conn.adapter({ adapter, state })
   end

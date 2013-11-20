@@ -44,8 +44,8 @@ defmodule Plug.Adapters.Test.Connection do
     { :ok, data, state.req_body(rest) }
   end
 
-  def parse_req_multipart(State[params: multipart] = state, _limit, params, _callback) do
-    { :ok, Dict.merge(params, multipart), state.params(nil) }
+  def parse_req_multipart(State[params: multipart] = state, _limit, _callback) do
+    { :ok, multipart, state.params(nil) }
   end
 
   ## Private helpers

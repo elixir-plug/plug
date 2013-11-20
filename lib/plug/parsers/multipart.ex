@@ -65,13 +65,13 @@ defmodule Plug.Parsers.MULTIPART do
 
   def parse(Conn[] = conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
     { adapter, state } = conn.adapter
-    limit = Keyword.get!(opts, :limit)
+    limit = Keyword.fetch!(opts, :limit)
 
-    case adapter.parse_req_multipart(state, limit, conn.params, &handle_headers/1) do
+    case adapter.parse_req_multipart(state, limit, &handle_headers/1) do
       { :ok, params, state } ->
-        { :ok, conn.params(params).adapter({ adapter, state }) }
+        { :ok, params, conn.adapter({ adapter, state }) }
       { :too_large, state } ->
-        raise Plug.Parsers.RequestTooLargeError, conn: conn.adapter({ adapter, state })
+        { :too_large, conn.adapter({ adapter, state }) }
     end
   end
 
@@ -104,7 +104,7 @@ defmodule Plug.Parsers.MULTIPART do
     if filename = params["filename"] do
       { :ok, file, path } = Plug.TempHack.random_file("multipart")
       { :file, name, file, Plug.Upload.File[filename: filename, path: path,
-                                            content_type: headers["content_type"]] }
+                                            content_type: headers["content-type"]] }
     else
       { :binary, name }
     end

@@ -70,14 +70,26 @@ defmodule Plug.Parsers do
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      { :ok, _ } = resp -> resp
-      { :halt, conn } -> reduce(conn, t, type, subtype, headers, opts)
+      { :ok, post, Conn[params: get] = conn } ->
+        { :ok, conn.params(merge_params(get, post)) }
+      { :halt, conn } ->
+        reduce(conn, t, type, subtype, headers, opts)
+      { :too_large, conn } ->
+        raise Plug.Parsers.RequestTooLargeError, conn: conn
     end
   end
 
   defp reduce(conn, [], type, subtype, _headers, _opts) do
     raise UnsupportedMediaTypeError, conn: conn,
           message: "unsupported media type #{type}/#{subtype}"
+  end
+
+  defp merge_params([], post), do: post
+  defp merge_params([{ k, _ }=h|t], post) do
+    case :lists.keyfind(k, 1, post) do
+      { _, _ } -> merge_params(t, post)
+      false -> merge_params(t, [h|post])
+    end
   end
 
   defp raise_missing_parsers do

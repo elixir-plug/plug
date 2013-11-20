@@ -2,13 +2,15 @@ defmodule Plug.Adapters.Cowboy.Connection do
   @behaviour Plug.Connection.Adapter
   @moduledoc false
 
+  require :cowboy_req, as: R
+
   def conn(req, transport) do
-    { path, req } = :cowboy_req.path req
-    { host, req } = :cowboy_req.host req
-    { port, req } = :cowboy_req.port req
-    { meth, req } = :cowboy_req.method req
-    { hdrs, req } = :cowboy_req.headers req
-    { qs, req }   = :cowboy_req.qs req
+    { path, req } = R.path req
+    { host, req } = R.host req
+    { port, req } = R.port req
+    { meth, req } = R.method req
+    { hdrs, req } = R.headers req
+    { qs, req }   = R.qs req
 
     Plug.Conn[
       adapter: { __MODULE__, req },
@@ -23,19 +25,19 @@ defmodule Plug.Adapters.Cowboy.Connection do
   end
 
   def send_resp(req, status, headers, body) do
-    { :ok, req } = :cowboy_req.reply(status, headers, body, req)
+    { :ok, req } = R.reply(status, headers, body, req)
     req
   end
 
   def stream_req_body(req, limit) do
-    :cowboy_req.stream_body(limit, req)
+    R.stream_body(limit, req)
   end
 
-  def parse_req_multipart(req, limit, params, callback) do
-    { :ok, limit, acc, req } = parse_multipart(req, limit, [], callback)
+  def parse_req_multipart(req, limit, callback) do
+    { :ok, limit, acc, req } = parse_multipart(R.multipart_data(req), limit, [], callback)
 
     if limit > 0 do
-      params = Enum.reduce(acc, params, &Plug.Connection.Query.decode_pair(&1, &2))
+      params = Enum.reduce(acc, [], &Plug.Connection.Query.decode_pair(&1, &2))
       { :ok, params, req }
     else
       { :too_large, req }
@@ -57,16 +59,16 @@ defmodule Plug.Adapters.Cowboy.Connection do
   defp parse_multipart({ :headers, headers, req }, limit, acc, callback) when limit >= 0 do
     case callback.(headers) do
       { :binary, name } ->
-        { :ok, limit, body, req } = parse_multipart_body(:cowboy_req.multipart_data(req), limit, "")
-        parse_req_multipart(:cowboy_req.multipart_data(req), limit, [{ name, body }|acc], callback)
+        { :ok, limit, body, req } = parse_multipart_body(R.multipart_data(req), limit, "")
+        parse_multipart(R.multipart_data(req), limit, [{ name, body }|acc], callback)
 
       { :file, name, file, Plug.Upload.File[] = uploaded } ->
-        { :ok, limit, req } = parse_multipart_file(:cowboy_req.multipart_data(req), limit, file)
-        parse_req_multipart(:cowboy_req.multipart_data(req), limit, [{ name, uploaded }|acc], callback)
+        { :ok, limit, req } = parse_multipart_file(R.multipart_data(req), limit, file)
+        parse_multipart(R.multipart_data(req), limit, [{ name, uploaded }|acc], callback)
 
       :skip ->
-        { :ok, req } = :cowboy_req.multipart_skip(req)
-        parse_req_multipart(:cowboy_req.multipart_data(req), limit, acc, callback)
+        { :ok, req } = R.multipart_skip(req)
+        parse_multipart(R.multipart_data(req), limit, acc, callback)
     end
   end
 

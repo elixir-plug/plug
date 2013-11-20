@@ -41,6 +41,6 @@ defmodule Plug.Connection.Adapter do
   * `{ :ok, params, payload }` - the parameters are already processed as defined per `Conn.params`
   * `{ :too_large, payload } - the request body goes over the given limit
   """
-  defcallback parse_req_multipart(payload, limit :: pos_integer, params :: Conn.params, fun) ::
+  defcallback parse_req_multipart(payload, limit :: pos_integer, fun) ::
               { :ok, Conn.params, payload } | { :too_large, payload }
 end

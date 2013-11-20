@@ -3,7 +3,7 @@ defmodule Plug.Parsers.URLENCODED do
   alias Plug.Conn
 
   def parse(Conn[] = conn, "application", "x-www-form-urlencoded", _headers, opts) do
-    { conn, body } = read_body(conn, Keyword.get!(opts, :limit))
+    { conn, body } = read_body(conn, Keyword.fetch!(opts, :limit))
     { :ok, conn.params(Plug.Connection.Query.decode(body, conn.params)) }
   end
 
@@ -14,9 +14,9 @@ defmodule Plug.Parsers.URLENCODED do
   defp read_body(Conn[adapter: { adapter, state }] = conn, limit) do
     case read_body({ :ok, "", state }, "", limit, adapter) do
       { :too_large, state } ->
-        raise Plug.Parsers.RequestTooLargeError, conn: conn.adapter({ adapter, state })
-      { body, state } ->
-        { conn.adapter({ adapter, state }), body }
+        { :too_large, conn.adapter({ adapter, state }) }
+      { :ok, body, state } ->
+        { :ok, body, conn.adapter({ adapter, state }) }
     end
   end
 
@@ -26,7 +26,7 @@ defmodule Plug.Parsers.URLENCODED do
     do: { :too_large, state }
 
   defp read_body({ :done, state }, acc, limit, _adapter) when limit >= 0,
-    do: { acc, state }
+    do: { :ok, acc, state }
   defp read_body({ :done, state }, _acc, _limit, _adapter),
     do: { :too_large, state }
 end

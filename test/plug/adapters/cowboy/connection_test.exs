@@ -28,7 +28,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-          send(conn, 500, exception.message <> "\n" <> Exception.format_stacktrace)
+          send(conn, 500, exception.message <> "\n" <>
+                          Exception.format_stacktrace(System.stacktrace))
       end
   end
 
@@ -114,6 +115,28 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     body = :binary.copy("abcdefghij", 100_000)
     assert { 204, _, "" } = request :get, "/stream_req_body", [], body
     assert { 204, _, "" } = request :post, "/stream_req_body", [], body
+  end
+
+  def multipart(conn) do
+    { :ok, conn } = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
+    assert conn.params["name"] == "hello"
+
+    assert Plug.Upload.File[] = file = conn.params["pic"]
+    assert File.read!(file.path) == "hello\n\n"
+    assert file.content_type == "text/plain"
+    assert file.filename == "foo.txt"
+
+    conn
+  end
+
+  test "parses multipart requests" do
+    multipart = "------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nhello\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r\nContent-Type: text/plain\r\n\r\nhello\n\n\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"commit\"\r\n\r\nCreate User\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq--\r\n"
+    headers =
+      [{ "Content-Type", "multipart/form-data; boundary=----WebKitFormBoundaryw58EW1cEpjzydSCq" },
+       { "Content-Length", size(multipart) }]
+
+    assert { 204, _, _ } = request :get, "/multipart", headers, multipart
+    assert { 204, _, _ } = request :get, "/multipart?name=overriden", headers, multipart
   end
 
   ## Helpers
