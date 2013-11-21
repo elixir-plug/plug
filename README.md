@@ -37,20 +37,20 @@ In practice, you want to use plugs in your existing projects. You can do that in
 
 1. Add plug and your webserver of choice (currently cowboy) to your `mix.exs` dependencies:
 
-```elixir
-def deps do
-  [ { :cowboy, github: "extend/cowboy" },
-    { :plug, PLUG_VERSION, github: "elixir-lang/plug" } ]
-end
-```
+    ```elixir
+    def deps do
+      [ { :cowboy, github: "extend/cowboy" },
+        { :plug, PLUG_VERSION, github: "elixir-lang/plug" } ]
+    end
+    ```
 
 2. List both :plug and :cowboy as your application dependencies:
 
-```elixir
-def application do
-  [ applications: [:cowboy, :plug] ]
-end
-```
+    ```elixir
+    def application do
+      [ applications: [:cowboy, :plug] ]
+    end
+    ```
 
 ## The Plug Connection
 
