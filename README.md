@@ -1,11 +1,11 @@
 # Plug
 
+[![Build Status](https://travis-ci.org/elixir-lang/plug.png?branch=master)](https://travis-ci.org/elixir-lang/plug)
+
 Plug is:
 
 1. A specification for composable modules in between web applications
 2. Connection adapters for different web servers in the Erlang VM
-
-[![Build Status](https://travis-ci.org/elixir-lang/plug.png?branch=master)](https://travis-ci.org/elixir-lang/plug)
 
 ## Hello world
 
@@ -44,7 +44,7 @@ In practice, you want to use plugs in your existing projects. You can do that in
     end
     ```
 
-2. List both :plug and :cowboy as your application dependencies:
+2. List both `:cowboy` and `:plug` as your application dependencies:
 
     ```elixir
     def application do
