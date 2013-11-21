@@ -6,7 +6,7 @@ defmodule Plug.Mixfile do
       version: "0.1.0",
       elixir: "~> 0.11.2",
       deps: deps(Mix.env),
-      docs: [ readme: true, main: "readme" ] ]
+      docs: [ readme: true, main: "README" ] ]
   end
 
   # Configuration for the OTP application
