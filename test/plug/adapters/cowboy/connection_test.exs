@@ -7,15 +7,12 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   ## Cowboy setup for testing
 
   setup_all do
-    dispatch = [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, __MODULE__ } ] }]
-    env = [dispatch: :cowboy_router.compile(dispatch)]
-    { :ok, _pid } = :cowboy.start_http(__MODULE__, 100, [port: 8001], [env: env])
+    { :ok, _pid } = Plug.Adapters.Cowboy.http __MODULE__, [], port: 8001
     :ok
   end
 
   teardown_all do
-    :ok = :cowboy.stop_listener(__MODULE__)
-    :ok
+    :ok = Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP)
   end
 
   def call(conn, []) do
@@ -141,12 +138,33 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 204, _, _ } = request :get, "/multipart?name=overriden", headers, multipart
   end
 
+  def https(conn) do
+    assert conn.scheme == :https
+    send(conn, 200, "OK")
+  end
+
+  @https_options [
+    port: 8002, password: "cowboy",
+    keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
+    certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
+  ]
+
+  test "https" do
+    { :ok, _pid } = Plug.Adapters.Cowboy.https __MODULE__, [], @https_options
+    assert { :ok, 200, _headers, client } = :hackney.get("https://127.0.0.1:8002/https", [], "", [])
+    assert { :ok, "OK", _client } = :hackney.body(client)
+    :hackney.close(client)
+  after
+    :ok = Plug.Adapters.Cowboy.shutdown __MODULE__.HTTPS
+  end
+
   ## Helpers
 
   defp request(verb, path, headers // [], body // "") do
     { :ok, status, headers, client } =
       :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, [])
     { :ok, body, _ } = :hackney.body(client)
+    :hackney.close(client)
     { status, headers, body }
   end
 end

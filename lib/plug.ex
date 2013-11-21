@@ -24,6 +24,11 @@ defmodule Plug do
   use Application.Behaviour
 
   @doc false
+  def init(_plug, opts) do
+    opts
+  end
+
+  @doc false
   def start(_type, _args) do
     Plug.Supervisor.start_link
   end

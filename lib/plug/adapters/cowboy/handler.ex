@@ -7,8 +7,8 @@ defmodule Plug.Adapters.Cowboy.Handler do
 
   # HTTP
 
-  def init({ transport, :http }, req, main) when transport in [:tcp, :ssl] do
-    case main.call(@connection.conn(req, transport), []) do
+  def init({ transport, :http }, req, { plug, opts }) when transport in [:tcp, :ssl] do
+    case plug.call(@connection.conn(req, transport), opts) do
       Plug.Conn[adapter: { @connection, req }] ->
         { :ok, req, nil }
       other ->
