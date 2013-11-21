@@ -1,7 +1,30 @@
 defmodule Plug.Test do
   @moduledoc """
   Conveniences for testing plugs.
+
+  ## Examples
+
+  This module can be used in your test cases:
+
+      use ExUnit.Case, async: true
+      use Plug.Test
+
+  and it will:
+
+      * import all functions from this module
+      * import all functions from `Plug.Connection`
+      * alias `Plug.Conn` to `Conn`
+
   """
+
+  @doc false
+  defmacro __using__(_) do
+    quote do
+      import Plug.Test
+      import Plug.Connection
+      alias  Plug.Conn
+    end
+  end
 
   alias Plug.Conn
 

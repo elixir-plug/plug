@@ -25,8 +25,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-          send(conn, 500, exception.message <> "\n" <>
-                          Exception.format_stacktrace(System.stacktrace))
+          { :halt, send(conn, 500, exception.message <> "\n" <>
+                        Exception.format_stacktrace(System.stacktrace)) }
       end
   end
 
@@ -36,7 +36,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.method == "HEAD"
     assert conn.path_info == []
     assert conn.query_string == "foo=bar&baz=bat"
-    conn
+    { :ok, conn }
   end
 
   def build(Conn[] = conn) do
@@ -47,7 +47,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
     assert conn.method == "GET"
-    conn
+    { :ok, conn }
   end
 
   test "builds a connection" do
@@ -59,7 +59,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def headers(conn) do
     assert conn.req_headers["foo"] == "bar"
     assert conn.req_headers["baz"] == "bat"
-    conn
+    { :ok, conn }
   end
 
   test "stores request headers" do
@@ -72,14 +72,14 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     conn = send(conn, 200, "OK")
     assert conn.state == :sent
     assert conn.resp_body == nil
-    conn
+    { :ok, conn }
   end
 
   def send_500(conn) do
-    conn
-    |> delete_resp_header("cache-control")
-    |> put_resp_header("x-sample", "value")
-    |> send(500, "ERROR")
+    { :ok, conn
+           |> delete_resp_header("cache-control")
+           |> put_resp_header("x-sample", "value")
+           |> send(500, "ERROR") }
   end
 
   test "sends a response with status, headers and body" do
@@ -99,7 +99,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     expected = :binary.copy("abcdefghij", 100_000)
     assert { ^expected, state } = read_req_body({ :ok, "", state }, "", adapter)
     assert { :done, state } = adapter.stream_req_body(state, 100_000)
-    conn.adapter({ adapter, state })
+    { :ok, conn.adapter({ adapter, state }) }
   end
 
   defp read_req_body({ :ok, buffer, state }, acc, adapter) do
@@ -125,7 +125,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert file.content_type == "text/plain"
     assert file.filename == "foo.txt"
 
-    conn
+    { :ok, conn }
   end
 
   test "parses multipart requests" do
@@ -140,7 +140,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   def https(conn) do
     assert conn.scheme == :https
-    send(conn, 200, "OK")
+    { :ok, send(conn, 200, "OK") }
   end
 
   @https_options [

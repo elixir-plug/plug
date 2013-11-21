@@ -3,14 +3,15 @@ defmodule Plug.Mixfile do
 
   def project do
     [ app: :plug,
-      version: "0.0.1",
+      version: "0.1.0",
       elixir: "~> 0.11.2",
       deps: deps(Mix.env) ]
   end
 
   # Configuration for the OTP application
   def application do
-    [mod: { Plug, [] }]
+    [ applications: [:crypto],
+      mod: { Plug, [] } ]
   end
 
   def deps(:prod) do

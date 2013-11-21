@@ -5,14 +5,13 @@ defmodule Plug.Adapters.Cowboy.Handler do
   require :cowboy_req
   @connection Plug.Adapters.Cowboy.Connection
 
-  # HTTP
-
   def init({ transport, :http }, req, { plug, opts }) when transport in [:tcp, :ssl] do
     case plug.call(@connection.conn(req, transport), opts) do
-      Plug.Conn[adapter: { @connection, req }] ->
+      { stat, Plug.Conn[adapter: { @connection, req }] } when stat in [:ok, :halt] ->
         { :ok, req, nil }
       other ->
-        raise "Expected a Plug.Conn with Cowboy adapter after request, got: #{inspect other}"
+        raise "the Cowboy adapter expected a plug to return { :ok, conn } " <>
+              "or { :halt, conn }, instead we got: #{inspect other}"
     end
   end
 

@@ -1,8 +1,6 @@
 defmodule Plug.ConnectionTest do
   use ExUnit.Case, async: true
-
-  import Plug.Connection
-  import Plug.Test
+  use Plug.Test
 
   test "assign/3" do
     conn = conn(:get, "/")
