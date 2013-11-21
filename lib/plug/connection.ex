@@ -3,6 +3,7 @@ alias Plug.Connection.Unfetched
 defrecord Plug.Conn,
     adapter: nil,
     assigns: [],
+    cookies: Unfetched[aspect: :cookies],
     host: nil,
     method: nil,
     params: Unfetched[aspect: :params],
@@ -71,13 +72,14 @@ defrecord Plug.Conn,
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
 
-  ## Fetchable request fields
+  ## Fetchable fields
 
-  Those fields contain request information but they need to be explicitly fetched.
+  Those fields contain request information and they need to be explicitly fetched.
   Before fetching those fields return a `Plug.Connection.Unfetched` record.
 
+  * `cookies`- the request cookies with the response cookies
   * `params` - the request params
-  * `req_cookies` - the request cookies
+  * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
 
@@ -237,12 +239,23 @@ defmodule Plug.Connection do
   Fetches cookies from the request headers.
   """
   @spec fetch_cookies(Conn.t) :: Conn.t
-  def fetch_cookies(Conn[req_cookies: Plug.Connection.Unfetched[], req_headers: req_headers] = conn) do
-    cookies =
+  def fetch_cookies(Conn[req_cookies: Plug.Connection.Unfetched[],
+                         resp_cookies: resp_cookies, req_headers: req_headers] = conn) do
+    req_cookies =
       lc { "cookie", cookie } inlist req_headers,
          kv inlist Plug.Connection.Cookies.decode(cookie),
          do: kv
-    conn.req_cookies(cookies)
+
+    cookies = Enum.reduce(resp_cookies, req_cookies, fn
+      { key, opts }, acc ->
+        if value = opts[:value] do
+          Dict.put(acc, key, value)
+        else
+          Dict.delete(acc, key)
+        end
+    end)
+
+    conn.req_cookies(req_cookies).cookies(cookies)
   end
 
   def fetch_cookies(Conn[] = conn) do
@@ -263,7 +276,8 @@ defmodule Plug.Connection do
   @spec put_resp_cookie(Conn.t, binary, binary, Keyword.t) :: Conn.t
   def put_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, value, opts // []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
-    conn.resp_cookies(List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] }))
+    resp_cookies = List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] })
+    conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.put(&1, key, value))
   end
 
   @epoch { { 1970, 1, 1 }, { 0, 0, 0 } }
@@ -278,6 +292,12 @@ defmodule Plug.Connection do
   def delete_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, opts // []) when
       is_binary(key) and is_list(opts) do
     opts = opts |> Keyword.put_new(:universal_time, @epoch) |> Keyword.put_new(:max_age, 0)
-    conn.resp_cookies(List.keystore(resp_cookies, key, 0, { key, opts }))
+    resp_cookies = List.keystore(resp_cookies, key, 0, { key, opts })
+    conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.delete(&1, key))
   end
+
+  defp update_cookies(Conn[cookies: Unfetched[]] = conn, _fun),
+    do: conn
+  defp update_cookies(Conn[] = conn, fun),
+    do: conn.update_cookies(fun)
 end

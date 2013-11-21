@@ -141,7 +141,7 @@ defmodule Plug.ConnectionTest do
     assert conn.req_cookies == []
   end
 
-  test "put_resp_cookies/4 and delete_resp_cookies/3" do
+  test "put_resp_cookie/4 and delete_resp_cookie/3" do
     conn = conn(:get, "/") |> send(200, "ok")
     refute conn.resp_headers["set-cookie"]
 
@@ -157,5 +157,53 @@ defmodule Plug.ConnectionTest do
            [max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"]
     assert conn.resp_headers["set-cookie"] ==
            "foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"
+  end
+
+  test "put_req_cookie/3 and delete_req_cookie/2" do
+    conn = conn(:get, "/")
+    refute conn.req_headers["cookie"]
+
+    conn = conn |> put_req_cookie("foo", "bar")
+    assert conn.req_headers["cookie"] == "foo=bar"
+
+    conn = conn |> delete_req_cookie("foo")
+    refute conn.req_headers["cookie"]
+
+    conn = conn |> put_req_cookie("foo", "bar") |> put_req_cookie("baz", "bat") |> fetch_cookies
+    assert conn.req_cookies["foo"] == "bar"
+    assert conn.req_cookies["baz"] == "bat"
+
+    assert_raise ArgumentError, fn ->
+      conn |> put_req_cookie("foo", "bar")
+    end
+  end
+
+  test "cookies/1 loaded early" do
+    conn = conn(:get, "/") |> put_req_cookie("foo", "bar")
+    assert conn.cookies == Plug.Connection.Unfetched[aspect: :cookies]
+
+    conn = conn |> fetch_cookies
+    assert conn.cookies["foo"] == "bar"
+
+    conn = conn |> put_resp_cookie("bar", "baz")
+    assert conn.cookies["bar"] == "baz"
+
+    conn = conn |> put_resp_cookie("foo", "baz")
+    assert conn.cookies["foo"] == "baz"
+
+    conn = conn |> delete_resp_cookie("foo")
+    refute conn.cookies["foo"]
+  end
+
+  test "cookies/1 loaded late" do
+    conn = conn(:get, "/") |> put_req_cookie("foo", "bar") |> put_req_cookie("bar", "baz")
+    assert conn.cookies == Plug.Connection.Unfetched[aspect: :cookies]
+
+    conn = conn |> put_resp_cookie("foo", "baz") |> put_resp_cookie("baz", "bat") |>
+           delete_resp_cookie("bar") |> fetch_cookies
+
+    assert conn.cookies["foo"] == "baz"
+    assert conn.cookies["baz"] == "bat"
+    refute conn.cookies["bar"]
   end
 end
