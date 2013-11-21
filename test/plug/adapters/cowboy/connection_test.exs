@@ -71,8 +71,10 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   def send_200(conn) do
     assert conn.state == :unsent
+    assert conn.resp_body == nil
     conn = send(conn, 200, "OK")
     assert conn.state == :sent
+    assert conn.resp_body == nil
     conn
   end
 

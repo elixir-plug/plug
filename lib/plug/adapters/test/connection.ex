@@ -2,7 +2,7 @@ defmodule Plug.Adapters.Test.Connection do
   @behaviour Plug.Connection.Adapter
   @moduledoc false
 
-  defrecord State, [:method, :params, :req_body, :resp_body]
+  defrecord State, [:method, :params, :req_body]
 
   ## Test helpers
 
@@ -25,15 +25,12 @@ defmodule Plug.Adapters.Test.Connection do
     ]
   end
 
-  def sent_body(State[resp_body: body]),
-    do: body
-
   ## Connection adapter
 
   def send_resp(State[method: "HEAD"] = state, _status, _headers, _body),
-    do: state.resp_body("")
+    do: { :ok, "", state }
   def send_resp(State[] = state, _status, _headers, body),
-    do: state.resp_body(body)
+    do: { :ok, body, state }
 
   def stream_req_body(State[req_body: body] = state, _limit) when byte_size(body) == 0,
     do: { :done, state }

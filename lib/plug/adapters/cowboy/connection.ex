@@ -26,7 +26,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
 
   def send_resp(req, status, headers, body) do
     { :ok, req } = R.reply(status, headers, body, req)
-    req
+    { :ok, nil, req }
   end
 
   def stream_req_body(req, limit) do

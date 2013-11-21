@@ -44,18 +44,17 @@ defmodule Plug.ConnectionTest do
     conn = conn(:get, "/foo")
     assert conn.status == nil
     assert conn.resp_headers == [{ "cache-control", "max-age=0, private, must-revalidate" }]
-    assert conn.resp_body == ""
+    assert conn.resp_body == nil
   end
 
   test "send/3" do
     conn = conn(:get, "/foo")
     assert conn.state == :unsent
-    assert sent_body(conn) == nil
+    assert conn.resp_body == nil
     conn = send(conn, 200, "HELLO")
     assert conn.status == 200
-    assert conn.resp_body == nil
+    assert conn.resp_body == "HELLO"
     assert conn.state == :sent
-    assert sent_body(conn) == "HELLO"
   end
 
   test "send/3 sends self a message" do
@@ -66,7 +65,7 @@ defmodule Plug.ConnectionTest do
 
   test "send/3 does not send on head" do
     conn = conn(:head, "/foo") |> send(200, "HELLO")
-    assert sent_body(conn) == ""
+    assert conn.resp_body == ""
   end
 
   test "send/3 raises when connection was already sent" do
@@ -111,8 +110,7 @@ defmodule Plug.ConnectionTest do
 
     conn = send(conn)
     assert conn.status == 200
-    assert conn.resp_body == nil
-    assert sent_body(conn) == "HELLO"
+    assert conn.resp_body == "HELLO"
   end
 
   test "req_headers/1" do

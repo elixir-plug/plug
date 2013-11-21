@@ -12,7 +12,7 @@ defrecord Plug.Conn,
     query_string: nil,
     req_cookies: Unfetched[aspect: :cookies],
     req_headers: [],
-    resp_body: "",
+    resp_body: nil,
     resp_cookies: [],
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
     scheme: nil,
@@ -85,7 +85,8 @@ defrecord Plug.Conn,
 
   Those fields contain response information:
 
-  * `resp_body` - the response body, by default is an empty string, set to nil after sening
+  * `resp_body` - the response body, by default is an empty string.
+                  It it set to nil after the response is set, except for test connections.
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_content_type` - the response content-type, by default is nil
   * `resp_cookies` - the response cookies with their name and options
@@ -157,8 +158,8 @@ defmodule Plug.Connection do
   def send(Conn[adapter: { adapter, payload }, state: :unsent] = conn) do
     self() <- @already_sent
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
-    payload = adapter.send_resp(payload, conn.status, headers, conn.resp_body)
-    conn.adapter({ adapter, payload }).state(:sent).resp_body(nil).resp_headers(headers)
+    { :ok, body, payload } = adapter.send_resp(payload, conn.status, headers, conn.resp_body)
+    conn.adapter({ adapter, payload }).state(:sent).resp_body(body).resp_headers(headers)
   end
 
   def send(Conn[]) do

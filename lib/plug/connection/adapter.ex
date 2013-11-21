@@ -9,9 +9,15 @@ defmodule Plug.Connection.Adapter do
   back to the client.
 
   If the request has method `"HEAD"`, the adapter should
-  not return
+  not send the response to the client.
+
+  Webservers are advised to return `nil` as the sent_body,
+  as the body can no longer be manipulated. However, the
+  test implementation returns the actual body so it can
+  be used during testing.
   """
-  defcallback send_resp(payload, Conn.status, Conn.headers, Conn.body) :: payload
+  defcallback send_resp(payload, Conn.status, Conn.headers, Conn.body) ::
+              { :ok, sent_body :: binary | nil, payload }
 
   @doc """
   Streams the request body.

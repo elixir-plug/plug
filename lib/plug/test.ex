@@ -14,14 +14,6 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Returns the body sent during testing.
-  """
-  @spec sent_body(Conn.t) :: Conn.body | nil
-  def sent_body(Conn[adapter: { Plug.Adapters.Test.Connection, state }]) do
-    Plug.Adapters.Test.Connection.sent_body(state)
-  end
-
-  @doc """
   Puts a new request header.
   Previous entries of the same headers are removed.
   """
