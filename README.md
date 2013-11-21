@@ -7,6 +7,8 @@ Plug is:
 1. A specification for composable modules in between web applications
 2. Connection adapters for different web servers in the Erlang VM
 
+[Documentation for Plug is available online](http://elixir-lang.org/docs/plug/).
+
 ## Hello world
 
 ```elixir
@@ -58,7 +60,7 @@ In the hello world example, we defined our first plug. What is a plug after all?
 
 > A plug is any function that receives a connection and a set of options as arguments and returns a tuple in the format `{ tag :: atom, conn :: Plug.Conn.t }`
 
-As per the specification above, a connection is represented by the `Plug.Conn` record:
+As per the specification above, a connection is represented by the `Plug.Conn` record ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)):
 
 ```elixir
 Plug.Conn[host: "www.example.com",
@@ -66,7 +68,7 @@ Plug.Conn[host: "www.example.com",
           ...]
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module. In our example, both `put_resp_content_type/2` and `send/3` are defined in `Plug.Connection`.
+Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send/3` are defined in `Plug.Connection`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
@@ -80,7 +82,7 @@ Finally, keep in mind that a connection is a **direct interface to the underlyin
 
 ## Testing plugs and applications
 
-Plug ships with a `Plug.Test` module that makes testing your plug applications easy. Here is how we can test our hello world example:
+Plug ships with a `Plug.Test` module ([docs](http://elixir-lang.org/docs/plug/Plug.Test.html)) that makes testing your plug applications easy. Here is how we can test our hello world example:
 
 ```elixir
 defmodule MyPlugTest do
@@ -110,7 +112,7 @@ Coming soon.
 
 This project aims to ship with different plugs that can be re-used in different stacks:
 
-* `Plug.Parsers` - a plug responsible for parsing the request body given its content-type;
+* `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - a plug responsible for parsing the request body given its content-type;
 
 ## The Plug Router
 
