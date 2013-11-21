@@ -3,15 +3,15 @@
 
 defprotocol Plug.Exception do
   @moduledoc """
-  This protocol extends exceptions so Plug knows how to handle
-  and translate them to the proper status code.
+  A protocol that extends exceptions to be status code aware
   """
 
   @fallback_to_any true
 
   @doc """
-  Receives an exception and returns the status code it represents.
+  Receives an exception and returns its status code.
   """
+  @spec status(t) :: Plug.Conn.status
   def status(exception)
 end
 

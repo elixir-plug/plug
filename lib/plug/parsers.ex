@@ -2,7 +2,11 @@ defmodule Plug.Parsers do
   message = "the request is too large. If you are willing to process " <>
             "larger requests, please give a :limit to Plug.Parsers"
 
-  defexception RequestTooLargeError, conn: nil, message: message do
+  defexception RequestTooLargeError, [:message] do
+    @moduledoc """
+    Error raised when the request is too large
+    """
+
     defimpl Plug.Exception do
       def status(_exception) do
         413
@@ -10,7 +14,11 @@ defmodule Plug.Parsers do
     end
   end
 
-  defexception UnsupportedMediaTypeError, [:message, :conn] do
+  defexception UnsupportedMediaTypeError, [:message] do
+    @moduledoc """
+    Error raised when the request body cannot be parsed
+    """
+
     defimpl Plug.Exception do
       def status(_exception) do
         415
@@ -19,7 +27,7 @@ defmodule Plug.Parsers do
   end
 
   @moduledoc """
-  A plug responsible for parsing the request body.
+  A plug for parsing the request body
 
   ## Options
 
@@ -98,13 +106,13 @@ defmodule Plug.Parsers do
         { :ok, conn.params(merge_params(get, post)) }
       { :next, conn } ->
         reduce(conn, t, type, subtype, headers, opts)
-      { :too_large, conn } ->
-        raise Plug.Parsers.RequestTooLargeError, conn: conn
+      { :too_large, _conn } ->
+        raise Plug.Parsers.RequestTooLargeError
     end
   end
 
-  defp reduce(conn, [], type, subtype, _headers, _opts) do
-    raise UnsupportedMediaTypeError, conn: conn,
+  defp reduce(_conn, [], type, subtype, _headers, _opts) do
+    raise UnsupportedMediaTypeError,
           message: "unsupported media type #{type}/#{subtype}"
   end
 

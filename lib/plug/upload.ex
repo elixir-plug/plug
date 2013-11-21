@@ -1,12 +1,12 @@
 defrecord Plug.Upload.File, [:path, :content_type, :filename] do
   @moduledoc """
-  Stores information about an uploaded file.
+  Stores information about an uploaded file
   """
 end
 
 defmodule Plug.Upload do
   @moduledoc """
-  A server that handles uploaded files in Plug.
+  A genserver that manages uploaded files
 
   Uploaded files are stored in a temporary directory
   and removed from the directory after the process that

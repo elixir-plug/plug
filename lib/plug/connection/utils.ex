@@ -1,6 +1,6 @@
 defmodule Plug.Connection.Utils do
   @moduledoc """
-  Utilities for handling connection information.
+  Utilities for working with connection data
   """
 
   @type params :: [{ binary, binary }]

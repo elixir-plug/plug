@@ -1,4 +1,7 @@
 defmodule Plug.Connection.Adapter do
+  @moduledoc """
+  Specification of the connection adapter API implemented by webservers
+  """
   use Behaviour
 
   alias Plug.Conn

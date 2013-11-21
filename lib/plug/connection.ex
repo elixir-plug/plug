@@ -51,7 +51,7 @@ defrecord Plug.Conn,
               status: status
 
   @moduledoc """
-  The connection record.
+  The connection record
 
   It is recommended to use the record for reading data,
   all connection manipulation should be done via the functions
@@ -112,14 +112,21 @@ end
 
 defmodule Plug.Connection do
   @moduledoc """
-  Functions for manipulating the connection.
+  Functions for manipulating the connection
   """
 
-  defexception NotSentError,
-    message: "no response was set nor sent from the connection"
+  defexception NotSentError, message: "no response was set nor sent from the connection" do
+    @moduledoc """
+    Error raised when no response is sent in a request
+    """
+  end
 
-  defexception AlreadySentError,
-    message: "the response was already sent"
+
+  defexception AlreadySentError, message: "the response was already sent" do
+    @moduledoc """
+    Error raised when trying to send a response more than once
+    """
+  end
 
   alias Plug.Conn
   @already_sent { :plug_conn, :sent }

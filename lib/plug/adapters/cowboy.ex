@@ -1,6 +1,6 @@
 defmodule Plug.Adapters.Cowboy do
   @moduledoc """
-  Starts `http` and `https` interfaces to the Cowboy webserver.
+  Adapter interface to the Cowboy webserver
 
   ## Options
 
@@ -129,7 +129,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp dispatch_for(plug, opts) do
-    [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, { plug, Plug.init(plug, opts) } } ] }]
+    [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, { plug, opts } } ] }]
   end
 
   defp normalize_ssl_file(key, options) do

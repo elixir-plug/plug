@@ -1,6 +1,6 @@
 defmodule Plug do
   @moduledoc """
-  Specification for a plug.
+  The plug specification
 
   A plug is any Elixir function that receives two arguments: a
   `Plug.Conn` record and a set of keywords options. This function
@@ -22,11 +22,6 @@ defmodule Plug do
   """
 
   use Application.Behaviour
-
-  @doc false
-  def init(_plug, opts) do
-    opts
-  end
 
   @doc false
   def start(_type, _args) do

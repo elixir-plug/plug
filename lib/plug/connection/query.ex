@@ -1,6 +1,6 @@
 defmodule Plug.Connection.Query do
   @moduledoc """
-  Conveniences for decoding and encoding query strings.
+  Conveniences for decoding and encoding url encoded queries
 
   Plug allows a developer to build query strings
   that maps to Elixir structures in order to make

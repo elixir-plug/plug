@@ -1,6 +1,6 @@
 defmodule Plug.Test do
   @moduledoc """
-  Conveniences for testing plugs.
+  Conveniences for testing plugs
 
   ## Examples
 

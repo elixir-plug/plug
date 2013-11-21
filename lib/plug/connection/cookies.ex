@@ -1,6 +1,6 @@
 defmodule Plug.Connection.Cookies do
   @moduledoc """
-  Conveniences for encoding and decoding cookies.
+  Conveniences for encoding and decoding cookies
   """
 
   @doc """
