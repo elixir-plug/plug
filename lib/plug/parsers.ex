@@ -32,11 +32,11 @@ defmodule Plug.Parsers do
   ## Options
 
   * `:parsers` - a set of modules to be invoked for parsing.
-                 Those modules need to implement the behaviour
+                 These modules need to implement the behaviour
                  outlined in this module.
 
   * `:limit` - the request size limit we accept to parse.
-               Defaults to 8_000_000 bytes.
+               Defaults to 8,000,000 bytes.
 
   ## Examples
 
@@ -57,12 +57,12 @@ defmodule Plug.Parsers do
 
   ## File handling
 
-  In case a file is uploaded via any of the parsers, Plug will
+  If a file is uploaded via any of the parsers, Plug will
   stream the uploaded contents to a file in a temporary directory,
   avoiding loading the whole file into memory. For such, it is
   required that the `:plug` application is started.
 
-  In those cases, the parameter will return a `Plug.Upload.File[]`
+  In those cases, the parameter will return a `Plug.Upload.File`
   record with information about the file and its content type.
 
   You can customize the temporary directory by setting the `PLUG_TMPDIR`
@@ -125,6 +125,6 @@ defmodule Plug.Parsers do
   end
 
   defp raise_missing_parsers do
-    raise ArgumentError, message: "Plug.Parsers expects a set of parsets to be given in :parsers"
+    raise ArgumentError, message: "Plug.Parsers expects a set of parsers to be given in :parsers"
   end
 end
