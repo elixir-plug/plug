@@ -45,9 +45,23 @@ defmodule Plug.ConnectionTest do
     assert conn.resp_body == nil
   end
 
+  test "resp/3" do
+    conn = conn(:get, "/foo")
+    assert conn.state == :unset
+    conn = resp(conn, 200, "HELLO")
+    assert conn.state == :set
+  end
+
+  test "resp/3 raises when connection was already sent" do
+    conn = conn(:head, "/foo") |> send(200, "HELLO")
+    assert_raise Plug.Connection.AlreadySentError, fn ->
+      resp(conn, 200, "OTHER")
+    end
+  end
+
   test "send/3" do
     conn = conn(:get, "/foo")
-    assert conn.state == :unsent
+    assert conn.state == :unset
     assert conn.resp_body == nil
     conn = send(conn, 200, "HELLO")
     assert conn.status == 200
@@ -75,12 +89,12 @@ defmodule Plug.ConnectionTest do
 
   test "send_file/3" do
     conn = conn(:get, "/foo")
-    assert conn.state == :unsent
+    assert conn.state == :unset
     assert conn.resp_body == nil
     conn = send_file(conn, 200, __FILE__)
     assert conn.status == 200
     assert conn.resp_body =~ "send_file/3"
-    assert conn.state == :file
+    assert conn.state == :sent
   end
 
   test "send_file/3 sends self a message" do
