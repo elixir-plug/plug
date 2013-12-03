@@ -110,7 +110,7 @@ Coming soon.
 
 ### Available Plugs
 
-This project aims to ship with different plugs that can be re-used in different stacks:
+This project aims to ship with different plugs that can be re-used accross applications:
 
 * `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - a plug responsible for parsing the request body given its content-type;
 

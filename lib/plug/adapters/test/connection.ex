@@ -2,7 +2,7 @@ defmodule Plug.Adapters.Test.Connection do
   @behaviour Plug.Connection.Adapter
   @moduledoc false
 
-  defrecord State, [:method, :params, :req_body]
+  defrecord State, [:method, :params, :req_body, :chunks]
 
   ## Test helpers
 
@@ -36,6 +36,15 @@ defmodule Plug.Adapters.Test.Connection do
     do: { :ok, "", state }
   def send_file(State[] = state, _status, _headers, path),
     do: { :ok, File.read!(path), state }
+
+  def send_chunked(state, _status, _headers),
+    do: { :ok, "", state.chunks("") }
+  def chunk(State[method: "HEAD"] = state, _body),
+    do: { :ok, "", state }
+  def chunk(State[chunks: chunks] = state, body) do
+    body = chunks <> body
+    { :ok, body, state.chunks(body) }
+  end
 
   def stream_req_body(State[req_body: body] = state, _limit) when byte_size(body) == 0,
     do: { :done, state }

@@ -156,6 +156,8 @@ defmodule Plug.Connection do
   It expects the connection state is to be `:set`,
   otherwise raises ArgumentError for `:unset` connections
   or `Plug.Connection.AlreadySentError` if it was already sent.
+
+  At the end sets the connection state to `:sent`.
   """
   @spec send(Conn.t) :: Conn.t | no_return
   def send(conn)
@@ -184,12 +186,16 @@ defmodule Plug.Connection do
   end
 
   @doc """
-  Sends a file as the response body.
+  Sends a file as the response body with the given `status`.
 
-  Web servers usually stream the file as a response to the user,
-  in a performant operation over the socket.
+  If available, the file is sent directly over the socket using
+  the operating system `sendfile` operation.
+
+  It expects a connection that was not yet `:sent` and sets its
+  state to `:sent` afterwards. Otherwise raises
+  `Plug.Connection.AlreadySentError`.
   """
-  @spec send_file(Conn.t, Conn.status, filename :: binary) :: Connt.t | no_return
+  @spec send_file(Conn.t, Conn.status, filename :: binary) :: Conn.t | no_return
   def send_file(Conn[adapter: { adapter, payload }, state: state] = conn, status, file)
       when state in [:unset, :set] and is_integer(status) and is_binary(file) do
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
@@ -200,12 +206,56 @@ defmodule Plug.Connection do
     conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
   end
 
-  def send_file(Conn[], _status, _file) do
+  def send_file(Conn[], status, file) when is_integer(status) and is_binary(file) do
     raise AlreadySentError
   end
 
   @doc """
-  Sends a response to the client the given status and body.
+  Sends the response headers as a chunked response.
+
+  It expects a connection that was not yet `:sent` and sets its
+  state to `:chunked` afterwards. Otherwise raises
+  `Plug.Connection.AlreadySentError`.
+  """
+  @spec send_chunked(Conn.t, Conn.status) :: Conn.t | no_return
+  def send_chunked(Conn[adapter: { adapter, payload }, state: state] = conn, status)
+      when state in [:unset, :set] and is_integer(status) do
+    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
+    conn    = conn.status(status).state(:chunked).resp_headers(headers)
+
+    { :ok, body, payload } = adapter.send_chunked(payload, conn.status, conn.resp_headers)
+    self() <- @already_sent
+    conn.adapter({ adapter, payload }).resp_body(body)
+  end
+
+  def send_chunked(Conn[], status) when is_integer(status) do
+    raise AlreadySentError
+  end
+
+  @doc """
+  Sends a chunk as part of a chunked response.
+
+  It expects a connection with state `:chunked` as set by
+  `send_chunked/2`, returns `{ :ok, conn }` in case of success,
+  otherwise `{ :error, reason }`.
+  """
+  @spec chunk(Conn.t, Conn.body) :: { :ok, Conn.t } | { :error, term } | no_return
+  def chunk(Conn[adapter: { adapter, payload }, state: :chunked] = conn, chunk) do
+    case adapter.chunk(payload, chunk) do
+      :ok                    -> { :ok, conn }
+      { :ok, body, payload } -> { :ok, conn.resp_body(body).adapter({ adapter, payload }) }
+      { :error, _ } = error  -> error
+    end
+  end
+
+  def chunk(Conn[], chunk) when is_binary(chunk) do
+    raise ArgumentError, message: "chunk/2 expects a chunked response. Please ensure " <>
+                                  "you have called send_chunked/2 before you send a chunk"
+  end
+
+  @doc """
+  Sends a response with given status and body.
+
   See `send/1` for more information.
   """
   @spec send(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
@@ -216,15 +266,16 @@ defmodule Plug.Connection do
   @doc """
   Sets the response to given status and body.
 
-  Raises `Plug.Connection.AlreadySentError` if it was already sent.
+  It sets the connection state to `:set` (if not yet `:set`)
+  and raises `Plug.Connection.AlreadySentError` if it was already sent.
   """
   @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
-  def resp(Conn[state: state] = conn, status, resp_body)
-      when is_integer(status) and is_binary(resp_body) and state in [:unset, :set] do
-    conn.status(status).resp_body(resp_body).state(:set)
+  def resp(Conn[state: state] = conn, status, body)
+      when is_integer(status) and is_binary(body) and state in [:unset, :set] do
+    conn.status(status).resp_body(body).state(:set)
   end
 
-  def resp(Conn[] = conn, _status, _resp_body) do
+  def resp(Conn[], status, body) when is_integer(status) and is_binary(body) do
     raise AlreadySentError
   end
 

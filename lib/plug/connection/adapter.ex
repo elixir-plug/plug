@@ -38,6 +38,32 @@ defmodule Plug.Connection.Adapter do
               { :ok, sent_body :: binary | nil, payload }
 
   @doc """
+  Sends the given status, headers as the beginning of
+  a chunked response to the client.
+
+  Webservers are advised to return `nil` as the sent_body,
+  as the body can no longer be manipulated. However, the
+  test implementation returns the actual body so it can
+  be used during testing.
+  """
+  defcallback send_chunked(payload, Conn.status, Conn.headers) ::
+              { :ok, sent_body :: binary | nil, payload }
+
+  @doc """
+  Sends a chunk in the chunked response.
+
+  If the request has method `"HEAD"`, the adapter should
+  not send the response to the client.
+
+  Webservers are advised to return `:ok` and not modify
+  any further state for each chunk. However, the test
+  implementation returns the actual body and payload so
+  it can be used during testing.
+  """
+  defcallback chunk(payload, Conn.status) ::
+              :ok | { :ok, sent_body :: binary, payload } | { :error, term }
+
+  @doc """
   Streams the request body.
 
   An approximate limit of data to be read from the socket per stream

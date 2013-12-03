@@ -88,10 +88,7 @@ defmodule Plug.ConnectionTest do
   end
 
   test "send_file/3" do
-    conn = conn(:get, "/foo")
-    assert conn.state == :unset
-    assert conn.resp_body == nil
-    conn = send_file(conn, 200, __FILE__)
+    conn = conn(:get, "/foo") |> send_file(200, __FILE__)
     assert conn.status == 200
     assert conn.resp_body =~ "send_file/3"
     assert conn.state == :sent
@@ -112,6 +109,34 @@ defmodule Plug.ConnectionTest do
     conn = conn(:head, "/foo") |> send_file(200, __FILE__)
     assert_raise Plug.Connection.AlreadySentError, fn ->
       send_file(conn, 200, __FILE__)
+    end
+  end
+
+  test "send_chunked/3" do
+    conn = conn(:get, "/foo") |> send_chunked(200)
+    assert conn.status == 200
+    assert conn.resp_body == ""
+    { :ok, conn } = chunk(conn, "HELLO\n")
+    assert conn.resp_body == "HELLO\n"
+    { :ok, conn } = chunk(conn, "WORLD\n")
+    assert conn.resp_body == "HELLO\nWORLD\n"
+  end
+
+  test "send_chunked/3 sends self a message" do
+    refute_received { :plug_conn, :sent }
+    conn(:get, "/foo") |> send_chunked(200)
+    assert_received { :plug_conn, :sent }
+  end
+
+  test "send_chunked/3 does not send on head" do
+    { :ok, conn } = conn(:head, "/foo") |> send_chunked(200) |> chunk("HELLO")
+    assert conn.resp_body == ""
+  end
+
+  test "send_chunked/3 raises when connection was already sent" do
+    conn = conn(:head, "/foo") |> send_chunked(200)
+    assert_raise Plug.Connection.AlreadySentError, fn ->
+      send_chunked(conn, 200)
     end
   end
 

@@ -37,6 +37,15 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { :ok, nil, req }
   end
 
+  def send_chunked(req, status, headers) do
+    { :ok, req } = R.chunked_reply(status, headers, req)
+    { :ok, nil, req }
+  end
+
+  def chunk(req, body) do
+    R.chunk(body, req)
+  end
+
   def stream_req_body(req, limit) do
     R.stream_body(limit, req)
   end
@@ -45,7 +54,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { :ok, limit, acc, req } = parse_multipart(R.multipart_data(req), limit, [], callback)
 
     if limit > 0 do
-      params = Enum.reduce(acc, [], &Plug.Connection.Query.decode_pair(&1, &2))
+      params = Enum.reduce(acc, [], &Plug.Connection.Query.decode_pair/2)
       { :ok, params, req }
     else
       { :too_large, req }

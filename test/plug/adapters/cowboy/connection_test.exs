@@ -90,7 +90,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert headers["x-sample"] == "value"
   end
 
-  test "sends skips body on head" do
+  test "skips body on head" do
     assert { 200, _, "" } = request :head, "/send_200"
   end
 
@@ -105,10 +105,25 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 200, headers, body } = request :get, "/send_file"
     assert body =~ "sends a file with status and headers"
     assert headers["cache-control"] == "max-age=0, private, must-revalidate"
+    assert headers["content-length"] == File.stat!(__FILE__).size |> integer_to_binary
   end
 
-  test "sends skips file on head" do
+  test "skips file on head" do
     assert { 200, _, "" } = request :head, "/send_file"
+  end
+
+  def send_chunked(conn) do
+    conn = send_chunked(conn, 200)
+    assert conn.state == :chunked
+    { :ok, conn } = chunk(conn, "HELLO\n")
+    { :ok, conn } = chunk(conn, "WORLD\n")
+    { :ok, conn }
+  end
+
+  test "sends a chunked response with status and headers" do
+    assert { 200, headers, "HELLO\nWORLD\n" } = request :get, "/send_chunked"
+    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
+    assert headers["transfer-encoding"] == "chunked"
   end
 
   def stream_req_body(conn) do
