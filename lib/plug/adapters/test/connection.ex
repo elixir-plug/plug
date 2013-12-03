@@ -32,6 +32,11 @@ defmodule Plug.Adapters.Test.Connection do
   def send_resp(State[] = state, _status, _headers, body),
     do: { :ok, body, state }
 
+  def send_file(State[method: "HEAD"] = state, _status, _headers, _path),
+    do: { :ok, "", state }
+  def send_file(State[] = state, _status, _headers, path),
+    do: { :ok, File.read!(path), state }
+
   def stream_req_body(State[req_body: body] = state, _limit) when byte_size(body) == 0,
     do: { :done, state }
   def stream_req_body(State[req_body: body] = state, limit) do

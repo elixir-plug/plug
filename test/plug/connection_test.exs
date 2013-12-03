@@ -73,6 +73,34 @@ defmodule Plug.ConnectionTest do
     end
   end
 
+  test "send_file/3" do
+    conn = conn(:get, "/foo")
+    assert conn.state == :unsent
+    assert conn.resp_body == nil
+    conn = send_file(conn, 200, __FILE__)
+    assert conn.status == 200
+    assert conn.resp_body =~ "send_file/3"
+    assert conn.state == :file
+  end
+
+  test "send_file/3 sends self a message" do
+    refute_received { :plug_conn, :sent }
+    conn(:get, "/foo") |> send_file(200, __FILE__)
+    assert_received { :plug_conn, :sent }
+  end
+
+  test "send_file/3 does not send on head" do
+    conn = conn(:head, "/foo") |> send_file(200, __FILE__)
+    assert conn.resp_body == ""
+  end
+
+  test "send_file/3 raises when connection was already sent" do
+    conn = conn(:head, "/foo") |> send_file(200, __FILE__)
+    assert_raise Plug.Connection.AlreadySentError, fn ->
+      send_file(conn, 200, __FILE__)
+    end
+  end
+
   test "put_resp_header/3" do
     conn1 = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
     assert conn1.resp_headers["x-foo"] == "bar"

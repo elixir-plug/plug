@@ -94,6 +94,23 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 200, _, "" } = request :head, "/send_200"
   end
 
+  def send_file(conn) do
+    conn = send_file(conn, 200, __FILE__)
+    assert conn.state == :file
+    assert conn.resp_body == nil
+    { :ok, conn }
+  end
+
+  test "sends a file with status and headers" do
+    assert { 200, headers, body } = request :get, "/send_file"
+    assert body =~ "sends a file with status and headers"
+    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
+  end
+
+  test "sends skips file on head" do
+    assert { 200, _, "" } = request :head, "/send_file"
+  end
+
   def stream_req_body(conn) do
     { adapter, state } = conn.adapter
     expected = :binary.copy("abcdefghij", 100_000)

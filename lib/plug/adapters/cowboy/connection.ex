@@ -29,6 +29,14 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { :ok, nil, req }
   end
 
+  def send_file(req, status, headers, path) do
+    File.Stat[type: :regular, size: size] = File.stat!(path)
+    body_fun = fn(socket, transport) -> transport.sendfile(socket, path) end
+
+    { :ok, req } = R.reply(status, headers, R.set_resp_body_fun(size, body_fun, req))
+    { :ok, nil, req }
+  end
+
   def stream_req_body(req, limit) do
     R.stream_body(limit, req)
   end

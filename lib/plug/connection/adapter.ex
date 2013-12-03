@@ -23,6 +23,21 @@ defmodule Plug.Connection.Adapter do
               { :ok, sent_body :: binary | nil, payload }
 
   @doc """
+  Sends the given status, headers and file as a response
+  back to the client.
+
+  If the request has method `"HEAD"`, the adapter should
+  not send the response to the client.
+
+  Webservers are advised to return `nil` as the sent_body,
+  as the body can no longer be manipulated. However, the
+  test implementation returns the actual body so it can
+  be used during testing.
+  """
+  defcallback send_file(payload, Conn.status, Conn.headers, file :: binary) ::
+              { :ok, sent_body :: binary | nil, payload }
+
+  @doc """
   Streams the request body.
 
   An approximate limit of data to be read from the socket per stream

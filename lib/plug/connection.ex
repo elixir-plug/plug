@@ -28,7 +28,7 @@ defrecord Plug.Conn,
   @type method       :: binary
   @type scheme       :: :http | :https
   @type segments     :: [binary]
-  @type state        :: :unsent | :sent
+  @type state        :: :unsent | :sent | :chunked | :file
   @type status       :: non_neg_integer
   @type param        :: binary | [{ binary, param }] | [param]
   @type params       :: [{ binary, param }]
@@ -100,7 +100,8 @@ defrecord Plug.Conn,
   * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts
-  as `:unsent` but is changed to `:sent` as soon as the response is sent.
+  as `:unsent` but is changed to `:sent`, `:chunked` or `:file` as soon as
+  one of `send/2`, `send_chunked/2` or `send_file/3` are respectively invoked.
 
   ## Private fields
 
@@ -163,10 +164,12 @@ defmodule Plug.Connection do
   end
 
   def send(Conn[adapter: { adapter, payload }, state: :unsent] = conn) do
-    self() <- @already_sent
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
-    { :ok, body, payload } = adapter.send_resp(payload, conn.status, headers, conn.resp_body)
-    conn.adapter({ adapter, payload }).state(:sent).resp_body(body).resp_headers(headers)
+    conn    = conn.adapter({ adapter, payload }).state(:sent).resp_headers(headers)
+
+    { :ok, body, payload } = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
+    self() <- @already_sent
+    conn.adapter({ adapter, payload }).resp_body(body)
   end
 
   def send(Conn[]) do
@@ -180,12 +183,33 @@ defmodule Plug.Connection do
   end
 
   @doc """
+  Sends a file as the response body.
+
+  Web servers usually stream the file as a response to the user,
+  in a performant operation over the socket.
+  """
+  @spec send_file(Conn.t, Conn.status, filename :: binary) :: Connt.t | no_return
+  def send_file(Conn[adapter: { adapter, payload }, state: :unsent] = conn, status, file)
+      when is_integer(status) and is_binary(file) do
+    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
+    conn    = conn.status(status).state(:file).resp_headers(headers)
+
+    { :ok, body, payload } = adapter.send_file(payload, conn.status, conn.resp_headers, file)
+    self() <- @already_sent
+    conn.adapter({ adapter, payload }).resp_body(body)
+  end
+
+  def send_file(Conn[], _status, _file) do
+    raise AlreadySentError
+  end
+
+  @doc """
   Sends a response to the client the given status and body.
   See `send/1` for more information.
   """
   @spec send(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
   def send(Conn[] = conn, status, body) when is_integer(status) and is_binary(body) do
-    send(conn.status(status).resp_body(body))
+    conn |> resp(status, body) |> send()
   end
 
   @doc """
