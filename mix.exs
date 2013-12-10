@@ -16,7 +16,8 @@ defmodule Plug.Mixfile do
   end
 
   def deps(:prod) do
-    [ { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true } ]
+    [ { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true },
+      { :elli, "~> 0.4.1", github: "knutin/elli", optional: true } ]
   end
 
   def deps(:docs) do
