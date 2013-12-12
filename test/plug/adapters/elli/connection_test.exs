@@ -25,7 +25,7 @@ defmodule Plug.Adapters.Elli.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-send          { :halt, send(conn, 500, exception.message <> "\n" <>
+          { :halt, send(conn, 500, exception.message <> "\n" <>
                         Exception.format_stacktrace(System.stacktrace)) }
       end
   end
@@ -71,8 +71,7 @@ send          { :halt, send(conn, 500, exception.message <> "\n" <>
     assert conn.resp_body == nil
     conn = send(conn, 200, "OK")
     assert conn.state == :sent
-
-    assert { 200, _headers, "OK" } = conn.resp_body
+    assert conn.resp_body == nil
     { :ok, conn }
   end
 
@@ -98,7 +97,7 @@ send          { :halt, send(conn, 500, exception.message <> "\n" <>
   def send_file(conn) do
     conn = send_file(conn, 200, __FILE__)
     assert conn.state == :sent
-    assert { 200, _headers, { :file, __FILE__ } } = conn.resp_body
+    assert conn.resp_body == nil
     { :ok, conn }
   end
 
@@ -116,29 +115,37 @@ send          { :halt, send(conn, 500, exception.message <> "\n" <>
   def send_chunked(conn) do
     conn = send_chunked(conn, 200)
     assert conn.state == :chunked
-    spawn(fn() -> __MODULE__.chunk_loop(conn) end)
+    { :ok, conn } = chunk(conn, "HELLO\n")
+    { :ok, conn } = chunk(conn, "WORLD\n")
     { :ok, conn }
   end
 
-  # Send 10 separate chunks to the client.
-
-  def chunk_loop(conn), do: chunk_loop(conn, 10)
-
-  def chunk_loop(conn, 0), do: chunk(conn, "")
-  def chunk_loop(conn, n) do
-    :timer.sleep(100)
-    case chunk(conn, to_string(n)) do
-      { :ok, conn } ->
-        chunk_loop(conn, n - 1)
-      { :error, reason } ->
-        IO.puts("error in sending chunk: #{inspect reason}")
-    end
-  end
-
   test "sends a chunked response with status and headers" do
-    assert { 200, headers, "10987654321" } = request :get, "/send_chunked"
+    assert { 200, headers, "HELLO\nWORLD\n" } = request :get, "/send_chunked"
     assert headers["cache-control"] == "max-age=0, private, must-revalidate"
     assert headers["Transfer-Encoding"] == "chunked"
+  end
+
+  def stream_req_body(conn) do
+    { adapter, state } = conn.adapter
+    expected = :binary.copy("abcdefghij", 100_000)
+    assert { ^expected, state } = read_req_body({ :ok, "", state }, "", adapter)
+    assert { :done, state } = adapter.stream_req_body(state, 100_000)
+    { :ok, conn.adapter({ adapter, state }) }
+  end
+
+  defp read_req_body({ :ok, buffer, state }, acc, adapter) do
+    read_req_body(adapter.stream_req_body(state, 100_000), acc <> buffer, adapter)
+  end
+
+  defp read_req_body({ :done, state }, acc, _adapter) do
+    { acc, state }
+  end
+
+  test "reads body" do
+    body = :binary.copy("abcdefghij", 100_000)
+    assert { 204, _, "" } = request :get, "/stream_req_body", [], body
+    assert { 204, _, "" } = request :post, "/stream_req_body", [], body
   end
 
   ## Helpers

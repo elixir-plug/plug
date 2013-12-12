@@ -4,6 +4,8 @@ defmodule Plug.Adapters.Elli.Connection do
 
   require :elli_request, as: R
 
+  defrecordp :elli_req, Record.extract(:req, from: "deps/elli/include/elli.hrl")
+
   def conn(req) do
     { host, port } = split_host_header(R.get_header("Host", req))
     headers  = downcase_fields(R.headers(req))
@@ -20,26 +22,36 @@ defmodule Plug.Adapters.Elli.Connection do
   end
 
   def send_resp(req, status, headers, body) do
-    resp = { status, headers, body }
-    { :ok, resp, req }
+    send_to_elli({ status, headers, body }, req)
+    { :ok, nil, req }
   end
 
   def send_file(req, status, headers, path) do
-    resp = { status, [{ "content-length", :elli_util.file_size(path) } | headers], { :file, path } }
-    { :ok, resp, req }
+    send_to_elli({ status, [{ "content-length", :elli_util.file_size(path) } | headers], { :file, path } }, req)
+    { :ok, nil, req }
   end
 
   def send_chunked(req, _status, headers) do
-    resp = { :chunk, headers }
-    { :ok, resp, req }
+    send_to_elli({ :chunk, headers }, req)
+    { :ok, nil, req }
   end
 
   def chunk(req, body) do
     R.send_chunk(R.chunk_ref(req), body)
   end
 
-  def stream_req_body(_req, _limit) do
-    raise UndefinedFunctionError, message: "Streaming of body data is not implemented for the Elli adapter."
+  def stream_req_body(req, limit) do
+    body = R.body(req)
+    if body == :done do
+      { :done, req }
+    else
+      size = size(body)
+      if limit >= size do
+        { :ok, body, elli_req(req, body: :done) }
+      else
+        { :ok, :binary.part(body, 0, limit), elli_req(req, body: :binary.part(body, limit, size - limit)) }
+      end
+    end
   end
 
   def parse_req_multipart(_req, _limit, _callback) do
@@ -57,6 +69,17 @@ defmodule Plug.Adapters.Elli.Connection do
 
   defp downcase_fields(headers) do
     lc { field, value } inlist headers, do: { String.downcase(field), value }
+  end
+
+  defp send_to_elli(resp, req) do
+    # Although the name is confusing, chunk_ref just returns
+    # the pid of the Elli process that executes the Elli handler.
+    R.chunk_ref(req) <- { :plug_response, resp }
+    receive do
+      { :elli_handler, result } -> result
+    after
+      5_000 -> { :error, :timeout }
+    end
   end
 
 end
