@@ -40,6 +40,10 @@ defmodule Plug.Adapters.Elli.Connection do
     R.send_chunk(R.chunk_ref(req), body)
   end
 
+  # Elli actually always fetches the complete body before executing any handler,
+  # so this implementation merely exists for compatibility purposes.
+  # Also note that a request with a body exceeding the maximum body size specified in
+  # Elli's startup options will be discarded before executing any handler.
   def stream_req_body(req, limit) do
     body = R.body(req)
     if body == :done do
