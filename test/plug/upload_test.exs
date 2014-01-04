@@ -10,11 +10,12 @@ defmodule Plug.UploadTest do
       File.open!(path)
     end
 
-    receive do
-      { :path, path } -> :ok
-    after
-      1_000 -> flunk "didn't get a path"
-    end
+    path =
+      receive do
+        { :path, path } -> path
+      after
+        1_000 -> flunk "didn't get a path"
+      end
 
     receive do
       { :DOWN, ^ref, :process, ^pid, :normal } ->

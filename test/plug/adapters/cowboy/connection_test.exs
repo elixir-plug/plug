@@ -95,7 +95,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def send_file(conn) do
-    conn = send_file(conn, 200, __FILE__)
+    conn = send_file(conn, 200, __ENV__.file)
     assert conn.state == :sent
     assert conn.resp_body == nil
     { :ok, conn }
@@ -105,7 +105,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 200, headers, body } = request :get, "/send_file"
     assert body =~ "sends a file with status and headers"
     assert headers["cache-control"] == "max-age=0, private, must-revalidate"
-    assert headers["content-length"] == File.stat!(__FILE__).size |> integer_to_binary
+    assert headers["content-length"] == File.stat!(__ENV__.file).size |> integer_to_binary
   end
 
   test "skips file on head" do
