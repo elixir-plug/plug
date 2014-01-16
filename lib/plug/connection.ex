@@ -171,7 +171,7 @@ defmodule Plug.Connection do
     conn    = conn.adapter({ adapter, payload }).resp_headers(headers)
 
     { :ok, body, payload } = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
-    self() <- @already_sent
+    send self(), @already_sent
     conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
   end
 
@@ -202,7 +202,7 @@ defmodule Plug.Connection do
     conn    = conn.status(status).state(:file).resp_headers(headers)
 
     { :ok, body, payload } = adapter.send_file(payload, conn.status, conn.resp_headers, file)
-    self() <- @already_sent
+    send self(), @already_sent
     conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
   end
 
@@ -224,7 +224,7 @@ defmodule Plug.Connection do
     conn    = conn.status(status).state(:chunked).resp_headers(headers)
 
     { :ok, body, payload } = adapter.send_chunked(payload, conn.status, conn.resp_headers)
-    self() <- @already_sent
+    send self(), @already_sent
     conn.adapter({ adapter, payload }).resp_body(body)
   end
 

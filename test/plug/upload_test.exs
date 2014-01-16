@@ -6,7 +6,7 @@ defmodule Plug.UploadTest do
 
     { pid, ref } = Process.spawn_monitor fn ->
       { :ok, path } = Plug.Upload.random_file("sample")
-      parent <- { :path, path }
+      send parent, { :path, path }
       File.open!(path)
     end
 

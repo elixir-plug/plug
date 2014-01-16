@@ -16,7 +16,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def call(conn, []) do
-    function = binary_to_atom Enum.first(conn.path_info) || "root"
+    function = binary_to_atom List.first(conn.path_info) || "root"
     apply __MODULE__, function, [conn]
   rescue
     exception ->
