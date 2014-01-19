@@ -159,14 +159,14 @@ defmodule Plug.Connection do
 
   At the end sets the connection state to `:sent`.
   """
-  @spec send(Conn.t) :: Conn.t | no_return
-  def send(conn)
+  @spec send_resp(Conn.t) :: Conn.t | no_return
+  def send_resp(conn)
 
-  def send(Conn[state: :unset]) do
+  def send_resp(Conn[state: :unset]) do
     raise ArgumentError, message: "cannot send a response that was not set"
   end
 
-  def send(Conn[adapter: { adapter, payload }, state: :set] = conn) do
+  def send_resp(Conn[adapter: { adapter, payload }, state: :set] = conn) do
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
     conn    = conn.adapter({ adapter, payload }).resp_headers(headers)
 
@@ -175,7 +175,7 @@ defmodule Plug.Connection do
     conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
   end
 
-  def send(Conn[]) do
+  def send_resp(Conn[]) do
     raise AlreadySentError
   end
 
@@ -256,11 +256,11 @@ defmodule Plug.Connection do
   @doc """
   Sends a response with given status and body.
 
-  See `send/1` for more information.
+  See `send_resp/1` for more information.
   """
-  @spec send(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
-  def send(Conn[] = conn, status, body) when is_integer(status) and is_binary(body) do
-    conn |> resp(status, body) |> send()
+  @spec send_resp(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
+  def send_resp(Conn[] = conn, status, body) when is_integer(status) and is_binary(body) do
+    conn |> resp(status, body) |> send_resp()
   end
 
   @doc """
