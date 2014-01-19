@@ -68,7 +68,7 @@ Plug.Conn[host: "www.example.com",
           ...]
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send/3` are defined in `Plug.Connection`.
+Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Connection`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
@@ -78,7 +78,7 @@ conn = send_resp(conn, 200, "ok")
 conn
 ```
 
-Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
+Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send_resp/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
 
 ## Testing plugs and applications
 
