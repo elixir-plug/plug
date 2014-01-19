@@ -25,8 +25,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-          { :halt, send(conn, 500, exception.message <> "\n" <>
-                        Exception.format_stacktrace(System.stacktrace)) }
+          { :halt, send_resp(conn, 500, exception.message <> "\n" <>
+                             Exception.format_stacktrace(System.stacktrace)) }
       end
   end
 
@@ -69,7 +69,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def send_200(conn) do
     assert conn.state == :unset
     assert conn.resp_body == nil
-    conn = send(conn, 200, "OK")
+    conn = send_resp(conn, 200, "OK")
     assert conn.state == :sent
     assert conn.resp_body == nil
     { :ok, conn }
@@ -79,7 +79,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     { :ok, conn
            |> delete_resp_header("cache-control")
            |> put_resp_header("x-sample", "value")
-           |> send(500, "ERROR") }
+           |> send_resp(500, "ERROR") }
   end
 
   test "sends a response with status, headers and body" do
@@ -172,7 +172,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   def https(conn) do
     assert conn.scheme == :https
-    { :ok, send(conn, 200, "OK") }
+    { :ok, send_resp(conn, 200, "OK") }
   end
 
   @https_options [

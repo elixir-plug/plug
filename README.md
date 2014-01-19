@@ -18,7 +18,7 @@ defmodule MyPlug do
   def call(conn, []) do
     conn = conn
            |> put_resp_content_type("text/plain")
-           |> send(200, "Hello world")
+           |> send_resp(200, "Hello world")
     { :ok, conn }
   end
 end
@@ -74,7 +74,7 @@ Remember that, as everything else in Elixir, **a connection is immutable**, so e
 
 ```elixir
 conn = put_resp_content_type(conn, "text/plain")
-conn = send(conn, 200, "ok")
+conn = send_resp(conn, 200, "ok")
 conn
 ```
 
