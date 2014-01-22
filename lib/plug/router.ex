@@ -6,6 +6,7 @@ defmodule Plug.Router do
 
       defmodule AppRouter do
         use Plug.Router
+        import Plug.Connection
 
         get "/hello" do
           { :ok, send_resp(conn, 200, "world") }
