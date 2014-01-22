@@ -20,6 +20,9 @@ defmodule Plug.Router.Utils do
   Generates a representation that will only match routes
   according to the given `spec`.
 
+  If a non-binary spec is given, it is assumed to be
+  custom match arguments and they are simply returned.
+
   ## Examples
 
       iex> Plug.Router.Utils.build_match("/foo/:id")
@@ -28,6 +31,10 @@ defmodule Plug.Router.Utils do
   """
   def build_match(spec) when is_binary(spec) do
     build_match split(spec), [], []
+  end
+
+  def build_match(spec) do
+    { [], spec }
   end
 
   @doc """
