@@ -76,7 +76,7 @@ defmodule Plug.Router.Utils do
 
   defp handle_segment_match({ :glob, identifier, expr }, t, vars, acc) do
     if t != [] do
-      raise(Plug.Router.InvalidSpecError, message: "cannot have a *glob followed by other segments")
+      raise Plug.Router.InvalidSpecError, message: "cannot have a *glob followed by other segments"
     end
 
     case acc do
@@ -94,7 +94,7 @@ defmodule Plug.Router.Utils do
   @underscore { :_, [], nil }
 
   defp segment_match(":" <> argument, buffer) do
-    identifier = binary_to_atom(argument)
+    identifier = binary_to_identifier(":", argument)
     expr = quote_if_buffer identifier, buffer, fn var ->
       quote do: unquote(buffer) <> unquote(var)
     end
@@ -102,7 +102,7 @@ defmodule Plug.Router.Utils do
   end
 
   defp segment_match("*" <> argument, buffer) do
-    identifier = binary_to_atom(argument)
+    identifier = binary_to_identifier("*", argument)
     expr = quote_if_buffer identifier, buffer, fn var ->
       quote do: [unquote(buffer) <> unquote(@underscore)|unquote(@underscore)] = unquote(var)
     end
@@ -123,5 +123,13 @@ defmodule Plug.Router.Utils do
 
   defp quote_if_buffer(identifier, _buffer, fun) do
     fun.({ identifier, [], nil })
+  end
+
+  defp binary_to_identifier(prefix, "") do
+    raise Plug.Router.InvalidSpecError, message: "#{prefix} must be followed by lowercase letters in routes"
+  end
+
+  defp binary_to_identifier(_, binary) do
+    binary_to_atom(binary)
   end
 end

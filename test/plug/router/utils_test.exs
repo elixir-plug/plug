@@ -59,11 +59,15 @@ defmodule Plug.Router.UtilsTest do
     assert quote(@opts, do: { [:glob], ["foo" | ["id-" <> _ | _] = glob] }) == R.build_match("foo/id-*glob")
   end
 
+  test "build invalid match with empty matches" do
+    assert_raise Plug.Router.InvalidSpecError,
+                 ": must be followed by lowercase letters in routes",
+                 fn -> R.build_match("/foo/:") end
+  end
+
   test "build invalid match with segments after glob" do
-    R.build_match("/foo/*bar/baz")
-    flunk "build_match should have failed"
-  rescue
-    x in [Plug.Router.InvalidSpecError] ->
-      "cannot have a *glob followed by other segments" = x.message
+    assert_raise Plug.Router.InvalidSpecError,
+                 "cannot have a *glob followed by other segments",
+                 fn -> R.build_match("/foo/*bar/baz") end
   end
 end

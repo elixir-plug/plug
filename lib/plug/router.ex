@@ -48,7 +48,7 @@ defmodule Plug.Router do
   of a route and can be available as a parameter in the function
   body, also note that a glob can't be followed by other segments:
 
-      get "/hello/*" do
+      get "/hello/*_rest" do
         { :ok, send_resp(conn, 200, "matches all routes starting with /hello") }
       end
 
