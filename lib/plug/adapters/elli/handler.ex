@@ -16,7 +16,7 @@ defmodule Plug.Adapters.Elli.Handler do
           # If a chunked response is requested from the plug handler,
           # respond immediately, because Elli doesn't emit a
           # :request_complete event with chunked transfers.
-          pid <- { :elli_handler, :ok }
+          send(pid, { :elli_handler, :ok })
         end           
         resp
     end
@@ -26,7 +26,7 @@ defmodule Plug.Adapters.Elli.Handler do
                     :request_throw, :request_error, :request_exit]
 
   def handle_event(type, _args, _) when type in @response_events do
-    Process.get(:plug_pid) <- { :elli_handler, to_result(type) }
+    send(Process.get(:plug_pid), { :elli_handler, to_result(type) })
     :ok
   end
   def handle_event(_type, _args, _) do
@@ -39,7 +39,7 @@ defmodule Plug.Adapters.Elli.Handler do
       { stat, Plug.Conn[adapter: { @connection, _req }, state: state] = conn } when stat in [:ok, :halt] ->
         cond do
           state in [:set, :unset] ->
-            Plug.Connection.send(conn, 204, "")
+            Plug.Connection.send_resp(conn, 204, "")
           state == :chunked ->
             Plug.Connection.chunk(conn, "")
           true -> nil

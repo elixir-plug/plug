@@ -78,7 +78,7 @@ defmodule Plug.Adapters.Elli.Connection do
   defp send_to_elli(resp, req) do
     # Although the name is confusing, chunk_ref just returns
     # the pid of the Elli process that executes the Elli handler.
-    R.chunk_ref(req) <- { :plug_response, resp }
+    send(R.chunk_ref(req), { :plug_response, resp })
     receive do
       { :elli_handler, result } -> result
     after
