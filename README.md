@@ -18,7 +18,7 @@ defmodule MyPlug do
   def call(conn, []) do
     conn = conn
            |> put_resp_content_type("text/plain")
-           |> send(200, "Hello world")
+           |> send_resp(200, "Hello world")
     { :ok, conn }
   end
 end
@@ -68,17 +68,17 @@ Plug.Conn[host: "www.example.com",
           ...]
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send/3` are defined in `Plug.Connection`.
+Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Connection`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
 ```elixir
 conn = put_resp_content_type(conn, "text/plain")
-conn = send(conn, 200, "ok")
+conn = send_resp(conn, 200, "ok")
 conn
 ```
 
-Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
+Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send_resp/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
 
 ## Testing plugs and applications
 
@@ -104,19 +104,42 @@ defmodule MyPlugTest do
 end
 ```
 
-## The Plug Builder
+## The Plug Router
 
-Coming soon.
+The Plug router allows developers to quickly match on incoming requests and perform some action:
+
+```elixir
+defmodule AppRouter do
+  use Plug.Router
+  import Plug.Connection
+
+  get "/hello" do
+    { :ok, send_resp(conn, 200, "world") }
+  end
+
+  match _ do
+    { :ok, send_resp(conn, 404, "oops") }
+  end
+end
+```
+
+The router is a plug, which means it can be invoked as:
+
+```elixir
+Plug.Router.call(conn, [])
+```
+
+Each route needs to return `{ atom, conn }`, as per the Plug specification.
+
+Note `Plug.Router` compiles all of your routes into a single function and relies on the Erlang VM to optimize the underlying routes into a tree lookup instead of a linear lookup that would instead match route-per-route. This means route lookups are extremely fast in Plug!
+
+This also means that a catch all `match` is recommended to be defined, as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
 
 ### Available Plugs
 
 This project aims to ship with different plugs that can be re-used accross applications:
 
 * `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - a plug responsible for parsing the request body given its content-type;
-
-## The Plug Router
-
-Coming soon.
 
 ## License
 

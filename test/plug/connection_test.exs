@@ -53,42 +53,42 @@ defmodule Plug.ConnectionTest do
   end
 
   test "resp/3 raises when connection was already sent" do
-    conn = conn(:head, "/foo") |> send(200, "HELLO")
+    conn = conn(:head, "/foo") |> send_resp(200, "HELLO")
     assert_raise Plug.Connection.AlreadySentError, fn ->
       resp(conn, 200, "OTHER")
     end
   end
 
-  test "send/3" do
+  test "send_resp/3" do
     conn = conn(:get, "/foo")
     assert conn.state == :unset
     assert conn.resp_body == nil
-    conn = send(conn, 200, "HELLO")
+    conn = send_resp(conn, 200, "HELLO")
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert conn.state == :sent
   end
 
-  test "send/3 sends self a message" do
+  test "send_resp/3 sends self a message" do
     refute_received { :plug_conn, :sent }
-    conn(:get, "/foo") |> send(200, "HELLO")
+    conn(:get, "/foo") |> send_resp(200, "HELLO")
     assert_received { :plug_conn, :sent }
   end
 
-  test "send/3 does not send on head" do
-    conn = conn(:head, "/foo") |> send(200, "HELLO")
+  test "send_resp/3 does not send on head" do
+    conn = conn(:head, "/foo") |> send_resp(200, "HELLO")
     assert conn.resp_body == ""
   end
 
-  test "send/3 raises when connection was already sent" do
-    conn = conn(:head, "/foo") |> send(200, "HELLO")
+  test "send_resp/3 raises when connection was already sent" do
+    conn = conn(:head, "/foo") |> send_resp(200, "HELLO")
     assert_raise Plug.Connection.AlreadySentError, fn ->
-      send(conn, 200, "OTHER")
+      send_resp(conn, 200, "OTHER")
     end
   end
 
   test "send_file/3" do
-    conn = conn(:get, "/foo") |> send_file(200, __FILE__)
+    conn = conn(:get, "/foo") |> send_file(200, __ENV__.file)
     assert conn.status == 200
     assert conn.resp_body =~ "send_file/3"
     assert conn.state == :sent
@@ -96,19 +96,19 @@ defmodule Plug.ConnectionTest do
 
   test "send_file/3 sends self a message" do
     refute_received { :plug_conn, :sent }
-    conn(:get, "/foo") |> send_file(200, __FILE__)
+    conn(:get, "/foo") |> send_file(200, __ENV__.file)
     assert_received { :plug_conn, :sent }
   end
 
   test "send_file/3 does not send on head" do
-    conn = conn(:head, "/foo") |> send_file(200, __FILE__)
+    conn = conn(:head, "/foo") |> send_file(200, __ENV__.file)
     assert conn.resp_body == ""
   end
 
   test "send_file/3 raises when connection was already sent" do
-    conn = conn(:head, "/foo") |> send_file(200, __FILE__)
+    conn = conn(:head, "/foo") |> send_file(200, __ENV__.file)
     assert_raise Plug.Connection.AlreadySentError, fn ->
-      send_file(conn, 200, __FILE__)
+      send_file(conn, 200, __ENV__.file)
     end
   end
 
@@ -168,12 +168,12 @@ defmodule Plug.ConnectionTest do
            put_resp_content_type(conn, "text/html", nil).resp_headers
   end
 
-  test "resp/3 and send/1" do
+  test "resp/3 and send_resp/1" do
     conn = conn(:get, "/foo") |> resp(200, "HELLO")
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
 
-    conn = send(conn)
+    conn = send_resp(conn)
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
   end
@@ -205,17 +205,17 @@ defmodule Plug.ConnectionTest do
   end
 
   test "put_resp_cookie/4 and delete_resp_cookie/3" do
-    conn = conn(:get, "/") |> send(200, "ok")
+    conn = conn(:get, "/") |> send_resp(200, "ok")
     refute conn.resp_headers["set-cookie"]
 
-    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send(200, "ok")
+    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
            [value: "baz", path: "/baz"]
     assert conn.resp_headers["set-cookie"] ==
            "foo=baz; path=/baz; HttpOnly"
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz") |>
-           delete_resp_cookie("foo", path: "/baz") |> send(200, "ok")
+           delete_resp_cookie("foo", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
            [max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"]
     assert conn.resp_headers["set-cookie"] ==

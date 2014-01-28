@@ -34,8 +34,8 @@ defmodule Plug.Connection.QueryTest do
     assert decode("x[y][z]=1&x[y][z]=2")["x"]["y"]["z"] == "2"
     assert decode("x[y][z][]=1&x[y][z][]=2")["x"]["y"]["z"] == ["1", "2"]
 
-    assert (decode("x[y][][z]=1")["x"]["y"] |> Enum.first)["z"] == "1"
-    assert (decode("x[y][][z][]=1")["x"]["y"] |> Enum.first)["z"] |> Enum.first == "1"
+    assert (decode("x[y][][z]=1")["x"]["y"] |> Enum.at(0))["z"] == "1"
+    assert (decode("x[y][][z][]=1")["x"]["y"] |> Enum.at(0))["z"] |> Enum.at(0) == "1"
   end
 
   test "last always wins on bad queries" do

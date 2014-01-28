@@ -16,7 +16,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def call(conn, []) do
-    function = binary_to_atom Enum.first(conn.path_info) || "root"
+    function = binary_to_atom List.first(conn.path_info) || "root"
     apply __MODULE__, function, [conn]
   rescue
     exception ->
@@ -25,8 +25,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-          { :halt, send(conn, 500, exception.message <> "\n" <>
-                        Exception.format_stacktrace(System.stacktrace)) }
+          { :halt, send_resp(conn, 500, exception.message <> "\n" <>
+                             Exception.format_stacktrace(System.stacktrace)) }
       end
   end
 
@@ -69,7 +69,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def send_200(conn) do
     assert conn.state == :unset
     assert conn.resp_body == nil
-    conn = send(conn, 200, "OK")
+    conn = send_resp(conn, 200, "OK")
     assert conn.state == :sent
     assert conn.resp_body == nil
     { :ok, conn }
@@ -79,7 +79,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     { :ok, conn
            |> delete_resp_header("cache-control")
            |> put_resp_header("x-sample", "value")
-           |> send(500, "ERROR") }
+           |> send_resp(500, "ERROR") }
   end
 
   test "sends a response with status, headers and body" do
@@ -95,7 +95,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def send_file(conn) do
-    conn = send_file(conn, 200, __FILE__)
+    conn = send_file(conn, 200, __ENV__.file)
     assert conn.state == :sent
     assert conn.resp_body == nil
     { :ok, conn }
@@ -105,7 +105,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert { 200, headers, body } = request :get, "/send_file"
     assert body =~ "sends a file with status and headers"
     assert headers["cache-control"] == "max-age=0, private, must-revalidate"
-    assert headers["content-length"] == File.stat!(__FILE__).size |> integer_to_binary
+    assert headers["content-length"] == File.stat!(__ENV__.file).size |> integer_to_binary
   end
 
   test "skips file on head" do
@@ -172,7 +172,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   def https(conn) do
     assert conn.scheme == :https
-    { :ok, send(conn, 200, "OK") }
+    { :ok, send_resp(conn, 200, "OK") }
   end
 
   @https_options [

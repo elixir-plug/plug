@@ -6,15 +6,16 @@ defmodule Plug.UploadTest do
 
     { pid, ref } = Process.spawn_monitor fn ->
       { :ok, path } = Plug.Upload.random_file("sample")
-      parent <- { :path, path }
+      send parent, { :path, path }
       File.open!(path)
     end
 
-    receive do
-      { :path, path } -> :ok
-    after
-      1_000 -> flunk "didn't get a path"
-    end
+    path =
+      receive do
+        { :path, path } -> path
+      after
+        1_000 -> flunk "didn't get a path"
+      end
 
     receive do
       { :DOWN, ^ref, :process, ^pid, :normal } ->

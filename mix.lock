@@ -3,5 +3,5 @@
   "elli": {:git, "git://github.com/knutin/elli.git", "47396a92d256f6ad20f76381a2fb236753aa157e", []},
   "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "a5ff9956feeea113509125e5b29623c1fa7e3be4", []},
   "hackney": {:git, "git://github.com/benoitc/hackney.git", "476b4992c64873ed67bf6daa5c48f0a31c2435b8", []},
-  "mimetypes": {:git, "https://github.com/spawngrid/mimetypes.git", "47d37a977a7d633199822bf6b08353007483d00f", [{:ref, "master"}]},
-  "ranch": {:git, "git://github.com/extend/ranch.git", "5df1f222f94e08abdcab7084f5e13027143cc222", [{:ref, "0.9.0"}]} ]
+  "mimetypes": {:git, "https://github.com/spawngrid/mimetypes.git", "47d37a977a7d633199822bf6b08353007483d00f", [ref: "master"]},
+  "ranch": {:git, "git://github.com/extend/ranch.git", "5df1f222f94e08abdcab7084f5e13027143cc222", [ref: "0.9.0"]} ]
