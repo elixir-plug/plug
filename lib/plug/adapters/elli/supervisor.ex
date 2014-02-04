@@ -12,13 +12,7 @@ defmodule Plug.Adapters.Elli.Supervisor do
   end
 
   def start_elli(ref, options) do
-    case :supervisor.start_child(__MODULE__, worker(:elli, [options], [id: ref])) do
-      { :ok, _ } ->
-        { :ok, ref }
-      { :error, { :already_started, _ } } ->
-        { :error, { :already_started, ref } }
-      other_error -> other_error
-    end
+    :supervisor.start_child(__MODULE__, worker(:elli, [options], [id: ref]))
   end
 
   def stop_elli(ref) do
