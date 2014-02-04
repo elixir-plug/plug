@@ -17,7 +17,7 @@ defmodule Plug.Adapters.Elli.Handler do
           # respond immediately, because Elli doesn't emit a
           # :request_complete event with chunked transfers.
           send(pid, { :elli_handler, :ok })
-        end           
+        end
         resp
     end
   end
@@ -33,7 +33,6 @@ defmodule Plug.Adapters.Elli.Handler do
     :ok
   end
 
-  @doc false
   def plug_handler(req, plug, opts) do
     case plug.call(@connection.conn(req), opts) do
       { stat, Plug.Conn[adapter: { @connection, _req }, state: state] = conn } when stat in [:ok, :halt] ->
