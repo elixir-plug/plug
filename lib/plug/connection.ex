@@ -301,7 +301,7 @@ defmodule Plug.Connection do
   account the charset.
   """
   @spec put_resp_content_type(Conn.t, binary, binary | nil) :: Conn.t
-  def put_resp_content_type(conn, content_type, charset // "utf-8") when
+  def put_resp_content_type(conn, content_type, charset \\ "utf-8") when
       is_binary(content_type) and (is_binary(charset) or nil?(charset)) do
     value =
       if nil?(charset) do
@@ -365,7 +365,7 @@ defmodule Plug.Connection do
 
   """
   @spec put_resp_cookie(Conn.t, binary, binary, Keyword.t) :: Conn.t
-  def put_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, value, opts // []) when
+  def put_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
     resp_cookies = List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] })
     conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.put(&1, key, value))
@@ -380,7 +380,7 @@ defmodule Plug.Connection do
   Check `put_resp_cookie/4` for more information.
   """
   @spec delete_resp_cookie(Conn.t, binary, Keyword.t) :: Conn.t
-  def delete_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, opts // []) when
+  def delete_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, opts \\ []) when
       is_binary(key) and is_list(opts) do
     opts = opts |> Keyword.put_new(:universal_time, @epoch) |> Keyword.put_new(:max_age, 0)
     resp_cookies = List.keystore(resp_cookies, key, 0, { key, opts })

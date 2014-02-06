@@ -32,7 +32,7 @@ defmodule Plug.Test do
   Creates a test connection.
   """
   @spec conn(String.Chars.t, binary, binary | list, Keyword.t) :: Conn.t
-  def conn(method, path, params_or_body // [], opts // []) do
+  def conn(method, path, params_or_body \\ [], opts \\ []) do
     Plug.Adapters.Test.Connection.conn(method, path, params_or_body, opts)
   end
 

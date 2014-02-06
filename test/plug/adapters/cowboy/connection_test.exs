@@ -192,7 +192,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   ## Helpers
 
-  defp request(verb, path, headers // [], body // "") do
+  defp request(verb, path, headers \\ [], body \\ "") do
     { :ok, status, headers, client } =
       :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, [])
     { :ok, body, _ } = :hackney.body(client)

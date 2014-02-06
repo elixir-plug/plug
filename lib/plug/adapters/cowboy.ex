@@ -46,7 +46,7 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTP
 
   """
-  def http(plug, opts, options // []) do
+  def http(plug, opts, options \\ []) do
     run(:http, plug, opts, options)
   end
 
@@ -77,7 +77,7 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTPS
 
   """
-  def https(plug, opts, options // []) do
+  def https(plug, opts, options \\ []) do
     :application.start(:asn1)
     :application.start(:public_key)
     :application.start(:ssl)

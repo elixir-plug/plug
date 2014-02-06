@@ -30,7 +30,7 @@ defmodule Plug.Connection.Query do
   @doc """
   Decodes the given binary.
   """
-  def decode(query, initial // [])
+  def decode(query, initial \\ [])
 
   def decode("", initial) do
     initial

@@ -63,7 +63,7 @@ defmodule Plug.Connection.Cookies do
   @doc """
   Receives a cookie key with options and returns a cookie header.
   """
-  def encode(key, opts // []) do
+  def encode(key, opts \\ []) do
     header = "#{key}=#{Keyword.get(opts, :value, "")}; path=#{Keyword.get(opts, :path, "/")}"
 
     if domain = opts[:domain] do

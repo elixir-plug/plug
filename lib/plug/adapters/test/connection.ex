@@ -6,7 +6,7 @@ defmodule Plug.Adapters.Test.Connection do
 
   ## Test helpers
 
-  def conn(method, uri, body_or_params // [], opts // []) do
+  def conn(method, uri, body_or_params \\ [], opts \\ []) do
     uri     = URI.parse(uri)
     method  = method |> to_string |> String.upcase
 

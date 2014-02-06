@@ -3,7 +3,7 @@ defmodule Plug.ParsersTest do
 
   import Plug.Test
 
-  def parse(conn, opts // []) do
+  def parse(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
     Plug.Parsers.call(conn, opts)
   end

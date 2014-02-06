@@ -131,7 +131,7 @@ defmodule Plug.Router do
       end
 
   """
-  defmacro match(expression, options, contents // []) do
+  defmacro match(expression, options, contents \\ []) do
     compile(:build_match, expression, Keyword.merge(contents, options), __CALLER__)
   end
 
