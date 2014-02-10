@@ -9,8 +9,14 @@ defmodule Plug.Adapters.Test.ConnectionTest do
     assert { :ok, "abcde", state } = adapter.stream_req_body(state, 5)
     assert { :ok, "fgh", state } = adapter.stream_req_body(state, 5)
     assert { :done, state } = adapter.stream_req_body(state, 5)
-    assert { :done, state } = adapter.stream_req_body(state, 5)
-    conn.adapter({ adapter, state })
+    assert { :done, _ } = adapter.stream_req_body(state, 5)
+  end
+
+  test "no body or params" do
+    conn = conn(:get, "/")
+    { adapter, state } = conn.adapter
+    assert conn.req_headers == []
+    assert { :done, _ } = adapter.stream_req_body(state, 10)
   end
 
   test "custom body requires content-type" do
@@ -27,8 +33,7 @@ defmodule Plug.Adapters.Test.ConnectionTest do
   test "parse_req_multipart/4" do
     conn = conn(:get, "/", a: "b", c: [[d: "e"], "f"])
     { adapter, state } = conn.adapter
-    assert { :ok, params, state } = adapter.parse_req_multipart(state, 1_000_000, fn _ -> end)
+    assert { :ok, params, _ } = adapter.parse_req_multipart(state, 1_000_000, fn _ -> end)
     assert params == [{ "a", "b" }, { "c", [[{ "d", "e" }], "f"] }]
-    conn.adapter({ adapter, state })
   end
 end

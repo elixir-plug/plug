@@ -61,6 +61,9 @@ defmodule Plug.Adapters.Test.Connection do
 
   ## Private helpers
 
+  defp body_or_params([], headers),
+    do: { "", nil, headers }
+
   defp body_or_params(body, headers) when is_binary(body) do
     unless headers["content-type"] do
       raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
