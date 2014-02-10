@@ -3,8 +3,8 @@ defmodule Plug.Mixfile do
 
   def project do
     [ app: :plug,
-      version: "0.2.0",
-      elixir: "~> 0.12.3",
+      version: "0.3.0-dev",
+      elixir: "~> 0.12.4-dev",
       deps: deps(Mix.env),
       docs: [ readme: true, main: "README" ] ]
   end

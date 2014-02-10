@@ -1,27 +1,58 @@
 defmodule Plug do
   @moduledoc """
-  The plug specification
+  The plug specification.
 
-  A plug is any Elixir function that receives two arguments: a
-  `Plug.Conn` record and a set of keywords options. This function
-  must return a tuple, where the first element is an atom and
-  the second one is the updated `Plug.Conn`.
+  There are two kind of plugs: function plugs and module plugs. A
+  function plug is any function that receives a connection and a
+  set of options and returns a connection. Its type signature must be:
 
-  While the first element can be any atom, two values have specific
-  meaning to plug:
+      (Plug.Conn.t, Plug.opts) :: Plug.Conn.t
 
-  * `:ok` - pass the connection to the next plug in the stack
-  * `:halt` - halts the current and all other stacks
+  A module plug is an extension of the function plug. It must export a
+  `call/2` function, with the signature defined above, but it must also
+  provide an `init/1` function, for initialization of the options.
 
-  Any other values means the connection should halt but it can
-  be handled by some of other part of the stack that will be
-  able to forward the connection to possibly another stack.
+  The result returned by `init/1` is the one given as second argument to
+  `call/2`. Note `init/1` may be called during compilation and as such
+  it must not return pids, ports or values that are not specific to the
+  runtime.
 
-  When defined in a module, it is common for the plug function
-  to be named `call/2`.
+  The API expected by a module plug is defined as a behaviour by the
+  `Plug` module (this module).
+
+  ## Wrappers
+
+  A wrapper is a module that exports two functions: `init/1` and `wrap/3`.
+
+  A wrapper is similar to a module plug except it receives a function
+  containing the remaining of the stack as third argument. Wrappers must
+  be reserved to the special cases where wrapping the whole stack is
+  required.
+
+  The behaviour specification of a wrapper can be found in the `Plug.Wrapper`
+  module.
+
+  ## The Plug stack
+
+  The plug specification was designed so it can connect all three different
+  mechanisms together in a same stack:
+
+  * function plugs
+  * module plugs
+  * and wrappers
+
+  An implementation of how such plug stacks can be achieved is defined in
+  the `Plug.Builder` module.
   """
 
+  @type t :: module | atom
+  @type opts :: tuple | atom | integer | float | [opts]
+
+  use Behaviour
   use Application.Behaviour
+
+  defcallback init(opts) :: opts
+  defcallback call(Plug.Conn.t, opts) :: Plug.Conn.t
 
   @doc false
   def start(_type, _args) do

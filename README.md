@@ -15,11 +15,10 @@ Plug is:
 defmodule MyPlug do
   import Plug.Connection
 
-  def call(conn, []) do
-    conn = conn
-           |> put_resp_content_type("text/plain")
-           |> send_resp(200, "Hello world")
-    { :ok, conn }
+  def call(conn, _opts) do
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, "Hello world")
   end
 end
 
@@ -58,7 +57,7 @@ In practice, you want to use plugs in your existing projects. You can do that in
 
 In the hello world example, we defined our first plug. What is a plug after all?
 
-> A plug is any function that receives a connection and a set of options as arguments and returns a tuple in the format `{ tag :: atom, conn :: Plug.Conn.t }`
+A plug takes two shapes. It is a function that receives a connection and a set of options as arguments and returns the connection or it is a module that provides an `init/1` function to initialize options and implement the `call/2` function, receiving the connection and the initialized options, and returning the connection.
 
 As per the specification above, a connection is represented by the `Plug.Conn` record ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)):
 
@@ -82,7 +81,7 @@ Finally, keep in mind that a connection is a **direct interface to the underlyin
 
 ## Testing plugs and applications
 
-Plug ships with a `Plug.Test` module ([docs](http://elixir-lang.org/docs/plug/Plug.Test.html)) that makes testing your plug applications easy. Here is how we can test our hello world example:
+Plug ships with a `Plug.Test` module ([docs](http://elixir-lang.org/docs/plug/Plug.Test.html)) that makes testing your plugs easy. Here is how we can test our hello world example:
 
 ```elixir
 defmodule MyPlugTest do
@@ -94,7 +93,7 @@ defmodule MyPlugTest do
     conn = conn(:get, "/")
 
     # Invoke the plug
-    { :ok, conn } = MyPlug.call(conn, [])
+    conn = MyPlug.call(conn, [])
 
     # Assert the response and status
     assert conn.state == :sent
@@ -114,11 +113,11 @@ defmodule AppRouter do
   import Plug.Connection
 
   get "/hello" do
-    { :ok, send_resp(conn, 200, "world") }
+    send_resp(conn, 200, "world")
   end
 
   match _ do
-    { :ok, send_resp(conn, 404, "oops") }
+    send_resp(conn, 404, "oops")
   end
 end
 ```
@@ -129,9 +128,9 @@ The router is a plug, which means it can be invoked as:
 Plug.Router.call(conn, [])
 ```
 
-Each route needs to return `{ atom, conn }`, as per the Plug specification.
+Each route needs to return the connection as per the Plug specification.
 
-Note `Plug.Router` compiles all of your routes into a single function and relies on the Erlang VM to optimize the underlying routes into a tree lookup instead of a linear lookup that would instead match route-per-route. This means route lookups are extremely fast in Plug!
+Note `Plug.Router` compiles all of your routes into a single function and relies on the Erlang VM to optimize the underlying routes into a tree lookup, instead of a linear lookup that would instead match route-per-route. This means route lookups are extremely fast in Plug!
 
 This also means that a catch all `match` is recommended to be defined, as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
 
