@@ -11,7 +11,7 @@ defmodule Plug.BuilderTest do
       fun.(assign(conn, :stack, stack))
     end
   end
-  
+
   defmodule Module do
     def init(val) do
       { :init, val }
@@ -23,12 +23,20 @@ defmodule Plug.BuilderTest do
     end
   end
 
+  defmodule Modfun do
+    def func(conn, opts) do
+      stack = [{ :modfun, opts }|conn.assigns[:stack]]
+      assign(conn, :stack, stack)
+    end
+  end
+
   defmodule Sample do
     use Plug.Builder
 
     plug :fun
     plug Wrapper, :opts
     plug Module, :opts
+    plug { Modfun, :func }
 
     def fun(conn, opts) do
       stack = [{ :fun, opts }|conn.assigns[:stack]]
@@ -46,6 +54,6 @@ defmodule Plug.BuilderTest do
   test "builds plug stack in the order" do
     conn = conn(:get, "/") |> assign(:stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
-           [call: {:init, :opts}, wrap: {:init, :opts}, fun: []]
+           [modfun: [], call: {:init, :opts}, wrap: {:init, :opts}, fun: []]
   end
 end
