@@ -5,7 +5,7 @@ defmodule Plug.ParsersTest do
 
   def parse(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
-    Plug.Parsers.call(conn, opts)
+    Plug.Parsers.call(conn, Plug.Parsers.init(opts))
   end
 
   test "raises when no parsers is given" do
@@ -15,18 +15,18 @@ defmodule Plug.ParsersTest do
   end
 
   test "parses query string information" do
-    { :ok, conn } = parse(conn(:get, "/?foo=bar"))
+    conn = parse(conn(:get, "/?foo=bar"))
     assert conn.params["foo"] == "bar"
   end
 
   test "parses url encoded bodies" do
     headers = [{ "content-type", "application/x-www-form-urlencoded" }]
-    { :ok, conn } = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
     assert conn.params["foo"] == "baz"
   end
 
   test "parses multipart bodies" do
-    { :ok, conn } = parse(conn(:get, "/?foo=bar", [foo: "baz"]))
+    conn = parse(conn(:get, "/?foo=bar", [foo: "baz"]))
     assert conn.params["foo"] == "baz"
   end
 

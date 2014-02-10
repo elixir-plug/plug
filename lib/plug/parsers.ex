@@ -41,7 +41,7 @@ defmodule Plug.Parsers do
   ## Examples
 
       Plug.Parsers.call(conn, parsers:
-                        [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
+                        [:urlencoded, :multipart])
 
   ## Built-in parsers
 
@@ -83,27 +83,47 @@ defmodule Plug.Parsers do
                     { :too_large, Conn.t } |
                     { :skip, Conn.t }
 
+  @behaviour Plug
+
+  def init(opts) do
+    parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
+    opts
+    |> Keyword.put(:parsers, convert_parsers(parsers))
+    |> Keyword.put_new(:limit, 8_000_000)
+  end
+
+  defp raise_missing_parsers do
+    raise ArgumentError, message: "Plug.Parsers expects a set of parsers to be given in :parsers"
+  end
+
+  defp convert_parsers(parsers) do
+    lc parser inlist parsers do
+      case atom_to_binary(parser) do
+        "Elixir." <> _ -> parser
+        reference      -> Module.concat(Plug.Parsers, String.upcase(reference))
+      end
+    end
+  end
+
   def call(Conn[req_headers: req_headers] = conn, opts) do
     conn = Plug.Connection.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       { "content-type", ct } ->
         case Plug.Connection.Utils.content_type(ct) do
           { :ok, type, subtype, headers } ->
-            parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
-            opts    = Keyword.put_new(opts, :limit, 8_000_000)
-            reduce(conn, parsers, type, subtype, headers, opts)
+            reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->
-            { :ok, conn }
+            conn
         end
       nil ->
-        { :ok, conn }
+        conn
     end
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
       { :ok, post, Conn[params: get] = conn } ->
-        { :ok, conn.params(merge_params(get, post)) }
+        conn.params(merge_params(get, post))
       { :next, conn } ->
         reduce(conn, t, type, subtype, headers, opts)
       { :too_large, _conn } ->
@@ -122,9 +142,5 @@ defmodule Plug.Parsers do
       { _, _ } -> merge_params(t, post)
       false -> merge_params(t, [h|post])
     end
-  end
-
-  defp raise_missing_parsers do
-    raise ArgumentError, message: "Plug.Parsers expects a set of parsers to be given in :parsers"
   end
 end

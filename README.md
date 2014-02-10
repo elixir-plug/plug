@@ -88,12 +88,14 @@ defmodule MyPlugTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  @opts MyPlug.init([])
+
   test "returns hello world" do
     # Create a test connection
     conn = conn(:get, "/")
 
     # Invoke the plug
-    conn = MyPlug.call(conn, [])
+    conn = MyPlug.call(conn, @opts)
 
     # Assert the response and status
     assert conn.state == :sent
@@ -125,7 +127,7 @@ end
 The router is a plug, which means it can be invoked as:
 
 ```elixir
-Plug.Router.call(conn, [])
+AppRouter.call(conn, AppRouter.init([]))
 ```
 
 Each route needs to return the connection as per the Plug specification.

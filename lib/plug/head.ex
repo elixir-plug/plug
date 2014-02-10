@@ -7,10 +7,17 @@ defmodule Plug.Head do
       Plug.Head.call(conn, [])
   """
 
+  @behaviour Plug
+
+  def init([]) do
+    []
+  end
+
   def call(conn, []) do
     if conn.method == "HEAD" do
-      conn = conn.method("GET")
+      conn.method("GET")
+    else
+      conn
     end
-    { :ok, conn }
   end
 end

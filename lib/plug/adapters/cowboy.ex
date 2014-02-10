@@ -1,6 +1,6 @@
 defmodule Plug.Adapters.Cowboy do
   @moduledoc """
-  Adapter interface to the Cowboy webserver
+  Adapter interface to the Cowboy webserver.
 
   ## Options
 
@@ -35,7 +35,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc """
-  Runs cowboy under http.
+  Run cowboy under http.
 
   ## Example
 
@@ -51,7 +51,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc """
-  Runs cowboy under https.
+  Run cowboy under https.
 
   Besides the options described in the module documentation,
   this module also accepts all options defined in [the `ssl`
@@ -102,6 +102,7 @@ defmodule Plug.Adapters.Cowboy do
     :application.start(:ranch)
     :application.start(:cowlib)
     :application.start(:cowboy)
+    opts = plug.init(opts)
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
   end
 

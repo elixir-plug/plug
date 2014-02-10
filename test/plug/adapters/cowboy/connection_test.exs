@@ -15,6 +15,10 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     :ok = Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP)
   end
 
+  def init(opts) do
+    opts
+  end
+
   def call(conn, []) do
     function = binary_to_atom List.first(conn.path_info) || "root"
     apply __MODULE__, function, [conn]
@@ -25,8 +29,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
           :erlang.raise(:error, exception, :erlang.get_stacktrace)
       after
         0 ->
-          { :halt, send_resp(conn, 500, exception.message <> "\n" <>
-                             Exception.format_stacktrace(System.stacktrace)) }
+          send_resp(conn, 500, exception.message <> "\n" <>
+                    Exception.format_stacktrace(System.stacktrace))
       end
   end
 
@@ -36,7 +40,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.method == "HEAD"
     assert conn.path_info == []
     assert conn.query_string == "foo=bar&baz=bat"
-    { :ok, conn }
+    conn
   end
 
   def build(Conn[] = conn) do
@@ -47,7 +51,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
     assert conn.method == "GET"
-    { :ok, conn }
+    conn
   end
 
   test "builds a connection" do
@@ -59,7 +63,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   def headers(conn) do
     assert conn.req_headers["foo"] == "bar"
     assert conn.req_headers["baz"] == "bat"
-    { :ok, conn }
+    conn
   end
 
   test "stores request headers" do
@@ -72,7 +76,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     conn = send_resp(conn, 200, "OK")
     assert conn.state == :sent
     assert conn.resp_body == nil
-    { :ok, conn }
+    conn
   end
 
   def send_500(conn) do
@@ -98,7 +102,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     conn = send_file(conn, 200, __ENV__.file)
     assert conn.state == :sent
     assert conn.resp_body == nil
-    { :ok, conn }
+    conn
   end
 
   test "sends a file with status and headers" do
@@ -117,7 +121,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.state == :chunked
     { :ok, conn } = chunk(conn, "HELLO\n")
     { :ok, conn } = chunk(conn, "WORLD\n")
-    { :ok, conn }
+    conn
   end
 
   test "sends a chunked response with status and headers" do
@@ -131,7 +135,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     expected = :binary.copy("abcdefghij", 100_000)
     assert { ^expected, state } = read_req_body({ :ok, "", state }, "", adapter)
     assert { :done, state } = adapter.stream_req_body(state, 100_000)
-    { :ok, conn.adapter({ adapter, state }) }
+    conn.adapter({ adapter, state })
   end
 
   defp read_req_body({ :ok, buffer, state }, acc, adapter) do
@@ -149,7 +153,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def multipart(conn) do
-    { :ok, conn } = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
+    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
     assert conn.params["name"] == "hello"
 
     assert Plug.Upload.File[] = file = conn.params["pic"]
@@ -157,7 +161,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert file.content_type == "text/plain"
     assert file.filename == "foo.txt"
 
-    { :ok, conn }
+    conn
   end
 
   test "parses multipart requests" do
@@ -172,7 +176,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   def https(conn) do
     assert conn.scheme == :https
-    { :ok, send_resp(conn, 200, "OK") }
+    send_resp(conn, 200, "OK")
   end
 
   @https_options [

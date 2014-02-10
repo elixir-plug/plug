@@ -10,16 +10,22 @@ defmodule Plug.MethodOverride do
       Plug.MethodOverride.call(conn, [])
   """
 
+  @behaviour Plug
+
+  def init([]) do
+    []
+  end
+
   def call(conn, []) do
     if conn.method == "POST" do
       case method_override(conn) do
-        "DELETE" -> { :ok, conn.method("DELETE") }
-        "PUT"    -> { :ok, conn.method("PUT") }
-        "PATCH"  -> { :ok, conn.method("PATCH") }
-        _        -> { :ok, conn }
+        "DELETE" -> conn.method("DELETE")
+        "PUT"    -> conn.method("PUT")
+        "PATCH"  -> conn.method("PATCH")
+        _        -> conn
       end
     else
-      { :ok, conn }
+      conn
     end
   end
 

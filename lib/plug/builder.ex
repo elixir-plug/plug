@@ -16,9 +16,10 @@ defmodule Plug.Builder do
         end
       end
 
-  `Plug.Builder` will then define a function named `call/2` that allows
-  this builder to be handed to a web server or used as part of another
-  stack.
+  `Plug.Builder` will define a `init/1` function (which is overridable)
+  and a `call/2` function with the compiled stack. By implementing the
+  Plug API, `Plug.Builder` guarantees this module can be handed to a web
+  server or used as part of another stack.
 
   Note this module also exports a `compile/1` function for those willing
   to collect and compile their plugs manually.
@@ -27,6 +28,14 @@ defmodule Plug.Builder do
   @doc false
   defmacro __using__(_) do
     quote do
+      @behaviour Plug
+
+      def init(opts) do
+        opts
+      end
+
+      defoverridable [init: 1]
+
       import Plug.Builder, only: [plug: 1, plug: 2]
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
       @before_compile Plug.Builder

@@ -9,11 +9,11 @@ defmodule Plug.Router do
         import Plug.Connection
 
         get "/hello" do
-          { :ok, send_resp(conn, 200, "world") }
+          send_resp(conn, 200, "world")
         end
 
         match _ do
-          { :ok, send_resp(conn, 404, "oops") }
+          send_resp(conn, 404, "oops")
         end
       end
 
@@ -29,7 +29,7 @@ defmodule Plug.Router do
   ## Routes
 
       get "/hello" do
-        { :ok, send_resp(conn, 200, "world") }
+        send_resp(conn, 200, "world")
       end
 
   In the example above, a request will only match if it is
@@ -41,7 +41,7 @@ defmodule Plug.Router do
   available in the function body:
 
       get "/hello/:name" do
-        { :ok, send_resp(conn, 200, "hello #{name}") }
+        send_resp(conn, 200, "hello #{name}")
       end
 
   Routes allow for globbing which will match the remaining parts
@@ -49,17 +49,17 @@ defmodule Plug.Router do
   body, also note that a glob can't be followed by other segments:
 
       get "/hello/*_rest" do
-        { :ok, send_resp(conn, 200, "matches all routes starting with /hello") }
+        send_resp(conn, 200, "matches all routes starting with /hello")
       end
 
       get "/hello/*glob" do
-        { :ok, send_resp(conn, 200, "route after /hello: #{inspect glob}") }
+        send_resp(conn, 200, "route after /hello: #{inspect glob}")
       end
 
   Finally, a general `match` function is also supported:
 
       match "/hello" do
-        { :ok, send_resp(conn, 200, "world")
+        send_resp(conn, 200, "world")
       end
 
   A `match` will match any route regardless of the HTTP method.
@@ -89,7 +89,7 @@ defmodule Plug.Router do
   ## Examples
 
       match "/foo/bar", via: :get do
-        { :ok, send_resp(conn, 200, "hello world") }
+        send_resp(conn, 200, "hello world")
       end
 
   ## Options
@@ -107,27 +107,27 @@ defmodule Plug.Router do
   and the connection. Consider this example:
 
       match "/foo/bar", via: :get do
-        { :ok, send_resp(conn, 200, "hello world") }
+        send_resp(conn, 200, "hello world")
       end
 
   It is compiled to:
 
       def dispatch("GET", ["foo", "bar"], conn) do
-        { :ok, send_resp(conn, 200, "hello world") }
+        send_resp(conn, 200, "hello world")
       end
 
   This opens up a few possibilities. First, guards can be given
   to match:
 
       match "/foo/:bar" when size(bar) <= 3, via: :get do
-        { :ok, send_resp(conn, 200, "hello world") }
+        send_resp(conn, 200, "hello world")
       end
 
   Second, a list of splitten paths (which is the compiled result)
   is also allowed:
 
       match ["foo", bar], via: :get do
-        { :ok, send_resp(conn, 200, "hello world") }
+        send_resp(conn, 200, "hello world")
       end
 
   """

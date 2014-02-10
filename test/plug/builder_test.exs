@@ -39,6 +39,10 @@ defmodule Plug.BuilderTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  test "exports the init/1 function" do
+    assert Sample.init(:ok) == :ok
+  end
+
   test "builds plug stack in the order" do
     conn = conn(:get, "/") |> assign(:stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
