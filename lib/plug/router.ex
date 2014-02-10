@@ -8,6 +8,9 @@ defmodule Plug.Router do
         use Plug.Router
         import Plug.Connection
 
+        plug :match
+        plug :dispatch
+
         get "/hello" do
           send_resp(conn, 200, "world")
         end
@@ -17,14 +20,19 @@ defmodule Plug.Router do
         end
       end
 
+  Each route needs to return a connection, as per the Plug spec.
+  A catch all `match` is recommended to be defined, as in the example
+  above, otherwise routing fails with a function clause error.
+
   The router is a plug, which means it can be invoked as:
 
-      Plug.Router.call(conn, [])
+      AppRouter.call(conn, [])
 
-  Each route needs to return `{ atom, conn }`, as per the Plug
-  specification. A catch all `match` is recommended to be defined,
-  as in the example above, otherwise routing fails with a function
-  clause error.
+  Notice the router contains a plug stack and by default it requires
+  two plugs: `match` and `dispatch`. `match` is responsible for
+  finding a matching route which is then forwarded to `dispatch`.
+  This means users can easily hook into the router mechanism and add
+  behaviour before match, before dispatch or after both.
 
   ## Routes
 
@@ -65,18 +73,84 @@ defmodule Plug.Router do
   A `match` will match any route regardless of the HTTP method.
   Check `match/3` for more information on how route compilation
   works and a list of supported options.
+
+  ## Routes compilation
+
+  All routes are compiled to a match function that receives
+  three arguments: the method, the request path split on "/"
+  and the connection. Consider this example:
+
+      match "/foo/bar", via: :get do
+        send_resp(conn, 200, "hello world")
+      end
+
+  It is compiled to:
+
+      defp match("GET", ["foo", "bar"], conn) do
+        send_resp(conn, 200, "hello world")
+      end
+
+  This opens up a few possibilities. First, guards can be given
+  to match:
+
+      match "/foo/:bar" when size(bar) <= 3, via: :get do
+        send_resp(conn, 200, "hello world")
+      end
+
+  Second, a list of splitten paths (which is the compiled result)
+  is also allowed:
+
+      match ["foo", bar], via: :get do
+        send_resp(conn, 200, "hello world")
+      end
+
+  After a match is found, the block given as `do/end` is stored
+  as a function in the connection. This function is then retrieved
+  and invoked in the `dispatch` plug.
+
+  ## Custom dispatch
+
+  TODO.
   """
 
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-      import unquote(__MODULE__)
+      import Plug.Builder, only: [plug: 1, plug: 2]
+      import Plug.Router
 
-      def call(conn, _opts) do
-        dispatch(conn.method, conn.path_info, conn)
+      @behaviour Plug
+
+      def init(opts) do
+        opts
       end
 
-      defoverridable [call: 2]
+      def match(conn, _opts) do
+        # TODO: Store :plug_route in the connection
+        # itself once it becomes a struct
+        Plug.Connection.assign(conn,
+          :plug_route,
+          do_match(conn.method, conn.path_info))
+      end
+
+      def dispatch(Plug.Conn[assigns: assigns] = conn, _opts) do
+        Keyword.get(conn.assigns, :plug_route).(conn)
+      end
+
+      defoverridable [init: 1, dispatch: 2]
+
+      Module.register_attribute(__MODULE__, :plugs, accumulate: true)
+      @before_compile Plug.Router
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    plugs = Module.get_attribute(env.module, :plugs)
+    { conn, body } = Plug.Builder.compile(plugs)
+    quote do
+      import Plug.Router, only: []
+      def call(unquote(conn), _), do: unquote(body)
     end
   end
 
@@ -99,36 +173,6 @@ defmodule Plug.Router do
   * `via:` matches the route against some specific HTTP methods
   * `do:` contains the implementation to be invoked in case
           the route matches
-
-  ## Routes compilation
-
-  All routes are compiled to a dispatch method that receives
-  three arguments: the method, the request path split on "/"
-  and the connection. Consider this example:
-
-      match "/foo/bar", via: :get do
-        send_resp(conn, 200, "hello world")
-      end
-
-  It is compiled to:
-
-      def dispatch("GET", ["foo", "bar"], conn) do
-        send_resp(conn, 200, "hello world")
-      end
-
-  This opens up a few possibilities. First, guards can be given
-  to match:
-
-      match "/foo/:bar" when size(bar) <= 3, via: :get do
-        send_resp(conn, 200, "hello world")
-      end
-
-  Second, a list of splitten paths (which is the compiled result)
-  is also allowed:
-
-      match ["foo", bar], via: :get do
-        send_resp(conn, 200, "hello world")
-      end
 
   """
   defmacro match(expression, options, contents \\ []) do
@@ -195,12 +239,15 @@ defmodule Plug.Router do
       raise ArgumentError, message: "expected :do to be given as option"
     end
 
+    # TODO: Optimize me when there is just one expected method
     methods_guard    = convert_methods(List.wrap(methods))
     { path, guards } = extract_path_and_guards(expr, default_guards(methods_guard))
     { _vars, match } = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
 
     quote do
-      def dispatch(method, unquote(match), var!(conn)) when unquote(guards), do: unquote(body)
+      defp do_match(method, unquote(match)) when unquote(guards) do
+        fn var!(conn) -> unquote(body) end
+      end
     end
   end
 
@@ -224,18 +271,11 @@ defmodule Plug.Router do
     { path, extra_guard }
   end
 
-  # Generate a default guard that is mean to avoid warnings
-  # when the connection is not used. It automatically merges
-  # the guards related to the method.
   defp default_guards(true) do
-    default_guard
+    true
   end
 
   defp default_guards(other) do
-    { :and, [], [other, default_guard] }
-  end
-
-  defp default_guard do
-    quote do: is_tuple(var!(conn))
+    other
   end
 end

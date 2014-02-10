@@ -1,8 +1,10 @@
 defmodule Plug.RouterTest do
   defmodule Sample do
     use Plug.Router
-
     import Plug.Connection
+
+    plug :match
+    plug :dispatch
 
     get "/" do
       conn |> resp(200, "root")
