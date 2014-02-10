@@ -107,10 +107,6 @@ defmodule Plug.Router do
   After a match is found, the block given as `do/end` is stored
   as a function in the connection. This function is then retrieved
   and invoked in the `dispatch` plug.
-
-  ## Custom dispatch
-
-  TODO.
   """
 
   @doc false
@@ -170,9 +166,9 @@ defmodule Plug.Router do
 
   `match` accepts the following options:
 
-  * `via:` matches the route against some specific HTTP methods
-  * `do:` contains the implementation to be invoked in case
-          the route matches
+  * `:via` - matches the route against some specific HTTP methods
+  * `:do` - contains the implementation to be invoked in case
+            the route matches
 
   """
   defmacro match(expression, options, contents \\ []) do
@@ -239,13 +235,12 @@ defmodule Plug.Router do
       raise ArgumentError, message: "expected :do to be given as option"
     end
 
-    # TODO: Optimize me when there is just one expected method
-    methods_guard    = convert_methods(List.wrap(methods))
-    { path, guards } = extract_path_and_guards(expr, default_guards(methods_guard))
-    { _vars, match } = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
+    { method, guard } = convert_methods(List.wrap(methods))
+    { path, guards }  = extract_path_and_guards(expr, guard)
+    { _vars, match }  = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
 
     quote do
-      defp do_match(method, unquote(match)) when unquote(guards) do
+      defp do_match(unquote(method), unquote(match)) when unquote(guards) do
         fn var!(conn) -> unquote(body) end
       end
     end
@@ -254,28 +249,29 @@ defmodule Plug.Router do
   # Convert the verbs given with :via into a variable
   # and guard set that can be added to the dispatch clause.
   defp convert_methods([]) do
-    true
+    { quote(do: _), true }
+  end
+
+  defp convert_methods([method]) do
+    { Plug.Router.Utils.normalize_method(method), true }
   end
 
   defp convert_methods(methods) do
     methods = Enum.map methods, &Plug.Router.Utils.normalize_method(&1)
-    quote do: method in unquote(methods)
+    var = quote do: method
+    { var, quote(do: unquote(var) in unquote(methods)) }
   end
 
   # Extract the path and guards from the path.
+  defp extract_path_and_guards({ :when, _, [path, guards] }, true) do
+    { path, guards }
+  end
+
   defp extract_path_and_guards({ :when, _, [path, guards] }, extra_guard) do
     { path, { :and, [], [guards, extra_guard] } }
   end
 
   defp extract_path_and_guards(path, extra_guard) do
     { path, extra_guard }
-  end
-
-  defp default_guards(true) do
-    true
-  end
-
-  defp default_guards(other) do
-    other
   end
 end
