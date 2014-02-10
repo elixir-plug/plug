@@ -27,9 +27,9 @@ defmodule Plug.ConnectionTest do
   end
 
   test "path_info/1" do
-    assert conn(:get, "/foo/bar").path_info == %w(foo bar)s
-    assert conn(:get, "/foo/bar/").path_info == %w(foo bar)s
-    assert conn(:get, "/foo//bar").path_info == %w(foo bar)s
+    assert conn(:get, "/foo/bar").path_info == ~w(foo bar)s
+    assert conn(:get, "/foo/bar/").path_info == ~w(foo bar)s
+    assert conn(:get, "/foo//bar").path_info == ~w(foo bar)s
   end
 
   test "query_string/1" do

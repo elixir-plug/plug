@@ -1,5 +1,5 @@
 defmodule Plug.Router do
-  @moduledoc %S"""
+  @moduledoc ~S"""
   A DSL to define a routing algorithm that works with Plug.
 
   It provides a set of macros to generate routes. For example:

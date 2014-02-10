@@ -60,25 +60,25 @@ defmodule Plug.RouterTest do
 
   test "dispatch dynamic segment" do
     conn = call(Sample, conn(:get, "/2/value"))
-    assert conn.resp_body == %s("value")
+    assert conn.resp_body == ~s("value")
   end
 
   test "dispatch dynamic segment with prefix" do
     conn = call(Sample, conn(:get, "/3/bar-value"))
-    assert conn.resp_body == %s("value")
+    assert conn.resp_body == ~s("value")
   end
 
   test "dispatch glob segment" do
     conn = call(Sample, conn(:get, "/4/value"))
-    assert conn.resp_body == %s(["value"])
+    assert conn.resp_body == ~s(["value"])
 
     conn = call(Sample, conn(:get, "/4/value/extra"))
-    assert conn.resp_body == %s(["value", "extra"])
+    assert conn.resp_body == ~s(["value", "extra"])
   end
 
   test "dispatch glob segment with prefix" do
     conn = call(Sample, conn(:get, "/5/bar-value/extra"))
-    assert conn.resp_body == %s(["bar-value", "extra"])
+    assert conn.resp_body == ~s(["bar-value", "extra"])
   end
 
   test "dispatch custom route" do
@@ -88,13 +88,13 @@ defmodule Plug.RouterTest do
 
   test "dispatch with guards" do
     conn = call(Sample, conn(:get, "/7/a"))
-    assert conn.resp_body == %s("a")
+    assert conn.resp_body == ~s("a")
 
     conn = call(Sample, conn(:get, "/7/ab"))
-    assert conn.resp_body == %s("ab")
+    assert conn.resp_body == ~s("ab")
 
     conn = call(Sample, conn(:get, "/7/abc"))
-    assert conn.resp_body == %s("abc")
+    assert conn.resp_body == ~s("abc")
 
     conn = call(Sample, conn(:get, "/7/abcd"))
     assert conn.resp_body == "oops"

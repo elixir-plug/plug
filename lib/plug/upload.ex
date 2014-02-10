@@ -57,7 +57,7 @@ defmodule Plug.Upload do
 
   ## Callbacks
 
-  @temp_env_vars %w(PLUG_TMPDIR TMPDIR TMP TEMP)s
+  @temp_env_vars ~w(PLUG_TMPDIR TMPDIR TMP TEMP)s
   @max_attempts 10
 
   @doc false

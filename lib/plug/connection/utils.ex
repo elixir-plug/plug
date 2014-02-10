@@ -130,7 +130,7 @@ defmodule Plug.Connection.Utils do
     end
   end
 
-  @doc %S"""
+  @doc ~S"""
   Parses a value as defined in [RFC-1341](1).
   For convenience, trims whitespace at the end of the token.
   Returns false is the token is invalid.
@@ -148,10 +148,10 @@ defmodule Plug.Connection.Utils do
       iex> token("<foo>")
       false
 
-      iex> token(%s["<foo>"])
+      iex> token(~s["<foo>"])
       "<foo>"
 
-      iex> token(%S["<f\oo>\"<b\ar>"])
+      iex> token(~S["<f\oo>\"<b\ar>"])
       "<foo>\"<bar>"
 
       iex> token("foo  ")
