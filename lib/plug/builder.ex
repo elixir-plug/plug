@@ -16,6 +16,12 @@ defmodule Plug.Builder do
         end
       end
 
+  There are three ways to refer to plugs. An atom `:func` references a
+  function in the local scope with name `func`. A `{ Module, :func }`
+  plug refers to a function with name `func` on module `Module`. Module
+  and wrapper plugs are referred to with an alias `Module`. See `plug/2`
+  for examples.
+
   `Plug.Builder` will define a `init/1` function (which is overridable)
   and a `call/2` function with the compiled stack. By implementing the
   Plug API, `Plug.Builder` guarantees this module can be handed to a web
@@ -24,6 +30,8 @@ defmodule Plug.Builder do
   Note this module also exports a `compile/1` function for those willing
   to collect and compile their plugs manually.
   """
+
+  @type plug :: module | atom | { module, atom }
 
   @doc false
   defmacro __using__(_) do
@@ -53,6 +61,12 @@ defmodule Plug.Builder do
 
   @doc """
   A macro that stores a new plug.
+
+  ## Examples
+
+      plug :func
+      plug { Module, :func }
+      plug Module, foo: [:bar]
   """
   defmacro plug(plug, opts \\ []) do
     quote do
@@ -67,10 +81,14 @@ defmodule Plug.Builder do
   and returns a tuple containing the reference to the connection
   as first argument and the compiled quote stack.
   """
-  @spec compile([{ Plug.t, Plug.opts }]) :: { Macro.t, Macro.t }
+  @spec compile([{ plug, Plug.opts }]) :: { Macro.t, Macro.t }
   def compile(stack) do
     conn = quote do: conn
     { conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2)) }
+  end
+
+  defp init_plug({ plug, opts }) when is_tuple(plug) do
+    init_modfun_plug(plug, opts)
   end
 
   defp init_plug({ plug, opts }) do
@@ -80,6 +98,10 @@ defmodule Plug.Builder do
       _ ->
         init_fun_plug(plug, opts)
     end
+  end
+
+  defp init_modfun_plug(plug, opts) do
+    { :modfun, plug, opts }
   end
 
   defp init_module_plug(plug, opts) do
@@ -126,7 +148,18 @@ defmodule Plug.Builder do
     quote do
       case unquote(plug)(conn, unquote(opts)) do
         Plug.Conn[] = conn -> unquote(acc)
-        _                  -> raise "expected #{unquote(inspect plug)}/2 to return a Plug.Conn"
+        _                  -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
+      end
+    end
+  end
+
+  defp quote_plug({ :modfun, { mod, fun }, opts }, acc) do
+    quote do
+      case unquote(mod).unquote(fun)(conn, unquote(opts)) do
+        Plug.Conn[] = conn ->
+          unquote(acc)
+        _ ->
+          raise "expected #{unquote(inspect mod)}.#{unquote(fun)}/2 to return a Plug.Conn"
       end
     end
   end

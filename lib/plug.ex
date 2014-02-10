@@ -45,7 +45,6 @@ defmodule Plug do
   the `Plug.Builder` module.
   """
 
-  @type t :: module | atom
   @type opts :: tuple | atom | integer | float | [opts]
 
   use Behaviour
