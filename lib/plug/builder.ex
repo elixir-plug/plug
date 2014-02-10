@@ -107,7 +107,7 @@ defmodule Plug.Builder do
 
   defp quote_plug({ :wrap, plug, opts }, acc) do
     quote do
-      unquote(plug).wrap(conn, unquote(opts), fn conn ->
+      unquote(plug).wrap(conn, unquote(Macro.escape(opts)), fn conn ->
         unquote(acc)
       end)
     end
@@ -115,7 +115,7 @@ defmodule Plug.Builder do
 
   defp quote_plug({ :call, plug, opts }, acc) do
     quote do
-      case unquote(plug).call(conn, unquote(opts)) do
+      case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
         Plug.Conn[] = conn -> unquote(acc)
         _                  -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
       end
@@ -124,9 +124,9 @@ defmodule Plug.Builder do
 
   defp quote_plug({ :fun, plug, opts }, acc) do
     quote do
-      case unquote(plug)(conn, unquote(opts)) do
+      case unquote(plug)(conn, unquote(Macro.escape(opts))) do
         Plug.Conn[] = conn -> unquote(acc)
-        _                  -> raise "expected #{unquote(inspect plug)}/2 to return a Plug.Conn"
+        _                  -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
       end
     end
   end

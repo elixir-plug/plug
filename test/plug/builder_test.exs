@@ -27,7 +27,7 @@ defmodule Plug.BuilderTest do
     use Plug.Builder
 
     plug :fun
-    plug Wrapper, :opts
+    plug Wrapper, ~r"opts"
     plug Module, :opts
 
     def fun(conn, opts) do
@@ -46,6 +46,6 @@ defmodule Plug.BuilderTest do
   test "builds plug stack in the order" do
     conn = conn(:get, "/") |> assign(:stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
-           [call: {:init, :opts}, wrap: {:init, :opts}, fun: []]
+           [call: {:init, :opts}, wrap: {:init, ~r"opts"}, fun: []]
   end
 end
