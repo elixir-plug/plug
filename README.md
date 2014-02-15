@@ -15,6 +15,12 @@ Plug is:
 defmodule MyPlug do
   import Plug.Connection
 
+  def init(options) do
+    # initialize options
+
+    options
+  end
+
   def call(conn, _opts) do
     conn
     |> put_resp_content_type("text/plain")
