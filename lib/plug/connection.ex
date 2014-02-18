@@ -21,7 +21,7 @@ defrecord Plug.Conn,
 
   @type adapter      :: { module, term }
   @type assigns      :: Keyword.t
-  @type body         :: binary
+  @type body         :: iodata
   @type cookies      :: [{ binary, binary }]
   @type headers      :: [{ binary, binary }]
   @type host         :: binary
@@ -248,7 +248,7 @@ defmodule Plug.Connection do
     end
   end
 
-  def chunk(Conn[], chunk) when is_binary(chunk) do
+  def chunk(Conn[], chunk) when is_binary(chunk) or is_list(chunk) do
     raise ArgumentError, message: "chunk/2 expects a chunked response. Please ensure " <>
                                   "you have called send_chunked/2 before you send a chunk"
   end
@@ -259,7 +259,8 @@ defmodule Plug.Connection do
   See `send_resp/1` for more information.
   """
   @spec send_resp(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
-  def send_resp(Conn[] = conn, status, body) when is_integer(status) and is_binary(body) do
+  def send_resp(Conn[] = conn, status, body)
+      when is_integer(status) and (is_binary(body) or is_list(body)) do
     conn |> resp(status, body) |> send_resp()
   end
 
@@ -271,11 +272,13 @@ defmodule Plug.Connection do
   """
   @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
   def resp(Conn[state: state] = conn, status, body)
-      when is_integer(status) and is_binary(body) and state in [:unset, :set] do
+      when is_integer(status) and state in [:unset, :set]
+        and (is_binary(body) or is_list(body)) do
     conn.status(status).resp_body(body).state(:set)
   end
 
-  def resp(Conn[], status, body) when is_integer(status) and is_binary(body) do
+  def resp(Conn[], status, body)
+      when is_integer(status) and (is_binary(body) or is_list(body)) do
     raise AlreadySentError
   end
 

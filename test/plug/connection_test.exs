@@ -87,6 +87,11 @@ defmodule Plug.ConnectionTest do
     end
   end
 
+  test "send_resp/3 allows for iolist in the resp body" do
+    conn(:get, "/foo") |> send_resp(200, ["this ", ["is", " nested"]])
+    assert_received { :plug_conn, :sent }
+  end
+
   test "send_file/3" do
     conn = conn(:get, "/foo") |> send_file(200, __ENV__.file)
     assert conn.status == 200
