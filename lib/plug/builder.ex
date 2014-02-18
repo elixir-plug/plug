@@ -25,6 +25,8 @@ defmodule Plug.Builder do
   to collect and compile their plugs manually.
   """
 
+  @type plug :: module | atom
+
   @doc false
   defmacro __using__(_) do
     quote do
@@ -67,7 +69,7 @@ defmodule Plug.Builder do
   and returns a tuple containing the reference to the connection
   as first argument and the compiled quote stack.
   """
-  @spec compile([{ Plug.t, Plug.opts }]) :: { Macro.t, Macro.t }
+  @spec compile([{ plug, Plug.opts }]) :: { Macro.t, Macro.t }
   def compile(stack) do
     conn = quote do: conn
     { conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2)) }
