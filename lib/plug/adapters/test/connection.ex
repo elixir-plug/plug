@@ -30,7 +30,7 @@ defmodule Plug.Adapters.Test.Connection do
   def send_resp(State[method: "HEAD"] = state, _status, _headers, _body),
     do: { :ok, "", state }
   def send_resp(State[] = state, _status, _headers, body),
-    do: { :ok, body, state }
+    do: { :ok, iolist_to_binary(body), state }
 
   def send_file(State[method: "HEAD"] = state, _status, _headers, _path),
     do: { :ok, "", state }
@@ -42,7 +42,7 @@ defmodule Plug.Adapters.Test.Connection do
   def chunk(State[method: "HEAD"] = state, _body),
     do: { :ok, "", state }
   def chunk(State[chunks: chunks] = state, body) do
-    body = chunks <> body
+    body = chunks <> iolist_to_binary(body)
     { :ok, body, state.chunks(body) }
   end
 

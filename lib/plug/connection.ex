@@ -123,7 +123,6 @@ defmodule Plug.Connection do
     """
   end
 
-
   defexception AlreadySentError, message: "the response was already sent" do
     @moduledoc """
     Error raised when trying to send a response more than once
@@ -259,8 +258,7 @@ defmodule Plug.Connection do
   See `send_resp/1` for more information.
   """
   @spec send_resp(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
-  def send_resp(Conn[] = conn, status, body)
-      when is_integer(status) and (is_binary(body) or is_list(body)) do
+  def send_resp(Conn[] = conn, status, body) do
     conn |> resp(status, body) |> send_resp()
   end
 

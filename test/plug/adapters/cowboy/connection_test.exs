@@ -80,10 +80,10 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def send_500(conn) do
-    { :ok, conn
-           |> delete_resp_header("cache-control")
-           |> put_resp_header("x-sample", "value")
-           |> send_resp(500, "ERROR") }
+    conn
+    |> delete_resp_header("cache-control")
+    |> put_resp_header("x-sample", "value")
+    |> send_resp(500, ["ERR", ["OR"]])
   end
 
   test "sends a response with status, headers and body" do
@@ -120,7 +120,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     conn = send_chunked(conn, 200)
     assert conn.state == :chunked
     { :ok, conn } = chunk(conn, "HELLO\n")
-    { :ok, conn } = chunk(conn, "WORLD\n")
+    { :ok, conn } = chunk(conn, ["WORLD", ["\n"]])
     conn
   end
 

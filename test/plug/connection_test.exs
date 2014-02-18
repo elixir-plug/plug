@@ -88,8 +88,10 @@ defmodule Plug.ConnectionTest do
   end
 
   test "send_resp/3 allows for iolist in the resp body" do
-    conn(:get, "/foo") |> send_resp(200, ["this ", ["is", " nested"]])
+    refute_received { :plug_conn, :sent }
+    conn = conn(:get, "/foo") |> send_resp(200, ["this ", ["is", " nested"]])
     assert_received { :plug_conn, :sent }
+    assert conn.resp_body == "this is nested"
   end
 
   test "send_file/3" do
@@ -123,7 +125,7 @@ defmodule Plug.ConnectionTest do
     assert conn.resp_body == ""
     { :ok, conn } = chunk(conn, "HELLO\n")
     assert conn.resp_body == "HELLO\n"
-    { :ok, conn } = chunk(conn, "WORLD\n")
+    { :ok, conn } = chunk(conn, ["WORLD", ["\n"]])
     assert conn.resp_body == "HELLO\nWORLD\n"
   end
 
