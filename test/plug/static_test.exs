@@ -55,7 +55,7 @@ defmodule Plug.StaticTest do
     conn = conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
     assert conn.status    == 400
     assert conn.resp_body == "Bad request"
-  
+
     conn = conn(:get, "/public/c:\\foo.txt") |> call
     assert conn.status    == 400
     assert conn.resp_body == "Bad request"

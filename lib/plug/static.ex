@@ -3,7 +3,7 @@ defmodule Plug.Static do
   A plug for serving static assets.
 
   It expects two options on initialization:
-  
+
   * `:at` - the request path to reach for static assets.
             It must be a binary.
 
