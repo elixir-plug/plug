@@ -94,6 +94,32 @@ defmodule Plug.ConnectionTest do
     assert conn.resp_body == "this is nested"
   end
 
+  test "send_resp/3 runs before_send callbacks" do
+    conn = conn(:get, "/foo")
+           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body))
+           |> register_before_send(&put_resp_header(&1, "x-body", "default"))
+           |> send_resp(200, "body")
+
+    assert conn.resp_headers["x-body"] == "body"
+  end
+
+  test "send_resp/3 uses the before_send status and body" do
+    conn = conn(:get, "/foo")
+           |> register_before_send(&resp(&1, 200, "new body"))
+           |> send_resp(204, "")
+
+    assert conn.status == 200
+    assert conn.resp_body == "new body"
+  end
+
+  test "send_resp/3 uses the before_send cookies" do
+    conn = conn(:get, "/foo")
+           |> register_before_send(&put_resp_cookie(&1, "hello", "world"))
+           |> send_resp(200, "")
+
+    assert conn.resp_cookies["hello"] == [value: "world"]
+  end
+
   test "send_file/3" do
     conn = conn(:get, "/foo") |> send_file(200, __ENV__.file)
     assert conn.status == 200
@@ -117,6 +143,14 @@ defmodule Plug.ConnectionTest do
     assert_raise Plug.Connection.AlreadySentError, fn ->
       send_file(conn, 200, __ENV__.file)
     end
+  end
+
+  test "send_file/3 runs before_send callbacks" do
+    conn = conn(:get, "/foo")
+           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "FILE"))
+           |> send_file(200, __ENV__.file)
+
+    assert conn.resp_headers["x-body"] == "FILE"
   end
 
   test "send_chunked/3" do
@@ -145,6 +179,14 @@ defmodule Plug.ConnectionTest do
     assert_raise Plug.Connection.AlreadySentError, fn ->
       send_chunked(conn, 200)
     end
+  end
+
+  test "send_chunked/3 runs before_send callbacks" do
+    conn = conn(:get, "/foo")
+           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "CHUNK"))
+           |> send_chunked(200)
+
+    assert conn.resp_headers["x-body"] == "CHUNK"
   end
 
   test "put_resp_header/3" do

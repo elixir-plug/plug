@@ -3,6 +3,7 @@ alias Plug.Connection.Unfetched
 defrecord Plug.Conn,
     adapter: nil,
     assigns: [],
+    before_send: [],
     cookies: Unfetched[aspect: :cookies],
     host: nil,
     method: nil,
@@ -21,7 +22,8 @@ defrecord Plug.Conn,
 
   @type adapter      :: { module, term }
   @type assigns      :: Keyword.t
-  @type body         :: iodata
+  @type before_send  :: [(t -> t)]
+  @type body         :: iodata | nil
   @type cookies      :: [{ binary, binary }]
   @type headers      :: [{ binary, binary }]
   @type host         :: binary
@@ -36,6 +38,8 @@ defrecord Plug.Conn,
 
   record_type adapter: adapter,
               assigns: assigns,
+              before_send: before_send,
+              cookies: cookies | Unfetched.t,
               host: host,
               method: method,
               params: params | Unfetched.t,
@@ -43,7 +47,7 @@ defrecord Plug.Conn,
               port: 0..65535,
               req_cookies: cookies | Unfetched.t,
               req_headers: [],
-              resp_body: body | nil,
+              resp_body: body,
               resp_cookies: resp_cookies,
               resp_headers: headers,
               scheme: scheme,
@@ -93,6 +97,11 @@ defrecord Plug.Conn,
   * `resp_headers` - the response headers as a dict,
                      by default `cache-control` is set to `"max-age=0, private, must-revalidate"`
   * `status` - the response status
+
+  Furthermore, the `before_send` field stores callbacks that are invoked
+  before the connection is sent. Callbacks are invoked in the reverse order
+  they are registed (callbacks registered first are invoked last) in order
+  to mimic a Plug stack behaviour.
 
   ## Connection fields
 
@@ -167,22 +176,14 @@ defmodule Plug.Connection do
   end
 
   def send_resp(Conn[adapter: { adapter, payload }, state: :set] = conn) do
-    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
-    conn    = conn.adapter({ adapter, payload }).resp_headers(headers)
-
+    Conn[] = conn = run_before_send(conn, :set)
     { :ok, body, payload } = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
     send self(), @already_sent
-    conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
+    conn.adapter({ adapter, payload }).resp_body(body).state(:sent)
   end
 
   def send_resp(Conn[]) do
     raise AlreadySentError
-  end
-
-  defp merge_headers(headers, cookies) do
-    Enum.reduce(cookies, headers, fn { key, opts }, acc ->
-      [{ "set-cookie", Plug.Connection.Cookies.encode(key, opts) }|acc]
-    end)
   end
 
   @doc """
@@ -196,18 +197,12 @@ defmodule Plug.Connection do
   `Plug.Connection.AlreadySentError`.
   """
   @spec send_file(Conn.t, Conn.status, filename :: binary) :: Conn.t | no_return
-  def send_file(Conn[adapter: { adapter, payload }, state: state] = conn, status, file)
-      when state in @unsent and is_integer(status) and is_binary(file) do
-    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
-    conn    = conn.status(status).state(:file).resp_headers(headers)
-
+  def send_file(Conn[adapter: { adapter, payload }] = conn, status, file)
+      when is_integer(status) and is_binary(file) do
+    Conn[] = conn = run_before_send(conn.status(status).resp_body(nil), :file)
     { :ok, body, payload } = adapter.send_file(payload, conn.status, conn.resp_headers, file)
     send self(), @already_sent
     conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
-  end
-
-  def send_file(Conn[], status, file) when is_integer(status) and is_binary(file) do
-    raise AlreadySentError
   end
 
   @doc """
@@ -220,9 +215,7 @@ defmodule Plug.Connection do
   @spec send_chunked(Conn.t, Conn.status) :: Conn.t | no_return
   def send_chunked(Conn[adapter: { adapter, payload }, state: state] = conn, status)
       when state in @unsent and is_integer(status) do
-    headers = merge_headers(conn.resp_headers, conn.resp_cookies)
-    conn    = conn.status(status).state(:chunked).resp_headers(headers)
-
+    Conn[] = conn = run_before_send(conn.status(status).resp_body(nil), :chunked)
     { :ok, body, payload } = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send self(), @already_sent
     conn.adapter({ adapter, payload }).resp_body(body)
@@ -287,7 +280,7 @@ defmodule Plug.Connection do
   """
   @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
   def put_resp_header(Conn[resp_headers: headers, state: state] = conn, key, value) when
-      is_binary(key) and is_binary(value) and state in @unsent do
+      is_binary(key) and is_binary(value) and state != :sent do
     conn.resp_headers(:lists.keystore(key, 1, headers, { key, value }))
   end
 
@@ -300,7 +293,7 @@ defmodule Plug.Connection do
   """
   @spec delete_resp_header(Conn.t, binary) :: Conn.t
   def delete_resp_header(Conn[resp_headers: headers, state: state] = conn, key) when
-      is_binary(key) and state in @unsent do
+      is_binary(key) and state != :sent do
     conn.resp_headers(:lists.keydelete(key, 1, headers))
   end
 
@@ -399,7 +392,41 @@ defmodule Plug.Connection do
     conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.delete(&1, key))
   end
 
-  defp update_cookies(Conn[state: state], _fun) when not state in @unsent,
+  @doc """
+  Registers a callback to be invoked before the response is sent.
+
+  Callbacks are invoked in the reverse order they are defined (callbacks
+  defined first are invoked last).
+  """
+  @spec register_before_send(Conn.t, (Conn.t -> Conn.t)) :: Conn.t
+  def register_before_send(Conn[before_send: before_send, state: state] = conn, callback)
+      when is_function(callback, 1) and state in @unsent do
+    conn.before_send([callback|before_send])
+  end
+
+  def register_before_send(Conn[], callback) when is_function(callback, 1) do
+    raise AlreadySentError
+  end
+
+  defp run_before_send(Conn[state: state, before_send: before_send] = conn, new) when state in @unsent do
+    conn = Conn[state: state] = Enum.reduce before_send, conn.state(new), &(&1.(&2))
+    if state != new do
+      raise ArgumentError, message: "cannot send/change response from run_before_send callback"
+    end
+    conn.resp_headers(merge_headers(conn.resp_headers, conn.resp_cookies))
+  end
+
+  defp run_before_send(_conn, _new) do
+    raise AlreadySentError
+  end
+
+  defp merge_headers(headers, cookies) do
+    Enum.reduce(cookies, headers, fn { key, opts }, acc ->
+      [{ "set-cookie", Plug.Connection.Cookies.encode(key, opts) }|acc]
+    end)
+  end
+
+  defp update_cookies(Conn[state: state], _fun) when state == :sent,
     do: raise AlreadySentError
   defp update_cookies(Conn[cookies: Unfetched[]] = conn, _fun),
     do: conn
