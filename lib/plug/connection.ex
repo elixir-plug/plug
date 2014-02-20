@@ -125,12 +125,13 @@ defmodule Plug.Connection do
 
   defexception AlreadySentError, message: "the response was already sent" do
     @moduledoc """
-    Error raised when trying to send a response more than once
+    Error raised when trying to modify or send an already sent response
     """
   end
 
   alias Plug.Conn
   @already_sent { :plug_conn, :sent }
+  @unsent [:unset, :set]
 
   @doc """
   Assigns a new key and value in the connection.
@@ -196,7 +197,7 @@ defmodule Plug.Connection do
   """
   @spec send_file(Conn.t, Conn.status, filename :: binary) :: Conn.t | no_return
   def send_file(Conn[adapter: { adapter, payload }, state: state] = conn, status, file)
-      when state in [:unset, :set] and is_integer(status) and is_binary(file) do
+      when state in @unsent and is_integer(status) and is_binary(file) do
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
     conn    = conn.status(status).state(:file).resp_headers(headers)
 
@@ -218,7 +219,7 @@ defmodule Plug.Connection do
   """
   @spec send_chunked(Conn.t, Conn.status) :: Conn.t | no_return
   def send_chunked(Conn[adapter: { adapter, payload }, state: state] = conn, status)
-      when state in [:unset, :set] and is_integer(status) do
+      when state in @unsent and is_integer(status) do
     headers = merge_headers(conn.resp_headers, conn.resp_cookies)
     conn    = conn.status(status).state(:chunked).resp_headers(headers)
 
@@ -270,7 +271,7 @@ defmodule Plug.Connection do
   """
   @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
   def resp(Conn[state: state] = conn, status, body)
-      when is_integer(status) and state in [:unset, :set]
+      when is_integer(status) and state in @unsent
         and (is_binary(body) or is_list(body)) do
     conn.status(status).resp_body(body).state(:set)
   end
@@ -285,16 +286,26 @@ defmodule Plug.Connection do
   Previous entries of the same headers are removed.
   """
   @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
-  def put_resp_header(Conn[resp_headers: headers] = conn, key, value) when is_binary(key) and is_binary(value) do
+  def put_resp_header(Conn[resp_headers: headers, state: state] = conn, key, value) when
+      is_binary(key) and is_binary(value) and state in @unsent do
     conn.resp_headers(:lists.keystore(key, 1, headers, { key, value }))
+  end
+
+  def put_resp_header(Conn[], key, value) when is_binary(key) and is_binary(value) do
+    raise AlreadySentError
   end
 
   @doc """
   Deletes a response header.
   """
   @spec delete_resp_header(Conn.t, binary) :: Conn.t
-  def delete_resp_header(Conn[resp_headers: headers] = conn, key) when is_binary(key) do
+  def delete_resp_header(Conn[resp_headers: headers, state: state] = conn, key) when
+      is_binary(key) and state in @unsent do
     conn.resp_headers(:lists.keydelete(key, 1, headers))
+  end
+
+  def delete_resp_header(Conn[], key) when is_binary(key) do
+    raise AlreadySentError
   end
 
   @doc """
@@ -388,6 +399,8 @@ defmodule Plug.Connection do
     conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.delete(&1, key))
   end
 
+  defp update_cookies(Conn[state: state], _fun) when not state in @unsent,
+    do: raise AlreadySentError
   defp update_cookies(Conn[cookies: Unfetched[]] = conn, _fun),
     do: conn
   defp update_cookies(Conn[] = conn, fun),
