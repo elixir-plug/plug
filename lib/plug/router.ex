@@ -122,15 +122,13 @@ defmodule Plug.Router do
       end
 
       def match(conn, _opts) do
-        # TODO: Store :plug_route in the connection
-        # itself once it becomes a struct
-        Plug.Connection.assign(conn,
+        Plug.Connection.assign_private(conn,
           :plug_route,
           do_match(conn.method, conn.path_info))
       end
 
       def dispatch(Plug.Conn[assigns: assigns] = conn, _opts) do
-        Keyword.get(conn.assigns, :plug_route).(conn)
+        Keyword.get(conn.private, :plug_route).(conn)
       end
 
       defoverridable [init: 1, dispatch: 2]

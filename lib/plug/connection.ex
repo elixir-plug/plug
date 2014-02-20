@@ -10,6 +10,7 @@ defrecord Plug.Conn,
     params: Unfetched[aspect: :params],
     path_info: [],
     port: nil,
+    private: [],
     query_string: nil,
     req_cookies: Unfetched[aspect: :cookies],
     req_headers: [],
@@ -45,6 +46,7 @@ defrecord Plug.Conn,
               params: params | Unfetched.t,
               path_info: segments,
               port: 0..65535,
+              private: assigns,
               req_cookies: cookies | Unfetched.t,
               req_headers: [],
               resp_body: body,
@@ -118,6 +120,7 @@ defrecord Plug.Conn,
   Those fields are reserved for libraries/framework usage.
 
   * `adapter` - holds the adapter information in a tuple
+  * `private` - shared library data as a dict
   """
 end
 
@@ -157,6 +160,28 @@ defmodule Plug.Connection do
   @spec assign(Conn.t, atom, term) :: Conn.t
   def assign(Conn[assigns: assigns] = conn, key, value) when is_atom(key) do
     conn.assigns(Keyword.put(assigns, key, value))
+  end
+
+  @doc """
+  Assigns a new private key and value in the connection.
+
+  This storage is meant to be used by libraries and frameworks
+  to avoid writing to the user storage (assigns). It is recommended
+  for libraries/framework to prefix the keys by the library name.
+
+  For example, if plug some plug needs to store a `:hello` key, it
+  should do so as `:plug_hello`:
+
+      iex> conn.private[:plug_hello]
+      nil
+      iex> conn = assign_private(conn, :plug_hello, :world)
+      iex> conn.private[:plug_hello]
+      :world
+
+  """
+  @spec assign_private(Conn.t, atom, term) :: Conn.t
+  def assign_private(Conn[private: private] = conn, key, value) when is_atom(key) do
+    conn.private(Keyword.put(private, key, value))
   end
 
   @doc """

@@ -9,6 +9,13 @@ defmodule Plug.ConnectionTest do
     assert conn.assigns[:hello] == :world
   end
 
+  test "assign_private/3" do
+    conn = conn(:get, "/")
+    assert conn.private[:hello] == nil
+    conn = assign_private(conn, :hello, :world)
+    assert conn.private[:hello] == :world
+  end
+
   test "scheme/1, host/1 and port/1" do
     conn = conn(:get, "/")
     assert conn.scheme == :http
