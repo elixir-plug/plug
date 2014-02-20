@@ -1,4 +1,18 @@
 defmodule Plug.Runtime do
+  @moduledoc """
+  A wrapper to set an “x-runtime” response header, indicating the response
+  time of the request, in seconds
+
+  ## Options
+
+  *  `:name` - a custom suffix used in header name.
+               This allow the use of multiple Runtime
+               wrappers in an app.
+
+  ## Examples
+
+      Plug.Runtime.wrap(conn, Plug.Runtime.init([]), fun)
+  """
   import Plug.Connection
 
   @behaviour Plug.Wrapper
