@@ -24,9 +24,9 @@ defmodule Plug.Runtime do
   end
 
   def wrap(conn, opts, fun) do
-    start_time = :erlang.now
+    start_time = :os.timestamp
     conn = fun.(conn)
-    request_time = :timer.now_diff(:erlang.now, start_time) / 1000000
+    request_time = :timer.now_diff(:os.timestamp, start_time) / 1000000
 
     header_name = opts[:name]
     unless conn.resp_headers[header_name] do
