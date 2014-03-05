@@ -4,7 +4,7 @@ defmodule Plug.ParsersTest do
   import Plug.Test
 
   def parse(conn, opts \\ []) do
-    opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
+    opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART, Plug.Parsers.JSON])
     Plug.Parsers.call(conn, Plug.Parsers.init(opts))
   end
 
@@ -27,6 +27,13 @@ defmodule Plug.ParsersTest do
 
   test "parses multipart bodies" do
     conn = parse(conn(:get, "/?foo=bar", [foo: "baz"]))
+    assert conn.params["foo"] == "baz"
+  end
+
+  test "parses json bodies" do
+    headers = [{ "content-type", "application/json" }]
+    json = JSON.encode( [ foo: "baz" ] )
+    conn = parse(conn(:get, "/?foo=bar", json, headers: headers ))
     assert conn.params["foo"] == "baz"
   end
 
