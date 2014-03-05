@@ -17,7 +17,8 @@ defmodule Plug.Mixfile do
 
   def deps(:prod) do
     [ { :mime, github: "dynamo/mime" },
-      { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true } ]
+      { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true },
+      { :jsonex, "~> 0.1.1", github: 'devinus/jsonex' } ]
   end
 
   def deps(:docs) do
