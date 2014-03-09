@@ -22,6 +22,8 @@ defmodule Plug.Adapters.Cowboy do
              Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
              This is the value that needs to be given on shutdown.
 
+  * `:compress` - Cowboy will attempt to compress the response body.
+
   """
 
   # Used for testing of cowboy.
@@ -95,7 +97,7 @@ defmodule Plug.Adapters.Cowboy do
 
   @http_options  [port: 4000]
   @https_options [port: 4040]
-  @not_options [:acceptors, :dispatch, :ref, :otp_app]
+  @not_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
 
   defp run(scheme, plug, opts, options) do
     :application.start(:crypto)
@@ -121,8 +123,9 @@ defmodule Plug.Adapters.Cowboy do
     ref       = options[:ref]
     acceptors = options[:acceptors] || 100
     dispatch  = :cowboy_router.compile(options[:dispatch])
+    compress  = options[:compress] || false
     options   = Keyword.drop(options, @not_options)
-    [ref, acceptors, options, [env: [dispatch: dispatch]]]
+    [ref, acceptors, options, [env: [dispatch: dispatch], compress: compress]]
   end
 
   defp build_ref(plug, scheme) do
