@@ -3,7 +3,9 @@ defmodule Plug.MethodOverride do
   A plug to overwrite "POST" method with the one defined in _method parameter
   or x-http-method-override header.
 
-  This plug expects the parameters to be already parsed and fetched.
+  This plug expects the parameters to be already parsed and fetched. Parameters
+  are fetched with `Plug.Connection.fetch_params/1` and parsed with
+  `Plug.Parsers`.
 
   ## Examples
 
