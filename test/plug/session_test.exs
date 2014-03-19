@@ -118,4 +118,9 @@ defmodule Plug.SessionTest do
     assert [value: sid] = conn.resp_cookies["foobar"]
     assert Process.get({ :session, sid }) == [foo: :bar]
   end
+
+  test "converts store reference" do
+    opts = Plug.Session.init(store: :ets, key: "foobar", table: :some_table)
+    assert [:config, Plug.Session.ETS | _ ] = tuple_to_list(opts)
+  end
 end

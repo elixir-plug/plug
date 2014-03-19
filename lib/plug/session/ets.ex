@@ -1,4 +1,4 @@
-defmodule Plug.Session.ETSStore do
+defmodule Plug.Session.ETS do
   @moduledoc """
   Stores the session in an in-memory ETS table.
 
@@ -18,7 +18,7 @@ defmodule Plug.Session.ETSStore do
       :ets.new(:session, [:named_table, :public, read_concurrency: true])
 
       # Use the session plug with the table name
-      plug Plug.Session, store: Plug.Session.ETSStore, key: "sid", table: :session
+      plug Plug.Session, store: :ets, key: "sid", table: :session
 
   http://www.erlang.org/doc/man/ets.html
   """
@@ -36,8 +36,8 @@ defmodule Plug.Session.ETSStore do
 
   def get(sid, config(table: table)) do
     case :ets.lookup(table, sid) do
-      [{ ^sid, data }] -> data
-      [] -> nil
+      [{ ^sid, data }] -> { sid, data }
+      [] -> { nil, nil }
     end
   end
 
@@ -51,7 +51,7 @@ defmodule Plug.Session.ETSStore do
     sid
   end
 
-  def destroy(sid, config(table: table)) do
+  def delete(sid, config(table: table)) do
     :ets.delete(table, sid)
     :ok
   end

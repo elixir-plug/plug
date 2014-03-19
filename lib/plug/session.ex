@@ -13,7 +13,7 @@ defmodule Plug.Session do
 
   Plug ships with the following session stores:
 
-  * `Plug.Session.ETSStore`
+  * `Plug.Session.ETS`
 
   ## Options
 
@@ -29,7 +29,7 @@ defmodule Plug.Session do
 
   ## Examples
 
-      plug Plug.Session, store: Plug.Session.ETSStore, key: "sid", secure: true, table: :session
+      plug Plug.Session, store: :ets, key: "sid", secure: true, table: :session
   """
 
   alias Plug.Connection
@@ -40,7 +40,7 @@ defmodule Plug.Session do
   defrecordp :config, [:store, :store_config, :key, :cookie_opts]
 
   def init(opts) do
-    store        = Keyword.fetch!(opts, :store)
+    store        = Keyword.fetch!(opts, :store) |> convert_store
     key          = Keyword.fetch!(opts, :key)
     cookie_opts  = Keyword.take(opts, @cookie_opts)
     store_opts   = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
@@ -52,6 +52,13 @@ defmodule Plug.Session do
 
   def call(conn, config) do
     Connection.assign_private(conn, :plug_session_fetch, fetch_session(config))
+  end
+
+  defp convert_store(store) do
+    case atom_to_binary(store) do
+      "Elixir." <> _ -> store
+      reference      -> Module.concat(Plug.Session, String.upcase(reference))
+    end
   end
 
   defp fetch_session(config) do
@@ -76,9 +83,16 @@ defmodule Plug.Session do
 
     fn conn ->
       case conn.private[:plug_session_info] do
+        { sid, :write } ->
           sid = store.put(sid, conn.private[:plug_session], store_config)
+        { sid, :drop } when not nil?(sid) ->
+          store.delete(sid, store_config)
           sid = nil
+        { sid, :renew } ->
+          unless nil?(sid), do: store.delete(sid, store_config)
           sid = store.put(nil, conn.private[:plug_session], store_config)
+        { sid, nil } ->
+          sid = sid
       end
 
       if sid do
