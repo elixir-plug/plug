@@ -325,4 +325,53 @@ defmodule Plug.ConnectionTest do
     assert conn.cookies["baz"] == "bat"
     refute conn.cookies["bar"]
   end
+
+  test "session not fetched" do
+    conn = conn(:get, "/")
+
+    assert_raise ArgumentError, "cannot access unfetched session", fn ->
+      get_session(conn, :foo)
+    end
+
+    assert_raise ArgumentError, "cannot fetch session without a configured session plug", fn ->
+      conn |> fetch_cookies |> fetch_session
+    end
+
+    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    conn = Plug.Session.call(conn, opts)
+
+    assert_raise ArgumentError, "cannot access unfetched session", fn ->
+      get_session(conn, :foo)
+    end
+
+    conn = conn |> fetch_cookies |> fetch_session
+
+    get_session(conn, :foo)
+  end
+
+  test "get and put session" do
+    conn = conn(:get, "/") |> assign_private(:plug_session, [])
+
+    conn = put_session(conn, :foo, :bar)
+    conn = put_session(conn, :key, 42)
+
+    assert conn.private[:plug_session_info] == :write
+
+    assert get_session(conn, :unknown) == nil
+    assert get_session(conn, :foo) == :bar
+    assert get_session(conn, :key) == 42
+  end
+
+  test "configure session" do
+    conn = conn(:get, "/") |> assign_private(:plug_session, [])
+
+    conn = configure_session(conn, drop: true)
+    assert conn.private[:plug_session_info] == :drop
+
+    conn = configure_session(conn, renew: true)
+    assert conn.private[:plug_session_info] == :renew
+
+    conn = put_session(conn, :foo, :bar)
+    assert conn.private[:plug_session_info] == :renew
+  end
 end

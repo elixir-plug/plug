@@ -418,6 +418,81 @@ defmodule Plug.Connection do
   end
 
   @doc """
+  Fetches session from session store.
+
+  Cookies must be fetched before calling this function.
+  """
+  @spec fetch_session(Conn.t) :: Conn.t
+  def fetch_session(conn) do
+    if fun = conn.private[:plug_session_fetch] do
+      fun.(conn)
+    else
+      raise ArgumentError, message: "cannot fetch session without a configured session plug"
+    end
+  end
+
+  @doc """
+  Puts specified value in session for given key.
+  """
+  @spec put_session(Conn.t, any, any) :: Conn.t
+  def put_session(conn, key, value) do
+    session = get_session(conn)
+    session = Dict.put(session, key, value)
+    info    = conn.private[:plug_session_info] || :write
+
+    conn
+    |> assign_private(:plug_session, session)
+    |> assign_private(:plug_session_info, info)
+  end
+
+  @doc """
+  Returns session value for given key.
+  """
+  @spec get_session(Conn.t, any) :: any
+  def get_session(conn, key) do
+    session = get_session(conn)
+    session[key]
+  end
+
+  @doc """
+  Deletes session for given key.
+  """
+  @spec delete_session(Conn.t, any) :: Conn.t
+  def delete_session(conn, key) do
+    session = get_session(conn)
+    session = Dict.delete(session, key)
+    info    = conn.private[:plug_session_info] || :write
+
+    conn
+    |> assign_private(:plug_session, session)
+    |> assign_private(:plug_session_info, info)
+  end
+
+  @doc """
+  Configures session.
+
+  ## Options
+
+  * `:renew` - generates a new session id for the cookie;
+  * `:drop` - drops the session, a session cookie will not be included in the
+              response;
+  """
+  @spec configure_session(Conn.t, Keyword.t) :: Conn.t
+  def configure_session(conn, opts) do
+    get_session(conn)
+
+    if opts[:renew] do
+      conn = assign_private(conn, :plug_session_info, :renew)
+    end
+
+    if opts[:drop] do
+      conn = assign_private(conn, :plug_session_info, :drop)
+    end
+
+    conn
+  end
+
+  @doc """
   Registers a callback to be invoked before the response is sent.
 
   Callbacks are invoked in the reverse order they are defined (callbacks
@@ -457,4 +532,12 @@ defmodule Plug.Connection do
     do: conn
   defp update_cookies(Conn[] = conn, fun),
     do: conn.update_cookies(fun)
+
+  defp get_session(conn) do
+    if session = conn.private[:plug_session] do
+      session
+    else
+      raise ArgumentError, message: "cannot access unfetched session"
+    end
+  end
 end
