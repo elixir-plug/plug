@@ -329,33 +329,34 @@ defmodule Plug.ConnectionTest do
   test "session not fetched" do
     conn = conn(:get, "/")
 
-    assert_raise ArgumentError, "cannot access unfetched session", fn ->
+    assert_raise ArgumentError, "session not fetched, call fetch_session/1", fn ->
       get_session(conn, :foo)
     end
 
     assert_raise ArgumentError, "cannot fetch session without a configured session plug", fn ->
-      conn |> fetch_cookies |> fetch_session
+      conn |> fetch_session
     end
 
     opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts)
 
-    assert_raise ArgumentError, "cannot access unfetched session", fn ->
+    assert_raise ArgumentError, "session not fetched, call fetch_session/1", fn ->
       get_session(conn, :foo)
     end
 
-    conn = conn |> fetch_cookies |> fetch_session
+    conn = conn |> fetch_session
 
     get_session(conn, :foo)
   end
 
   test "get and put session" do
-    conn = conn(:get, "/") |> assign_private(:plug_session, [])
+    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = put_session(conn, :foo, :bar)
     conn = put_session(conn, :key, 42)
 
-    assert conn.private[:plug_session_info] == :write
+    assert conn.private[:plug_session_info] == { nil, :write }
 
     assert get_session(conn, :unknown) == nil
     assert get_session(conn, :foo) == :bar
@@ -363,15 +364,16 @@ defmodule Plug.ConnectionTest do
   end
 
   test "configure session" do
-    conn = conn(:get, "/") |> assign_private(:plug_session, [])
+    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = configure_session(conn, drop: true)
-    assert conn.private[:plug_session_info] == :drop
+    assert conn.private[:plug_session_info] == { nil, :drop }
 
     conn = configure_session(conn, renew: true)
-    assert conn.private[:plug_session_info] == :renew
+    assert conn.private[:plug_session_info] == { nil, :renew }
 
     conn = put_session(conn, :foo, :bar)
-    assert conn.private[:plug_session_info] == :renew
+    assert conn.private[:plug_session_info] == { nil, :renew }
   end
 end

@@ -11,10 +11,10 @@ defmodule Plug.SessionTest do
     end
 
     def get(sid, nil) do
-      Process.get({ :session, sid })
+      { sid, Process.get({ :session, sid }) }
     end
 
-    def destroy(sid, nil) do
+    def delete(sid, nil) do
       Process.delete({ :session, sid })
       :ok
     end
@@ -33,13 +33,13 @@ defmodule Plug.SessionTest do
   test "sets session cookie" do
     conn = conn(:get, "/") |> fetch_cookies
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
-    conn = Plug.Session.call(conn, opts) |> fetch_cookies |> fetch_session
+    conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = send_resp(conn, 200, "")
     assert [] = conn.resp_cookies
 
     conn = conn(:get, "/") |> fetch_cookies
     opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path")
-    conn = Plug.Session.call(conn, opts) |> fetch_cookies |> fetch_session
+    conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = put_session(conn, :foo, :bar)
     conn = send_resp(conn, 200, "")
     assert [{ "foobar", [value: _, secure: true, path: "some/path"] }] = conn.resp_cookies

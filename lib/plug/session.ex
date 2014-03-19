@@ -2,10 +2,9 @@ defmodule Plug.Session do
   @moduledoc """
   A plug to handle session cookies and session stores.
 
-  The session is accessed via functions on `Plug.Connection`.
-
-  Cookies and session has to be fetched with `Plug.Connection.fetch_cookies/1`
-  and `Plug.Connection.fetch_session/1` before the session can be accessed.
+  The session is accessed via functions on `Plug.Connection`. Cookies and
+  session have to be fetched with `Plug.Connection.fetch_session/1` before the
+  session can be accessed.
 
   ## Session stores
 
@@ -60,12 +59,12 @@ defmodule Plug.Session do
 
     fn conn ->
       if sid = conn.cookies[key] do
-        session = store.get(sid, store_config)
+        { sid, session } = store.get(sid, store_config)
       end
 
       conn
       |> Connection.assign_private(:plug_session, session || [])
-      |> Connection.assign_private(:plug_session_info, nil)
+      |> Connection.assign_private(:plug_session_info, { sid, nil })
       |> Connection.assign_private(:plug_session_fetch, &(&1))
       |> Connection.register_before_send(before_send(config))
     end
@@ -76,19 +75,10 @@ defmodule Plug.Session do
            cookie_opts: cookie_opts) = config
 
     fn conn ->
-      sid = conn.cookies[key]
-
       case conn.private[:plug_session_info] do
-        :write ->
           sid = store.put(sid, conn.private[:plug_session], store_config)
-        :drop ->
           sid = nil
-          store.destroy(sid, store_config)
-        :renew ->
-          store.destroy(sid, store_config)
           sid = store.put(nil, conn.private[:plug_session], store_config)
-        nil ->
-          :ok
       end
 
       if sid do

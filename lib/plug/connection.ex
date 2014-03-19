@@ -418,14 +418,12 @@ defmodule Plug.Connection do
   end
 
   @doc """
-  Fetches session from session store.
-
-  Cookies must be fetched before calling this function.
+  Fetches session from session store. Will also fetch cookies.
   """
   @spec fetch_session(Conn.t) :: Conn.t
   def fetch_session(conn) do
     if fun = conn.private[:plug_session_fetch] do
-      fun.(conn)
+      conn |> fetch_cookies |> fun.()
     else
       raise ArgumentError, message: "cannot fetch session without a configured session plug"
     end
@@ -436,13 +434,7 @@ defmodule Plug.Connection do
   """
   @spec put_session(Conn.t, any, any) :: Conn.t
   def put_session(conn, key, value) do
-    session = get_session(conn)
-    session = Dict.put(session, key, value)
-    info    = conn.private[:plug_session_info] || :write
-
-    conn
-    |> assign_private(:plug_session, session)
-    |> assign_private(:plug_session_info, info)
+    put_session(conn, &Dict.put(&1, key, value))
   end
 
   @doc """
@@ -459,13 +451,7 @@ defmodule Plug.Connection do
   """
   @spec delete_session(Conn.t, any) :: Conn.t
   def delete_session(conn, key) do
-    session = get_session(conn)
-    session = Dict.delete(session, key)
-    info    = conn.private[:plug_session_info] || :write
-
-    conn
-    |> assign_private(:plug_session, session)
-    |> assign_private(:plug_session_info, info)
+    put_session(conn, &Dict.delete(&1, key))
   end
 
   @doc """
@@ -480,13 +466,14 @@ defmodule Plug.Connection do
   @spec configure_session(Conn.t, Keyword.t) :: Conn.t
   def configure_session(conn, opts) do
     get_session(conn)
+    { sid, _info } = conn.private[:plug_session_info]
 
     if opts[:renew] do
-      conn = assign_private(conn, :plug_session_info, :renew)
+      conn = assign_private(conn, :plug_session_info, { sid, :renew })
     end
 
     if opts[:drop] do
-      conn = assign_private(conn, :plug_session_info, :drop)
+      conn = assign_private(conn, :plug_session_info, { sid, :drop })
     end
 
     conn
@@ -537,7 +524,17 @@ defmodule Plug.Connection do
     if session = conn.private[:plug_session] do
       session
     else
-      raise ArgumentError, message: "cannot access unfetched session"
+      raise ArgumentError, message: "session not fetched, call fetch_session/1"
     end
+  end
+
+  defp put_session(conn, fun) do
+    { sid, status } = conn.private[:plug_session_info]
+    status          = status || :write
+    session         = get_session(conn) |> fun.()
+
+    conn
+    |> assign_private(:plug_session, session)
+    |> assign_private(:plug_session_info, { sid, status })
   end
 end
