@@ -149,7 +149,11 @@ This also means that a catch all `match` is recommended to be defined, as in the
 
 This project aims to ship with different plugs that can be re-used accross applications:
 
-* `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - a plug responsible for parsing the request body given its content-type;
+* `Plug.Head` ([docs](http://elixir-lang.org/docs/plug/Plug.Head.html)) - converts HEAD requests to GET requests;
+* `Plug.MethodOverride` ([docs](http://elixir-lang.org/docs/plug/Plug.MethodOverride.html)) - overrides a request method with one specified in headers;
+* `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - responsible for parsing the request body given its content-type;
+* `Plug.Session` ([docs](http://elixir-lang.org/docs/plug/Plug.Session.html)) - handles session management and storage;
+* `Plug.Static` ([docs](http://elixir-lang.org/docs/plug/Plug.Static.html)) - serves static files;
 
 ## License
 
