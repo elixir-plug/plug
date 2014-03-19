@@ -71,28 +71,28 @@ defmodule Plug.Session do
 
       conn
       |> Connection.assign_private(:plug_session, session || [])
-      |> Connection.assign_private(:plug_session_info, { sid, nil })
+      |> Connection.assign_private(:plug_session_info, nil)
       |> Connection.assign_private(:plug_session_fetch, &(&1))
-      |> Connection.register_before_send(before_send(config))
+      |> Connection.register_before_send(before_send(sid, config))
     end
   end
 
-  defp before_send(config) do
+  defp before_send(sid, config) do
     config(store: store, store_config: store_config, key: key,
            cookie_opts: cookie_opts) = config
 
     fn conn ->
       case conn.private[:plug_session_info] do
-        { sid, :write } ->
+        :write ->
           sid = store.put(sid, conn.private[:plug_session], store_config)
-        { sid, :drop } when not nil?(sid) ->
-          store.delete(sid, store_config)
+        :drop ->
+          if sid, do: store.delete(sid, store_config)
           sid = nil
-        { sid, :renew } ->
-          unless nil?(sid), do: store.delete(sid, store_config)
+        :renew ->
+          if sid, do: store.delete(sid, store_config)
           sid = store.put(nil, conn.private[:plug_session], store_config)
-        { sid, nil } ->
-          sid = sid
+        nil ->
+         :ok
       end
 
       if sid do

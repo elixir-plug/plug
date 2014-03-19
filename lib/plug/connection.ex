@@ -466,14 +466,13 @@ defmodule Plug.Connection do
   @spec configure_session(Conn.t, Keyword.t) :: Conn.t
   def configure_session(conn, opts) do
     get_session(conn)
-    { sid, _info } = conn.private[:plug_session_info]
 
     if opts[:renew] do
-      conn = assign_private(conn, :plug_session_info, { sid, :renew })
+      conn = assign_private(conn, :plug_session_info, :renew)
     end
 
     if opts[:drop] do
-      conn = assign_private(conn, :plug_session_info, { sid, :drop })
+      conn = assign_private(conn, :plug_session_info, :drop)
     end
 
     conn
@@ -529,12 +528,11 @@ defmodule Plug.Connection do
   end
 
   defp put_session(conn, fun) do
-    { sid, status } = conn.private[:plug_session_info]
-    status          = status || :write
-    session         = get_session(conn) |> fun.()
+    session = get_session(conn) |> fun.()
+    status  = conn.private[:plug_session_info] || :write
 
     conn
     |> assign_private(:plug_session, session)
-    |> assign_private(:plug_session_info, { sid, status })
+    |> assign_private(:plug_session_info, status)
   end
 end
