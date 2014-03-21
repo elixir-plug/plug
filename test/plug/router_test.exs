@@ -1,5 +1,17 @@
 defmodule Plug.RouterTest do
   defmodule Sample do
+    defmodule Forward do
+      use Plug.Router
+      import Plug.Connection
+
+      plug :match
+      plug :dispatch
+
+      post "/foo" do
+        conn |> resp(200, "forwarded")
+      end
+    end
+
     use Plug.Router
     import Plug.Connection
 
@@ -37,6 +49,9 @@ defmodule Plug.RouterTest do
     get "/7/:bar" when size(bar) <= 3 do
       conn |> resp(200, inspect(bar))
     end
+
+    forward "/forward", to: Forward
+    forward "/nested/forward", to: Forward
 
     match ["8", "bar"] do
       conn |> resp(200, "ok")
@@ -105,6 +120,18 @@ defmodule Plug.RouterTest do
   test "dispatch wrong verb" do
     conn = call(Sample, conn(:post, "/1/bar"))
     assert conn.resp_body == "oops"
+  end
+
+  test "dispatch with forwarding" do
+    conn = call(Sample, conn(:post, "/forward/foo"))
+    assert conn.resp_body == "forwarded"
+    assert conn.path_info == ["forward", "foo"]
+  end
+
+  test "dispatch with forwarding including slashes" do
+    conn = call(Sample, conn(:post, "/nested/forward/foo"))
+    assert conn.resp_body == "forwarded"
+    assert conn.path_info == ["nested", "forward", "foo"]
   end
 
   test "dispatch any verb" do
