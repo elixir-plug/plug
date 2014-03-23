@@ -50,6 +50,8 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     assert conn.scheme == :http
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
+    assert conn.peer_ip == "127.0.0.1"
+    assert is_integer(conn.peer_port)
     assert conn.method == "GET"
     conn
   end

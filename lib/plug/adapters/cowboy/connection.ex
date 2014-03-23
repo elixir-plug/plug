@@ -11,6 +11,9 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { meth, req } = R.method req
     { hdrs, req } = R.headers req
     { qs, req }   = R.qs req
+    { peer, req } = R.peer req
+    peer_ip       = :inet_parse.ntoa(elem(peer, 0)) |> String.from_char_list!
+    peer_port     = elem(peer, 1)
 
     Plug.Conn[
       adapter: { __MODULE__, req },
@@ -18,6 +21,8 @@ defmodule Plug.Adapters.Cowboy.Connection do
       method: meth,
       path_info: split_path(path),
       port: port,
+      peer_ip: peer_ip,
+      peer_port: peer_port,
       query_string: qs,
       req_headers: hdrs,
       scheme: scheme(transport)
