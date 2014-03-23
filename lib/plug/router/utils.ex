@@ -38,6 +38,19 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
+  Forwards requests to another Plug at a new path.
+
+  """
+  def forward(Plug.Conn[path_info: path, script_name: script] = conn, new_path, options) do
+    target = options[:to]
+    {base, ^new_path} = Enum.split(path, length(path) - length(new_path))
+
+    conn = conn.update(path_info: new_path, script_name: base ++ script) |> target.call([])
+
+    conn.update(path_info: path, script_name: script)
+  end
+
+  @doc """
   Splits the given path into several segments.
   It ignores both leading and trailing slashes in the path.
 

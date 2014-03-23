@@ -18,6 +18,7 @@ defrecord Plug.Conn,
     resp_cookies: [],
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
     scheme: nil,
+    script_name: [],
     state: :unset,
     status: nil do
 
@@ -53,6 +54,7 @@ defrecord Plug.Conn,
               resp_cookies: resp_cookies,
               resp_headers: headers,
               scheme: scheme,
+              script_name: segments,
               state: state,
               status: status
 

@@ -221,6 +221,30 @@ defmodule Plug.Router do
     compile(:build_match, path, Keyword.put(contents, :via, :options), __CALLER__)
   end
 
+  @doc """
+  Forwards requests to another Plug. The path_info of the forwarded
+  connection will exclude the portion of the path specified in the
+  call to `forward`.
+
+  ## Examples
+
+      forward "/users", to: UserRouter
+
+  ## Options
+
+  `forward` accepts the following options:
+
+  * `:to` - a Plug where the requests will be forwarded
+
+  """
+  defmacro forward(path, options) do
+    quote do
+      match unquote(path <> "/*glob") do
+        Plug.Router.Utils.forward(var!(conn), var!(glob), unquote(options))
+      end
+    end
+  end
+
   ## Match Helpers
 
   # Entry point for both forward and match that is actually

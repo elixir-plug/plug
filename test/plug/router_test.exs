@@ -1,5 +1,21 @@
 defmodule Plug.RouterTest do
   defmodule Sample do
+    defmodule Forward do
+      use Plug.Router
+      import Plug.Connection
+
+      plug :match
+      plug :dispatch
+
+      get "/foo" do
+        conn |> resp(200, "forwarded")
+      end
+
+      get "/script_name" do
+        conn |> resp(200, Enum.join(conn.script_name, ","))
+      end
+    end
+
     use Plug.Router
     import Plug.Connection
 
@@ -37,6 +53,9 @@ defmodule Plug.RouterTest do
     get "/7/:bar" when size(bar) <= 3 do
       conn |> resp(200, inspect(bar))
     end
+
+    forward "/forward", to: Forward
+    forward "/nested/forward", to: Forward
 
     match ["8", "bar"] do
       conn |> resp(200, "ok")
@@ -105,6 +124,23 @@ defmodule Plug.RouterTest do
   test "dispatch wrong verb" do
     conn = call(Sample, conn(:post, "/1/bar"))
     assert conn.resp_body == "oops"
+  end
+
+  test "dispatch with forwarding" do
+    conn = call(Sample, conn(:get, "/forward/foo"))
+    assert conn.resp_body == "forwarded"
+    assert conn.path_info == ["forward", "foo"]
+  end
+
+  test "dispatch with forwarding including slashes" do
+    conn = call(Sample, conn(:get, "/nested/forward/foo"))
+    assert conn.resp_body == "forwarded"
+    assert conn.path_info == ["nested", "forward", "foo"]
+  end
+
+  test "forwarding modifies script_name" do
+    conn = call(Sample, conn(:get, "/nested/forward/script_name"))
+    assert conn.resp_body == "nested,forward"
   end
 
   test "dispatch any verb" do
