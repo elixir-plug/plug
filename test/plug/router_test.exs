@@ -7,8 +7,12 @@ defmodule Plug.RouterTest do
       plug :match
       plug :dispatch
 
-      post "/foo" do
+      get "/foo" do
         conn |> resp(200, "forwarded")
+      end
+
+      get "/script_name" do
+        conn |> resp(200, Enum.join(conn.script_name, ","))
       end
     end
 
@@ -123,15 +127,20 @@ defmodule Plug.RouterTest do
   end
 
   test "dispatch with forwarding" do
-    conn = call(Sample, conn(:post, "/forward/foo"))
+    conn = call(Sample, conn(:get, "/forward/foo"))
     assert conn.resp_body == "forwarded"
     assert conn.path_info == ["forward", "foo"]
   end
 
   test "dispatch with forwarding including slashes" do
-    conn = call(Sample, conn(:post, "/nested/forward/foo"))
+    conn = call(Sample, conn(:get, "/nested/forward/foo"))
     assert conn.resp_body == "forwarded"
     assert conn.path_info == ["nested", "forward", "foo"]
+  end
+
+  test "forwarding modifies script_name" do
+    conn = call(Sample, conn(:get, "/nested/forward/script_name"))
+    assert conn.resp_body == "nested,forward"
   end
 
   test "dispatch any verb" do
