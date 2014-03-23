@@ -21,8 +21,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
       method: meth,
       path_info: split_path(path),
       port: port,
-      peer_ip: peer_ip,
-      peer_port: peer_port,
+      peer: {peer_ip, peer_port},
       query_string: qs,
       req_headers: hdrs,
       scheme: scheme(transport)

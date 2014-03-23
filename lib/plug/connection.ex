@@ -17,8 +17,7 @@ defrecord Plug.Conn,
     resp_body: nil,
     resp_cookies: [],
     resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
-    peer_ip: nil,
-    peer_port: nil,
+    peer: nil,
     scheme: nil,
     state: :unset,
     status: nil do
@@ -79,8 +78,7 @@ defrecord Plug.Conn,
   * `req_headers` - the request headers as a list, example: `[{ "content-type", "text/plain" }]`
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
-  * `peer_ip` - the request IP address, example: "60.145.144.120"
-  * `peer_port` - the request port, example: 80
+  * `peer` - the request IP address and port as a tuple, example: {"60.145.144.120", 80}
 
   ## Fetchable fields
 
