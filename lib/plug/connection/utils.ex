@@ -187,6 +187,32 @@ defmodule Plug.Connection.Utils do
   defp unquoted_token(<< >>, acc),
     do: acc
 
+  @doc """
+  Parses a comma-separated header list.
+
+  ## Examples
+
+      iex> list("foo, bar")
+      ["foo", "bar"]
+
+      iex> list("foobar")
+      ["foobar"]
+
+      iex> list("")
+      []
+
+      iex> list("empties, , are,, filtered")
+      ["empties", "are", "filtered"]
+  """
+  @spec list(binary) :: [binary]
+  def list(binary) do
+    elems = :binary.split(binary, ",", [:global])
+    Enum.reduce(elems, [], fn elem, acc ->
+      elem = strip_spaces(elem)
+      if elem != "", do: [elem|acc], else: acc
+    end) |> Enum.reverse
+  end
+
   defp strip_spaces(<< h, t :: binary >>) when h in [?\s, ?\t],
     do: strip_spaces(t)
   defp strip_spaces(t),
