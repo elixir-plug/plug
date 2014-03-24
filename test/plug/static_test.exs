@@ -5,7 +5,7 @@ defmodule Plug.StaticTest do
   defmodule MyPlug do
     use Plug.Builder
 
-    plug Plug.Static, at: "/public", from: Path.expand("..", __DIR__)
+    plug Plug.Static, at: "/public", from: Path.expand("..", __DIR__), gzip: true
     plug :passthrough
 
     defp passthrough(conn, _) do
@@ -65,5 +65,30 @@ defmodule Plug.StaticTest do
     conn = conn(:post, "/public/fixtures/static.txt") |> call
     assert conn.status == 406
     assert conn.resp_body == "Method not allowed"
+  end
+
+  test "serves gzipped file" do
+    conn = conn(:get, "/public/fixtures/static.txt", [],
+                headers: [{ "accept-encoding", "gzip" }])
+           |> call
+    assert conn.status == 200
+    assert conn.resp_body == "GZIPPED HELLO"
+    assert conn.resp_headers["content-encoding"] == "gzip"
+
+    conn = conn(:get, "/public/fixtures/static.txt", [],
+                headers: [{ "accept-encoding", "*" }])
+           |> call
+    assert conn.status == 200
+    assert conn.resp_body == "GZIPPED HELLO"
+    assert conn.resp_headers["content-encoding"] == "gzip"
+  end
+
+  test "only serve gzipped file if available" do
+    conn = conn(:get, "/public/fixtures/static+with%20spaces.txt", [],
+                headers: [{ "accept-encoding", "gzip" }])
+           |> call
+    assert conn.status == 200
+    assert conn.resp_body == "SPACES"
+    assert conn.resp_headers["content-encoding"] != "gzip"
   end
 end

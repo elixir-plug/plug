@@ -49,12 +49,13 @@ defmodule Plug.Static do
       raise ArgumentError, message: ":from must be an atom or a binary"
     end
 
-    { Plug.Router.Utils.split(at), from }
+    { Plug.Router.Utils.split(at), from, opts[:gzip] }
   end
 
-  def wrap(conn, { at, from }, fun) do
+  def wrap(conn, { at, from, gzip }, fun) do
     segments = subset(at, conn.path_info)
     segments = lc segment inlist List.wrap(segments), do: URI.decode(segment)
+    path     = path(from, segments)
 
     cond do
       segments in [nil, []] ->
@@ -64,15 +65,35 @@ defmodule Plug.Static do
       invalid_path?(segments) ->
         send_resp(conn, 400, "Bad request")
       true ->
-        path = path(from, segments)
-        if File.regular?(path) do
-          conn
-          |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
-          |> put_resp_header("cache-control", "public, max-age=31536000")
-          |> send_file(200, path)
-        else
-          fun.(conn)
+        case file_encoding(conn, path, gzip) do
+          { conn, path } ->
+            conn
+            |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
+            |> put_resp_header("cache-control", "public, max-age=31536000")
+            |> send_file(200, path)
+          :error ->
+            fun.(conn)
         end
+    end
+  end
+
+  defp file_encoding(conn, path, gzip) do
+    path_gz = path <> ".gz"
+
+    cond do
+      gzip && gzip?(conn) && File.regular?(path_gz) ->
+        { put_resp_header(conn, "content-encoding", "gzip"), path_gz }
+      File.regular?(path) ->
+        { conn, path }
+      true ->
+        :error
+    end
+  end
+
+  defp gzip?(conn) do
+    if accept = conn.req_headers["accept-encoding"] do
+      Plug.Connection.Utils.list(accept)
+      |> Enum.any?(&(:binary.match(&1, ["gzip", "*"]) != :nomatch))
     end
   end
 
