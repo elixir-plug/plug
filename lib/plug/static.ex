@@ -26,7 +26,7 @@ defmodule Plug.Static do
       defmodule MyPlug do
         use Plug.Builder
 
-        plug Plug.Static, at: "/public", from: my_app
+        plug Plug.Static, at: "/public", from: :my_app
         plug :not_found
 
         def not_found(conn, _) do
