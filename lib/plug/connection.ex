@@ -303,6 +303,7 @@ defmodule Plug.Connection do
 
   @doc """
   Puts a new response header.
+
   Previous entries of the same headers are removed.
   """
   @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
@@ -345,9 +346,10 @@ defmodule Plug.Connection do
   end
 
   @doc """
-  Fetches parameters from the query string. This function does not
-  fetch parameters from the body. To fetch parameters from the body,
-  use the `Plug.Parsers` plug.
+  Fetches parameters from the query string.
+
+  This function does not fetch parameters from the body. To fetch
+  parameters from the body, use the `Plug.Parsers` plug.
   """
   @spec fetch_params(Conn.t) :: Conn.t
   def fetch_params(Conn[params: Plug.Connection.Unfetched[], query_string: query_string] = conn) do

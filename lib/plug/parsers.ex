@@ -40,8 +40,7 @@ defmodule Plug.Parsers do
 
   ## Examples
 
-      Plug.Parsers.call(conn, parsers:
-                        [:urlencoded, :multipart])
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
 
   ## Built-in parsers
 

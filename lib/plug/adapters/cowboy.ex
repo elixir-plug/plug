@@ -33,7 +33,7 @@ defmodule Plug.Adapters.Cowboy do
   def args(scheme, plug, opts, options) do
     options
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
-    |> Keyword.put_new(:dispatch, dispatch_for(plug, opts))
+    |> Keyword.put_new(:dispatch, options[:dispatch] || dispatch_for(plug, opts))
     |> normalize_options(scheme)
     |> to_args()
   end
