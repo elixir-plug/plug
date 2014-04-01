@@ -17,6 +17,8 @@ defmodule Plug.Adapters.Cowboy do
                          Defaults to :infinity.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
+                  If this option is used, the plug being passed,
+                  will be disregarded.
 
   * `:ref` - the reference name to be used.
              Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
@@ -104,7 +106,6 @@ defmodule Plug.Adapters.Cowboy do
     :application.start(:ranch)
     :application.start(:cowlib)
     :application.start(:cowboy)
-    opts = plug.init(opts)
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
   end
 
@@ -133,6 +134,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp dispatch_for(plug, opts) do
+    opts = plug.init(opts)
     [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, { plug, opts } } ] }]
   end
 
