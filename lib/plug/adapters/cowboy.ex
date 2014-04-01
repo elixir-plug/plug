@@ -17,6 +17,8 @@ defmodule Plug.Adapters.Cowboy do
                          Defaults to :infinity.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
+                  If this option is used, the plug being passed,
+                  will be disregarded.
 
   * `:ref` - the reference name to be used.
              Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
