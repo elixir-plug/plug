@@ -5,24 +5,24 @@ defmodule Plug.Adapters.Cowboy do
   ## Options
 
   * `:ip` - the ip to bind the server to.
-            Must be a tuple in the format `{ x, y, z, w }`.
+    Must be a tuple in the format `{ x, y, z, w }`.
 
   * `:port` - the port to run the server.
-              Defaults to 4000 (http) and 4040 (https).
+    Defaults to 4000 (http) and 4040 (https).
 
   * `:acceptors` - the number of acceptors for the listener.
-                   Defaults to 100.
+    Defaults to 100.
 
   * `:max_connections` - max number of connections supported.
-                         Defaults to :infinity.
+    Defaults to `:infinity`.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
-                  If this option is used, the plug being passed,
-                  will be disregarded.
+    If this option is used, the plug given plug won't be initialized
+    nor dispatched to (and doing so becomes the user responsibility).
 
   * `:ref` - the reference name to be used.
-             Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
-             This is the value that needs to be given on shutdown.
+    Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
+    This is the value that needs to be given on shutdown.
 
   * `:compress` - Cowboy will attempt to compress the response body.
 
