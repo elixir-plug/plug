@@ -104,7 +104,6 @@ defmodule Plug.Adapters.Cowboy do
     :application.start(:ranch)
     :application.start(:cowlib)
     :application.start(:cowboy)
-    opts = plug.init(opts)
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
   end
 
@@ -133,6 +132,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp dispatch_for(plug, opts) do
+    opts = plug.init(opts)
     [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, { plug, opts } } ] }]
   end
 
