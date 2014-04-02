@@ -83,7 +83,7 @@ defmodule Plug.Connection.Adapter do
   * `{ :binary, name }` - the current segment must be treated as a regular
                           binary value with the given `name`
   * `{ :file, name, file, upload } - the current segment is a file upload with `name`
-                                     and contents should be writen to the given `file`
+                                     and contents should be written to the given `file`
   * `:skip` - this multipart segment should be skipped
 
   This function can respond with one of the three following values:
