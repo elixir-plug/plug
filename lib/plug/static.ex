@@ -60,17 +60,19 @@ defmodule Plug.Static do
     cond do
       segments in [nil, []] ->
         fun.(conn)
-      not conn.method in @allowed_methods ->
-        send_resp(conn, 406, "Method not allowed")
       invalid_path?(segments) ->
-        send_resp(conn, 400, "Bad request")
+        fun.(conn)
       true ->
         case file_encoding(conn, path, gzip) do
           { conn, path } ->
-            conn
-            |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
-            |> put_resp_header("cache-control", "public, max-age=31536000")
-            |> send_file(200, path)
+            if conn.method in @allowed_methods do
+                conn
+                |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
+                |> put_resp_header("cache-control", "public, max-age=31536000")
+                |> send_file(200, path)
+            else
+                send_resp(conn, 406, "Method not allowed")
+            end
           :error ->
             fun.(conn)
         end
