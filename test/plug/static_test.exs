@@ -51,6 +51,12 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == "Passthrough"
   end
 
+  test "passes for non-get/non-head requests" do
+    conn = conn(:post, "/public/fixtures/static.txt") |> call
+    assert conn.status == 404
+    assert conn.resp_body == "Passthrough"
+  end
+
   test "returns 400 for unsafe paths" do
     conn = conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
     assert conn.status    == 400
@@ -59,12 +65,6 @@ defmodule Plug.StaticTest do
     conn = conn(:get, "/public/c:\\foo.txt") |> call
     assert conn.status    == 400
     assert conn.resp_body == "Bad request"
-  end
-
-  test "returns 406 for non-get/non-head requests" do
-    conn = conn(:post, "/public/fixtures/static.txt") |> call
-    assert conn.status == 406
-    assert conn.resp_body == "Method not allowed"
   end
 
   test "serves gzipped file" do
@@ -83,7 +83,7 @@ defmodule Plug.StaticTest do
     assert conn.resp_headers["content-encoding"] == "gzip"
   end
 
-  test "only serve gzipped file if available" do
+  test "only serves gzipped file if available" do
     conn = conn(:get, "/public/fixtures/static+with%20spaces.txt", [],
                 headers: [{ "accept-encoding", "gzip" }])
            |> call

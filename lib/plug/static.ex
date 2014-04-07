@@ -53,6 +53,14 @@ defmodule Plug.Static do
   end
 
   def wrap(conn, { at, from, gzip }, fun) do
+    if conn.method in @allowed_methods do
+      wrap(conn, at, from, gzip, fun)
+    else
+      fun.(conn)
+    end
+  end
+
+  def wrap(conn, at, from, gzip, fun) do
     segments = subset(at, conn.path_info)
     segments = lc segment inlist List.wrap(segments), do: URI.decode(segment)
     path     = path(from, segments)
@@ -60,8 +68,6 @@ defmodule Plug.Static do
     cond do
       segments in [nil, []] ->
         fun.(conn)
-      not conn.method in @allowed_methods ->
-        send_resp(conn, 406, "Method not allowed")
       invalid_path?(segments) ->
         send_resp(conn, 400, "Bad request")
       true ->
