@@ -95,6 +95,18 @@ defmodule Plug.Adapters.Cowboy do
     :cowboy.stop_listener(ref)
   end
 
+  @doc """
+  Returns a child_spec to be supervised by your application.
+  """
+  def child_spec(scheme, plug, opts, options \\ []) do
+    [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, options)
+    ranch_module = case scheme do
+      :http -> :ranch_tcp
+      :https -> :ranch_ssl
+    end
+    :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
+  end
+
   ## Helpers
 
   @http_options  [port: 4000]
