@@ -4,7 +4,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Test helpers
 
-  def conn(method, uri, body_or_params \\ [], opts \\ []) do
+  def conn(method, uri, body_or_params, opts) do
     uri     = URI.parse(uri)
     method  = method |> to_string |> String.upcase
 
@@ -59,7 +59,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Private helpers
 
-  defp body_or_params([], headers),
+  defp body_or_params(nil, headers),
     do: {"", nil, headers}
 
   defp body_or_params(body, headers) when is_binary(body) do
@@ -69,17 +69,23 @@ defmodule Plug.Adapters.Test.Conn do
     {body, nil, headers}
   end
 
-  defp body_or_params(params, headers) when is_list(params) do
-    headers = Dict.put(headers, "content-type", "multipart/mixed; charset: utf-8")
+  defp body_or_params(params, headers) when is_list(params) or is_map(params) do
+    headers = :lists.keystore("content-type", 1, headers,
+                              {"content-type", "multipart/mixed; charset: utf-8"})
     {"", stringify_params(params), headers}
   end
 
-  defp stringify_params([{k, v}|t]),
-    do: [{to_string(k), stringify_params(v)}|stringify_params(t)]
-  defp stringify_params([h|t]),
-    do: [stringify_params(h)|stringify_params(t)]
+  defp stringify_params([{_, _}|_] = params),
+    do: Enum.into(params, %{}, &stringify_kv/1)
+  defp stringify_params([_|_] = params),
+    do: Enum.map(params, &stringify_params/1)
+  defp stringify_params(%{} = params),
+    do: params
   defp stringify_params(other),
     do: other
+
+  defp stringify_kv({k, v}),
+    do: {to_string(k), stringify_params(v)}
 
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])

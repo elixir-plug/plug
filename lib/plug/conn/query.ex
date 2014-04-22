@@ -30,7 +30,7 @@ defmodule Plug.Conn.Query do
   @doc """
   Decodes the given binary.
   """
-  def decode(query, initial \\ [])
+  def decode(query, initial \\ %{})
 
   def decode("", initial) do
     initial
@@ -75,10 +75,7 @@ defmodule Plug.Conn.Query do
   # We always assign the value in the last segment.
   # `age=17` would match here.
   defp assign_parts([key], value, acc) do
-    case :lists.keyfind(key, 1, acc) do
-      {_, _} -> acc
-      false -> put(key, value, acc)
-    end
+    Map.put_new(acc, key, value)
   end
 
   # The current segment is a list. We simply prepend
@@ -86,25 +83,25 @@ defmodule Plug.Conn.Query do
   # not yet. This assumes that items are iterated in
   # reverse order.
   defp assign_parts([key,""|t], value, acc) do
-    case :lists.keyfind(key, 1, acc) do
-      {^key, [h|_] = current} when not is_tuple(h) ->
-        replace(key, assign_list(t, current, value), acc)
-      false ->
-        put(key, assign_list(t, [], value), acc)
+    case Map.fetch(acc, key) do
+      {:ok, current} when is_list(current) ->
+        Map.put(acc, key, assign_list(t, current, value))
+      :error ->
+        Map.put(acc, key, assign_list(t, [], value))
       _ ->
         acc
     end
   end
 
   # The current segment is a parent segment of a
-  # dict. We need to create a dictionary and then
+  # map. We need to create a map and then
   # continue looping.
   defp assign_parts([key|t], value, acc) do
-    case :lists.keyfind(key, 1, acc) do
-      {^key, [h|_] = current} when is_tuple(h) ->
-        replace(key, assign_parts(t, value, current), acc)
-      false ->
-        put(key, assign_parts(t, value, []), acc)
+    case Map.fetch(acc, key) do
+      {:ok, %{} = current} ->
+        Map.put(acc, key, assign_parts(t, value, current))
+      :error ->
+        Map.put(acc, key, assign_parts(t, value, %{}))
       _ ->
         acc
     end
@@ -115,15 +112,5 @@ defmodule Plug.Conn.Query do
   end
 
   defp assign_list([], value), do: value
-  defp assign_list(t, value),  do: assign_parts(t, value, [])
-
-  @compile {:inline, put: 3, replace: 3}
-
-  defp put(key, value, acc) do
-    [{key, value}|acc]
-  end
-
-  defp replace(key, value, acc) do
-    [{key, value}|:lists.keydelete(key, 1, acc)]
-  end
+  defp assign_list(t, value),  do: assign_parts(t, value, %{})
 end

@@ -34,6 +34,6 @@ defmodule Plug.Adapters.Test.ConnTest do
     conn = conn(:get, "/", a: "b", c: [[d: "e"], "f"])
     {adapter, state} = conn.adapter
     assert {:ok, params, _} = adapter.parse_req_multipart(state, 1_000_000, fn _ -> end)
-    assert params == [{"a", "b"}, {"c", [[{"d", "e"}], "f"]}]
+    assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
   end
 end

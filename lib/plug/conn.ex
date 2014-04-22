@@ -68,10 +68,10 @@ defmodule Plug.Conn do
   """
 
   @type adapter      :: {module, term}
-  @type assigns      :: Keyword.t
+  @type assigns      :: %{atom => any}
   @type before_send  :: [(t -> t)]
   @type body         :: iodata | nil
-  @type cookies      :: [{binary, binary}] | Unfetched.t
+  @type cookies      :: %{binary => binary} | Unfetched.t
   @type headers      :: [{binary, binary}]
   @type host         :: binary
   @type method       :: binary
@@ -79,13 +79,13 @@ defmodule Plug.Conn do
   @type segments     :: [binary]
   @type state        :: :unset | :set | :file | :chunked | :sent
   @type status       :: non_neg_integer | nil
-  @type param        :: binary | [{binary, param}] | [param]
-  @type params       :: [{binary, param}]
+  @type param        :: binary | %{binary => param} | [param]
+  @type params       :: %{binary => param}
   @type query_string :: String.t
-  @type resp_cookies :: [{binary, Keyword.t}]
+  @type resp_cookies :: %{binary => %{}}
 
   defstruct adapter:      {Plug.Conn, nil} :: adapter,
-            assigns:      [] :: assigns,
+            assigns:      %{} :: assigns,
             before_send:  [] :: before_send,
             cookies:      %Unfetched{aspect: :cookies} :: cookies | Unfetched.t,
             host:         "www.example.com" :: host,
@@ -93,12 +93,12 @@ defmodule Plug.Conn do
             params:       %Unfetched{aspect: :params} :: params | Unfetched.t,
             path_info:    [] :: segments,
             port:         0  :: 0..65335,
-            private:      [] :: assigns,
+            private:      %{} :: assigns,
             query_string: "" :: query_string,
             req_cookies:  %Unfetched{aspect: :cookies} :: cookies | Unfetched.t,
             req_headers:  [] :: headers,
             resp_body:    nil :: body,
-            resp_cookies: [] :: resp_cookies,
+            resp_cookies: %{} :: resp_cookies,
             resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}] :: headers,
             scheme:       :http :: scheme,
             script_name:  [] :: segments,
@@ -135,7 +135,7 @@ defmodule Plug.Conn do
   """
   @spec assign(t, atom, term) :: t
   def assign(%Conn{assigns: assigns} = conn, key, value) when is_atom(key) do
-    %{conn | assigns: Keyword.put(assigns, key, value)}
+    %{conn | assigns: Map.put(assigns, key, value)}
   end
 
   @doc """
@@ -157,7 +157,7 @@ defmodule Plug.Conn do
   """
   @spec assign_private(t, atom, term) :: t
   def assign_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
-    %{conn | private: Keyword.put(private, key, value)}
+    %{conn | private: Map.put(private, key, value)}
   end
 
   @doc """
@@ -236,7 +236,7 @@ defmodule Plug.Conn do
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
     case adapter.chunk(payload, chunk) do
-      :ok                    -> {:ok, conn}
+      :ok                  -> {:ok, conn}
       {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
       {:error, _} = error  -> error
     end
@@ -277,8 +277,6 @@ defmodule Plug.Conn do
 
   @doc """
   Puts a new response header.
-
-  Previous entries of the same headers are removed.
   """
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
@@ -343,14 +341,15 @@ defmodule Plug.Conn do
     req_cookies =
       for {"cookie", cookie} <- req_headers,
           kv <- Plug.Conn.Cookies.decode(cookie),
+          into: %{},
           do: kv
 
     cookies = Enum.reduce(resp_cookies, req_cookies, fn
       {key, opts}, acc ->
-        if value = opts[:value] do
-          Dict.put(acc, key, value)
+        if value = Map.get(opts, :value) do
+          Map.put(acc, key, value)
         else
-          Dict.delete(acc, key)
+          Map.delete(acc, key)
         end
     end)
 
@@ -375,8 +374,8 @@ defmodule Plug.Conn do
   @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t
   def put_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
-    resp_cookies = List.keystore(resp_cookies, key, 0, {key, [{:value, value}|opts]})
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.put(&1, key, value))
+    resp_cookies = Map.put(resp_cookies, key, :maps.from_list([{:value, value}|opts]))
+    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.put(&1, key, value))
   end
 
   @epoch {{1970, 1, 1}, {0, 0, 0}}
@@ -390,11 +389,9 @@ defmodule Plug.Conn do
   @spec delete_resp_cookie(t, binary, Keyword.t) :: t
   def delete_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, opts \\ []) when
       is_binary(key) and is_list(opts) do
-    opts = opts
-           |> Keyword.put_new(:universal_time, @epoch)
-           |> Keyword.put_new(:max_age, 0)
-    resp_cookies = List.keystore(resp_cookies, key, 0, {key, opts})
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.delete(&1, key))
+    opts = [universal_time: @epoch, max_age: 0] ++ opts
+    resp_cookies = Map.put(resp_cookies, key, :maps.from_list(opts))
+    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.delete(&1, key))
   end
 
   @doc """
@@ -402,7 +399,7 @@ defmodule Plug.Conn do
   """
   @spec fetch_session(t) :: t
   def fetch_session(%Conn{private: private} = conn) do
-    if fun = private[:plug_session_fetch] do
+    if fun = Map.get(private, :plug_session_fetch) do
       conn |> fetch_cookies |> fun.()
     else
       raise ArgumentError, message: "cannot fetch session without a configured session plug"
@@ -414,7 +411,7 @@ defmodule Plug.Conn do
   """
   @spec put_session(t, any, any) :: t
   def put_session(conn, key, value) do
-    put_session(conn, &Dict.put(&1, key, value))
+    put_session(conn, &Map.put(&1, key, value))
   end
 
   @doc """
@@ -423,7 +420,7 @@ defmodule Plug.Conn do
   @spec get_session(t, any) :: any
   def get_session(conn, key) do
     session = get_session(conn)
-    Dict.get(session, key)
+    Map.get(session, key)
   end
 
   @doc """
@@ -431,7 +428,7 @@ defmodule Plug.Conn do
   """
   @spec delete_session(t, any) :: t
   def delete_session(conn, key) do
-    put_session(conn, &Dict.delete(&1, key))
+    put_session(conn, &Map.delete(&1, key))
   end
 
   @doc """
@@ -500,7 +497,7 @@ defmodule Plug.Conn do
     do: %{conn | cookies: fun.(cookies)}
 
   defp get_session(%Conn{private: private}) do
-    if session = private[:plug_session] do
+    if session = Map.get(private, :plug_session) do
       session
     else
       raise ArgumentError, message: "session not fetched, call fetch_session/1"
@@ -508,11 +505,10 @@ defmodule Plug.Conn do
   end
 
   defp put_session(conn, fun) do
-    session = get_session(conn) |> fun.()
-    status  = conn.private[:plug_session_info] || :write
+    private = conn.private
+              |> Map.put(:plug_session, get_session(conn) |> fun.())
+              |> Map.put_new(:plug_session_info, :write)
 
-    conn
-    |> assign_private(:plug_session, session)
-    |> assign_private(:plug_session_info, status)
+    %{conn | private: private}
   end
 end

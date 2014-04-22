@@ -70,8 +70,7 @@ defmodule Plug.Session do
       end
 
       conn
-      |> Conn.assign_private(:plug_session, session || [])
-      |> Conn.assign_private(:plug_session_info, nil)
+      |> Conn.assign_private(:plug_session, session || %{})
       |> Conn.assign_private(:plug_session_fetch, &(&1))
       |> Conn.register_before_send(before_send(sid, config))
     end
@@ -82,7 +81,7 @@ defmodule Plug.Session do
       cookie_opts: cookie_opts} = config
 
     fn conn ->
-      case conn.private[:plug_session_info] do
+      case Map.get(conn.private, :plug_session_info) do
         :write ->
           sid = store.put(sid, conn.private[:plug_session], store_config)
         :drop ->

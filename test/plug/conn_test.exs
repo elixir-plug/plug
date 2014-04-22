@@ -2,6 +2,8 @@ defmodule Plug.ConnTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  alias Plug.ProcessStore
+
   test "assign/3" do
     conn = conn(:get, "/")
     assert conn.assigns[:hello] == nil
@@ -124,7 +126,7 @@ defmodule Plug.ConnTest do
            |> register_before_send(&put_resp_cookie(&1, "hello", "world"))
            |> send_resp(200, "")
 
-    assert conn.resp_cookies["hello"] == [value: "world"]
+    assert conn.resp_cookies["hello"] == %{value: "world"}
   end
 
   test "send_file/3" do
@@ -201,7 +203,8 @@ defmodule Plug.ConnTest do
     assert conn1.resp_headers["x-foo"] == "bar"
     conn2 = conn1 |> put_resp_header("x-foo", "baz")
     assert conn2.resp_headers["x-foo"] == "baz"
-    assert length(conn1.resp_headers) == length(conn2.resp_headers)
+    assert length(conn1.resp_headers) ==
+           length(conn2.resp_headers)
   end
 
   test "delete_resp_header/3" do
@@ -244,20 +247,20 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
     conn = fetch_params(conn)
-    assert conn.params == [{"a", "b"}, {"c", "d"}]
+    assert conn.params == %{"a" => "b", "c" => "d"}
 
     conn = conn(:get, "/foo") |> fetch_params
-    assert conn.params == []
+    assert conn.params == %{}
   end
 
   test "req_cookies/1 && fetch_params/1" do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
     assert conn.req_cookies == %Plug.Conn.Unfetched{aspect: :cookies}
     conn = fetch_cookies(conn)
-    assert conn.req_cookies == [{"foo", "bar"}, {"baz", "bat"}]
+    assert conn.req_cookies == %{"foo" => "bar", "baz" => "bat"}
 
     conn = conn(:get, "/foo") |> fetch_cookies
-    assert conn.req_cookies == []
+    assert conn.req_cookies == %{}
   end
 
   test "put_resp_cookie/4 and delete_resp_cookie/3" do
@@ -266,14 +269,14 @@ defmodule Plug.ConnTest do
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
-           [value: "baz", path: "/baz"]
+           %{value: "baz", path: "/baz"}
     assert conn.resp_headers["set-cookie"] ==
            "foo=baz; path=/baz; HttpOnly"
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz") |>
            delete_resp_cookie("foo", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
-           [max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"]
+           %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"}
     assert conn.resp_headers["set-cookie"] ==
            "foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"
   end
@@ -337,7 +340,7 @@ defmodule Plug.ConnTest do
       conn |> fetch_session
     end
 
-    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts)
 
     assert_raise ArgumentError, "session not fetched, call fetch_session/1", fn ->
@@ -350,7 +353,7 @@ defmodule Plug.ConnTest do
   end
 
   test "get and put session" do
-    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = put_session(conn, :foo, :bar)
@@ -364,7 +367,7 @@ defmodule Plug.ConnTest do
   end
 
   test "configure session" do
-    opts = Plug.Session.init(store: Plug.SessionTest.ProcessStore, key: "foobar")
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = configure_session(conn, drop: true)

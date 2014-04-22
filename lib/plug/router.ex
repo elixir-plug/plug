@@ -128,7 +128,7 @@ defmodule Plug.Router do
       end
 
       def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
-        Keyword.get(conn.private, :plug_route).(conn)
+        Map.get(conn.private, :plug_route).(conn)
       end
 
       defoverridable [init: 1, dispatch: 2]

@@ -51,10 +51,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def parse_req_multipart(req, limit, callback) do
-    {:ok, limit, acc, req} = parse_multipart(R.multipart_data(req), limit, [], callback)
+    {:ok, limit, acc, req} = parse_multipart(R.multipart_data(req), limit, %{}, callback)
 
     if limit > 0 do
-      params = Enum.reduce(acc, [], &Plug.Conn.Query.decode_pair/2)
+      params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
       {:ok, params, req}
     else
       {:too_large, req}
@@ -77,11 +77,11 @@ defmodule Plug.Adapters.Cowboy.Conn do
     case callback.(headers) do
       {:binary, name} ->
         {:ok, limit, body, req} = parse_multipart_body(R.multipart_data(req), limit, "")
-        parse_multipart(R.multipart_data(req), limit, [{name, body}|acc], callback)
+        parse_multipart(R.multipart_data(req), limit, Map.put(acc, name, body), callback)
 
       {:file, name, file, %Plug.Upload{} = uploaded} ->
         {:ok, limit, req} = parse_multipart_file(R.multipart_data(req), limit, file)
-        parse_multipart(R.multipart_data(req), limit, [{name, uploaded}|acc], callback)
+        parse_multipart(R.multipart_data(req), limit, Map.put(acc, name, uploaded), callback)
 
       :skip ->
         {:ok, req} = R.multipart_skip(req)

@@ -12,19 +12,19 @@ defmodule Plug.Conn.Cookies do
   ## Examples
 
       iex> decode("key1=value1, key2=value2")
-      [{"key1", "value1"}, {"key2", "value2"}]
+      %{"key1" => "value1", "key2" => "value2"}
 
   """
   def decode(cookie) do
-    decode_each(:binary.split(cookie, [";", ","], [:global]))
+    decode(:binary.split(cookie, [";", ","], [:global]), %{})
   end
 
-  defp decode_each([]),
-    do: []
-  defp decode_each([h|t]) do
+  defp decode([], acc),
+    do: acc
+  defp decode([h|t], acc) do
     case decode_kv(h) do
-      {_, _} = kv -> [kv|decode_each(t)]
-      false -> decode_each(t)
+      {k, v} -> decode(t, Map.put(acc, k, v))
+      false  -> decode(t, acc)
     end
   end
 
@@ -60,11 +60,8 @@ defmodule Plug.Conn.Cookies do
   @doc """
   Encodes the given cookies as expected in a response header.
   """
-  @doc """
-  Receives a cookie key with options and returns a cookie header.
-  """
-  def encode(key, opts \\ []) do
-    header = "#{key}=#{Keyword.get(opts, :value, "")}; path=#{Keyword.get(opts, :path, "/")}"
+  def encode(key, opts \\ %{}) do
+    header = "#{key}=#{opts[:value]}; path=#{opts[:path] || "/"}"
 
     if domain = opts[:domain] do
       header = header <> "; domain=#{domain}"

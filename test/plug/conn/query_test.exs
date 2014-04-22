@@ -83,6 +83,6 @@ defmodule Plug.Conn.QueryTest do
   end
 
   defp decode_pair(pairs) do
-    Enum.reduce Enum.reverse(pairs), [], &Plug.Conn.Query.decode_pair(&1, &2)
+    Enum.reduce Enum.reverse(pairs), %{}, &Plug.Conn.Query.decode_pair(&1, &2)
   end
 end
