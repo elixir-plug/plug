@@ -79,7 +79,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
         {:ok, limit, body, req} = parse_multipart_body(R.multipart_data(req), limit, "")
         parse_multipart(R.multipart_data(req), limit, [{name, body}|acc], callback)
 
-      {:file, name, file, Plug.Upload.File[] = uploaded} ->
+      {:file, name, file, %Plug.Upload{} = uploaded} ->
         {:ok, limit, req} = parse_multipart_file(R.multipart_data(req), limit, file)
         parse_multipart(R.multipart_data(req), limit, [{name, uploaded}|acc], callback)
 

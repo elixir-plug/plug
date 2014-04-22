@@ -43,8 +43,8 @@ defmodule Plug.Parsers.MULTIPART do
     if filename = params["filename"] do
       path = Plug.Upload.random_file!("multipart")
       file = File.open!(path, [:write, :binary])
-      {:file, name, file, Plug.Upload.File[filename: filename, path: path,
-                                            content_type: headers["content-type"]]}
+      {:file, name, file, %Plug.Upload{filename: filename, path: path,
+                                       content_type: headers["content-type"]}}
     else
       {:binary, name}
     end

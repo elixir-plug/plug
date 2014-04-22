@@ -61,8 +61,8 @@ defmodule Plug.Parsers do
   avoiding loading the whole file into memory. For such, it is
   required that the `:plug` application is started.
 
-  In those cases, the parameter will return a `Plug.Upload.File`
-  record with information about the file and its content type.
+  In those cases, the parameter will return a `Plug.Upload`
+  struct with information about the file and its content type.
 
   You can customize the temporary directory by setting the `PLUG_TMPDIR`
   environment variable in your system.

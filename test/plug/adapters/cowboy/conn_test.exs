@@ -156,7 +156,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
     assert conn.params["name"] == "hello"
 
-    assert Plug.Upload.File[] = file = conn.params["pic"]
+    assert %Plug.Upload{} = file = conn.params["pic"]
     assert File.read!(file.path) == "hello\n\n"
     assert file.content_type == "text/plain"
     assert file.filename == "foo.txt"

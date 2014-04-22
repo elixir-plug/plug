@@ -1,17 +1,20 @@
-defrecord Plug.Upload.File, [:path, :content_type, :filename] do
-  @moduledoc """
-  Stores information about an uploaded file
-  """
-end
-
 defmodule Plug.Upload do
   @moduledoc """
-  A genserver that manages uploaded files
+  A server that manages uploaded files.
 
   Uploaded files are stored in a temporary directory
   and removed from the directory after the process that
   requested the file dies.
+
+  During the request, those files are represented with
+  the Plug.Upload struct that contains three fields:
+
+  * `:path` - the path to the uploaded file on the filesystem
+  * `:content_type` - the content type of the uploaded file
+  * `:filename` - the filename of the uploaded file given in the request
   """
+
+  defstruct [:path, :content_type, :filename]
 
   @doc """
   Requests a random file to be created in the upload directory
