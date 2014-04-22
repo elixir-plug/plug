@@ -2,7 +2,7 @@ defmodule Plug.Parsers.URLENCODED do
   @moduledoc false
   alias Plug.Conn
 
-  def parse(Conn[] = conn, "application", "x-www-form-urlencoded", _headers, opts) do
+  def parse(%Conn{} = conn, "application", "x-www-form-urlencoded", _headers, opts) do
     read_body(conn, Keyword.fetch!(opts, :limit))
   end
 
@@ -10,12 +10,12 @@ defmodule Plug.Parsers.URLENCODED do
     { :next, conn }
   end
 
-  defp read_body(Conn[adapter: { adapter, state }] = conn, limit) do
+  defp read_body(%Conn{adapter: { adapter, state }} = conn, limit) do
     case read_body({ :ok, "", state }, "", limit, adapter) do
       { :too_large, state } ->
-        { :too_large, conn.adapter({ adapter, state }) }
+        { :too_large, %{conn | adapter: { adapter, state }} }
       { :ok, body, state } ->
-        { :ok, Plug.Connection.Query.decode(body), conn.adapter({ adapter, state }) }
+        { :ok, Plug.Connection.Query.decode(body), %{conn | adapter: { adapter, state }} }
     end
   end
 

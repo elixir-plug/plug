@@ -104,7 +104,7 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(Conn[req_headers: req_headers] = conn, opts) do
+  def call(%Conn{req_headers: req_headers} = conn, opts) do
     conn = Plug.Connection.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       { "content-type", ct } ->
@@ -121,8 +121,8 @@ defmodule Plug.Parsers do
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      { :ok, post, Conn[params: get] = conn } ->
-        conn.params(merge_params(get, post))
+      { :ok, post, %Conn{params: get} = conn } ->
+        %{conn | params: merge_params(get, post)}
       { :next, conn } ->
         reduce(conn, t, type, subtype, headers, opts)
       { :too_large, _conn } ->

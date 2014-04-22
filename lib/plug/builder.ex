@@ -12,7 +12,7 @@ defmodule Plug.Builder do
 
         def hello(conn, opts) do
           body = if opts[:upper], do: "WORLD", else: "world"
-          conn.send_resp(200, body)
+          send_resp(conn, 200, body)
         end
       end
 
@@ -118,8 +118,8 @@ defmodule Plug.Builder do
   defp quote_plug({ :call, plug, opts }, acc) do
     quote do
       case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
-        Plug.Conn[] = conn -> unquote(acc)
-        _                  -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
+        %Plug.Conn{} = conn -> unquote(acc)
+        _                   -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
       end
     end
   end
@@ -127,8 +127,8 @@ defmodule Plug.Builder do
   defp quote_plug({ :fun, plug, opts }, acc) do
     quote do
       case unquote(plug)(conn, unquote(Macro.escape(opts))) do
-        Plug.Conn[] = conn -> unquote(acc)
-        _                  -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
+        %Plug.Conn{} = conn -> unquote(acc)
+        _                   -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
       end
     end
   end

@@ -36,14 +36,14 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
 
   ## Tests
 
-  def root(Conn[] = conn) do
+  def root(%Conn{} = conn) do
     assert conn.method == "HEAD"
     assert conn.path_info == []
     assert conn.query_string == "foo=bar&baz=bat"
     conn
   end
 
-  def build(Conn[] = conn) do
+  def build(%Conn{} = conn) do
     assert { Plug.Adapters.Cowboy.Connection, _ } = conn.adapter
     assert conn.path_info == ["build", "foo", "bar"]
     assert conn.query_string == ""
@@ -135,7 +135,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
     expected = :binary.copy("abcdefghij", 100_000)
     assert { ^expected, state } = read_req_body({ :ok, "", state }, "", adapter)
     assert { :done, state } = adapter.stream_req_body(state, 100_000)
-    conn.adapter({ adapter, state })
+    %{conn | adapter: { adapter, state }}
   end
 
   defp read_req_body({ :ok, buffer, state }, acc, adapter) do

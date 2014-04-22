@@ -7,7 +7,7 @@ defmodule Plug.Adapters.Cowboy.Handler do
 
   def init({ transport, :http }, req, { plug, opts }) when transport in [:tcp, :ssl] do
     case plug.call(@connection.conn(req, transport), opts) do
-      Plug.Conn[adapter: { @connection, req }] ->
+      %Plug.Conn{adapter: { @connection, req }} ->
         { :ok, req, nil }
       other ->
         raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"

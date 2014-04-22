@@ -1,72 +1,14 @@
 alias Plug.Connection.Unfetched
 
-defrecord Plug.Conn,
-    adapter: nil,
-    assigns: [],
-    before_send: [],
-    cookies: Unfetched[aspect: :cookies],
-    host: nil,
-    method: nil,
-    params: Unfetched[aspect: :params],
-    path_info: [],
-    port: nil,
-    private: [],
-    query_string: nil,
-    req_cookies: Unfetched[aspect: :cookies],
-    req_headers: [],
-    resp_body: nil,
-    resp_cookies: [],
-    resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
-    scheme: nil,
-    script_name: [],
-    state: :unset,
-    status: nil do
-
-  @type adapter      :: { module, term }
-  @type assigns      :: Keyword.t
-  @type before_send  :: [(t -> t)]
-  @type body         :: iodata | nil
-  @type cookies      :: [{ binary, binary }]
-  @type headers      :: [{ binary, binary }]
-  @type host         :: binary
-  @type method       :: binary
-  @type scheme       :: :http | :https
-  @type segments     :: [binary]
-  @type state        :: :unset | :set | :file | :chunked | :sent
-  @type status       :: non_neg_integer
-  @type param        :: binary | [{ binary, param }] | [param]
-  @type params       :: [{ binary, param }]
-  @type resp_cookies :: [{ binary, Keyword.t }]
-
-  record_type adapter: adapter,
-              assigns: assigns,
-              before_send: before_send,
-              cookies: cookies | Unfetched.t,
-              host: host,
-              method: method,
-              params: params | Unfetched.t,
-              path_info: segments,
-              port: 0..65535,
-              private: assigns,
-              req_cookies: cookies | Unfetched.t,
-              req_headers: [],
-              resp_body: body,
-              resp_cookies: resp_cookies,
-              resp_headers: headers,
-              scheme: scheme,
-              script_name: segments,
-              state: state,
-              status: status
-
+defmodule Plug.Conn do
   @moduledoc """
-  The connection record
+  The Plug connection.
 
-  It is recommended to use the record for reading data,
-  all connection manipulation should be done via the functions
-  in `Plug.Connection` module.
+  This module defines a struct and the main functions for working
+  with Plug connections.
 
-  Both request and response headers are expected to have
-  lower-cased keys.
+  All the struct fields are defined below. Note both request and
+  response headers are expected to have lower-case keys.
 
   ## Request fields
 
@@ -124,6 +66,44 @@ defrecord Plug.Conn,
   * `adapter` - holds the adapter information in a tuple
   * `private` - shared library data as a dict
   """
+
+  @type adapter      :: { module, term }
+  @type assigns      :: Keyword.t
+  @type before_send  :: [(t -> t)]
+  @type body         :: iodata | nil
+  @type cookies      :: [{ binary, binary }] | Unfetched.t
+  @type headers      :: [{ binary, binary }]
+  @type host         :: binary
+  @type method       :: binary
+  @type scheme       :: :http | :https
+  @type segments     :: [binary]
+  @type state        :: :unset | :set | :file | :chunked | :sent
+  @type status       :: non_neg_integer | nil
+  @type param        :: binary | [{ binary, param }] | [param]
+  @type params       :: [{ binary, param }]
+  @type query_string :: String.t
+  @type resp_cookies :: [{ binary, Keyword.t }]
+
+  defstruct adapter:      { Plug.Conn, nil } :: adapter,
+            assigns:      [] :: assigns,
+            before_send:  [] :: before_send,
+            cookies:      Unfetched[aspect: :cookies] :: cookies | Unfetched.t,
+            host:         "www.example.com" :: host,
+            method:       "GET" :: method,
+            params:       Unfetched[aspect: :params] :: params | Unfetched.t,
+            path_info:    [] :: segments,
+            port:         0  :: 0..65335,
+            private:      [] :: assigns,
+            query_string: "" :: query_string,
+            req_cookies:  Unfetched[aspect: :cookies] :: cookies | Unfetched.t,
+            req_headers:  [] :: headers,
+            resp_body:    nil :: body,
+            resp_cookies: [] :: resp_cookies,
+            resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}] :: headers,
+            scheme:       :http :: scheme,
+            script_name:  [] :: segments,
+            state:        :unset :: state,
+            status:       nil :: status
 end
 
 defmodule Plug.Connection do
@@ -160,8 +140,8 @@ defmodule Plug.Connection do
 
   """
   @spec assign(Conn.t, atom, term) :: Conn.t
-  def assign(Conn[assigns: assigns] = conn, key, value) when is_atom(key) do
-    conn.assigns(Keyword.put(assigns, key, value))
+  def assign(%Conn{assigns: assigns} = conn, key, value) when is_atom(key) do
+    %{conn | assigns: Keyword.put(assigns, key, value)}
   end
 
   @doc """
@@ -182,8 +162,8 @@ defmodule Plug.Connection do
 
   """
   @spec assign_private(Conn.t, atom, term) :: Conn.t
-  def assign_private(Conn[private: private] = conn, key, value) when is_atom(key) do
-    conn.private(Keyword.put(private, key, value))
+  def assign_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
+    %{conn | private: Keyword.put(private, key, value)}
   end
 
   @doc """
@@ -198,18 +178,18 @@ defmodule Plug.Connection do
   @spec send_resp(Conn.t) :: Conn.t | no_return
   def send_resp(conn)
 
-  def send_resp(Conn[state: :unset]) do
+  def send_resp(%Conn{state: :unset}) do
     raise ArgumentError, message: "cannot send a response that was not set"
   end
 
-  def send_resp(Conn[adapter: { adapter, payload }, state: :set] = conn) do
-    Conn[] = conn = run_before_send(conn, :set)
+  def send_resp(%Conn{adapter: {adapter, payload}, state: :set} = conn) do
+    conn = run_before_send(conn, :set)
     { :ok, body, payload } = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
     send self(), @already_sent
-    conn.adapter({ adapter, payload }).resp_body(body).state(:sent)
+    %{conn | adapter: { adapter, payload }, resp_body: body, state: :sent}
   end
 
-  def send_resp(Conn[]) do
+  def send_resp(%Conn{}) do
     raise AlreadySentError
   end
 
@@ -224,12 +204,12 @@ defmodule Plug.Connection do
   `Plug.Connection.AlreadySentError`.
   """
   @spec send_file(Conn.t, Conn.status, filename :: binary) :: Conn.t | no_return
-  def send_file(Conn[adapter: { adapter, payload }] = conn, status, file)
+  def send_file(%Conn{adapter: { adapter, payload }} = conn, status, file)
       when is_integer(status) and is_binary(file) do
-    Conn[] = conn = run_before_send(conn.status(status).resp_body(nil), :file)
+    conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
     { :ok, body, payload } = adapter.send_file(payload, conn.status, conn.resp_headers, file)
     send self(), @already_sent
-    conn.adapter({ adapter, payload }).state(:sent).resp_body(body)
+    %{conn | adapter: { adapter, payload }, state: :sent, resp_body: body}
   end
 
   @doc """
@@ -240,15 +220,15 @@ defmodule Plug.Connection do
   `Plug.Connection.AlreadySentError`.
   """
   @spec send_chunked(Conn.t, Conn.status) :: Conn.t | no_return
-  def send_chunked(Conn[adapter: { adapter, payload }, state: state] = conn, status)
+  def send_chunked(%Conn{adapter: { adapter, payload }, state: state} = conn, status)
       when state in @unsent and is_integer(status) do
-    Conn[] = conn = run_before_send(conn.status(status).resp_body(nil), :chunked)
+    conn = run_before_send(%{conn | status: status, resp_body: nil}, :chunked)
     { :ok, body, payload } = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send self(), @already_sent
-    conn.adapter({ adapter, payload }).resp_body(body)
+    %{conn | adapter: { adapter, payload }, resp_body: body}
   end
 
-  def send_chunked(Conn[], status) when is_integer(status) do
+  def send_chunked(%Conn{}, status) when is_integer(status) do
     raise AlreadySentError
   end
 
@@ -260,15 +240,15 @@ defmodule Plug.Connection do
   otherwise `{ :error, reason }`.
   """
   @spec chunk(Conn.t, Conn.body) :: { :ok, Conn.t } | { :error, term } | no_return
-  def chunk(Conn[adapter: { adapter, payload }, state: :chunked] = conn, chunk) do
+  def chunk(%Conn{adapter: { adapter, payload }, state: :chunked} = conn, chunk) do
     case adapter.chunk(payload, chunk) do
       :ok                    -> { :ok, conn }
-      { :ok, body, payload } -> { :ok, conn.resp_body(body).adapter({ adapter, payload }) }
+      { :ok, body, payload } -> { :ok, %{conn | resp_body: body, adapter: { adapter, payload }} }
       { :error, _ } = error  -> error
     end
   end
 
-  def chunk(Conn[], chunk) when is_binary(chunk) or is_list(chunk) do
+  def chunk(%Conn{}, chunk) when is_binary(chunk) or is_list(chunk) do
     raise ArgumentError, message: "chunk/2 expects a chunked response. Please ensure " <>
                                   "you have called send_chunked/2 before you send a chunk"
   end
@@ -279,7 +259,7 @@ defmodule Plug.Connection do
   See `send_resp/1` for more information.
   """
   @spec send_resp(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
-  def send_resp(Conn[] = conn, status, body) do
+  def send_resp(%Conn{} = conn, status, body) do
     conn |> resp(status, body) |> send_resp()
   end
 
@@ -290,13 +270,13 @@ defmodule Plug.Connection do
   and raises `Plug.Connection.AlreadySentError` if it was already sent.
   """
   @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
-  def resp(Conn[state: state] = conn, status, body)
+  def resp(%Conn{state: state} = conn, status, body)
       when is_integer(status) and state in @unsent
         and (is_binary(body) or is_list(body)) do
-    conn.status(status).resp_body(body).state(:set)
+    %{conn | status: status, resp_body: body, state: :set}
   end
 
-  def resp(Conn[], status, body)
+  def resp(%Conn{}, status, body)
       when is_integer(status) and (is_binary(body) or is_list(body)) do
     raise AlreadySentError
   end
@@ -307,12 +287,12 @@ defmodule Plug.Connection do
   Previous entries of the same headers are removed.
   """
   @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
-  def put_resp_header(Conn[resp_headers: headers, state: state] = conn, key, value) when
+  def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
       is_binary(key) and is_binary(value) and state != :sent do
-    conn.resp_headers(:lists.keystore(key, 1, headers, { key, value }))
+    %{conn | resp_headers: :lists.keystore(key, 1, headers, { key, value })}
   end
 
-  def put_resp_header(Conn[], key, value) when is_binary(key) and is_binary(value) do
+  def put_resp_header(%Conn{}, key, value) when is_binary(key) and is_binary(value) do
     raise AlreadySentError
   end
 
@@ -320,12 +300,12 @@ defmodule Plug.Connection do
   Deletes a response header.
   """
   @spec delete_resp_header(Conn.t, binary) :: Conn.t
-  def delete_resp_header(Conn[resp_headers: headers, state: state] = conn, key) when
+  def delete_resp_header(%Conn{resp_headers: headers, state: state} = conn, key) when
       is_binary(key) and state != :sent do
-    conn.resp_headers(:lists.keydelete(key, 1, headers))
+    %{conn | resp_headers: :lists.keydelete(key, 1, headers)}
   end
 
-  def delete_resp_header(Conn[], key) when is_binary(key) do
+  def delete_resp_header(%Conn{}, key) when is_binary(key) do
     raise AlreadySentError
   end
 
@@ -352,11 +332,11 @@ defmodule Plug.Connection do
   parameters from the body, use the `Plug.Parsers` plug.
   """
   @spec fetch_params(Conn.t) :: Conn.t
-  def fetch_params(Conn[params: Plug.Connection.Unfetched[], query_string: query_string] = conn) do
-    conn.params(Plug.Connection.Query.decode(query_string))
+  def fetch_params(%Conn{params: Plug.Connection.Unfetched[], query_string: query_string} = conn) do
+    %{conn | params: Plug.Connection.Query.decode(query_string)}
   end
 
-  def fetch_params(Conn[] = conn) do
+  def fetch_params(%Conn{} = conn) do
     conn
   end
 
@@ -364,8 +344,8 @@ defmodule Plug.Connection do
   Fetches cookies from the request headers.
   """
   @spec fetch_cookies(Conn.t) :: Conn.t
-  def fetch_cookies(Conn[req_cookies: Plug.Connection.Unfetched[],
-                         resp_cookies: resp_cookies, req_headers: req_headers] = conn) do
+  def fetch_cookies(%Conn{req_cookies: Plug.Connection.Unfetched[],
+                          resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
     req_cookies =
       lc { "cookie", cookie } inlist req_headers,
          kv inlist Plug.Connection.Cookies.decode(cookie),
@@ -380,10 +360,10 @@ defmodule Plug.Connection do
         end
     end)
 
-    conn.req_cookies(req_cookies).cookies(cookies)
+    %{conn | req_cookies: req_cookies, cookies: cookies}
   end
 
-  def fetch_cookies(Conn[] = conn) do
+  def fetch_cookies(%Conn{} = conn) do
     conn
   end
 
@@ -399,10 +379,10 @@ defmodule Plug.Connection do
 
   """
   @spec put_resp_cookie(Conn.t, binary, binary, Keyword.t) :: Conn.t
-  def put_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, value, opts \\ []) when
+  def put_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
     resp_cookies = List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] })
-    conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.put(&1, key, value))
+    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.put(&1, key, value))
   end
 
   @epoch { { 1970, 1, 1 }, { 0, 0, 0 } }
@@ -414,19 +394,21 @@ defmodule Plug.Connection do
   Check `put_resp_cookie/4` for more information.
   """
   @spec delete_resp_cookie(Conn.t, binary, Keyword.t) :: Conn.t
-  def delete_resp_cookie(Conn[resp_cookies: resp_cookies] = conn, key, opts \\ []) when
+  def delete_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, opts \\ []) when
       is_binary(key) and is_list(opts) do
-    opts = opts |> Keyword.put_new(:universal_time, @epoch) |> Keyword.put_new(:max_age, 0)
+    opts = opts
+           |> Keyword.put_new(:universal_time, @epoch)
+           |> Keyword.put_new(:max_age, 0)
     resp_cookies = List.keystore(resp_cookies, key, 0, { key, opts })
-    conn.resp_cookies(resp_cookies) |> update_cookies(&Dict.delete(&1, key))
+    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.delete(&1, key))
   end
 
   @doc """
   Fetches session from session store. Will also fetch cookies.
   """
   @spec fetch_session(Conn.t) :: Conn.t
-  def fetch_session(conn) do
-    if fun = conn.private[:plug_session_fetch] do
+  def fetch_session(%Conn{private: private} = conn) do
+    if fun = private[:plug_session_fetch] do
       conn |> fetch_cookies |> fun.()
     else
       raise ArgumentError, message: "cannot fetch session without a configured session plug"
@@ -447,7 +429,7 @@ defmodule Plug.Connection do
   @spec get_session(Conn.t, any) :: any
   def get_session(conn, key) do
     session = get_session(conn)
-    session[key]
+    Dict.get(session, key)
   end
 
   @doc """
@@ -489,21 +471,21 @@ defmodule Plug.Connection do
   defined first are invoked last).
   """
   @spec register_before_send(Conn.t, (Conn.t -> Conn.t)) :: Conn.t
-  def register_before_send(Conn[before_send: before_send, state: state] = conn, callback)
+  def register_before_send(%Conn{before_send: before_send, state: state} = conn, callback)
       when is_function(callback, 1) and state in @unsent do
-    conn.before_send([callback|before_send])
+    %{conn | before_send: [callback|before_send]}
   end
 
-  def register_before_send(Conn[], callback) when is_function(callback, 1) do
+  def register_before_send(%Conn{}, callback) when is_function(callback, 1) do
     raise AlreadySentError
   end
 
-  defp run_before_send(Conn[state: state, before_send: before_send] = conn, new) when state in @unsent do
-    conn = Conn[state: state] = Enum.reduce before_send, conn.state(new), &(&1.(&2))
-    if state != new do
+  defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when state in @unsent do
+    conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
+    if conn.state != new do
       raise ArgumentError, message: "cannot send/change response from run_before_send callback"
     end
-    conn.resp_headers(merge_headers(conn.resp_headers, conn.resp_cookies))
+    %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
   end
 
   defp run_before_send(_conn, _new) do
@@ -516,15 +498,15 @@ defmodule Plug.Connection do
     end)
   end
 
-  defp update_cookies(Conn[state: state], _fun) when state == :sent,
+  defp update_cookies(%Conn{state: :sent}, _fun),
     do: raise AlreadySentError
-  defp update_cookies(Conn[cookies: Unfetched[]] = conn, _fun),
+  defp update_cookies(%Conn{cookies: Unfetched[]} = conn, _fun),
     do: conn
-  defp update_cookies(Conn[] = conn, fun),
-    do: conn.update_cookies(fun)
+  defp update_cookies(%Conn{cookies: cookies} = conn, fun),
+    do: %{conn | cookies: fun.(cookies)}
 
-  defp get_session(conn) do
-    if session = conn.private[:plug_session] do
+  defp get_session(%Conn{private: private}) do
+    if session = private[:plug_session] do
       session
     else
       raise ArgumentError, message: "session not fetched, call fetch_session/1"

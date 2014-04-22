@@ -15,7 +15,7 @@ defmodule Plug.Head do
 
   def call(conn, []) do
     if conn.method == "HEAD" do
-      conn.method("GET")
+      %{conn | method: "GET"}
     else
       conn
     end

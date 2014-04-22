@@ -3,7 +3,7 @@
 
 defprotocol Plug.Exception do
   @moduledoc """
-  A protocol that extends exceptions to be status code aware
+  A protocol that extends exceptions to be status code aware.
   """
 
   @fallback_to_any true

@@ -41,13 +41,10 @@ defmodule Plug.Router.Utils do
   Forwards requests to another Plug at a new path.
 
   """
-  def forward(Plug.Conn[path_info: path, script_name: script] = conn, new_path, options) do
-    target = options[:to]
+  def forward(%Plug.Conn{path_info: path, script_name: script} = conn, new_path, target, opts) do
     {base, ^new_path} = Enum.split(path, length(path) - length(new_path))
-
-    conn = conn.update(path_info: new_path, script_name: base ++ script) |> target.call([])
-
-    conn.update(path_info: path, script_name: script)
+    conn = %{conn | path_info: new_path, script_name: base ++ script} |> target.call(opts)
+    %{conn | path_info: path, script_name: script}
   end
 
   @doc """

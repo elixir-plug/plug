@@ -68,9 +68,9 @@ A plug takes two shapes. It is a function that receives a connection and a set o
 As per the specification above, a connection is represented by the `Plug.Conn` record ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)):
 
 ```elixir
-Plug.Conn[host: "www.example.com",
-          path_info: ["bar", "baz"],
-          ...]
+%Plug.Conn{host: "www.example.com",
+           path_info: ["bar", "baz"],
+           ...}
 ```
 
 Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Connection`.

@@ -13,7 +13,7 @@ defmodule Plug.Adapters.Test.Connection do
     { body, params, headers } = body_or_params(body_or_params, opts[:headers] || [])
     state = State[method: method, params: params, req_body: body]
 
-    Plug.Conn[
+    %Plug.Conn{
       adapter: { __MODULE__, state },
       host: uri.host || "www.example.com",
       method: method,
@@ -22,7 +22,7 @@ defmodule Plug.Adapters.Test.Connection do
       req_headers: headers,
       query_string: uri.query || "",
       scheme: (uri.scheme || "http") |> String.downcase |> binary_to_atom
-    ]
+    }
   end
 
   ## Connection adapter

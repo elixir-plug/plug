@@ -21,9 +21,9 @@ defmodule Plug.MethodOverride do
   def call(conn, []) do
     if conn.method == "POST" do
       case method_override(conn) do
-        "DELETE" -> conn.method("DELETE")
-        "PUT"    -> conn.method("PUT")
-        "PATCH"  -> conn.method("PATCH")
+        "DELETE" -> %{conn | method: "DELETE"}
+        "PUT"    -> %{conn | method: "PUT"}
+        "PATCH"  -> %{conn | method: "PATCH"}
         _        -> conn
       end
     else
@@ -31,7 +31,7 @@ defmodule Plug.MethodOverride do
     end
   end
 
-  defp method_override(Plug.Conn[req_headers: req_headers] = conn) do
+  defp method_override(%Plug.Conn{req_headers: req_headers} = conn) do
     conn.params["_method"] || req_headers["x-http-method-override"]
   end
 end

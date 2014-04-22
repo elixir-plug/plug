@@ -12,7 +12,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { hdrs, req } = R.headers req
     { qs, req }   = R.qs req
 
-    Plug.Conn[
+    %Plug.Conn{
       adapter: { __MODULE__, req },
       host: host,
       method: meth,
@@ -21,7 +21,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
       query_string: qs,
       req_headers: hdrs,
       scheme: scheme(transport)
-    ]
+    }
   end
 
   def send_resp(req, status, headers, body) do

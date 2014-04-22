@@ -47,7 +47,7 @@ defmodule Plug.SessionTest do
 
   test "put session" do
     conn = conn(:get, "/") |> fetch_cookies
-    conn = conn.cookies([{ "foobar", "sid" }])
+    conn = %{conn | cookies: [{ "foobar", "sid" }]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -60,7 +60,7 @@ defmodule Plug.SessionTest do
   test "get session" do
     Process.put({ :session, "sid" }, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = conn.cookies([{ "foobar", "sid" }])
+    conn = %{conn | cookies: [{ "foobar", "sid" }]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -70,7 +70,7 @@ defmodule Plug.SessionTest do
   test "drop session" do
     Process.put({ :session, "sid" }, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = conn.cookies([{ "foobar", "sid" }])
+    conn = %{conn | cookies: [{ "foobar", "sid" }]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -84,7 +84,7 @@ defmodule Plug.SessionTest do
   test "renew session" do
     Process.put({ :session, "sid" }, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = conn.cookies([{ "foobar", "sid" }])
+    conn = %{conn | cookies: [{ "foobar", "sid" }]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -98,7 +98,7 @@ defmodule Plug.SessionTest do
   test "reuses sid" do
     Process.put({ :session, "sid" }, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = conn.cookies([{ "foobar", "sid" }])
+    conn = %{conn | cookies: [{ "foobar", "sid" }]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session

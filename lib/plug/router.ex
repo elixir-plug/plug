@@ -127,7 +127,7 @@ defmodule Plug.Router do
           do_match(conn.method, conn.path_info))
       end
 
-      def dispatch(Plug.Conn[assigns: assigns] = conn, _opts) do
+      def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
         Keyword.get(conn.private, :plug_route).(conn)
       end
 
@@ -236,11 +236,21 @@ defmodule Plug.Router do
 
   * `:to` - a Plug where the requests will be forwarded
 
+  All remaining options are passed to the underlying plug.
   """
-  defmacro forward(path, options) do
+  defmacro forward(path, options) when is_binary(path) do
     quote do
+      { target, options } = Keyword.pop(unquote(options), :to)
+
+      if nil?(target) or !is_atom(target) do
+        raise ArgumentError, message: "expected :to to be an alias or an atom"
+      end
+
+      @plug_forward_target target
+      @plug_forward_opts   target.init(options)
+
       match unquote(path <> "/*glob") do
-        Plug.Router.Utils.forward(var!(conn), var!(glob), unquote(options))
+        Plug.Router.Utils.forward(var!(conn), var!(glob), @plug_forward_target, @plug_forward_opts)
       end
     end
   end

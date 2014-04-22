@@ -41,16 +41,16 @@ defmodule Plug.Test do
   Previous entries of the same headers are removed.
   """
   @spec put_req_header(Conn.t, binary, binary) :: Conn.t
-  def put_req_header(Conn[req_headers: headers] = conn, key, value) when is_binary(key) and is_binary(value) do
-    conn.req_headers(:lists.keystore(key, 1, headers, { key, value }))
+  def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
+    %{conn | req_headers: :lists.keystore(key, 1, headers, { key, value })}
   end
 
   @doc """
   Deletes a request header.
   """
   @spec delete_req_header(Conn.t, binary) :: Conn.t
-  def delete_req_header(Conn[req_headers: headers] = conn, key) when is_binary(key) do
-    conn.req_headers(:lists.keydelete(key, 1, headers))
+  def delete_req_header(%Conn{req_headers: headers} = conn, key) when is_binary(key) do
+    %{conn | req_headers: :lists.keydelete(key, 1, headers)}
   end
 
   @doc """
@@ -58,20 +58,19 @@ defmodule Plug.Test do
   """
   @spec put_req_cookie(Conn.t, binary, binary) :: Conn.t
   def put_req_cookie(conn, key, value) when is_binary(key) and is_binary(value) do
-    Conn[] = conn = delete_req_cookie(conn, key)
-    conn.req_headers([{ "cookie", "#{key}=#{value}" }|conn.req_headers])
+    conn = delete_req_cookie(conn, key)
+    %{conn | req_headers: [{ "cookie", "#{key}=#{value}" }|conn.req_headers]}
   end
 
   @doc """
   Deletes a request cookie.
   """
   @spec delete_req_cookie(Conn.t, binary) :: Conn.t
-  def delete_req_cookie(Conn[req_cookies: Plug.Connection.Unfetched[],
-                             req_headers: headers] = conn, key) when is_binary(key) do
+  def delete_req_cookie(%Conn{req_cookies: Plug.Connection.Unfetched[]} = conn, key) when is_binary(key) do
     key  = "#{key}="
     size = byte_size(key)
-    conn.req_headers Enum.reject(headers,
-                     &match?({ "cookie", value } when binary_part(value, 0, size) == key, &1))
+    fun  = &match?({ "cookie", value } when binary_part(value, 0, size) == key, &1)                              
+    %{conn | req_headers: Enum.reject(conn.req_headers, fun)}
   end
 
   def delete_req_cookie(_conn, key) when is_binary(key) do
