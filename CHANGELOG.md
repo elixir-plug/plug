@@ -1,4 +1,4 @@
-# v0.3.1-dev
+# v0.4.0
 
 * Enhancements
   * Support `before_send/1` callbacks
@@ -6,6 +6,12 @@
   * Allow iodata as the body
   * Do not allow response headers to be set if the response was already sent
   * Add `Plug.Conn.private` to be used as storage by libraries/frameworks
+  * Add `get_req_header` and `get_resp_header` for fetching request and response headers
+
+* Backwards incompatible changes
+  * `Plug.Connection` was removed in favor of `Plug.Conn`
+  * `Plug.Conn` is now a struct
+  * assigns, cookies, params and sessions have been converted to maps
 
 # v0.3.0
 
