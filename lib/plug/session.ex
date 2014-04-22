@@ -37,8 +37,6 @@ defmodule Plug.Session do
 
   @cookie_opts [:domain, :max_age, :path, :secure]
 
-  defrecordp :config, [:store, :store_config, :key, :cookie_opts]
-
   def init(opts) do
     store        = Keyword.fetch!(opts, :store) |> convert_store
     key          = Keyword.fetch!(opts, :key)
@@ -46,8 +44,10 @@ defmodule Plug.Session do
     store_opts   = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
     store_config = store.init(store_opts)
 
-    config(store: store, store_config: store_config, key: key,
-           cookie_opts: cookie_opts)
+    %{store: store,
+      store_config: store_config,
+      key: key,
+      cookie_opts: cookie_opts}
   end
 
   def call(conn, config) do
@@ -62,7 +62,7 @@ defmodule Plug.Session do
   end
 
   defp fetch_session(config) do
-    config(store: store, store_config: store_config, key: key) = config
+    %{store: store, store_config: store_config, key: key} = config
 
     fn conn ->
       if sid = conn.cookies[key] do
@@ -78,8 +78,8 @@ defmodule Plug.Session do
   end
 
   defp before_send(sid, config) do
-    config(store: store, store_config: store_config, key: key,
-           cookie_opts: cookie_opts) = config
+    %{store: store, store_config: store_config, key: key,
+      cookie_opts: cookie_opts} = config
 
     fn conn ->
       case conn.private[:plug_session_info] do

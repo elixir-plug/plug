@@ -20,7 +20,7 @@ defmodule Plug.SessionTest do
     end
 
     def put(nil, data, nil) do
-      sid = :crypto.strong_rand_bytes(96) |> :base64.encode
+      sid = :crypto.strong_rand_bytes(96) |> Base.encode64
       put(sid, data, nil)
     end
 
@@ -121,6 +121,6 @@ defmodule Plug.SessionTest do
 
   test "converts store reference" do
     opts = Plug.Session.init(store: :ets, key: "foobar", table: :some_table)
-    assert [:config, Plug.Session.ETS | _ ] = tuple_to_list(opts)
+    assert opts.store == Plug.Session.ETS
   end
 end

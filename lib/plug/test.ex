@@ -66,7 +66,7 @@ defmodule Plug.Test do
   Deletes a request cookie.
   """
   @spec delete_req_cookie(Conn.t, binary) :: Conn.t
-  def delete_req_cookie(%Conn{req_cookies: Plug.Conn.Unfetched[]} = conn, key) when is_binary(key) do
+  def delete_req_cookie(%Conn{req_cookies: %Plug.Conn.Unfetched{}} = conn, key) when is_binary(key) do
     key  = "#{key}="
     size = byte_size(key)
     fun  = &match?({"cookie", value} when binary_part(value, 0, size) == key, &1)

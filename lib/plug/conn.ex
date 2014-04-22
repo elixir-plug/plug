@@ -87,15 +87,15 @@ defmodule Plug.Conn do
   defstruct adapter:      {Plug.Conn, nil} :: adapter,
             assigns:      [] :: assigns,
             before_send:  [] :: before_send,
-            cookies:      Unfetched[aspect: :cookies] :: cookies | Unfetched.t,
+            cookies:      %Unfetched{aspect: :cookies} :: cookies | Unfetched.t,
             host:         "www.example.com" :: host,
             method:       "GET" :: method,
-            params:       Unfetched[aspect: :params] :: params | Unfetched.t,
+            params:       %Unfetched{aspect: :params} :: params | Unfetched.t,
             path_info:    [] :: segments,
             port:         0  :: 0..65335,
             private:      [] :: assigns,
             query_string: "" :: query_string,
-            req_cookies:  Unfetched[aspect: :cookies] :: cookies | Unfetched.t,
+            req_cookies:  %Unfetched{aspect: :cookies} :: cookies | Unfetched.t,
             req_headers:  [] :: headers,
             resp_body:    nil :: body,
             resp_cookies: [] :: resp_cookies,
@@ -326,7 +326,7 @@ defmodule Plug.Conn do
   parameters from the body, use the `Plug.Parsers` plug.
   """
   @spec fetch_params(t) :: t
-  def fetch_params(%Conn{params: Plug.Conn.Unfetched[], query_string: query_string} = conn) do
+  def fetch_params(%Conn{params: %Unfetched{}, query_string: query_string} = conn) do
     %{conn | params: Plug.Conn.Query.decode(query_string)}
   end
 
@@ -338,7 +338,7 @@ defmodule Plug.Conn do
   Fetches cookies from the request headers.
   """
   @spec fetch_cookies(t) :: t
-  def fetch_cookies(%Conn{req_cookies: Plug.Conn.Unfetched[],
+  def fetch_cookies(%Conn{req_cookies: %Unfetched{},
                           resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
     req_cookies =
       lc {"cookie", cookie} inlist req_headers,
@@ -494,7 +494,7 @@ defmodule Plug.Conn do
 
   defp update_cookies(%Conn{state: :sent}, _fun),
     do: raise AlreadySentError
-  defp update_cookies(%Conn{cookies: Unfetched[]} = conn, _fun),
+  defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, _fun),
     do: conn
   defp update_cookies(%Conn{cookies: cookies} = conn, fun),
     do: %{conn | cookies: fun.(cookies)}

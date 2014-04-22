@@ -242,7 +242,7 @@ defmodule Plug.ConnTest do
 
   test "params/1 && fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
-    assert conn.params == Plug.Conn.Unfetched[aspect: :params]
+    assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
     conn = fetch_params(conn)
     assert conn.params == [{"a", "b"}, {"c", "d"}]
 
@@ -252,7 +252,7 @@ defmodule Plug.ConnTest do
 
   test "req_cookies/1 && fetch_params/1" do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
-    assert conn.req_cookies == Plug.Conn.Unfetched[aspect: :cookies]
+    assert conn.req_cookies == %Plug.Conn.Unfetched{aspect: :cookies}
     conn = fetch_cookies(conn)
     assert conn.req_cookies == [{"foo", "bar"}, {"baz", "bat"}]
 
@@ -299,7 +299,7 @@ defmodule Plug.ConnTest do
 
   test "cookies/1 loaded early" do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar")
-    assert conn.cookies == Plug.Conn.Unfetched[aspect: :cookies]
+    assert conn.cookies == %Plug.Conn.Unfetched{aspect: :cookies}
 
     conn = conn |> fetch_cookies
     assert conn.cookies["foo"] == "bar"
@@ -316,7 +316,7 @@ defmodule Plug.ConnTest do
 
   test "cookies/1 loaded late" do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar") |> put_req_cookie("bar", "baz")
-    assert conn.cookies == Plug.Conn.Unfetched[aspect: :cookies]
+    assert conn.cookies == %Plug.Conn.Unfetched{aspect: :cookies}
 
     conn = conn |> put_resp_cookie("foo", "baz") |> put_resp_cookie("baz", "bat") |>
            delete_resp_cookie("bar") |> fetch_cookies
