@@ -31,7 +31,8 @@ defmodule Plug.MethodOverride do
     end
   end
 
-  defp method_override(%Plug.Conn{req_headers: req_headers} = conn) do
-    conn.params["_method"] || req_headers["x-http-method-override"]
+  defp method_override(conn) do
+    conn.params["_method"] ||
+      (Plug.Conn.get_req_header(conn, "x-http-method-override") |> List.first)
   end
 end

@@ -22,16 +22,16 @@ defmodule Plug.Conn.Utils do
   ## Examples
 
       iex> content_type "text/plain"
-      {:ok, "text", "plain", []}
+      {:ok, "text", "plain", %{}}
 
       iex> content_type "APPLICATION/vnd.ms-data+XML"
-      {:ok, "application", "vnd.ms-data+xml", []}
+      {:ok, "application", "vnd.ms-data+xml", %{}}
 
       iex> content_type "x-sample/json; charset=utf-8"
-      {:ok, "x-sample", "json", [{"charset", "utf-8"}]}
+      {:ok, "x-sample", "json", %{"charset" => "utf-8"}}
 
       iex> content_type "x-sample/json  ; charset=utf-8  ; foo=bar"
-      {:ok, "x-sample", "json", [{"charset", "utf-8"}, {"foo", "bar"}]}
+      {:ok, "x-sample", "json", %{"charset" => "utf-8", "foo" => "bar"}}
 
       iex> content_type "x y"
       :error
@@ -66,7 +66,7 @@ defmodule Plug.Conn.Utils do
 
   defp ct_params(t, first, second) do
     case strip_spaces(t) do
-      ""       -> {:ok, first, second, []}
+      ""       -> {:ok, first, second, %{}}
       ";" <> t -> {:ok, first, second, params(t)}
       _        -> :error
     end
@@ -81,32 +81,32 @@ defmodule Plug.Conn.Utils do
   ## Examples
 
       iex> params("foo=bar")
-      [{"foo","bar"}]
+      %{"foo" => "bar"}
 
       iex> params("  foo=bar  ")
-      [{"foo","bar"}]
+      %{"foo" => "bar"}
 
       iex> params("FOO=bar")
-      [{"foo","bar"}]
+      %{"foo" => "bar"}
 
       iex> params("foo=BAR ; wat")
-      [{"foo","BAR"}]
+      %{"foo" => "BAR"}
 
       iex> params("=")
-      []
+      %{}
 
   """
   @spec params(binary) :: params
   def params(t) do
-    params_kv(:binary.split(t, ";", [:global]))
+    params(:binary.split(t, ";", [:global]), %{})
   end
 
-  defp params_kv([]),
-    do: []
-  defp params_kv([h|t]) do
+  defp params([], acc),
+    do: acc
+  defp params([h|t], acc) do
     case params_key(h, "") do
-      {_, _} = kv -> [kv|params_kv(t)]
-      false -> params_kv(t)
+      {k, v} -> params(t, Map.put(acc, k, v))
+      false  -> params(t, acc)
     end
   end
 

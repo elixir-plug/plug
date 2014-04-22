@@ -61,8 +61,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def headers(conn) do
-    assert conn.req_headers["foo"] == "bar"
-    assert conn.req_headers["baz"] == "bat"
+    assert get_req_header(conn, "foo") == ["bar"]
+    assert get_req_header(conn, "baz") == ["bat"]
     conn
   end
 
@@ -88,10 +88,12 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "sends a response with status, headers and body" do
     assert {200, headers, "OK"} = request :get, "/send_200"
-    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
+    assert List.keyfind(headers, "cache-control", 0) ==
+           {"cache-control", "max-age=0, private, must-revalidate"}
     assert {500, headers, "ERROR"} = request :get, "/send_500"
-    assert headers["cache-control"] == nil
-    assert headers["x-sample"] == "value"
+    assert List.keyfind(headers, "cache-control", 0) == nil
+    assert List.keyfind(headers, "x-sample", 0) ==
+           {"x-sample", "value"}
   end
 
   test "skips body on head" do
@@ -108,8 +110,10 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   test "sends a file with status and headers" do
     assert {200, headers, body} = request :get, "/send_file"
     assert body =~ "sends a file with status and headers"
-    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
-    assert headers["content-length"] == File.stat!(__ENV__.file).size |> integer_to_binary
+    assert List.keyfind(headers, "cache-control", 0) ==
+           {"cache-control", "max-age=0, private, must-revalidate"}
+    assert List.keyfind(headers, "content-length", 0) ==
+           {"content-length", File.stat!(__ENV__.file).size |> integer_to_binary}
   end
 
   test "skips file on head" do
@@ -126,8 +130,10 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "sends a chunked response with status and headers" do
     assert {200, headers, "HELLO\nWORLD\n"} = request :get, "/send_chunked"
-    assert headers["cache-control"] == "max-age=0, private, must-revalidate"
-    assert headers["transfer-encoding"] == "chunked"
+    assert List.keyfind(headers, "cache-control", 0) ==
+           {"cache-control", "max-age=0, private, must-revalidate"}
+    assert List.keyfind(headers, "transfer-encoding", 0) ==
+           {"transfer-encoding", "chunked"}
   end
 
   def stream_req_body(conn) do

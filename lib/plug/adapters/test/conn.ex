@@ -63,7 +63,7 @@ defmodule Plug.Adapters.Test.Conn do
     do: {"", nil, headers}
 
   defp body_or_params(body, headers) when is_binary(body) do
-    unless headers["content-type"] do
+    unless List.keyfind(headers, "content-type", 0) do
       raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
     end
     {body, nil, headers}

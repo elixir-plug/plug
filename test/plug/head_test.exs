@@ -16,7 +16,7 @@ defmodule Plug.HeadTest do
            |> send_resp(200, "Hello world")
 
     assert conn.status == 200
-    assert conn.resp_headers["content-type"] == "text/plain; charset=utf-8"
+    assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
     assert conn.resp_body == ""
   end
 end

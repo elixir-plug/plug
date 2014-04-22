@@ -276,6 +276,22 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Gets a request header.
+  """
+  @spec get_req_header(t, binary) :: [binary]
+  def get_req_header(%Conn{req_headers: headers}, key) when is_binary(key) do
+    for {k, v} <- headers, k == key, do: v
+  end
+
+  @doc """
+  Gets a response header.
+  """
+  @spec get_resp_header(t, binary) :: [binary]
+  def get_resp_header(%Conn{resp_headers: headers}, key) when is_binary(key) do
+    for {k, v} <- headers, k == key, do: v
+  end
+
+  @doc """
   Puts a new response header.
   """
   @spec put_resp_header(t, binary, binary) :: t

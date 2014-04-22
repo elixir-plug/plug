@@ -97,9 +97,9 @@ defmodule Plug.Static do
   end
 
   defp gzip?(conn) do
-    if accept = conn.req_headers["accept-encoding"] do
-      Plug.Conn.Utils.list(accept)
-      |> Enum.any?(&(:binary.match(&1, ["gzip", "*"]) != :nomatch))
+    fun = &(:binary.match(&1, ["gzip", "*"]) != :nomatch)
+    Enum.any? get_req_header(conn, "accept-encoding"), fn accept ->
+      Enum.any?(Plug.Conn.Utils.list(accept), fun)
     end
   end
 

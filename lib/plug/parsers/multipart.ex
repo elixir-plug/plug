@@ -29,7 +29,7 @@ defmodule Plug.Parsers.MULTIPART do
     case :binary.split(disposition, ";") do
       [_, params] ->
         params = Plug.Conn.Utils.params(params)
-        if name = params["name"] do
+        if name = Map.get(params, "name") do
           handle_disposition_params(name, params, headers)
         else
           :skip
@@ -40,13 +40,20 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp handle_disposition_params(name, params, headers) do
-    if filename = params["filename"] do
+    if filename = Map.get(params, "filename") do
       path = Plug.Upload.random_file!("multipart")
       file = File.open!(path, [:write, :binary])
       {:file, name, file, %Plug.Upload{filename: filename, path: path,
-                                       content_type: headers["content-type"]}}
+                                       content_type: get_header(headers, "content-type")}}
     else
       {:binary, name}
+    end
+  end
+
+  defp get_header(headers, key) do
+    case List.keyfind(headers, key, 0) do
+      {^key, value} -> value
+      nil -> nil
     end
   end
 end

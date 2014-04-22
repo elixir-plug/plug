@@ -109,7 +109,7 @@ defmodule Plug.ConnTest do
            |> register_before_send(&put_resp_header(&1, "x-body", "default"))
            |> send_resp(200, "body")
 
-    assert conn.resp_headers["x-body"] == "body"
+    assert get_resp_header(conn, "x-body") == ["body"]
   end
 
   test "send_resp/3 uses the before_send status and body" do
@@ -159,7 +159,7 @@ defmodule Plug.ConnTest do
            |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "FILE"))
            |> send_file(200, __ENV__.file)
 
-    assert conn.resp_headers["x-body"] == "FILE"
+    assert get_resp_header(conn, "x-body") == ["FILE"]
   end
 
   test "send_chunked/3" do
@@ -195,23 +195,23 @@ defmodule Plug.ConnTest do
            |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "CHUNK"))
            |> send_chunked(200)
 
-    assert conn.resp_headers["x-body"] == "CHUNK"
+    assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
   test "put_resp_header/3" do
     conn1 = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
-    assert conn1.resp_headers["x-foo"] == "bar"
+    assert get_resp_header(conn1, "x-foo") == ["bar"]
     conn2 = conn1 |> put_resp_header("x-foo", "baz")
-    assert conn2.resp_headers["x-foo"] == "baz"
+    assert get_resp_header(conn2, "x-foo") == ["baz"]
     assert length(conn1.resp_headers) ==
            length(conn2.resp_headers)
   end
 
   test "delete_resp_header/3" do
     conn = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
-    assert conn.resp_headers["x-foo"] == "bar"
+    assert get_resp_header(conn, "x-foo") == ["bar"]
     conn = conn |> delete_resp_header("x-foo")
-    assert nil? conn.resp_headers["x-foo"]
+    assert get_resp_header(conn, "x-foo") == []
   end
 
   test "put_resp_content_type/3" do
@@ -239,8 +239,8 @@ defmodule Plug.ConnTest do
 
   test "req_headers/1" do
     conn = conn(:get, "/foo", [], headers: [{"foo", "bar"}, {"baz", "bat"}])
-    assert conn.req_headers["foo"] == "bar"
-    assert conn.req_headers["baz"] == "bat"
+    assert get_req_header(conn, "foo") == ["bar"]
+    assert get_req_header(conn, "baz") == ["bat"]
   end
 
   test "params/1 && fetch_params/1" do
@@ -265,31 +265,31 @@ defmodule Plug.ConnTest do
 
   test "put_resp_cookie/4 and delete_resp_cookie/3" do
     conn = conn(:get, "/") |> send_resp(200, "ok")
-    refute conn.resp_headers["set-cookie"]
+    assert get_resp_header(conn, "set-cookie") == []
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
            %{value: "baz", path: "/baz"}
-    assert conn.resp_headers["set-cookie"] ==
-           "foo=baz; path=/baz; HttpOnly"
+    assert get_resp_header(conn, "set-cookie") ==
+           ["foo=baz; path=/baz; HttpOnly"]
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz") |>
            delete_resp_cookie("foo", path: "/baz") |> send_resp(200, "ok")
     assert conn.resp_cookies["foo"] ==
            %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"}
-    assert conn.resp_headers["set-cookie"] ==
-           "foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"
+    assert get_resp_header(conn, "set-cookie") ==
+           ["foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"]
   end
 
   test "put_req_cookie/3 and delete_req_cookie/2" do
     conn = conn(:get, "/")
-    refute conn.req_headers["cookie"]
+    assert get_req_header(conn, "cookie") == []
 
     conn = conn |> put_req_cookie("foo", "bar")
-    assert conn.req_headers["cookie"] == "foo=bar"
+    assert get_req_header(conn, "cookie") == ["foo=bar"]
 
     conn = conn |> delete_req_cookie("foo")
-    refute conn.req_headers["cookie"]
+    assert get_req_header(conn, "cookie") == []
 
     conn = conn |> put_req_cookie("foo", "bar") |> put_req_cookie("baz", "bat") |> fetch_cookies
     assert conn.req_cookies["foo"] == "bar"
