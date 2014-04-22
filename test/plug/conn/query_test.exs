@@ -1,8 +1,8 @@
-defmodule Plug.Connection.QueryTest do
+defmodule Plug.Conn.QueryTest do
   use ExUnit.Case, async: true
 
-  import Plug.Connection.Query, only: [decode: 1]
-  doctest Plug.Connection.Query
+  import Plug.Conn.Query, only: [decode: 1]
+  doctest Plug.Conn.Query
 
   test "decode queries" do
     params = decode "foo=bar&baz=bat"
@@ -83,6 +83,6 @@ defmodule Plug.Connection.QueryTest do
   end
 
   defp decode_pair(pairs) do
-    Enum.reduce Enum.reverse(pairs), [], &Plug.Connection.Query.decode_pair(&1, &2)
+    Enum.reduce Enum.reverse(pairs), [], &Plug.Conn.Query.decode_pair(&1, &2)
   end
 end

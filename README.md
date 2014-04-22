@@ -13,7 +13,7 @@ Plug is:
 
 ```elixir
 defmodule MyPlug do
-  import Plug.Connection
+  import Plug.Conn
 
   def init(options) do
     # initialize options
@@ -59,7 +59,7 @@ In practice, you want to use plugs in your existing projects. You can do that in
     end
     ```
 
-## The Plug Connection
+## The Plug.Conn
 
 In the hello world example, we defined our first plug. What is a plug after all?
 
@@ -73,7 +73,7 @@ As per the specification above, a connection is represented by the `Plug.Conn` r
            ...}
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Connection` module ([docs](http://elixir-lang.org/docs/plug/Plug.Connection.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Connection`.
+Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Conn` module ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Conn`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
@@ -117,7 +117,7 @@ The Plug router allows developers to quickly match on incoming requests and perf
 
 ```elixir
 defmodule AppRouter do
-  import Plug.Connection
+  import Plug.Conn
   use Plug.Router
 
   plug :match

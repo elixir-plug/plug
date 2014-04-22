@@ -1,4 +1,4 @@
-defmodule Plug.Connection.Cookies do
+defmodule Plug.Conn.Cookies do
   @moduledoc """
   Conveniences for encoding and decoding cookies
   """

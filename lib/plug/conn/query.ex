@@ -1,4 +1,4 @@
-defmodule Plug.Connection.Query do
+defmodule Plug.Conn.Query do
   @moduledoc """
   Conveniences for decoding and encoding url encoded queries
 

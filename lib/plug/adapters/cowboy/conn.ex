@@ -1,5 +1,5 @@
-defmodule Plug.Adapters.Cowboy.Connection do
-  @behaviour Plug.Connection.Adapter
+defmodule Plug.Adapters.Cowboy.Conn do
+  @behaviour Plug.Conn.Adapter
   @moduledoc false
 
   require :cowboy_req, as: R
@@ -54,7 +54,7 @@ defmodule Plug.Adapters.Cowboy.Connection do
     { :ok, limit, acc, req } = parse_multipart(R.multipart_data(req), limit, [], callback)
 
     if limit > 0 do
-      params = Enum.reduce(acc, [], &Plug.Connection.Query.decode_pair/2)
+      params = Enum.reduce(acc, [], &Plug.Conn.Query.decode_pair/2)
       { :ok, params, req }
     else
       { :too_large, req }

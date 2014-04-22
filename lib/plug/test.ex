@@ -12,7 +12,7 @@ defmodule Plug.Test do
   and it will:
 
       * import all functions from this module
-      * import all functions from `Plug.Connection`
+      * import all functions from `Plug.Conn`
       * alias `Plug.Conn` to `Conn`
 
   """
@@ -21,7 +21,7 @@ defmodule Plug.Test do
   defmacro __using__(_) do
     quote do
       import Plug.Test
-      import Plug.Connection
+      import Plug.Conn
       alias  Plug.Conn
     end
   end
@@ -33,7 +33,7 @@ defmodule Plug.Test do
   """
   @spec conn(String.Chars.t, binary, binary | list, Keyword.t) :: Conn.t
   def conn(method, path, params_or_body \\ [], opts \\ []) do
-    Plug.Adapters.Test.Connection.conn(method, path, params_or_body, opts)
+    Plug.Adapters.Test.Conn.conn(method, path, params_or_body, opts)
   end
 
   @doc """
@@ -66,7 +66,7 @@ defmodule Plug.Test do
   Deletes a request cookie.
   """
   @spec delete_req_cookie(Conn.t, binary) :: Conn.t
-  def delete_req_cookie(%Conn{req_cookies: Plug.Connection.Unfetched[]} = conn, key) when is_binary(key) do
+  def delete_req_cookie(%Conn{req_cookies: Plug.Conn.Unfetched[]} = conn, key) when is_binary(key) do
     key  = "#{key}="
     size = byte_size(key)
     fun  = &match?({ "cookie", value } when binary_part(value, 0, size) == key, &1)                              

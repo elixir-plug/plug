@@ -6,7 +6,7 @@ defmodule Plug.Router do
 
       defmodule AppRouter do
         use Plug.Router
-        import Plug.Connection
+        import Plug.Conn
 
         plug :match
         plug :dispatch
@@ -122,7 +122,7 @@ defmodule Plug.Router do
       end
 
       def match(conn, _opts) do
-        Plug.Connection.assign_private(conn,
+        Plug.Conn.assign_private(conn,
           :plug_route,
           do_match(conn.method, conn.path_info))
       end

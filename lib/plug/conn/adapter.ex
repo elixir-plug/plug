@@ -1,4 +1,4 @@
-defmodule Plug.Connection.Adapter do
+defmodule Plug.Conn.Adapter do
   @moduledoc """
   Specification of the connection adapter API implemented by webservers
   """

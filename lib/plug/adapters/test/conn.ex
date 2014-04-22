@@ -1,5 +1,5 @@
-defmodule Plug.Adapters.Test.Connection do
-  @behaviour Plug.Connection.Adapter
+defmodule Plug.Adapters.Test.Conn do
+  @behaviour Plug.Conn.Adapter
   @moduledoc false
 
   defrecord State, [:method, :params, :req_body, :chunks]

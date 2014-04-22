@@ -1,5 +1,5 @@
 defmodule Plug.BuilderTest do
-  import Plug.Connection
+  import Plug.Conn
 
   defmodule Wrapper do
     def init(val) do

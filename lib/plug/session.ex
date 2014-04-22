@@ -2,8 +2,8 @@ defmodule Plug.Session do
   @moduledoc """
   A plug to handle session cookies and session stores.
 
-  The session is accessed via functions on `Plug.Connection`. Cookies and
-  session have to be fetched with `Plug.Connection.fetch_session/1` before the
+  The session is accessed via functions on `Plug.Conn`. Cookies and
+  session have to be fetched with `Plug.Conn.fetch_session/1` before the
   session can be accessed.
 
   ## Session stores
@@ -19,10 +19,10 @@ defmodule Plug.Session do
 
   * `:store` - session store module (required);
   * `:key` - session cookie key (required);
-  * `:domain` - see `Plug.Connection.put_resp_cookies/4`;
-  * `:max_age` - see `Plug.Connection.put_resp_cookies/4`;
-  * `:path` - see `Plug.Connection.put_resp_cookies/4`;
-  * `:secure` - see `Plug.Connection.put_resp_cookies/4`;
+  * `:domain` - see `Plug.Conn.put_resp_cookies/4`;
+  * `:max_age` - see `Plug.Conn.put_resp_cookies/4`;
+  * `:path` - see `Plug.Conn.put_resp_cookies/4`;
+  * `:secure` - see `Plug.Conn.put_resp_cookies/4`;
 
   Additional options can be given to the session store, see the store's
   documentation for the options it accepts.
@@ -32,7 +32,7 @@ defmodule Plug.Session do
       plug Plug.Session, store: :ets, key: "sid", secure: true, table: :session
   """
 
-  alias Plug.Connection
+  alias Plug.Conn
   @behaviour Plug
 
   @cookie_opts [:domain, :max_age, :path, :secure]
@@ -51,7 +51,7 @@ defmodule Plug.Session do
   end
 
   def call(conn, config) do
-    Connection.assign_private(conn, :plug_session_fetch, fetch_session(config))
+    Conn.assign_private(conn, :plug_session_fetch, fetch_session(config))
   end
 
   defp convert_store(store) do
@@ -70,10 +70,10 @@ defmodule Plug.Session do
       end
 
       conn
-      |> Connection.assign_private(:plug_session, session || [])
-      |> Connection.assign_private(:plug_session_info, nil)
-      |> Connection.assign_private(:plug_session_fetch, &(&1))
-      |> Connection.register_before_send(before_send(sid, config))
+      |> Conn.assign_private(:plug_session, session || [])
+      |> Conn.assign_private(:plug_session_info, nil)
+      |> Conn.assign_private(:plug_session_fetch, &(&1))
+      |> Conn.register_before_send(before_send(sid, config))
     end
   end
 
@@ -96,7 +96,7 @@ defmodule Plug.Session do
       end
 
       if sid do
-        conn = Connection.put_resp_cookie(conn, key, sid, cookie_opts)
+        conn = Conn.put_resp_cookie(conn, key, sid, cookie_opts)
       end
 
       conn

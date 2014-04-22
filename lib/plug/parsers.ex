@@ -105,10 +105,10 @@ defmodule Plug.Parsers do
   end
 
   def call(%Conn{req_headers: req_headers} = conn, opts) do
-    conn = Plug.Connection.fetch_params(conn)
+    conn = Plug.Conn.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       { "content-type", ct } ->
-        case Plug.Connection.Utils.content_type(ct) do
+        case Plug.Conn.Utils.content_type(ct) do
           { :ok, type, subtype, headers } ->
             reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->

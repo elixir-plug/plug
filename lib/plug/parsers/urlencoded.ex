@@ -15,7 +15,7 @@ defmodule Plug.Parsers.URLENCODED do
       { :too_large, state } ->
         { :too_large, %{conn | adapter: { adapter, state }} }
       { :ok, body, state } ->
-        { :ok, Plug.Connection.Query.decode(body), %{conn | adapter: { adapter, state }} }
+        { :ok, Plug.Conn.Query.decode(body), %{conn | adapter: { adapter, state }} }
     end
   end
 

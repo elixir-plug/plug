@@ -1,4 +1,4 @@
-alias Plug.Connection.Unfetched
+alias Plug.Conn.Unfetched
 
 defmodule Plug.Conn do
   @moduledoc """
@@ -25,7 +25,7 @@ defmodule Plug.Conn do
   ## Fetchable fields
 
   Those fields contain request information and they need to be explicitly fetched.
-  Before fetching those fields return a `Plug.Connection.Unfetched` record.
+  Before fetching those fields return a `Plug.Conn.Unfetched` record.
 
   * `cookies`- the request cookies with the response cookies
   * `params` - the request params
@@ -55,8 +55,8 @@ defmodule Plug.Conn do
   * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts
-  as `:unset` but is changed to `:set` (via `Plug.Connection.resp/3`) or `:file`
-  (when invoked via `Plug.Connection.send_file/3`). Its final result is
+  as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
+  (when invoked via `Plug.Conn.send_file/3`). Its final result is
   `:sent` or `:chunked` depending on the response model.
 
   ## Private fields
@@ -104,12 +104,6 @@ defmodule Plug.Conn do
             script_name:  [] :: segments,
             state:        :unset :: state,
             status:       nil :: status
-end
-
-defmodule Plug.Connection do
-  @moduledoc """
-  Functions for manipulating the connection
-  """
 
   defexception NotSentError, message: "no response was set nor sent from the connection" do
     @moduledoc """
@@ -139,7 +133,7 @@ defmodule Plug.Connection do
       :world
 
   """
-  @spec assign(Conn.t, atom, term) :: Conn.t
+  @spec assign(t, atom, term) :: t
   def assign(%Conn{assigns: assigns} = conn, key, value) when is_atom(key) do
     %{conn | assigns: Keyword.put(assigns, key, value)}
   end
@@ -161,7 +155,7 @@ defmodule Plug.Connection do
       :world
 
   """
-  @spec assign_private(Conn.t, atom, term) :: Conn.t
+  @spec assign_private(t, atom, term) :: t
   def assign_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
     %{conn | private: Keyword.put(private, key, value)}
   end
@@ -171,11 +165,11 @@ defmodule Plug.Connection do
 
   It expects the connection state is to be `:set`,
   otherwise raises ArgumentError for `:unset` connections
-  or `Plug.Connection.AlreadySentError` if it was already sent.
+  or `Plug.Conn.AlreadySentError` if it was already sent.
 
   At the end sets the connection state to `:sent`.
   """
-  @spec send_resp(Conn.t) :: Conn.t | no_return
+  @spec send_resp(t) :: t | no_return
   def send_resp(conn)
 
   def send_resp(%Conn{state: :unset}) do
@@ -201,9 +195,9 @@ defmodule Plug.Connection do
 
   It expects a connection that was not yet `:sent` and sets its
   state to `:sent` afterwards. Otherwise raises
-  `Plug.Connection.AlreadySentError`.
+  `Plug.Conn.AlreadySentError`.
   """
-  @spec send_file(Conn.t, Conn.status, filename :: binary) :: Conn.t | no_return
+  @spec send_file(t, status, filename :: binary) :: t | no_return
   def send_file(%Conn{adapter: { adapter, payload }} = conn, status, file)
       when is_integer(status) and is_binary(file) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
@@ -217,9 +211,9 @@ defmodule Plug.Connection do
 
   It expects a connection that was not yet `:sent` and sets its
   state to `:chunked` afterwards. Otherwise raises
-  `Plug.Connection.AlreadySentError`.
+  `Plug.Conn.AlreadySentError`.
   """
-  @spec send_chunked(Conn.t, Conn.status) :: Conn.t | no_return
+  @spec send_chunked(t, status) :: t | no_return
   def send_chunked(%Conn{adapter: { adapter, payload }, state: state} = conn, status)
       when state in @unsent and is_integer(status) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :chunked)
@@ -239,7 +233,7 @@ defmodule Plug.Connection do
   `send_chunked/2`, returns `{ :ok, conn }` in case of success,
   otherwise `{ :error, reason }`.
   """
-  @spec chunk(Conn.t, Conn.body) :: { :ok, Conn.t } | { :error, term } | no_return
+  @spec chunk(t, body) :: { :ok, t } | { :error, term } | no_return
   def chunk(%Conn{adapter: { adapter, payload }, state: :chunked} = conn, chunk) do
     case adapter.chunk(payload, chunk) do
       :ok                    -> { :ok, conn }
@@ -258,7 +252,7 @@ defmodule Plug.Connection do
 
   See `send_resp/1` for more information.
   """
-  @spec send_resp(Conn.t, Conn.status, Conn.body) :: Conn.t | no_return
+  @spec send_resp(t, status, body) :: t | no_return
   def send_resp(%Conn{} = conn, status, body) do
     conn |> resp(status, body) |> send_resp()
   end
@@ -267,9 +261,9 @@ defmodule Plug.Connection do
   Sets the response to given status and body.
 
   It sets the connection state to `:set` (if not yet `:set`)
-  and raises `Plug.Connection.AlreadySentError` if it was already sent.
+  and raises `Plug.Conn.AlreadySentError` if it was already sent.
   """
-  @spec resp(Conn.t, Conn.status, Conn.body) :: Conn.t
+  @spec resp(t, status, body) :: t
   def resp(%Conn{state: state} = conn, status, body)
       when is_integer(status) and state in @unsent
         and (is_binary(body) or is_list(body)) do
@@ -286,7 +280,7 @@ defmodule Plug.Connection do
 
   Previous entries of the same headers are removed.
   """
-  @spec put_resp_header(Conn.t, binary, binary) :: Conn.t
+  @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
       is_binary(key) and is_binary(value) and state != :sent do
     %{conn | resp_headers: :lists.keystore(key, 1, headers, { key, value })}
@@ -299,7 +293,7 @@ defmodule Plug.Connection do
   @doc """
   Deletes a response header.
   """
-  @spec delete_resp_header(Conn.t, binary) :: Conn.t
+  @spec delete_resp_header(t, binary) :: t
   def delete_resp_header(%Conn{resp_headers: headers, state: state} = conn, key) when
       is_binary(key) and state != :sent do
     %{conn | resp_headers: :lists.keydelete(key, 1, headers)}
@@ -313,7 +307,7 @@ defmodule Plug.Connection do
   Puts the content-type response header taking into
   account the charset.
   """
-  @spec put_resp_content_type(Conn.t, binary, binary | nil) :: Conn.t
+  @spec put_resp_content_type(t, binary, binary | nil) :: t
   def put_resp_content_type(conn, content_type, charset \\ "utf-8") when
       is_binary(content_type) and (is_binary(charset) or nil?(charset)) do
     value =
@@ -331,9 +325,9 @@ defmodule Plug.Connection do
   This function does not fetch parameters from the body. To fetch
   parameters from the body, use the `Plug.Parsers` plug.
   """
-  @spec fetch_params(Conn.t) :: Conn.t
-  def fetch_params(%Conn{params: Plug.Connection.Unfetched[], query_string: query_string} = conn) do
-    %{conn | params: Plug.Connection.Query.decode(query_string)}
+  @spec fetch_params(t) :: t
+  def fetch_params(%Conn{params: Plug.Conn.Unfetched[], query_string: query_string} = conn) do
+    %{conn | params: Plug.Conn.Query.decode(query_string)}
   end
 
   def fetch_params(%Conn{} = conn) do
@@ -343,12 +337,12 @@ defmodule Plug.Connection do
   @doc """
   Fetches cookies from the request headers.
   """
-  @spec fetch_cookies(Conn.t) :: Conn.t
-  def fetch_cookies(%Conn{req_cookies: Plug.Connection.Unfetched[],
+  @spec fetch_cookies(t) :: t
+  def fetch_cookies(%Conn{req_cookies: Plug.Conn.Unfetched[],
                           resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
     req_cookies =
       lc { "cookie", cookie } inlist req_headers,
-         kv inlist Plug.Connection.Cookies.decode(cookie),
+         kv inlist Plug.Conn.Cookies.decode(cookie),
          do: kv
 
     cookies = Enum.reduce(resp_cookies, req_cookies, fn
@@ -378,7 +372,7 @@ defmodule Plug.Connection do
   * `:secure` - if the cookie must be sent only over https;
 
   """
-  @spec put_resp_cookie(Conn.t, binary, binary, Keyword.t) :: Conn.t
+  @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t
   def put_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
     resp_cookies = List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] })
@@ -393,7 +387,7 @@ defmodule Plug.Connection do
   Deleting a cookie requires the same options as to when the cookie was put.
   Check `put_resp_cookie/4` for more information.
   """
-  @spec delete_resp_cookie(Conn.t, binary, Keyword.t) :: Conn.t
+  @spec delete_resp_cookie(t, binary, Keyword.t) :: t
   def delete_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, opts \\ []) when
       is_binary(key) and is_list(opts) do
     opts = opts
@@ -406,7 +400,7 @@ defmodule Plug.Connection do
   @doc """
   Fetches session from session store. Will also fetch cookies.
   """
-  @spec fetch_session(Conn.t) :: Conn.t
+  @spec fetch_session(t) :: t
   def fetch_session(%Conn{private: private} = conn) do
     if fun = private[:plug_session_fetch] do
       conn |> fetch_cookies |> fun.()
@@ -418,7 +412,7 @@ defmodule Plug.Connection do
   @doc """
   Puts specified value in session for given key.
   """
-  @spec put_session(Conn.t, any, any) :: Conn.t
+  @spec put_session(t, any, any) :: t
   def put_session(conn, key, value) do
     put_session(conn, &Dict.put(&1, key, value))
   end
@@ -426,7 +420,7 @@ defmodule Plug.Connection do
   @doc """
   Returns session value for given key.
   """
-  @spec get_session(Conn.t, any) :: any
+  @spec get_session(t, any) :: any
   def get_session(conn, key) do
     session = get_session(conn)
     Dict.get(session, key)
@@ -435,7 +429,7 @@ defmodule Plug.Connection do
   @doc """
   Deletes session for given key.
   """
-  @spec delete_session(Conn.t, any) :: Conn.t
+  @spec delete_session(t, any) :: t
   def delete_session(conn, key) do
     put_session(conn, &Dict.delete(&1, key))
   end
@@ -449,7 +443,7 @@ defmodule Plug.Connection do
   * `:drop` - drops the session, a session cookie will not be included in the
               response;
   """
-  @spec configure_session(Conn.t, Keyword.t) :: Conn.t
+  @spec configure_session(t, Keyword.t) :: t
   def configure_session(conn, opts) do
     get_session(conn)
 
@@ -470,7 +464,7 @@ defmodule Plug.Connection do
   Callbacks are invoked in the reverse order they are defined (callbacks
   defined first are invoked last).
   """
-  @spec register_before_send(Conn.t, (Conn.t -> Conn.t)) :: Conn.t
+  @spec register_before_send(t, (t -> t)) :: t
   def register_before_send(%Conn{before_send: before_send, state: state} = conn, callback)
       when is_function(callback, 1) and state in @unsent do
     %{conn | before_send: [callback|before_send]}
@@ -494,7 +488,7 @@ defmodule Plug.Connection do
 
   defp merge_headers(headers, cookies) do
     Enum.reduce(cookies, headers, fn { key, opts }, acc ->
-      [{ "set-cookie", Plug.Connection.Cookies.encode(key, opts) }|acc]
+      [{ "set-cookie", Plug.Conn.Cookies.encode(key, opts) }|acc]
     end)
   end
 

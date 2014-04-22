@@ -1,7 +1,7 @@
 defmodule Plug.SessionTest do
   use ExUnit.Case, async: true
   use Plug.Test
-  import Plug.Connection
+  import Plug.Conn
 
   defmodule ProcessStore do
     @behaviour Plug.Session.Store

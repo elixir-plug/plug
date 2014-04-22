@@ -1,4 +1,4 @@
-defmodule Plug.Connection.Utils do
+defmodule Plug.Conn.Utils do
   @moduledoc """
   Utilities for working with connection data
   """

@@ -9,7 +9,7 @@ defmodule Plug.StaticTest do
     plug :passthrough
 
     defp passthrough(conn, _) do
-      Plug.Connection.send_resp(conn, 404, "Passthrough")
+      Plug.Conn.send_resp(conn, 404, "Passthrough")
     end
   end
 

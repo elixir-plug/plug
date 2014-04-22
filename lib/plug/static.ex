@@ -30,7 +30,7 @@ defmodule Plug.Static do
         plug :not_found
 
         def not_found(conn, _) do
-          Plug.Connection.send(conn, 404, "not found")
+          Plug.Conn.send(conn, 404, "not found")
         end
       end
 
@@ -39,7 +39,7 @@ defmodule Plug.Static do
   @behaviour Plug.Wrapper
   @allowed_methods ~w(GET HEAD)
 
-  import Plug.Connection
+  import Plug.Conn
 
   def init(opts) do
     at   = Keyword.fetch!(opts, :at)
@@ -98,7 +98,7 @@ defmodule Plug.Static do
 
   defp gzip?(conn) do
     if accept = conn.req_headers["accept-encoding"] do
-      Plug.Connection.Utils.list(accept)
+      Plug.Conn.Utils.list(accept)
       |> Enum.any?(&(:binary.match(&1, ["gzip", "*"]) != :nomatch))
     end
   end

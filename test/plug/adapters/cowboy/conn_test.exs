@@ -1,8 +1,8 @@
-defmodule Plug.Adapters.Cowboy.ConnectionTest do
+defmodule Plug.Adapters.Cowboy.ConnTest do
   use ExUnit.Case, async: true
 
   alias  Plug.Conn
-  import Plug.Connection
+  import Plug.Conn
 
   ## Cowboy setup for testing
 
@@ -44,7 +44,7 @@ defmodule Plug.Adapters.Cowboy.ConnectionTest do
   end
 
   def build(%Conn{} = conn) do
-    assert { Plug.Adapters.Cowboy.Connection, _ } = conn.adapter
+    assert { Plug.Adapters.Cowboy.Conn, _ } = conn.adapter
     assert conn.path_info == ["build", "foo", "bar"]
     assert conn.query_string == ""
     assert conn.scheme == :http

@@ -1,4 +1,4 @@
-defmodule Plug.ConnectionTest do
+defmodule Plug.ConnTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
@@ -61,7 +61,7 @@ defmodule Plug.ConnectionTest do
 
   test "resp/3 raises when connection was already sent" do
     conn = conn(:head, "/foo") |> send_resp(200, "HELLO")
-    assert_raise Plug.Connection.AlreadySentError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       resp(conn, 200, "OTHER")
     end
   end
@@ -89,7 +89,7 @@ defmodule Plug.ConnectionTest do
 
   test "send_resp/3 raises when connection was already sent" do
     conn = conn(:head, "/foo") |> send_resp(200, "HELLO")
-    assert_raise Plug.Connection.AlreadySentError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       send_resp(conn, 200, "OTHER")
     end
   end
@@ -147,7 +147,7 @@ defmodule Plug.ConnectionTest do
 
   test "send_file/3 raises when connection was already sent" do
     conn = conn(:head, "/foo") |> send_file(200, __ENV__.file)
-    assert_raise Plug.Connection.AlreadySentError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       send_file(conn, 200, __ENV__.file)
     end
   end
@@ -183,7 +183,7 @@ defmodule Plug.ConnectionTest do
 
   test "send_chunked/3 raises when connection was already sent" do
     conn = conn(:head, "/foo") |> send_chunked(200)
-    assert_raise Plug.Connection.AlreadySentError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       send_chunked(conn, 200)
     end
   end
@@ -242,7 +242,7 @@ defmodule Plug.ConnectionTest do
 
   test "params/1 && fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
-    assert conn.params == Plug.Connection.Unfetched[aspect: :params]
+    assert conn.params == Plug.Conn.Unfetched[aspect: :params]
     conn = fetch_params(conn)
     assert conn.params == [{ "a", "b" }, { "c", "d" }]
 
@@ -252,7 +252,7 @@ defmodule Plug.ConnectionTest do
 
   test "req_cookies/1 && fetch_params/1" do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
-    assert conn.req_cookies == Plug.Connection.Unfetched[aspect: :cookies]
+    assert conn.req_cookies == Plug.Conn.Unfetched[aspect: :cookies]
     conn = fetch_cookies(conn)
     assert conn.req_cookies == [{ "foo", "bar" }, { "baz", "bat" }]
 
@@ -299,7 +299,7 @@ defmodule Plug.ConnectionTest do
 
   test "cookies/1 loaded early" do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar")
-    assert conn.cookies == Plug.Connection.Unfetched[aspect: :cookies]
+    assert conn.cookies == Plug.Conn.Unfetched[aspect: :cookies]
 
     conn = conn |> fetch_cookies
     assert conn.cookies["foo"] == "bar"
@@ -316,7 +316,7 @@ defmodule Plug.ConnectionTest do
 
   test "cookies/1 loaded late" do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar") |> put_req_cookie("bar", "baz")
-    assert conn.cookies == Plug.Connection.Unfetched[aspect: :cookies]
+    assert conn.cookies == Plug.Conn.Unfetched[aspect: :cookies]
 
     conn = conn |> put_resp_cookie("foo", "baz") |> put_resp_cookie("baz", "bat") |>
            delete_resp_cookie("bar") |> fetch_cookies

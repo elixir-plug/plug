@@ -4,7 +4,7 @@ defmodule Plug.MethodOverride do
   or x-http-method-override header.
 
   This plug expects the parameters to be already parsed and fetched. Parameters
-  are fetched with `Plug.Connection.fetch_params/1` and parsed with
+  are fetched with `Plug.Conn.fetch_params/1` and parsed with
   `Plug.Parsers`.
 
   ## Examples

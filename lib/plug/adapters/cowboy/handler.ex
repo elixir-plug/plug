@@ -3,7 +3,7 @@ defmodule Plug.Adapters.Cowboy.Handler do
   @moduledoc false
 
   require :cowboy_req
-  @connection Plug.Adapters.Cowboy.Connection
+  @connection Plug.Adapters.Cowboy.Conn
 
   def init({ transport, :http }, req, { plug, opts }) when transport in [:tcp, :ssl] do
     case plug.call(@connection.conn(req, transport), opts) do

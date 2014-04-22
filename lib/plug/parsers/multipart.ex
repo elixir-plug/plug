@@ -28,7 +28,7 @@ defmodule Plug.Parsers.MULTIPART do
   defp handle_disposition(disposition, headers) do
     case :binary.split(disposition, ";") do
       [_, params] ->
-        params = Plug.Connection.Utils.params(params)
+        params = Plug.Conn.Utils.params(params)
         if name = params["name"] do
           handle_disposition_params(name, params, headers)
         else

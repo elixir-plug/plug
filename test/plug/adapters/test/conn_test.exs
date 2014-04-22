@@ -1,4 +1,4 @@
-defmodule Plug.Adapters.Test.ConnectionTest do
+defmodule Plug.Adapters.Test.ConnTest do
   use ExUnit.Case, async: true
 
   import Plug.Test
