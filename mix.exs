@@ -4,7 +4,7 @@ defmodule Plug.Mixfile do
   def project do
     [ app: :plug,
       version: "0.4.0",
-      elixir: "~> 0.13.0",
+      elixir: "~> 0.13.1-dev",
       deps: deps,
       docs: [readme: true, main: "README"] ]
   end
