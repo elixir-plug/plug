@@ -341,9 +341,9 @@ defmodule Plug.Conn do
   def fetch_cookies(%Conn{req_cookies: %Unfetched{},
                           resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
     req_cookies =
-      lc {"cookie", cookie} inlist req_headers,
-         kv inlist Plug.Conn.Cookies.decode(cookie),
-         do: kv
+      for {"cookie", cookie} <- req_headers,
+          kv <- Plug.Conn.Cookies.decode(cookie),
+          do: kv
 
     cookies = Enum.reduce(resp_cookies, req_cookies, fn
       {key, opts}, acc ->

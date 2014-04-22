@@ -68,7 +68,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
-    lc segment inlist segments, segment != "", do: segment
+    for segment <- segments, segment != "", do: segment
   end
 
   ## Multipart

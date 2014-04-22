@@ -62,7 +62,7 @@ defmodule Plug.Static do
 
   def wrap(conn, at, from, gzip, fun) do
     segments = subset(at, conn.path_info)
-    segments = lc segment inlist List.wrap(segments), do: URI.decode(segment)
+    segments = for segment <- List.wrap(segments), do: URI.decode(segment)
     path     = path(from, segments)
 
     cond do

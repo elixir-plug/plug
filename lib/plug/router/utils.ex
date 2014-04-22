@@ -58,7 +58,7 @@ defmodule Plug.Router.Utils do
 
   """
   def split(bin) do
-    lc segment inlist String.split(bin, "/"), segment != "", do: segment
+    for segment <- String.split(bin, "/"), segment != "", do: segment
   end
 
   ## Helpers

@@ -96,7 +96,7 @@ defmodule Plug.Parsers do
   end
 
   defp convert_parsers(parsers) do
-    lc parser inlist parsers do
+    for parser <- parsers do
       case atom_to_binary(parser) do
         "Elixir." <> _ -> parser
         reference      -> Module.concat(Plug.Parsers, String.upcase(reference))

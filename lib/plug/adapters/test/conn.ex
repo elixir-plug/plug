@@ -2,8 +2,6 @@ defmodule Plug.Adapters.Test.Conn do
   @behaviour Plug.Conn.Adapter
   @moduledoc false
 
-  defrecord State, [:method, :params, :req_body, :chunks]
-
   ## Test helpers
 
   def conn(method, uri, body_or_params \\ [], opts \\ []) do
@@ -11,7 +9,7 @@ defmodule Plug.Adapters.Test.Conn do
     method  = method |> to_string |> String.upcase
 
     {body, params, headers} = body_or_params(body_or_params, opts[:headers] || [])
-    state = State[method: method, params: params, req_body: body]
+    state = %{method: method, params: params, req_body: body, chunks: nil}
 
     %Plug.Conn{
       adapter: {__MODULE__, state},
@@ -27,36 +25,36 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Connection adapter
 
-  def send_resp(State[method: "HEAD"] = state, _status, _headers, _body),
+  def send_resp(%{method: "HEAD"} = state, _status, _headers, _body),
     do: {:ok, "", state}
-  def send_resp(State[] = state, _status, _headers, body),
+  def send_resp(%{} = state, _status, _headers, body),
     do: {:ok, iolist_to_binary(body), state}
 
-  def send_file(State[method: "HEAD"] = state, _status, _headers, _path),
+  def send_file(%{method: "HEAD"} = state, _status, _headers, _path),
     do: {:ok, "", state}
-  def send_file(State[] = state, _status, _headers, path),
+  def send_file(%{} = state, _status, _headers, path),
     do: {:ok, File.read!(path), state}
 
   def send_chunked(state, _status, _headers),
-    do: {:ok, "", state.chunks("")}
-  def chunk(State[method: "HEAD"] = state, _body),
+    do: {:ok, "", %{state | chunks: ""}}
+  def chunk(%{method: "HEAD"} = state, _body),
     do: {:ok, "", state}
-  def chunk(State[chunks: chunks] = state, body) do
+  def chunk(%{chunks: chunks} = state, body) do
     body = chunks <> iolist_to_binary(body)
-    {:ok, body, state.chunks(body)}
+    {:ok, body, %{state | chunks: body}}
   end
 
-  def stream_req_body(State[req_body: body] = state, _limit) when byte_size(body) == 0,
+  def stream_req_body(%{req_body: body} = state, _limit) when byte_size(body) == 0,
     do: {:done, state}
-  def stream_req_body(State[req_body: body] = state, limit) do
+  def stream_req_body(%{req_body: body} = state, limit) do
     size = min(byte_size(body), limit)
     data = :binary.part(body, 0, size)
     rest = :binary.part(body, size, byte_size(body) - size)
-    {:ok, data, state.req_body(rest)}
+    {:ok, data, %{state | req_body: rest}}
   end
 
-  def parse_req_multipart(State[params: multipart] = state, _limit, _callback) do
-    {:ok, multipart, state.params(nil)}
+  def parse_req_multipart(%{params: multipart} = state, _limit, _callback) do
+    {:ok, multipart, %{state | params: nil}}
   end
 
   ## Private helpers
@@ -85,6 +83,6 @@ defmodule Plug.Adapters.Test.Conn do
 
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
-    lc segment inlist segments, segment != "", do: segment
+    for segment <- segments, segment != "", do: segment
   end
 end
