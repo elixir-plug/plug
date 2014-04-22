@@ -20,7 +20,7 @@ defmodule Plug.ParsersTest do
   end
 
   test "parses url encoded bodies" do
-    headers = [{ "content-type", "application/x-www-form-urlencoded" }]
+    headers = [{"content-type", "application/x-www-form-urlencoded"}]
     conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
     assert conn.params["foo"] == "baz"
   end
@@ -32,7 +32,7 @@ defmodule Plug.ParsersTest do
 
   test "raises on too large bodies" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError, fn ->
-      headers = [{ "content-type", "application/x-www-form-urlencoded" }]
+      headers = [{"content-type", "application/x-www-form-urlencoded"}]
       parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), limit: 5)
     end
     assert Plug.Exception.status(exception) == 413
@@ -40,7 +40,7 @@ defmodule Plug.ParsersTest do
 
   test "raises when request cannot be processed" do
     exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
-      headers = [{ "content-type", "text/plain" }]
+      headers = [{"content-type", "text/plain"}]
       parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
     end
     assert Plug.Exception.status(exception) == 415

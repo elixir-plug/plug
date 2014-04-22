@@ -49,7 +49,7 @@ defmodule Plug.Conn.Query do
   Parameters lists are added to the accumulator in reverse
   order, so be sure to pass the parameters in reverse order.
   """
-  def decode_pair({ key, value }, acc) do
+  def decode_pair({key, value}, acc) do
     parts =
       if key != "" and :binary.last(key) == ?] do
         # Remove trailing ]
@@ -76,7 +76,7 @@ defmodule Plug.Conn.Query do
   # `age=17` would match here.
   defp assign_parts([key], value, acc) do
     case :lists.keyfind(key, 1, acc) do
-      { _, _ } -> acc
+      {_, _} -> acc
       false -> put(key, value, acc)
     end
   end
@@ -87,7 +87,7 @@ defmodule Plug.Conn.Query do
   # reverse order.
   defp assign_parts([key,""|t], value, acc) do
     case :lists.keyfind(key, 1, acc) do
-      { ^key, [h|_] = current } when not is_tuple(h) ->
+      {^key, [h|_] = current} when not is_tuple(h) ->
         replace(key, assign_list(t, current, value), acc)
       false ->
         put(key, assign_list(t, [], value), acc)
@@ -101,7 +101,7 @@ defmodule Plug.Conn.Query do
   # continue looping.
   defp assign_parts([key|t], value, acc) do
     case :lists.keyfind(key, 1, acc) do
-      { ^key, [h|_] = current } when is_tuple(h) ->
+      {^key, [h|_] = current} when is_tuple(h) ->
         replace(key, assign_parts(t, value, current), acc)
       false ->
         put(key, assign_parts(t, value, []), acc)
@@ -117,13 +117,13 @@ defmodule Plug.Conn.Query do
   defp assign_list([], value), do: value
   defp assign_list(t, value),  do: assign_parts(t, value, [])
 
-  @compile { :inline, put: 3, replace: 3 }
+  @compile {:inline, put: 3, replace: 3}
 
   defp put(key, value, acc) do
-    [{ key, value }|acc]
+    [{key, value}|acc]
   end
 
   defp replace(key, value, acc) do
-    [{ key, value }|:lists.keydelete(key, 1, acc)]
+    [{key, value}|:lists.keydelete(key, 1, acc)]
   end
 end

@@ -141,7 +141,7 @@ defmodule Plug.Router do
   @doc false
   defmacro __before_compile__(env) do
     plugs = Module.get_attribute(env.module, :plugs)
-    { conn, body } = Plug.Builder.compile(plugs)
+    {conn, body} = Plug.Builder.compile(plugs)
     quote do
       import Plug.Router, only: []
       def call(unquote(conn), _), do: unquote(body)
@@ -240,7 +240,7 @@ defmodule Plug.Router do
   """
   defmacro forward(path, options) when is_binary(path) do
     quote do
-      { target, options } = Keyword.pop(unquote(options), :to)
+      {target, options} = Keyword.pop(unquote(options), :to)
 
       if nil?(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
@@ -267,9 +267,9 @@ defmodule Plug.Router do
       raise ArgumentError, message: "expected :do to be given as option"
     end
 
-    { method, guard } = convert_methods(List.wrap(methods))
-    { path, guards }  = extract_path_and_guards(expr, guard)
-    { _vars, match }  = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
+    {method, guard} = convert_methods(List.wrap(methods))
+    {path, guards}  = extract_path_and_guards(expr, guard)
+    {_vars, match}  = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
 
     quote do
       defp do_match(unquote(method), unquote(match)) when unquote(guards) do
@@ -281,29 +281,29 @@ defmodule Plug.Router do
   # Convert the verbs given with :via into a variable
   # and guard set that can be added to the dispatch clause.
   defp convert_methods([]) do
-    { quote(do: _), true }
+    {quote(do: _), true}
   end
 
   defp convert_methods([method]) do
-    { Plug.Router.Utils.normalize_method(method), true }
+    {Plug.Router.Utils.normalize_method(method), true}
   end
 
   defp convert_methods(methods) do
     methods = Enum.map methods, &Plug.Router.Utils.normalize_method(&1)
     var = quote do: method
-    { var, quote(do: unquote(var) in unquote(methods)) }
+    {var, quote(do: unquote(var) in unquote(methods))}
   end
 
   # Extract the path and guards from the path.
-  defp extract_path_and_guards({ :when, _, [path, guards] }, true) do
-    { path, guards }
+  defp extract_path_and_guards({:when, _, [path, guards]}, true) do
+    {path, guards}
   end
 
-  defp extract_path_and_guards({ :when, _, [path, guards] }, extra_guard) do
-    { path, { :and, [], [guards, extra_guard] } }
+  defp extract_path_and_guards({:when, _, [path, guards]}, extra_guard) do
+    {path, {:and, [], [guards, extra_guard]}}
   end
 
   defp extract_path_and_guards(path, extra_guard) do
-    { path, extra_guard }
+    {path, extra_guard}
   end
 end

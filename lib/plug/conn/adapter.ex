@@ -20,7 +20,7 @@ defmodule Plug.Conn.Adapter do
   be used during testing.
   """
   defcallback send_resp(payload, Conn.status, Conn.headers, Conn.body) ::
-              { :ok, sent_body :: binary | nil, payload }
+              {:ok, sent_body :: binary | nil, payload}
 
   @doc """
   Sends the given status, headers and file as a response
@@ -35,7 +35,7 @@ defmodule Plug.Conn.Adapter do
   be used during testing.
   """
   defcallback send_file(payload, Conn.status, Conn.headers, file :: binary) ::
-              { :ok, sent_body :: binary | nil, payload }
+              {:ok, sent_body :: binary | nil, payload}
 
   @doc """
   Sends the given status, headers as the beginning of
@@ -47,7 +47,7 @@ defmodule Plug.Conn.Adapter do
   be used during testing.
   """
   defcallback send_chunked(payload, Conn.status, Conn.headers) ::
-              { :ok, sent_body :: binary | nil, payload }
+              {:ok, sent_body :: binary | nil, payload}
 
   @doc """
   Sends a chunk in the chunked response.
@@ -61,7 +61,7 @@ defmodule Plug.Conn.Adapter do
   it can be used during testing.
   """
   defcallback chunk(payload, Conn.status) ::
-              :ok | { :ok, sent_body :: binary, payload } | { :error, term }
+              :ok | {:ok, sent_body :: binary, payload} | {:error, term}
 
   @doc """
   Streams the request body.
@@ -70,7 +70,7 @@ defmodule Plug.Conn.Adapter do
   can be passed as argument.
   """
   defcallback stream_req_body(payload, limit :: pos_integer) ::
-              { :ok, data :: binary, payload } | { :done, payload }
+              {:ok, data :: binary, payload} | {:done, payload}
 
   @doc """
   Parses a multipart request.
@@ -80,17 +80,17 @@ defmodule Plug.Conn.Adapter do
   given fallback passing the headers for that segment, before consuming
   the body. The callback will return one of the following values:
 
-  * `{ :binary, name }` - the current segment must be treated as a regular
+  * `{:binary, name}` - the current segment must be treated as a regular
                           binary value with the given `name`
-  * `{ :file, name, file, upload } - the current segment is a file upload with `name`
+  * `{:file, name, file, upload} - the current segment is a file upload with `name`
                                      and contents should be written to the given `file`
   * `:skip` - this multipart segment should be skipped
 
   This function can respond with one of the three following values:
 
-  * `{ :ok, params, payload }` - the parameters are already processed as defined per `Conn.params`
-  * `{ :too_large, payload } - the request body goes over the given limit
+  * `{:ok, params, payload}` - the parameters are already processed as defined per `Conn.params`
+  * `{:too_large, payload} - the request body goes over the given limit
   """
   defcallback parse_req_multipart(payload, limit :: pos_integer, fun) ::
-              { :ok, Conn.params, payload } | { :too_large, payload }
+              {:ok, Conn.params, payload} | {:too_large, payload}
 end

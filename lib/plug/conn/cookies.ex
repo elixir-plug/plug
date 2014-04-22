@@ -12,7 +12,7 @@ defmodule Plug.Conn.Cookies do
   ## Examples
 
       iex> decode("key1=value1, key2=value2")
-      [{ "key1", "value1" }, { "key2", "value2" }]
+      [{"key1", "value1"}, {"key2", "value2"}]
 
   """
   def decode(cookie) do
@@ -23,7 +23,7 @@ defmodule Plug.Conn.Cookies do
     do: []
   defp decode_each([h|t]) do
     case decode_kv(h) do
-      { _, _ } = kv -> [kv|decode_each(t)]
+      {_, _} = kv -> [kv|decode_each(t)]
       false -> decode_each(t)
     end
   end
@@ -49,7 +49,7 @@ defmodule Plug.Conn.Cookies do
     do: decode_key(t, << key :: binary, h >>)
 
   defp decode_value("", _spaces, key, value),
-    do: { key, value }
+    do: {key, value}
   defp decode_value(<< ?\s, t :: binary >>, spaces, key, value),
     do: decode_value(t, << spaces :: binary, ?\s >>, key, value)
   defp decode_value(<< h, _ :: binary >>, _spaces, _key, _value) when h in [?\t, ?\r, ?\n, ?\v, ?\f],
@@ -95,7 +95,7 @@ defmodule Plug.Conn.Cookies do
     integer_to_binary(number)
   end
 
-  defp rfc2822({ { year, month, day } = date, { hour, minute, second } }) do
+  defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
     weekday_name  = weekday_name(:calendar.day_of_the_week(date))
     month_name    = month_name(month)
     padded_day    = pad(day)

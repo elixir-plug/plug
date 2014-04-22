@@ -42,7 +42,7 @@ defmodule Plug.Test do
   """
   @spec put_req_header(Conn.t, binary, binary) :: Conn.t
   def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
-    %{conn | req_headers: :lists.keystore(key, 1, headers, { key, value })}
+    %{conn | req_headers: :lists.keystore(key, 1, headers, {key, value})}
   end
 
   @doc """
@@ -59,7 +59,7 @@ defmodule Plug.Test do
   @spec put_req_cookie(Conn.t, binary, binary) :: Conn.t
   def put_req_cookie(conn, key, value) when is_binary(key) and is_binary(value) do
     conn = delete_req_cookie(conn, key)
-    %{conn | req_headers: [{ "cookie", "#{key}=#{value}" }|conn.req_headers]}
+    %{conn | req_headers: [{"cookie", "#{key}=#{value}"}|conn.req_headers]}
   end
 
   @doc """
@@ -69,7 +69,7 @@ defmodule Plug.Test do
   def delete_req_cookie(%Conn{req_cookies: Plug.Conn.Unfetched[]} = conn, key) when is_binary(key) do
     key  = "#{key}="
     size = byte_size(key)
-    fun  = &match?({ "cookie", value } when binary_part(value, 0, size) == key, &1)                              
+    fun  = &match?({"cookie", value} when binary_part(value, 0, size) == key, &1)
     %{conn | req_headers: Enum.reject(conn.req_headers, fun)}
   end
 

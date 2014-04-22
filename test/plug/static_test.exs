@@ -69,14 +69,14 @@ defmodule Plug.StaticTest do
 
   test "serves gzipped file" do
     conn = conn(:get, "/public/fixtures/static.txt", [],
-                headers: [{ "accept-encoding", "gzip" }])
+                headers: [{"accept-encoding", "gzip"}])
            |> call
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
     assert conn.resp_headers["content-encoding"] == "gzip"
 
     conn = conn(:get, "/public/fixtures/static.txt", [],
-                headers: [{ "accept-encoding", "*" }])
+                headers: [{"accept-encoding", "*"}])
            |> call
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
@@ -85,7 +85,7 @@ defmodule Plug.StaticTest do
 
   test "only serves gzipped file if available" do
     conn = conn(:get, "/public/fixtures/static+with%20spaces.txt", [],
-                headers: [{ "accept-encoding", "gzip" }])
+                headers: [{"accept-encoding", "gzip"}])
            |> call
     assert conn.status == 200
     assert conn.resp_body == "SPACES"

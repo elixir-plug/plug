@@ -48,7 +48,7 @@ defmodule Plug.ConnTest do
   test "status/1, resp_headers/1 and resp_body/1" do
     conn = conn(:get, "/foo")
     assert conn.status == nil
-    assert conn.resp_headers == [{ "cache-control", "max-age=0, private, must-revalidate" }]
+    assert conn.resp_headers == [{"cache-control", "max-age=0, private, must-revalidate"}]
     assert conn.resp_body == nil
   end
 
@@ -77,9 +77,9 @@ defmodule Plug.ConnTest do
   end
 
   test "send_resp/3 sends self a message" do
-    refute_received { :plug_conn, :sent }
+    refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_resp(200, "HELLO")
-    assert_received { :plug_conn, :sent }
+    assert_received {:plug_conn, :sent}
   end
 
   test "send_resp/3 does not send on head" do
@@ -95,9 +95,9 @@ defmodule Plug.ConnTest do
   end
 
   test "send_resp/3 allows for iolist in the resp body" do
-    refute_received { :plug_conn, :sent }
+    refute_received {:plug_conn, :sent}
     conn = conn(:get, "/foo") |> send_resp(200, ["this ", ["is", " nested"]])
-    assert_received { :plug_conn, :sent }
+    assert_received {:plug_conn, :sent}
     assert conn.resp_body == "this is nested"
   end
 
@@ -135,9 +135,9 @@ defmodule Plug.ConnTest do
   end
 
   test "send_file/3 sends self a message" do
-    refute_received { :plug_conn, :sent }
+    refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_file(200, __ENV__.file)
-    assert_received { :plug_conn, :sent }
+    assert_received {:plug_conn, :sent}
   end
 
   test "send_file/3 does not send on head" do
@@ -164,20 +164,20 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo") |> send_chunked(200)
     assert conn.status == 200
     assert conn.resp_body == ""
-    { :ok, conn } = chunk(conn, "HELLO\n")
+    {:ok, conn} = chunk(conn, "HELLO\n")
     assert conn.resp_body == "HELLO\n"
-    { :ok, conn } = chunk(conn, ["WORLD", ["\n"]])
+    {:ok, conn} = chunk(conn, ["WORLD", ["\n"]])
     assert conn.resp_body == "HELLO\nWORLD\n"
   end
 
   test "send_chunked/3 sends self a message" do
-    refute_received { :plug_conn, :sent }
+    refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_chunked(200)
-    assert_received { :plug_conn, :sent }
+    assert_received {:plug_conn, :sent}
   end
 
   test "send_chunked/3 does not send on head" do
-    { :ok, conn } = conn(:head, "/foo") |> send_chunked(200) |> chunk("HELLO")
+    {:ok, conn} = conn(:head, "/foo") |> send_chunked(200) |> chunk("HELLO")
     assert conn.resp_body == ""
   end
 
@@ -214,13 +214,13 @@ defmodule Plug.ConnTest do
   test "put_resp_content_type/3" do
     conn = conn(:head, "/foo")
 
-    assert { "content-type", "text/html; charset=utf-8" } in
+    assert {"content-type", "text/html; charset=utf-8"} in
            put_resp_content_type(conn, "text/html").resp_headers
 
-    assert { "content-type", "text/html; charset=iso" } in
+    assert {"content-type", "text/html; charset=iso"} in
            put_resp_content_type(conn, "text/html", "iso").resp_headers
 
-    assert { "content-type", "text/html" } in
+    assert {"content-type", "text/html"} in
            put_resp_content_type(conn, "text/html", nil).resp_headers
   end
 
@@ -235,7 +235,7 @@ defmodule Plug.ConnTest do
   end
 
   test "req_headers/1" do
-    conn = conn(:get, "/foo", [], headers: [{ "foo", "bar" }, { "baz", "bat" }])
+    conn = conn(:get, "/foo", [], headers: [{"foo", "bar"}, {"baz", "bat"}])
     assert conn.req_headers["foo"] == "bar"
     assert conn.req_headers["baz"] == "bat"
   end
@@ -244,7 +244,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == Plug.Conn.Unfetched[aspect: :params]
     conn = fetch_params(conn)
-    assert conn.params == [{ "a", "b" }, { "c", "d" }]
+    assert conn.params == [{"a", "b"}, {"c", "d"}]
 
     conn = conn(:get, "/foo") |> fetch_params
     assert conn.params == []
@@ -254,7 +254,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
     assert conn.req_cookies == Plug.Conn.Unfetched[aspect: :cookies]
     conn = fetch_cookies(conn)
-    assert conn.req_cookies == [{ "foo", "bar" }, { "baz", "bat" }]
+    assert conn.req_cookies == [{"foo", "bar"}, {"baz", "bat"}]
 
     conn = conn(:get, "/foo") |> fetch_cookies
     assert conn.req_cookies == []

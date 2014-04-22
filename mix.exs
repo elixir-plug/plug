@@ -12,21 +12,21 @@ defmodule Plug.Mixfile do
   # Configuration for the OTP application
   def application do
     [ applications: [:crypto],
-      mod: { Plug, [] } ]
+      mod: {Plug, []} ]
   end
 
   def deps(:prod) do
-    [ { :mime, github: "dynamo/mime" },
-      { :cowboy, "~> 0.9", github: "extend/cowboy", optional: true } ]
+    [ {:mime, github: "dynamo/mime"},
+      {:cowboy, "~> 0.9", github: "extend/cowboy", optional: true} ]
   end
 
   def deps(:docs) do
     deps(:prod) ++
-      [ { :ex_doc, github: "elixir-lang/ex_doc" } ]
+      [ {:ex_doc, github: "elixir-lang/ex_doc"} ]
   end
 
   def deps(_) do
     deps(:prod) ++
-      [ { :hackney, github: "benoitc/hackney" } ]
+      [ {:hackney, github: "benoitc/hackney"} ]
   end
 end

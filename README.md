@@ -46,8 +46,8 @@ In practice, you want to use plugs in your existing projects. You can do that in
 
     ```elixir
     def deps do
-      [ { :cowboy, github: "extend/cowboy" },
-        { :plug, PLUG_VERSION, github: "elixir-lang/plug" } ]
+      [ {:cowboy, github: "extend/cowboy"},
+        {:plug, PLUG_VERSION, github: "elixir-lang/plug"} ]
     end
     ```
 

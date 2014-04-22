@@ -11,11 +11,11 @@ defmodule Plug.SessionTest do
     end
 
     def get(sid, nil) do
-      { sid, Process.get({ :session, sid }) }
+      {sid, Process.get({:session, sid})}
     end
 
     def delete(sid, nil) do
-      Process.delete({ :session, sid })
+      Process.delete({:session, sid})
       :ok
     end
 
@@ -25,7 +25,7 @@ defmodule Plug.SessionTest do
     end
 
     def put(sid, data, nil) do
-      Process.put({ :session, sid }, data)
+      Process.put({:session, sid}, data)
       sid
     end
   end
@@ -42,25 +42,25 @@ defmodule Plug.SessionTest do
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = put_session(conn, :foo, :bar)
     conn = send_resp(conn, 200, "")
-    assert [{ "foobar", [value: _, secure: true, path: "some/path"] }] = conn.resp_cookies
+    assert [{"foobar", [value: _, secure: true, path: "some/path"]}] = conn.resp_cookies
   end
 
   test "put session" do
     conn = conn(:get, "/") |> fetch_cookies
-    conn = %{conn | cookies: [{ "foobar", "sid" }]}
+    conn = %{conn | cookies: [{"foobar", "sid"}]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = put_session(conn, :foo, :bar)
     send_resp(conn, 200, "")
 
-    assert Process.get({ :session, "sid" }) == [foo: :bar]
+    assert Process.get({:session, "sid"}) == [foo: :bar]
   end
 
   test "get session" do
-    Process.put({ :session, "sid" }, [foo: :bar])
+    Process.put({:session, "sid"}, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = %{conn | cookies: [{ "foobar", "sid" }]}
+    conn = %{conn | cookies: [{"foobar", "sid"}]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -68,9 +68,9 @@ defmodule Plug.SessionTest do
   end
 
   test "drop session" do
-    Process.put({ :session, "sid" }, [foo: :bar])
+    Process.put({:session, "sid"}, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = %{conn | cookies: [{ "foobar", "sid" }]}
+    conn = %{conn | cookies: [{"foobar", "sid"}]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -82,29 +82,29 @@ defmodule Plug.SessionTest do
   end
 
   test "renew session" do
-    Process.put({ :session, "sid" }, [foo: :bar])
+    Process.put({:session, "sid"}, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = %{conn | cookies: [{ "foobar", "sid" }]}
+    conn = %{conn | cookies: [{"foobar", "sid"}]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = configure_session(conn, renew: true)
     conn = send_resp(conn, 200, "")
 
-    assert [{ "foobar", [value: _] }] = conn.resp_cookies
-    refute [{ "foobar", [value: "sid"] }] = conn.resp_cookies
+    assert [{"foobar", [value: _]}] = conn.resp_cookies
+    refute [{"foobar", [value: "sid"]}] = conn.resp_cookies
   end
 
   test "reuses sid" do
-    Process.put({ :session, "sid" }, [foo: :bar])
+    Process.put({:session, "sid"}, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
-    conn = %{conn | cookies: [{ "foobar", "sid" }]}
+    conn = %{conn | cookies: [{"foobar", "sid"}]}
 
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = send_resp(conn, 200, "")
 
-    assert [{ "foobar", [value: "sid"] }] = conn.resp_cookies
+    assert [{"foobar", [value: "sid"]}] = conn.resp_cookies
   end
 
   test "generates sid" do
@@ -116,7 +116,7 @@ defmodule Plug.SessionTest do
     conn = send_resp(conn, 200, "")
 
     assert [value: sid] = conn.resp_cookies["foobar"]
-    assert Process.get({ :session, sid }) == [foo: :bar]
+    assert Process.get({:session, sid}) == [foo: :bar]
   end
 
   test "converts store reference" do

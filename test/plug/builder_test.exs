@@ -3,22 +3,22 @@ defmodule Plug.BuilderTest do
 
   defmodule Wrapper do
     def init(val) do
-      { :init, val }
+      {:init, val}
     end
 
     def wrap(conn, opts, fun) do
-      stack = [{ :wrap, opts }|conn.assigns[:stack]]
+      stack = [{:wrap, opts}|conn.assigns[:stack]]
       fun.(assign(conn, :stack, stack))
     end
   end
   
   defmodule Module do
     def init(val) do
-      { :init, val }
+      {:init, val}
     end
 
     def call(conn, opts) do
-      stack = [{ :call, opts }|conn.assigns[:stack]]
+      stack = [{:call, opts}|conn.assigns[:stack]]
       assign(conn, :stack, stack)
     end
   end
@@ -31,7 +31,7 @@ defmodule Plug.BuilderTest do
     plug Module, :opts
 
     def fun(conn, opts) do
-      stack = [{ :fun, opts }|conn.assigns[:stack]]
+      stack = [{:fun, opts}|conn.assigns[:stack]]
       assign(conn, :stack, stack)
     end
   end

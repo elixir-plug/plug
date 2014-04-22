@@ -47,7 +47,7 @@ defmodule Plug.Builder do
   @doc false
   defmacro __before_compile__(env) do
     plugs = Module.get_attribute(env.module, :plugs)
-    { conn, body } = Plug.Builder.compile(plugs)
+    {conn, body} = Plug.Builder.compile(plugs)
     quote do
       def call(unquote(conn), _), do: unquote(body)
     end
@@ -58,7 +58,7 @@ defmodule Plug.Builder do
   """
   defmacro plug(plug, opts \\ []) do
     quote do
-      @plugs { unquote(plug), unquote(opts) }
+      @plugs {unquote(plug), unquote(opts)}
     end
   end
 
@@ -69,13 +69,13 @@ defmodule Plug.Builder do
   and returns a tuple containing the reference to the connection
   as first argument and the compiled quote stack.
   """
-  @spec compile([{ plug, Plug.opts }]) :: { Macro.t, Macro.t }
+  @spec compile([{plug, Plug.opts}]) :: {Macro.t, Macro.t}
   def compile(stack) do
     conn = quote do: conn
-    { conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2)) }
+    {conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2))}
   end
 
-  defp init_plug({ plug, opts }) do
+  defp init_plug({plug, opts}) do
     case atom_to_list(plug) do
       'Elixir.' ++ _ ->
         init_module_plug(plug, opts)
@@ -94,9 +94,9 @@ defmodule Plug.Builder do
         raise ArgumentError,
           message: "#{inspect plug} plug implements both call/2 and wrap/3"
       call? ->
-        { :call, plug, opts }
+        {:call, plug, opts}
       wrap? ->
-        { :wrap, plug, opts }
+        {:wrap, plug, opts}
       true ->
         raise ArgumentError,
           message: "#{inspect plug} plug must implement call/2 or wrap/3"
@@ -104,10 +104,10 @@ defmodule Plug.Builder do
   end
 
   defp init_fun_plug(plug, opts) do
-    { :fun, plug, opts }
+    {:fun, plug, opts}
   end
 
-  defp quote_plug({ :wrap, plug, opts }, acc) do
+  defp quote_plug({:wrap, plug, opts}, acc) do
     quote do
       unquote(plug).wrap(conn, unquote(Macro.escape(opts)), fn conn ->
         unquote(acc)
@@ -115,7 +115,7 @@ defmodule Plug.Builder do
     end
   end
 
-  defp quote_plug({ :call, plug, opts }, acc) do
+  defp quote_plug({:call, plug, opts}, acc) do
     quote do
       case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
         %Plug.Conn{} = conn -> unquote(acc)
@@ -124,7 +124,7 @@ defmodule Plug.Builder do
     end
   end
 
-  defp quote_plug({ :fun, plug, opts }, acc) do
+  defp quote_plug({:fun, plug, opts}, acc) do
     quote do
       case unquote(plug)(conn, unquote(Macro.escape(opts))) do
         %Plug.Conn{} = conn -> unquote(acc)

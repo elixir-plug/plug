@@ -66,7 +66,7 @@ defmodule Plug.Session do
 
     fn conn ->
       if sid = conn.cookies[key] do
-        { sid, session } = store.get(sid, store_config)
+        {sid, session} = store.get(sid, store_config)
       end
 
       conn

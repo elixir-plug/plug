@@ -17,7 +17,7 @@ defmodule Plug.Session.Store do
   associated with the id return `nil` as session. The store can generate a new
   id for the session or return `nil` as the id if it was invalid.
   """
-  defcallback get(sid, Plug.opts) :: { sid, any }
+  defcallback get(sid, Plug.opts) :: {sid, any}
 
   @moduledoc """
   Stores the session associated with given session id. If `nil` is given as id

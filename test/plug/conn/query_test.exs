@@ -45,40 +45,40 @@ defmodule Plug.Conn.QueryTest do
   end
 
   test "decode_pair simple queries" do
-    params = decode_pair [{ "foo", "bar" }, { "baz", "bat" }]
+    params = decode_pair [{"foo", "bar"}, {"baz", "bat"}]
     assert params["foo"] == "bar"
     assert params["baz"] == "bat"
   end
 
   test "decode_pair one-level nested query" do
-    params = decode_pair [{ "users[name]", "hello" }]
+    params = decode_pair [{"users[name]", "hello"}]
     assert params["users"]["name"] == "hello"
 
-    params = decode_pair [{ "users[name]", "hello" }, { "users[age]", "17" }]
+    params = decode_pair [{"users[name]", "hello"}, {"users[age]", "17"}]
     assert params["users"]["name"] == "hello"
     assert params["users"]["age"]  == "17"
   end
 
   test "decode_pair query no override" do
-    params = decode_pair [{ "foo", "bar" }, { "foo", "baz" }]
+    params = decode_pair [{"foo", "bar"}, {"foo", "baz"}]
     assert params["foo"] == "baz"
 
-    params = decode_pair [{ "users[name]", "bar" }, { "users[name]", "baz" }]
+    params = decode_pair [{"users[name]", "bar"}, {"users[name]", "baz"}]
     assert params["users"]["name"] == "baz"
   end
 
   test "decode_pair many-levels nested query" do
-    params = decode_pair [{ "users[name]", "hello" }]
+    params = decode_pair [{"users[name]", "hello"}]
     assert params["users"]["name"] == "hello"
 
-    params = decode_pair [{ "users[name]", "hello" }, { "users[age]", "17" }, { "users[address][street]", "Mourato" }]
+    params = decode_pair [{"users[name]", "hello"}, {"users[age]", "17"}, {"users[address][street]", "Mourato"}]
     assert params["users"]["name"]              == "hello"
     assert params["users"]["age"]               == "17"
     assert params["users"]["address"]["street"] == "Mourato"
   end
 
   test "decode_pair list query" do
-    params = decode_pair [{ "foo[]", "bar" }, { "foo[]", "baz" }]
+    params = decode_pair [{"foo[]", "bar"}, {"foo[]", "baz"}]
     assert params["foo"] == ["bar", "baz"]
   end
 

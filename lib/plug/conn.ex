@@ -18,7 +18,7 @@ defmodule Plug.Conn do
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `port` - the requested port as an integer, example: `80`
-  * `req_headers` - the request headers as a list, example: `[{ "content-type", "text/plain" }]`
+  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
 
@@ -67,24 +67,24 @@ defmodule Plug.Conn do
   * `private` - shared library data as a dict
   """
 
-  @type adapter      :: { module, term }
+  @type adapter      :: {module, term}
   @type assigns      :: Keyword.t
   @type before_send  :: [(t -> t)]
   @type body         :: iodata | nil
-  @type cookies      :: [{ binary, binary }] | Unfetched.t
-  @type headers      :: [{ binary, binary }]
+  @type cookies      :: [{binary, binary}] | Unfetched.t
+  @type headers      :: [{binary, binary}]
   @type host         :: binary
   @type method       :: binary
   @type scheme       :: :http | :https
   @type segments     :: [binary]
   @type state        :: :unset | :set | :file | :chunked | :sent
   @type status       :: non_neg_integer | nil
-  @type param        :: binary | [{ binary, param }] | [param]
-  @type params       :: [{ binary, param }]
+  @type param        :: binary | [{binary, param}] | [param]
+  @type params       :: [{binary, param}]
   @type query_string :: String.t
-  @type resp_cookies :: [{ binary, Keyword.t }]
+  @type resp_cookies :: [{binary, Keyword.t}]
 
-  defstruct adapter:      { Plug.Conn, nil } :: adapter,
+  defstruct adapter:      {Plug.Conn, nil} :: adapter,
             assigns:      [] :: assigns,
             before_send:  [] :: before_send,
             cookies:      Unfetched[aspect: :cookies] :: cookies | Unfetched.t,
@@ -118,7 +118,7 @@ defmodule Plug.Conn do
   end
 
   alias Plug.Conn
-  @already_sent { :plug_conn, :sent }
+  @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
 
   @doc """
@@ -178,9 +178,9 @@ defmodule Plug.Conn do
 
   def send_resp(%Conn{adapter: {adapter, payload}, state: :set} = conn) do
     conn = run_before_send(conn, :set)
-    { :ok, body, payload } = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
+    {:ok, body, payload} = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
     send self(), @already_sent
-    %{conn | adapter: { adapter, payload }, resp_body: body, state: :sent}
+    %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
   end
 
   def send_resp(%Conn{}) do
@@ -198,12 +198,12 @@ defmodule Plug.Conn do
   `Plug.Conn.AlreadySentError`.
   """
   @spec send_file(t, status, filename :: binary) :: t | no_return
-  def send_file(%Conn{adapter: { adapter, payload }} = conn, status, file)
+  def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file)
       when is_integer(status) and is_binary(file) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
-    { :ok, body, payload } = adapter.send_file(payload, conn.status, conn.resp_headers, file)
+    {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file)
     send self(), @already_sent
-    %{conn | adapter: { adapter, payload }, state: :sent, resp_body: body}
+    %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
   end
 
   @doc """
@@ -214,12 +214,12 @@ defmodule Plug.Conn do
   `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
-  def send_chunked(%Conn{adapter: { adapter, payload }, state: state} = conn, status)
+  def send_chunked(%Conn{adapter: {adapter, payload}, state: state} = conn, status)
       when state in @unsent and is_integer(status) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :chunked)
-    { :ok, body, payload } = adapter.send_chunked(payload, conn.status, conn.resp_headers)
+    {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send self(), @already_sent
-    %{conn | adapter: { adapter, payload }, resp_body: body}
+    %{conn | adapter: {adapter, payload}, resp_body: body}
   end
 
   def send_chunked(%Conn{}, status) when is_integer(status) do
@@ -230,15 +230,15 @@ defmodule Plug.Conn do
   Sends a chunk as part of a chunked response.
 
   It expects a connection with state `:chunked` as set by
-  `send_chunked/2`, returns `{ :ok, conn }` in case of success,
-  otherwise `{ :error, reason }`.
+  `send_chunked/2`, returns `{:ok, conn}` in case of success,
+  otherwise `{:error, reason}`.
   """
-  @spec chunk(t, body) :: { :ok, t } | { :error, term } | no_return
-  def chunk(%Conn{adapter: { adapter, payload }, state: :chunked} = conn, chunk) do
+  @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
+  def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
     case adapter.chunk(payload, chunk) do
-      :ok                    -> { :ok, conn }
-      { :ok, body, payload } -> { :ok, %{conn | resp_body: body, adapter: { adapter, payload }} }
-      { :error, _ } = error  -> error
+      :ok                    -> {:ok, conn}
+      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+      {:error, _} = error  -> error
     end
   end
 
@@ -283,7 +283,7 @@ defmodule Plug.Conn do
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
       is_binary(key) and is_binary(value) and state != :sent do
-    %{conn | resp_headers: :lists.keystore(key, 1, headers, { key, value })}
+    %{conn | resp_headers: :lists.keystore(key, 1, headers, {key, value})}
   end
 
   def put_resp_header(%Conn{}, key, value) when is_binary(key) and is_binary(value) do
@@ -341,12 +341,12 @@ defmodule Plug.Conn do
   def fetch_cookies(%Conn{req_cookies: Plug.Conn.Unfetched[],
                           resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
     req_cookies =
-      lc { "cookie", cookie } inlist req_headers,
+      lc {"cookie", cookie} inlist req_headers,
          kv inlist Plug.Conn.Cookies.decode(cookie),
          do: kv
 
     cookies = Enum.reduce(resp_cookies, req_cookies, fn
-      { key, opts }, acc ->
+      {key, opts}, acc ->
         if value = opts[:value] do
           Dict.put(acc, key, value)
         else
@@ -375,11 +375,11 @@ defmodule Plug.Conn do
   @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t
   def put_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
-    resp_cookies = List.keystore(resp_cookies, key, 0, { key, [{:value, value}|opts] })
+    resp_cookies = List.keystore(resp_cookies, key, 0, {key, [{:value, value}|opts]})
     %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.put(&1, key, value))
   end
 
-  @epoch { { 1970, 1, 1 }, { 0, 0, 0 } }
+  @epoch {{1970, 1, 1}, {0, 0, 0}}
 
   @doc """
   Deletes a response cookie.
@@ -393,7 +393,7 @@ defmodule Plug.Conn do
     opts = opts
            |> Keyword.put_new(:universal_time, @epoch)
            |> Keyword.put_new(:max_age, 0)
-    resp_cookies = List.keystore(resp_cookies, key, 0, { key, opts })
+    resp_cookies = List.keystore(resp_cookies, key, 0, {key, opts})
     %{conn | resp_cookies: resp_cookies} |> update_cookies(&Dict.delete(&1, key))
   end
 
@@ -487,8 +487,8 @@ defmodule Plug.Conn do
   end
 
   defp merge_headers(headers, cookies) do
-    Enum.reduce(cookies, headers, fn { key, opts }, acc ->
-      [{ "set-cookie", Plug.Conn.Cookies.encode(key, opts) }|acc]
+    Enum.reduce(cookies, headers, fn {key, opts}, acc ->
+      [{"set-cookie", Plug.Conn.Cookies.encode(key, opts)}|acc]
     end)
   end
 

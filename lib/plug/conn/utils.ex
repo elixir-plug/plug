@@ -3,7 +3,7 @@ defmodule Plug.Conn.Utils do
   Utilities for working with connection data
   """
 
-  @type params :: [{ binary, binary }]
+  @type params :: [{binary, binary}]
 
   @upper ?A..?Z
   @lower ?a..?z
@@ -22,16 +22,16 @@ defmodule Plug.Conn.Utils do
   ## Examples
 
       iex> content_type "text/plain"
-      { :ok, "text", "plain", [] }
+      {:ok, "text", "plain", []}
 
       iex> content_type "APPLICATION/vnd.ms-data+XML"
-      { :ok, "application", "vnd.ms-data+xml", [] }
+      {:ok, "application", "vnd.ms-data+xml", []}
 
       iex> content_type "x-sample/json; charset=utf-8"
-      { :ok, "x-sample", "json", [{"charset", "utf-8"}] }
+      {:ok, "x-sample", "json", [{"charset", "utf-8"}]}
 
       iex> content_type "x-sample/json  ; charset=utf-8  ; foo=bar"
-      { :ok, "x-sample", "json", [{"charset", "utf-8"}, {"foo", "bar"}] }
+      {:ok, "x-sample", "json", [{"charset", "utf-8"}, {"foo", "bar"}]}
 
       iex> content_type "x y"
       :error
@@ -43,7 +43,7 @@ defmodule Plug.Conn.Utils do
       :error
 
   """
-  @spec content_type(binary) :: { :ok, type :: binary, subtype :: binary, params } | :error
+  @spec content_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
   def content_type(binary) do
     ct_first(binary, "")
   end
@@ -66,8 +66,8 @@ defmodule Plug.Conn.Utils do
 
   defp ct_params(t, first, second) do
     case strip_spaces(t) do
-      ""       -> { :ok, first, second, [] }
-      ";" <> t -> { :ok, first, second, params(t) }
+      ""       -> {:ok, first, second, []}
+      ";" <> t -> {:ok, first, second, params(t)}
       _        -> :error
     end
   end
@@ -105,7 +105,7 @@ defmodule Plug.Conn.Utils do
     do: []
   defp params_kv([h|t]) do
     case params_key(h, "") do
-      { _, _ } = kv -> [kv|params_kv(t)]
+      {_, _} = kv -> [kv|params_kv(t)]
       false -> params_kv(t)
     end
   end
@@ -126,7 +126,7 @@ defmodule Plug.Conn.Utils do
   defp params_value(token, key) do
     case token(token) do
       false -> false
-      value -> { key, value }
+      value -> {key, value}
     end
   end
 

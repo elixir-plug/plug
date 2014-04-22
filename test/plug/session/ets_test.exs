@@ -20,9 +20,9 @@ defmodule Plug.Session.ETSTest do
     assert "foo" = ETS.put("foo", :foo, opts)
     assert "bar" = ETS.put("bar", :bar, opts)
 
-    assert { "foo", :foo } = ETS.get("foo", opts)
-    assert { "bar", :bar } = ETS.get("bar", opts)
-    assert { nil, nil } = ETS.get("unknown", opts)
+    assert {"foo", :foo} = ETS.get("foo", opts)
+    assert {"bar", :bar} = ETS.get("bar", opts)
+    assert {nil, nil} = ETS.get("unknown", opts)
   end
 
   test "delete session" do
@@ -32,8 +32,8 @@ defmodule Plug.Session.ETSTest do
     ETS.put("bar", :bar, opts)
     ETS.delete("foo", opts)
 
-    assert { nil, nil } = ETS.get("foo", opts)
-    assert { "bar", :bar } = ETS.get("bar", opts)
+    assert {nil, nil} = ETS.get("foo", opts)
+    assert {"bar", :bar} = ETS.get("bar", opts)
   end
 
   test "generate new sid" do
@@ -44,6 +44,6 @@ defmodule Plug.Session.ETSTest do
 
   test "invalidate sid if unknown" do
     opts = ETS.init([table: @ets_table])
-    assert { nil, nil } = ETS.get("unknown_sid", opts)
+    assert {nil, nil} = ETS.get("unknown_sid", opts)
   end
 end

@@ -36,8 +36,8 @@ defmodule Plug.Session.ETS do
 
   def get(sid, config(table: table)) do
     case :ets.lookup(table, sid) do
-      [{ ^sid, data }] -> { sid, data }
-      [] -> { nil, nil }
+      [{^sid, data}] -> {sid, data}
+      [] -> {nil, nil}
     end
   end
 
@@ -46,7 +46,7 @@ defmodule Plug.Session.ETS do
   end
 
   def put(sid, data, config(table: table)) do
-    :ets.insert(table, { sid, data })
+    :ets.insert(table, {sid, data})
     sid
   end
 
@@ -59,7 +59,7 @@ defmodule Plug.Session.ETS do
       when counter < @max_tries do
     sid = :crypto.strong_rand_bytes(96) |> :base64.encode
 
-    if :ets.insert_new(table, { sid, data }) do
+    if :ets.insert_new(table, {sid, data}) do
       sid
     else
       put(data, config, counter + 1)

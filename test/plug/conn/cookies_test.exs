@@ -6,24 +6,24 @@ defmodule Plug.Conn.CookiesTest do
 
   test "decode cookies" do
     assert decode("key1=value1, key2=value2") ==
-           [{ "key1", "value1" }, { "key2", "value2" }]
+           [{"key1", "value1"}, {"key2", "value2"}]
 
     assert decode("key1=value1; key2=value2") ==
-           [{ "key1", "value1" }, { "key2", "value2" }]
+           [{"key1", "value1"}, {"key2", "value2"}]
 
     assert decode("$key1=value1, key2=value2; $key3=value3") ==
-           [{ "key2", "value2" }]
+           [{"key2", "value2"}]
 
     assert decode("key space=value, key=value space") ==
-           [{ "key", "value space" }]
+           [{"key", "value space"}]
 
     assert decode("  key1=value1 , key2=value2  ") ==
-           [{ "key1", "value1" }, { "key2", "value2" }]
+           [{"key1", "value1"}, {"key2", "value2"}]
 
     assert decode("") == []
     assert decode("key, =, value") == []
-    assert decode("key=") == [{ "key", "" }]
-    assert decode("key1=;;key2=") == [{ "key1", "" }, { "key2", "" }]
+    assert decode("key=") == [{"key", ""}]
+    assert decode("key1=;;key2=") == [{"key1", ""}, {"key2", ""}]
   end
 
   test "encodes the cookie" do
@@ -52,7 +52,7 @@ defmodule Plug.Conn.CookiesTest do
   end
 
   test "encodes with :max_age" do
-    start  = { { 2012, 9, 29 }, { 15, 32, 10 } }
+    start  = {{2012, 9, 29}, {15, 32, 10}}
     assert encode("foo", value: "bar", max_age: 60, universal_time: start) ==
            "foo=bar; path=/; expires=Sat, 29 Sep 2012 15:33:10 GMT; max-age=60; HttpOnly"
   end

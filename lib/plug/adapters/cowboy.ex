@@ -5,7 +5,7 @@ defmodule Plug.Adapters.Cowboy do
   ## Options
 
   * `:ip` - the ip to bind the server to.
-    Must be a tuple in the format `{ x, y, z, w }`.
+    Must be a tuple in the format `{x, y, z, w}`.
 
   * `:port` - the port to run the server.
     Defaults to 4000 (http) and 4040 (https).
@@ -147,7 +147,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp dispatch_for(plug, opts) do
     opts = plug.init(opts)
-    [{ :_, [ {:_, Plug.Adapters.Cowboy.Handler, { plug, opts } } ] }]
+    [{:_, [ {:_, Plug.Adapters.Cowboy.Handler, {plug, opts}} ]}]
   end
 
   defp normalize_ssl_file(key, options) do

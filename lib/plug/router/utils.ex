@@ -26,7 +26,7 @@ defmodule Plug.Router.Utils do
   ## Examples
 
       iex> Plug.Router.Utils.build_match("/foo/:id")
-      { [:id], ["foo", { :id, [], nil }] }
+      {[:id], ["foo", {:id, [], nil}]}
 
   """
   def build_match(spec) when is_binary(spec) do
@@ -34,7 +34,7 @@ defmodule Plug.Router.Utils do
   end
 
   def build_match(spec) do
-    { [], spec }
+    {[], spec}
   end
 
   @doc """
@@ -70,45 +70,45 @@ defmodule Plug.Router.Utils do
   end
 
   defp build_match([], vars, acc) do
-    { vars |> Enum.uniq |> Enum.reverse, Enum.reverse(acc) }
+    {vars |> Enum.uniq |> Enum.reverse, Enum.reverse(acc)}
   end
 
   # Handle each segment match. They can either be a
   # :literal ("foo"), an identifier (":bar") or a glob ("*path")
 
-  defp handle_segment_match({ :literal, literal }, t, vars, acc) do
+  defp handle_segment_match({:literal, literal}, t, vars, acc) do
     build_match t, vars, [literal|acc]
   end
 
-  defp handle_segment_match({ :identifier, identifier, expr }, t, vars, acc) do
+  defp handle_segment_match({:identifier, identifier, expr}, t, vars, acc) do
     build_match t, [identifier|vars], [expr|acc]
   end
 
-  defp handle_segment_match({ :glob, identifier, expr }, t, vars, acc) do
+  defp handle_segment_match({:glob, identifier, expr}, t, vars, acc) do
     if t != [] do
       raise Plug.Router.InvalidSpecError, message: "cannot have a *glob followed by other segments"
     end
 
     case acc do
       [hs|ts] ->
-        acc = [{ :|, [], [hs, expr] } | ts]
+        acc = [{:|, [], [hs, expr]} | ts]
         build_match([], [identifier|vars], acc)
       _ ->
-        { vars, expr } = build_match([], [identifier|vars], [expr])
-        { vars, hd(expr) }
+        {vars, expr} = build_match([], [identifier|vars], [expr])
+        {vars, hd(expr)}
     end
   end
 
   # In a given segment, checks if there is a match.
 
-  @underscore { :_, [], nil }
+  @underscore {:_, [], nil}
 
   defp segment_match(":" <> argument, buffer) do
     identifier = binary_to_identifier(":", argument)
     expr = quote_if_buffer identifier, buffer, fn var ->
       quote do: unquote(buffer) <> unquote(var)
     end
-    { :identifier, identifier, expr }
+    {:identifier, identifier, expr}
   end
 
   defp segment_match("*" <> argument, buffer) do
@@ -116,7 +116,7 @@ defmodule Plug.Router.Utils do
     expr = quote_if_buffer identifier, buffer, fn var ->
       quote do: [unquote(buffer) <> unquote(@underscore)|unquote(@underscore)] = unquote(var)
     end
-    { :glob, identifier, expr }
+    {:glob, identifier, expr}
   end
 
   defp segment_match(<<h, t::binary>>, buffer) do
@@ -124,15 +124,15 @@ defmodule Plug.Router.Utils do
   end
 
   defp segment_match(<<>>, buffer) do
-    { :literal, buffer }
+    {:literal, buffer}
   end
 
   defp quote_if_buffer(identifier, "", _fun) do
-    { identifier, [], nil }
+    {identifier, [], nil}
   end
 
   defp quote_if_buffer(identifier, _buffer, fun) do
-    fun.({ identifier, [], nil })
+    fun.({identifier, [], nil})
   end
 
   defp binary_to_identifier(prefix, "") do

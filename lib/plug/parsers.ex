@@ -73,14 +73,14 @@ defmodule Plug.Parsers do
 
   @doc """
   Attempt to parse the connection request body given the type,
-  subtype and headers. Returns `{ :ok, conn }` if the parser can
-  handle the given content type, `{ :halt, conn }` otherwise.
+  subtype and headers. Returns `{:ok, conn}` if the parser can
+  handle the given content type, `{:halt, conn}` otherwise.
   """
   defcallback parse(Conn.t, type :: binary, subtype :: binary,
                     headers :: Keyword.t, opts :: Keyword.t) ::
-                    { :ok, Conn.params, Conn.t } |
-                    { :too_large, Conn.t } |
-                    { :skip, Conn.t }
+                    {:ok, Conn.params, Conn.t} |
+                    {:too_large, Conn.t} |
+                    {:skip, Conn.t}
 
   @behaviour Plug
 
@@ -107,9 +107,9 @@ defmodule Plug.Parsers do
   def call(%Conn{req_headers: req_headers} = conn, opts) do
     conn = Plug.Conn.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
-      { "content-type", ct } ->
+      {"content-type", ct} ->
         case Plug.Conn.Utils.content_type(ct) do
-          { :ok, type, subtype, headers } ->
+          {:ok, type, subtype, headers} ->
             reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->
             conn
@@ -121,11 +121,11 @@ defmodule Plug.Parsers do
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      { :ok, post, %Conn{params: get} = conn } ->
+      {:ok, post, %Conn{params: get} = conn} ->
         %{conn | params: merge_params(get, post)}
-      { :next, conn } ->
+      {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
-      { :too_large, _conn } ->
+      {:too_large, _conn} ->
         raise Plug.Parsers.RequestTooLargeError
     end
   end
@@ -136,9 +136,9 @@ defmodule Plug.Parsers do
   end
 
   defp merge_params([], post), do: post
-  defp merge_params([{ k, _ }=h|t], post) do
+  defp merge_params([{k, _}=h|t], post) do
     case :lists.keyfind(k, 1, post) do
-      { _, _ } -> merge_params(t, post)
+      {_, _} -> merge_params(t, post)
       false -> merge_params(t, [h|post])
     end
   end

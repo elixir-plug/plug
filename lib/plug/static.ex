@@ -49,10 +49,10 @@ defmodule Plug.Static do
       raise ArgumentError, message: ":from must be an atom or a binary"
     end
 
-    { Plug.Router.Utils.split(at), from, opts[:gzip] }
+    {Plug.Router.Utils.split(at), from, opts[:gzip]}
   end
 
-  def wrap(conn, { at, from, gzip }, fun) do
+  def wrap(conn, {at, from, gzip}, fun) do
     if conn.method in @allowed_methods do
       wrap(conn, at, from, gzip, fun)
     else
@@ -72,7 +72,7 @@ defmodule Plug.Static do
         send_resp(conn, 400, "Bad request")
       true ->
         case file_encoding(conn, path, gzip) do
-          { conn, path } ->
+          {conn, path} ->
             conn
             |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
             |> put_resp_header("cache-control", "public, max-age=31536000")
@@ -88,9 +88,9 @@ defmodule Plug.Static do
 
     cond do
       gzip && gzip?(conn) && File.regular?(path_gz) ->
-        { put_resp_header(conn, "content-encoding", "gzip"), path_gz }
+        {put_resp_header(conn, "content-encoding", "gzip"), path_gz}
       File.regular?(path) ->
-        { conn, path }
+        {conn, path}
       true ->
         :error
     end
@@ -119,7 +119,7 @@ defmodule Plug.Static do
   defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
   defp invalid_path?([h|t]) do
     case :binary.match(h, ["/", "\\", ":"]) do
-      { _, _ } -> true
+      {_, _} -> true
       :nomatch -> invalid_path?(t)
     end
   end
