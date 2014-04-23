@@ -30,8 +30,25 @@ defmodule Plug.Test do
 
   @doc """
   Creates a test connection.
+
+  The request `method` and `path` must be given as required
+  arguments. `method` may be any value that implements `to_string/1`
+  and it will properly converted and normalized.
+
+  The `params_or_body` field must be one of:
+
+  * `nil` - meaning there is no body;
+  * a binary - containing a request body. For such cases, `:headers`
+    must be given as option with a content-type;
+  * a map or list - containing the parameters which will automatically
+    set the content-type to multipart. The map or list may be contain
+    other lists or maps and all entries keywords and maps will be
+    normalized to string keys;
+
+  The only option supported so far is `:headers` which expects a
+  list of headers.
   """
-  @spec conn(String.Chars.t, binary, binary | list, Keyword.t) :: Conn.t
+  @spec conn(String.Chars.t, binary, binary | list | map | nil, [headers: Conn.headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
     Plug.Adapters.Test.Conn.conn(method, path, params_or_body, opts)
   end
