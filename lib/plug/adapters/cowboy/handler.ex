@@ -1,8 +1,6 @@
 defmodule Plug.Adapters.Cowboy.Handler do
-  @behaviour :cowboy_http_handler
   @moduledoc false
-
-  require :cowboy_req
+  @behaviour :cowboy_http_handler
   @connection Plug.Adapters.Cowboy.Conn
 
   def init({transport, :http}, req, {plug, opts}) when transport in [:tcp, :ssl] do

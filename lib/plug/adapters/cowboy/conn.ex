@@ -2,7 +2,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
   @behaviour Plug.Conn.Adapter
   @moduledoc false
 
-  require :cowboy_req, as: R
+  alias :cowboy_req, as: R
 
   def conn(req, transport) do
     {path, req} = R.path req
