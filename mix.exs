@@ -3,10 +3,12 @@ defmodule Plug.Mixfile do
 
   def project do
     [app: :plug,
-     version: "0.4.1",
+     version: "0.4.2-dev",
      elixir: "~> 0.13.0",
      deps: deps,
      package: package,
+     description: "A specification and conveniences for composable " <>
+                  "modules in between web applications",
      docs: [readme: true, main: "README"]]
   end
 
