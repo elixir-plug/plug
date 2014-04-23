@@ -15,7 +15,8 @@ defmodule Plug.Parsers.JSON do
       {:too_large, state} ->
         {:too_large, %{conn | adapter: {adapter, state}}}
       {:ok, body, state} ->
-        {:ok, Map.new(JSEX.decode!(body)), %{conn | adapter: {adapter, state}}}
+        decoded_body = body |> JSEX.decode! |> Map.new
+        {:ok, decoded_body, %{conn | adapter: {adapter, state}}}
     end
   end
 
