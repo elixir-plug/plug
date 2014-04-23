@@ -40,7 +40,7 @@ defmodule Plug.Parsers do
 
   ## Examples
 
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json]
 
   ## Built-in parsers
 
@@ -48,6 +48,7 @@ defmodule Plug.Parsers do
 
   * `Plug.Parsers.URLENCODED` - parses "application/x-www-form-urlencoded" requests
   * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
+  * `Plug.Parsers.JSON` - parses "application/json" requests
 
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` if
   the request cannot be parsed by any of the given types and raise
