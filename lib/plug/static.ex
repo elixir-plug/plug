@@ -74,7 +74,7 @@ defmodule Plug.Static do
         case file_encoding(conn, path, gzip) do
           {conn, path} ->
             conn
-            |> put_resp_header("content-type", MIME.Types.path(List.last(segments)))
+            |> put_resp_header("content-type", Plug.MIME.path(List.last(segments)))
             |> put_resp_header("cache-control", "public, max-age=31536000")
             |> send_file(200, path)
           :error ->

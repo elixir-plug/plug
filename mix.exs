@@ -16,9 +16,8 @@ defmodule Plug.Mixfile do
   end
 
   def deps do
-    [ {:mime, github: "dynamo/mime"},
-      {:cowboy, "~> 0.9", github: "extend/cowboy", optional: true},
-      {:ex_doc, github: "elixir-lang/ex_doc", only: [:docs]},
-      {:hackney, github: "benoitc/hackney", only: [:test]} ]
+    [{:cowboy, "~> 0.9", github: "extend/cowboy", optional: true},
+     {:ex_doc, github: "elixir-lang/ex_doc", only: [:docs]},
+     {:hackney, github: "benoitc/hackney", only: [:test]}]
   end
 end
