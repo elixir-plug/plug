@@ -1,3 +1,10 @@
+# v0.4.1
+
+* Enhancements
+  * Remove `:mime` dependency in favor of `Plug.MIME`
+  * Improve errors when Cowboy is not available
+  * First hex package release
+
 # v0.4.0
 
 * Enhancements
