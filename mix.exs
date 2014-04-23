@@ -21,7 +21,8 @@ defmodule Plug.Mixfile do
   def deps do
     [{:cowboy, "~> 0.9", github: "extend/cowboy", optional: true},
      {:ex_doc, github: "elixir-lang/ex_doc", only: [:docs]},
-     {:hackney, github: "benoitc/hackney", only: [:test]}]
+     {:hackney, github: "benoitc/hackney", only: [:test]},
+     {:jsex, github: "talentdeficit/jsex"}]
   end
 
   defp package do
