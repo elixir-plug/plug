@@ -40,14 +40,14 @@ Access "http://localhost:4000" and we are done!
 
 ## Installation
 
-In practice, you want to use plugs in your existing projects. You can do that in two steps:
+You can use plug in your projects in two steps:
 
 1. Add plug and your webserver of choice (currently cowboy) to your `mix.exs` dependencies:
 
     ```elixir
     def deps do
-      [ {:cowboy, github: "extend/cowboy"},
-        {:plug, PLUG_VERSION, github: "elixir-lang/plug"} ]
+      [{:cowboy, github: "extend/cowboy"},
+       {:plug, "~> 0.4.2"}]
     end
     ```
 
@@ -55,7 +55,7 @@ In practice, you want to use plugs in your existing projects. You can do that in
 
     ```elixir
     def application do
-      [ applications: [:cowboy, :plug] ]
+      [applications: [:cowboy, :plug]]
     end
     ```
 
