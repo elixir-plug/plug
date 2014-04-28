@@ -37,7 +37,7 @@ defmodule Plug.Adapters.CowboyTest do
            {{:ranch_listener_sup, Plug.Adapters.CowboyTest.HTTP},
             {:ranch_listener_sup, :start_link, args},
             :permanent,
-            5000,
+            :infinity,
             :supervisor,
             [:ranch_listener_sup]}
   end

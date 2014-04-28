@@ -51,7 +51,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def parse_req_multipart(req, limit, callback) do
-    {:ok, limit, acc, req} = parse_multipart(R.multipart_data(req), limit, %{}, callback)
+    {:ok, limit, acc, req} = parse_multipart(R.part(req), limit, %{}, callback)
 
     if limit > 0 do
       params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
@@ -73,53 +73,63 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   ## Multipart
 
-  defp parse_multipart({:headers, headers, req}, limit, acc, callback) when limit >= 0 do
+  defp parse_multipart({:ok, headers, req}, limit, acc, callback) when limit >= 0 do
     case callback.(headers) do
       {:binary, name} ->
-        {:ok, limit, body, req} = parse_multipart_body(R.multipart_data(req), limit, "")
-        parse_multipart(R.multipart_data(req), limit, Map.put(acc, name, body), callback)
+        {:ok, limit, body, req} = parse_multipart_body(R.part_body(req), limit, "")
+        parse_multipart(R.part(req), limit, Map.put(acc, name, body), callback)
 
       {:file, name, file, %Plug.Upload{} = uploaded} ->
-        {:ok, limit, req} = parse_multipart_file(R.multipart_data(req), limit, file)
-        parse_multipart(R.multipart_data(req), limit, Map.put(acc, name, uploaded), callback)
+        {:ok, limit, req} = parse_multipart_file(R.part_body(req), limit, file)
+        parse_multipart(R.part(req), limit, Map.put(acc, name, uploaded), callback)
 
       :skip ->
         {:ok, req} = R.multipart_skip(req)
-        parse_multipart(R.multipart_data(req), limit, acc, callback)
+        parse_multipart(R.part(req), limit, acc, callback)
     end
   end
 
-  defp parse_multipart({:headers, _headers, req}, limit, acc, _callback) do
+  defp parse_multipart({:ok, _headers, req}, limit, acc, _callback) do
     {:ok, limit, acc, req}
   end
 
-  defp parse_multipart({:eof, req}, limit, acc, _callback) do
+  defp parse_multipart({:done, req}, limit, acc, _callback) do
     {:ok, limit, acc, req}
   end
 
-  defp parse_multipart_body({:body, tail, req}, limit, body) when limit >= 0 do
-    parse_multipart_body(R.multipart_data(req), limit - byte_size(tail), body <> tail)
+  defp parse_multipart_body({:more, tail, req}, limit, body) when limit >= 0 do
+    parse_multipart_body(R.part_body(req), limit - byte_size(tail), body <> tail)
   end
 
-  defp parse_multipart_body({:body, _tail, req}, limit, body) do
+  defp parse_multipart_body({:more, _tail, req}, limit, body) do
     {:ok, limit, body, req}
   end
 
-  defp parse_multipart_body({:end_of_part, req}, limit, body) do
+  defp parse_multipart_body({:ok, tail, req}, limit, body) when limit >= byte_size(tail) do
+    {:ok, limit, body <> tail, req}
+  end
+
+  defp parse_multipart_body({:ok, _tail, req}, limit, body) do
     {:ok, limit, body, req}
   end
 
-  defp parse_multipart_file({:body, tail, req}, limit, file) when limit >= 0 do
+  defp parse_multipart_file({:more, tail, req}, limit, file) when limit >= 0 do
     :file.write(file, tail)
-    parse_multipart_file(R.multipart_data(req), limit - byte_size(tail), file)
+    parse_multipart_file(R.part_body(req), limit - byte_size(tail), file)
   end
 
-  defp parse_multipart_file({:body, _tail, req}, limit, file) do
+  defp parse_multipart_file({:more, _tail, req}, limit, file) do
     :file.close(file)
     {:ok, limit, req}
   end
 
-  defp parse_multipart_file({:end_of_part, req}, limit, file) do
+  defp parse_multipart_file({:ok, tail, req}, limit, file) when limit >= byte_size(tail) do
+    :file.write(file, tail)
+    :file.close(file)
+    {:ok, limit, req}
+  end
+
+  defp parse_multipart_file({:ok, _tail, req}, limit, file) do
     :file.close(file)
     {:ok, limit, req}
   end
