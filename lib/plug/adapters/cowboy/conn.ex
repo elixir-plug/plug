@@ -30,7 +30,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def send_file(req, status, headers, path) do
-    File.Stat[type: :regular, size: size] = File.stat!(path)
+    %File.Stat{type: :regular, size: size} = File.stat!(path)
     body_fun = fn(socket, transport) -> transport.sendfile(socket, path) end
 
     {:ok, req} = R.reply(status, headers, R.set_resp_body_fun(size, body_fun, req))
