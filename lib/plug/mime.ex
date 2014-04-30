@@ -48,10 +48,8 @@ defmodule Plug.MIME do
 
   @spec type(String.t) :: String.t
 
-  lc { type, exts } inlist mapping do
-    lc ext inlist exts do
-      def type(unquote(ext)), do: unquote(type)
-    end
+  for { type, exts } <- mapping, ext <- exts do
+    def type(unquote(ext)), do: unquote(type)
   end
 
   def type(_ext), do: @default_type
@@ -73,7 +71,7 @@ defmodule Plug.MIME do
 
   # entry/1
 
-  lc { type, exts } inlist mapping do
+  for { type, exts } <- mapping do
     defp entry(unquote(type)), do: unquote(exts)
   end
 
