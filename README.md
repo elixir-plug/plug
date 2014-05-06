@@ -59,6 +59,8 @@ You can use plug in your projects in two steps:
     end
     ```
 
+Note: if you are using Elixir master, please use Plug master (from git) as well.
+
 ## The Plug.Conn
 
 In the hello world example, we defined our first plug. What is a plug after all?
