@@ -4,7 +4,7 @@ defmodule Plug.UploadTest do
   test "removes the random file on process death" do
     parent = self()
 
-    {pid, ref} = Process.spawn_monitor fn ->
+    {pid, ref} = spawn_monitor fn ->
       {:ok, path} = Plug.Upload.random_file("sample")
       send parent, {:path, path}
       File.open!(path)

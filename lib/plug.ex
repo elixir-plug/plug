@@ -48,7 +48,7 @@ defmodule Plug do
   @type opts :: tuple | atom | integer | float | [opts]
 
   use Behaviour
-  use Application.Behaviour
+  use Application
 
   defcallback init(opts) :: opts
   defcallback call(Plug.Conn.t, opts) :: Plug.Conn.t

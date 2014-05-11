@@ -3,8 +3,8 @@ defmodule Plug.Mixfile do
 
   def project do
     [app: :plug,
-     version: "0.4.2",
-     elixir: "~> 0.13.1",
+     version: "0.4.3",
+     elixir: "~> 0.13.2",
      deps: deps,
      package: package,
      description: "A specification and conveniences for composable " <>
