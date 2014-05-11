@@ -25,7 +25,7 @@ defmodule Plug.Mixfile do
   end
 
   defp package do
-    [licenses: ["Apache 2"],
-     links: [{"Github", "https://github.com/elixir-lang/plug"}]]
+    %{licenses: ["Apache 2"],
+      links: %{"Github" => "https://github.com/elixir-lang/plug"}}
   end
 end
