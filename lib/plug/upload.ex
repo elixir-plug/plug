@@ -49,7 +49,7 @@ defmodule Plug.Upload do
       raise "could not find process Plug.Upload. Have you started the :plug application?"
   end
 
-  use GenServer.Behaviour
+  use GenServer
 
   @doc """
   Starts the upload handling server.

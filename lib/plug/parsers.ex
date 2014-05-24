@@ -2,10 +2,12 @@ defmodule Plug.Parsers do
   message = "the request is too large. If you are willing to process " <>
             "larger requests, please give a :limit to Plug.Parsers"
 
-  defexception RequestTooLargeError, [:message] do
+  defmodule RequestTooLargeError do
     @moduledoc """
     Error raised when the request is too large
     """
+
+    defexception [:message]
 
     defimpl Plug.Exception do
       def status(_exception) do
@@ -14,10 +16,12 @@ defmodule Plug.Parsers do
     end
   end
 
-  defexception UnsupportedMediaTypeError, [:message] do
+  defmodule UnsupportedMediaTypeError do
     @moduledoc """
     Error raised when the request body cannot be parsed
     """
+
+    defexception [:message]
 
     defimpl Plug.Exception do
       def status(_exception) do

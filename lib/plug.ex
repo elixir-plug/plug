@@ -55,6 +55,9 @@ defmodule Plug do
 
   @doc false
   def start(_type, _args) do
-    Plug.Supervisor.start_link
+    import Supervisor.Spec
+    spec = [worker(Plug.Upload, [])]
+    opts = [strategy: :one_for_one, name: Plug.Supervisor]
+    Supervisor.start_link(spec, opts)
   end
 end

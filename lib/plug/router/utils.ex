@@ -1,4 +1,6 @@
-defexception Plug.Router.InvalidSpecError, message: "invalid route specification"
+defmodule Plug.Router.InvalidSpecError do
+  defexception message: "invalid route specification"
+end
 
 defmodule Plug.Router.Utils do
   @moduledoc false
@@ -126,7 +128,7 @@ defmodule Plug.Router.Utils do
     segment_match t, buffer <> <<h>>, context
   end
 
-  defp segment_match(<<>>, buffer, context) do
+  defp segment_match(<<>>, buffer, _context) do
     {:literal, buffer}
   end
 

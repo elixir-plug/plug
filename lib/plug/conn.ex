@@ -105,13 +105,17 @@ defmodule Plug.Conn do
             state:        :unset :: state,
             status:       nil :: status
 
-  defexception NotSentError, message: "no response was set nor sent from the connection" do
+  defmodule NotSentError do
+    defexception message: "no response was set nor sent from the connection"
+
     @moduledoc """
     Error raised when no response is sent in a request
     """
   end
 
-  defexception AlreadySentError, message: "the response was already sent" do
+  defmodule AlreadySentError do
+    defexception message: "the response was already sent"
+
     @moduledoc """
     Error raised when trying to modify or send an already sent response
     """

@@ -1,3 +1,8 @@
+# v0.4.4
+
+* Enhancements
+  * Update to Elixir v0.13.3
+
 # v0.4.3
 
 * Enhancements
