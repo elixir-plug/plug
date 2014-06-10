@@ -233,22 +233,32 @@ defmodule Plug.Conn do
   @doc """
   Sends a chunk as part of a chunked response.
 
+  The chunk parameter may be a String or a Plug.ServerSentEvent struct. The later
+  properly handles all allowed fields for a Server-Sent Event stream message.
+
   It expects a connection with state `:chunked` as set by
   `send_chunked/2`, returns `{:ok, conn}` in case of success,
   otherwise `{:error, reason}`.
   """
-  @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
-  def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    case adapter.chunk(payload, chunk) do
-      :ok                  -> {:ok, conn}
-      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
-      {:error, _} = error  -> error
-    end
+  @spec chunk(t, Plug.ServerSentEvent.t | body) :: {:ok, t} | {:error, term} | no_return
+  def chunk(%Conn{state: :chunked} = conn, %Plug.ServerSentEvent{} = chunk) do
+    do_chunk(conn, Plug.ServerSentEvent.to_string(chunk))
+  end
+  def chunk(%Conn{state: :chunked} = conn, chunk) do
+    do_chunk(conn, chunk)
   end
 
   def chunk(%Conn{}, chunk) when is_binary(chunk) or is_list(chunk) do
     raise ArgumentError, message: "chunk/2 expects a chunked response. Please ensure " <>
                                   "you have called send_chunked/2 before you send a chunk"
+  end
+
+  def do_chunk(%Conn{adapter: {adapter, payload}} = conn, chunk) do
+    case adapter.chunk(payload, chunk) do
+      :ok                  -> {:ok, conn}
+      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+      {:error, _} = error  -> error
+    end
   end
 
   @doc """
