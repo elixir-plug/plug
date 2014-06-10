@@ -353,6 +353,31 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Streams the request body.
+  """
+  @spec collect_body(t, binary, list) :: {:ok, binary, t} | {:error, :too_large, t}
+  def collect_body(%Conn{adapter: {adapter, state}} = conn, "", opts \\ []) do
+    limit = Keyword.get(opts, :limit, 8_000_000)
+    case collect_body({:ok, "", state}, "", limit, adapter) do
+      {:error, :too_large, state} ->
+        {:error, :too_large, %{conn | adapter: {adapter, state}}}
+      {:ok, body, state} ->
+        {:ok, body, %{conn | adapter: {adapter, state}}}
+    end
+  end
+
+  defp collect_body({:ok, buffer, state}, acc, limit, adapter) when limit >= 0,
+    do: collect_body(adapter.stream_req_body(state, 1_000_000),
+                  acc <> buffer, limit - byte_size(buffer), adapter)
+  defp collect_body({:ok, _, state}, _acc, _limit, _adapter),
+    do: {:error, :too_large, state}
+
+  defp collect_body({:done, state}, acc, limit, _adapter) when limit >= 0,
+    do: {:ok, acc, state}
+  defp collect_body({:done, state}, _acc, _limit, _adapter),
+    do: {:error, :too_large, state}
+
+  @doc """
   Fetches cookies from the request headers.
   """
   @spec fetch_cookies(t) :: t
