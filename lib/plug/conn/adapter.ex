@@ -96,8 +96,8 @@ defmodule Plug.Conn.Adapter do
   This function can respond with one of the three following values:
 
   * `{:ok, params, payload}` - the parameters are already processed as defined per `Conn.params`
-  * `{:too_large, payload} - the request body goes over the given limit
+  * `{:error, :too_large, payload} - the request body goes over the given limit
   """
   defcallback parse_req_multipart(payload, limit :: pos_integer, fun) ::
-              {:ok, Conn.params, payload} | {:too_large, payload}
+              {:ok, Conn.params, payload} | {:error, :too_large, payload}
 end
