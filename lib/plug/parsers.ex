@@ -10,9 +10,7 @@ defmodule Plug.Parsers do
     defexception [:message]
 
     defimpl Plug.Exception do
-      def status(_exception) do
-        413
-      end
+      def status(_exception), do: 413
     end
   end
 
@@ -24,9 +22,7 @@ defmodule Plug.Parsers do
     defexception [:message]
 
     defimpl Plug.Exception do
-      def status(_exception) do
-        415
-      end
+      def status(_exception), do: 415
     end
   end
 
