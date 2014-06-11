@@ -353,7 +353,23 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Streams the request body.
+  Streams the request body by chunks.
+
+  This function streams the request body from the adapter and returns
+  `{:ok, body, conn}` if the body length is within the :limit, otherwise
+  `{:error, :too_large, conn}`.
+
+  Because the request body can be of any size, reading the body will only
+  work once, as Plug will not cache the result of these operations.
+
+  ## Options
+
+  * `:limit` - sets the max body length to read (defaults to 8MB)
+
+  ## Example
+
+    {:ok, body, conn} = Plug.Conn.collect_body(conn, "")
+
   """
   @spec collect_body(t, binary, list) :: {:ok, binary, t} | {:error, :too_large, t}
   def collect_body(%Conn{adapter: {adapter, state}} = conn, "", opts \\ []) do
