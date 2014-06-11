@@ -243,6 +243,13 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn, "baz") == ["bat"]
   end
 
+  test "collect_body/3" do
+    body = :binary.copy("abcdefghij", 100_000)
+    conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
+    assert {:ok, ^body, _} = collect_body(conn, "") 
+    assert {:error, :too_large, _} = collect_body(conn, "", limit: 10_000) 
+  end
+
   test "params/1 && fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == %Plug.Conn.Unfetched{aspect: :params}

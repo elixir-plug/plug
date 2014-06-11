@@ -57,7 +57,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
       {:ok, params, req}
     else
-      {:too_large, req}
+      {:error, :too_large, req}
     end
   end
 

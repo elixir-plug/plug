@@ -137,25 +137,21 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def stream_req_body(conn) do
-    {adapter, state} = conn.adapter
     expected = :binary.copy("abcdefghij", 100_000)
-    assert {^expected, state} = read_req_body({:ok, "", state}, "", adapter)
-    assert {:done, state} = adapter.stream_req_body(state, 100_000)
-    %{conn | adapter: {adapter, state}}
+    assert {:ok, ^expected, conn} = collect_body(conn, "")
+    conn
   end
 
-  defp read_req_body({:ok, buffer, state}, acc, adapter) do
-    read_req_body(adapter.stream_req_body(state, 100_000), acc <> buffer, adapter)
-  end
-
-  defp read_req_body({:done, state}, acc, _adapter) do
-    {acc, state}
+  def stream_req_body_too_large(conn) do
+    assert {:error, :too_large, _} = collect_body(conn, "", limit: 10_000)
+    conn
   end
 
   test "reads body" do
     body = :binary.copy("abcdefghij", 100_000)
     assert {204, _, ""} = request :get, "/stream_req_body", [], body
     assert {204, _, ""} = request :post, "/stream_req_body", [], body
+    assert {204, _, ""} = request :post, "/stream_req_body_too_large", [], body
   end
 
   def multipart(conn) do

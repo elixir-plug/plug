@@ -10,9 +10,7 @@ defmodule Plug.Parsers do
     defexception [:message]
 
     defimpl Plug.Exception do
-      def status(_exception) do
-        413
-      end
+      def status(_exception), do: 413
     end
   end
 
@@ -24,9 +22,7 @@ defmodule Plug.Parsers do
     defexception [:message]
 
     defimpl Plug.Exception do
-      def status(_exception) do
-        415
-      end
+      def status(_exception), do: 415
     end
   end
 
@@ -83,7 +79,7 @@ defmodule Plug.Parsers do
   defcallback parse(Conn.t, type :: binary, subtype :: binary,
                     headers :: Keyword.t, opts :: Keyword.t) ::
                     {:ok, Conn.params, Conn.t} |
-                    {:too_large, Conn.t} |
+                    {:error, :too_large, Conn.t} |
                     {:skip, Conn.t}
 
   @behaviour Plug
@@ -129,7 +125,7 @@ defmodule Plug.Parsers do
         %{conn | params: Map.merge(get, post)}
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
-      {:too_large, _conn} ->
+      {:error, :too_large, _conn} ->
         raise Plug.Parsers.RequestTooLargeError
     end
   end

@@ -9,8 +9,8 @@ defmodule Plug.Parsers.MULTIPART do
     case adapter.parse_req_multipart(state, limit, &handle_headers/1) do
       {:ok, params, state} ->
         {:ok, params, %{conn | adapter: {adapter, state}}}
-      {:too_large, state} ->
-        {:too_large, %{conn | adapter: {adapter, state}}}
+      {:error, :too_large, state} ->
+        {:error, :too_large, %{conn | adapter: {adapter, state}}}
     end
   end
 
