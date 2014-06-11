@@ -172,6 +172,12 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == "HELLO\nWORLD\n"
   end
 
+  test "send_chunked/3 with ServerSentEvent" do
+    conn = conn(:get, "/foo") |> send_chunked(200)
+    {:ok, conn} = chunk(conn, %Plug.ServerSentEvent{data: ["WORLD"]})
+    assert conn.resp_body == "data:WORLD\n\n"
+  end
+
   test "send_chunked/3 sends self a message" do
     refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_chunked(200)
