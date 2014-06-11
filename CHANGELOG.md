@@ -1,3 +1,9 @@
+# v0.5.0-dev
+
+* Enhancements
+  * Update Cowboy adapter to v0.10.0
+  * Add `Plug.Conn.collect_body/3`
+
 # v0.4.4
 
 * Enhancements
