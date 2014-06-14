@@ -26,7 +26,7 @@ defmodule Plug.StaticTest do
   end
 
   test "serves the file with a urlencoded filename" do
-    conn = conn(:get, "/public/fixtures/static+with%20spaces.txt") |> call
+    conn = conn(:get, "/public/fixtures/static%20with%20spaces.txt") |> call
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
@@ -82,7 +82,7 @@ defmodule Plug.StaticTest do
   end
 
   test "only serves gzipped file if available" do
-    conn = call conn(:get, "/public/fixtures/static+with%20spaces.txt", [],
+    conn = call conn(:get, "/public/fixtures/static%20with%20spaces.txt", [],
                      headers: [{"accept-encoding", "gzip"}])
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
