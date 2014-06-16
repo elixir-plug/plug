@@ -353,11 +353,11 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Collects the request body into a collectable.
+  Reads the request body.
 
-  This function streams the request body from the adapter and returns
-  `{:ok, body, conn}` if the body length is within the :limit, otherwise
-  `{:error, :too_large, conn}`.
+  This function reads a chunk of the request body. If there is more data to be
+  read, then `{:more, partial_body, conn}` is returned. Otherwise
+  `{:ok, body, conn}` is returned.
 
   Because the request body can be of any size, reading the body will only
   work once, as Plug will not cache the result of these operations. If you
@@ -367,59 +367,34 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:limit` - sets the max body length to read (defaults to 8,000,000 bytes)
+  * `:continue` - sets whether the server should send a `100 Continue` reply if required,
+                  defaults to true;
+  * `:length` - sets the max body length to read, defaults to 8,000,000 bytes;
+  * `:read_length` - set the amount of bytes to read at one time, defaults to 1,000,000 bytes;
+  * `:read_timeout` - set the time Cowboy waits before each chuch is received, defaults to 15ms;
+
+  Chunked transfer-encoding is handled by default. If any other transfer-encoding or
+  content-encoding has been used for the request, custom decoding functions can be
+  used. The `content_decode` and `transfer_decode` options allow setting the decode
+  functions manually.
 
   ## Example
 
-      {:ok, body, conn} = Plug.Conn.collect_body(conn, "")
-
-  Since any collectable can be given, you can stream the body directly
-  into a file, for example:
-
-      {:ok, body, conn} = Plug.Conn.collect_body(conn, File.stream!("req_body"))
-
-  Check the documentation for `Collectable` in Elixir for more information.
+      {:ok, body, conn} = Plug.Conn.read_body(conn, length: 1_000_000)
   """
-  @spec collect_body(t, Collectable.t, Keyword.t) ::
-        {:ok, Collectable.t, t} | {:error, :too_large, t}
-  def collect_body(%Conn{adapter: {adapter, state}} = conn, collectable, opts \\ []) do
-    {initial, fun} = Collectable.into(collectable)
-    limit = Keyword.get(opts, :limit, 8_000_000)
-    case collect_body({:ok, "", state}, initial, fun, limit, adapter) do
-      {:error, :too_large, state} ->
-        {:error, :too_large, %{conn | adapter: {adapter, state}}}
-      {:ok, collectable, state} ->
-        {:ok, collectable, %{conn | adapter: {adapter, state}}}
+  @spec read_body(t, Keyword.t) :: {:ok, binary, t}
+                                | {:more, binary, t}
+                                | {:error, binary}
+  def read_body(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
+    case adapter.read_req_body(state, opts) do
+      {:ok, data, state} ->
+        {:ok, data, %{conn | adapter: {adapter, state}}}
+      {:more, data, state} ->
+        {:more, data, %{conn | adapter: {adapter, state}}}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
-
-  defp collect_body({:ok, buffer, state}, acc, fun, limit, adapter) when limit >= 0 do
-    collect_body(adapter.stream_req_body(state, 1_000_000),
-                 cont_body(acc, buffer, fun), fun, limit - byte_size(buffer), adapter)
-  end
-
-  defp collect_body({:ok, _buffer, state}, acc, fun, _limit, _adapter) do
-    stop_body(acc, :halt, fun)
-    {:error, :too_large, state}
-  end
-
-  defp collect_body({:done, state}, acc, fun, limit, _adapter) when limit >= 0 do
-    stop_body(acc, :done, fun)
-    {:ok, acc, state}
-  end
-
-  defp collect_body({:done, state}, acc, fun, _limit, _adapter) do
-    stop_body(acc, :done, fun)
-    {:error, :too_large, state}
-  end
-
-  @compile {:inline, cont_body: 3, stop_body: 3}
-
-  defp cont_body(acc, buffer, _fun) when is_binary(acc), do: acc <> buffer
-  defp cont_body(acc, buffer, fun), do: fun.(acc, {:cont, buffer})
-
-  defp stop_body(acc, _msg, _fun) when is_binary(acc), do: acc
-  defp stop_body(acc, msg, fun), do: fun.(acc, msg)
 
   @doc """
   Fetches cookies from the request headers.

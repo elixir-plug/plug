@@ -3,20 +3,22 @@ defmodule Plug.Adapters.Test.ConnTest do
 
   import Plug.Test
 
-  test "stream_req_body/2" do
-    conn = conn(:get, "/", "abcdefgh", headers: [{"content-type", "text/plain"}])
+  test "read_req_body/2" do
+    conn = conn(:get, "/", "abcdefghij", headers: [{"content-type", "text/plain"}])
     {adapter, state} = conn.adapter
-    assert {:ok, "abcde", state} = adapter.stream_req_body(state, 5)
-    assert {:ok, "fgh", state} = adapter.stream_req_body(state, 5)
-    assert {:done, state} = adapter.stream_req_body(state, 5)
-    assert {:done, _} = adapter.stream_req_body(state, 5)
+
+    assert {:more, "abcde", state} = adapter.read_req_body(state, length: 5)
+    assert {:more, "f", state} = adapter.read_req_body(state, length: 1)
+    assert {:more, "gh", state} = adapter.read_req_body(state, length: 2)
+    assert {:ok, "ij", state} = adapter.read_req_body(state, length: 5)
+    assert {:ok, "", _state} = adapter.read_req_body(state, length: 5)
   end
 
   test "no body or params" do
     conn = conn(:get, "/")
     {adapter, state} = conn.adapter
     assert conn.req_headers == []
-    assert {:done, _} = adapter.stream_req_body(state, 10)
+    assert {:ok, "", _state} = adapter.read_req_body(state, length: 10)
   end
 
   test "custom body requires content-type" do

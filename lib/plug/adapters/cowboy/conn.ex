@@ -2,15 +2,15 @@ defmodule Plug.Adapters.Cowboy.Conn do
   @behaviour Plug.Conn.Adapter
   @moduledoc false
 
-  alias :cowboy_req, as: R
+  alias :cowboy_req, as: Request
 
   def conn(req, transport) do
-    {path, req} = R.path req
-    {host, req} = R.host req
-    {port, req} = R.port req
-    {meth, req} = R.method req
-    {hdrs, req} = R.headers req
-    {qs, req}   = R.qs req
+    {path, req} = Request.path req
+    {host, req} = Request.host req
+    {port, req} = Request.port req
+    {meth, req} = Request.method req
+    {hdrs, req} = Request.headers req
+    {qs, req}   = Request.qs req
 
     %Plug.Conn{
       adapter: {__MODULE__, req},
@@ -25,7 +25,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def send_resp(req, status, headers, body) do
-    {:ok, req} = R.reply(status, headers, body, req)
+    {:ok, req} = Request.reply(status, headers, body, req)
     {:ok, nil, req}
   end
 
@@ -33,25 +33,25 @@ defmodule Plug.Adapters.Cowboy.Conn do
     %File.Stat{type: :regular, size: size} = File.stat!(path)
     body_fun = fn(socket, transport) -> transport.sendfile(socket, path) end
 
-    {:ok, req} = R.reply(status, headers, R.set_resp_body_fun(size, body_fun, req))
+    {:ok, req} = Request.reply(status, headers, Request.set_resp_body_fun(size, body_fun, req))
     {:ok, nil, req}
   end
 
   def send_chunked(req, status, headers) do
-    {:ok, req} = R.chunked_reply(status, headers, req)
+    {:ok, req} = Request.chunked_reply(status, headers, req)
     {:ok, nil, req}
   end
 
   def chunk(req, body) do
-    R.chunk(body, req)
+    Request.chunk(body, req)
   end
 
-  def stream_req_body(req, limit) do
-    R.stream_body(limit, req)
+  def read_req_body(req, opts \\ []) do
+    Request.body(req, opts)
   end
 
   def parse_req_multipart(req, limit, callback) do
-    {:ok, limit, acc, req} = parse_multipart(R.part(req), limit, %{}, callback)
+    {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, %{}, callback)
 
     if limit > 0 do
       params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
@@ -76,16 +76,16 @@ defmodule Plug.Adapters.Cowboy.Conn do
   defp parse_multipart({:ok, headers, req}, limit, acc, callback) when limit >= 0 do
     case callback.(headers) do
       {:binary, name} ->
-        {:ok, limit, body, req} = parse_multipart_body(R.part_body(req), limit, "")
-        parse_multipart(R.part(req), limit, Map.put(acc, name, body), callback)
+        {:ok, limit, body, req} = parse_multipart_body(Request.part_body(req), limit, "")
+        parse_multipart(Request.part(req), limit, Map.put(acc, name, body), callback)
 
       {:file, name, file, %Plug.Upload{} = uploaded} ->
-        {:ok, limit, req} = parse_multipart_file(R.part_body(req), limit, file)
-        parse_multipart(R.part(req), limit, Map.put(acc, name, uploaded), callback)
+        {:ok, limit, req} = parse_multipart_file(Request.part_body(req), limit, file)
+        parse_multipart(Request.part(req), limit, Map.put(acc, name, uploaded), callback)
 
       :skip ->
-        {:ok, req} = R.multipart_skip(req)
-        parse_multipart(R.part(req), limit, acc, callback)
+        {:ok, req} = Request.multipart_skip(req)
+        parse_multipart(Request.part(req), limit, acc, callback)
     end
   end
 
@@ -98,7 +98,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   defp parse_multipart_body({:more, tail, req}, limit, body) when limit >= 0 do
-    parse_multipart_body(R.part_body(req), limit - byte_size(tail), body <> tail)
+    parse_multipart_body(Request.part_body(req), limit - byte_size(tail), body <> tail)
   end
 
   defp parse_multipart_body({:more, _tail, req}, limit, body) do
@@ -115,7 +115,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   defp parse_multipart_file({:more, tail, req}, limit, file) when limit >= 0 do
     :file.write(file, tail)
-    parse_multipart_file(R.part_body(req), limit - byte_size(tail), file)
+    parse_multipart_file(Request.part_body(req), limit - byte_size(tail), file)
   end
 
   defp parse_multipart_file({:more, _tail, req}, limit, file) do

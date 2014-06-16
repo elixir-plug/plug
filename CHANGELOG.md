@@ -2,7 +2,7 @@
 
 * Enhancements
   * Update Cowboy adapter to v0.10.0
-  * Add `Plug.Conn.collect_body/3`
+  * Add `Plug.Conn.read_body/2`
 
 # v0.4.4
 

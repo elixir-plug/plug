@@ -3,10 +3,10 @@ defmodule Plug.Parsers.URLENCODED do
   alias Plug.Conn
 
   def parse(%Conn{} = conn, "application", "x-www-form-urlencoded", _headers, opts) do
-    case Conn.collect_body(conn, "", opts) do
+    case Conn.read_body(conn, opts) do
       {:ok, body, conn} ->
         {:ok, Plug.Conn.Query.decode(body), conn}
-      {:error, :too_large, conn} ->
+      {:more, _data, conn} ->
         {:error, :too_large, conn}
     end
   end

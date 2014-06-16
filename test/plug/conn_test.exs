@@ -243,26 +243,17 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn, "baz") == ["bat"]
   end
 
-  test "collect_body/3" do
+  test "read_body/2" do
     body = :binary.copy("abcdefghij", 1000)
     conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
-    assert {:ok, ^body, conn} = collect_body(conn, "")
-    assert {:ok, "", _} = collect_body(conn, "")
+    assert {:ok, ^body, conn} = read_body(conn)
+    assert {:ok, "", _} = read_body(conn)
   end
 
-  test "collect_body/3 too large" do
+  test "read_body/2 partial retrieval" do
     body = :binary.copy("abcdefghij", 100)
     conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
-    assert {:error, :too_large, _} = collect_body(conn, "", limit: 100)
-  end
-
-  test "collect_body/3 with collectable" do
-    import ExUnit.CaptureIO
-    body = :binary.copy("abcdefghij", 1000)
-    conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
-    assert capture_io(fn ->
-      assert {:ok, _, _} = collect_body(conn, IO.stream(:stdio, :line))
-    end) == body
+    assert {:more, _, _} = read_body(conn, length: 100)
   end
 
   test "params/1 && fetch_params/1" do

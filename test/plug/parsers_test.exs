@@ -33,7 +33,7 @@ defmodule Plug.ParsersTest do
   test "raises on too large bodies" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError, fn ->
       headers = [{"content-type", "application/x-www-form-urlencoded"}]
-      parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), limit: 5)
+      parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), length: 5)
     end
     assert Plug.Exception.status(exception) == 413
   end

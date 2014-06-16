@@ -44,13 +44,16 @@ defmodule Plug.Adapters.Test.Conn do
     {:ok, body, %{state | chunks: body}}
   end
 
-  def stream_req_body(%{req_body: body} = state, _limit) when byte_size(body) == 0,
-    do: {:done, state}
-  def stream_req_body(%{req_body: body} = state, limit) do
-    size = min(byte_size(body), limit)
+  def read_req_body(%{req_body: body} = state, opts \\ []) do
+    size = min(byte_size(body), Keyword.get(opts, :length, 8_000_000))
     data = :binary.part(body, 0, size)
     rest = :binary.part(body, size, byte_size(body) - size)
-    {:ok, data, %{state | req_body: rest}}
+    tag =
+      case rest do
+        "" -> :ok
+        _  -> :more
+      end
+    {tag, data, %{state | req_body: rest}}
   end
 
   def parse_req_multipart(%{params: multipart} = state, _limit, _callback) do
