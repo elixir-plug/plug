@@ -136,22 +136,23 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
            {"transfer-encoding", "chunked"}
   end
 
-  def stream_req_body(conn) do
+  def read_req_body(conn) do
     expected = :binary.copy("abcdefghij", 100_000)
-    assert {:ok, ^expected, conn} = collect_body(conn, "")
+    assert {:ok, ^expected, conn} = read_body(conn)
+    assert {:ok, "", conn} = read_body(conn)
     conn
   end
 
-  def stream_req_body_too_large(conn) do
-    assert {:error, :too_large, _} = collect_body(conn, "", limit: 10_000)
+  def read_req_body_partial(conn) do
+    assert {:more, _body, conn} = read_body(conn, length: 5)
     conn
   end
 
   test "reads body" do
     body = :binary.copy("abcdefghij", 100_000)
-    assert {204, _, ""} = request :get, "/stream_req_body", [], body
-    assert {204, _, ""} = request :post, "/stream_req_body", [], body
-    assert {204, _, ""} = request :post, "/stream_req_body_too_large", [], body
+    assert {204, _, ""} = request :get, "/read_req_body", [], body
+    assert {204, _, ""} = request :post, "/read_req_body", [], body
+    assert {204, _, ""} = request :post, "/read_req_body_partial", [], body
   end
 
   def multipart(conn) do

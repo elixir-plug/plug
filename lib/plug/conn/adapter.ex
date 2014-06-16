@@ -76,8 +76,8 @@ defmodule Plug.Conn.Adapter do
   An approximate limit of data to be read from the socket per stream
   can be passed as argument.
   """
-  defcallback stream_req_body(payload, limit :: pos_integer) ::
-              {:ok, data :: binary, payload} | {:done, payload}
+  defcallback read_req_body(payload, options :: Keyword.t) ::
+              {:ok, data :: binary, payload} | {:more, payload}
 
   @doc """
   Parses a multipart request.

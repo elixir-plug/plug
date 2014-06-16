@@ -46,8 +46,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
     Request.chunk(body, req)
   end
 
-  def stream_req_body(req, limit) do
-    Request.stream_body(limit, req)
+  def read_req_body(req, opts \\ []) do
+    Request.body(req, opts)
   end
 
   def parse_req_multipart(req, limit, callback) do
