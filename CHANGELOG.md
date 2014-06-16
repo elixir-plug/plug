@@ -4,6 +4,9 @@
   * Update Cowboy adapter to v0.10.0
   * Add `Plug.Conn.read_body/2`
 
+* Backwards incompatible changes
+  * `Plug.Parsers` now expect `:length` instead of `:limit` and also accept `:read_length` and `:read_timeout`
+
 # v0.4.4
 
 * Enhancements

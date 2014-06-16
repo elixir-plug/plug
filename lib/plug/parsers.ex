@@ -1,6 +1,6 @@
 defmodule Plug.Parsers do
   message = "the request is too large. If you are willing to process " <>
-            "larger requests, please give a :limit to Plug.Parsers"
+            "larger requests, please give a :length to Plug.Parsers"
 
   defmodule RequestTooLargeError do
     @moduledoc """
@@ -35,8 +35,8 @@ defmodule Plug.Parsers do
                  These modules need to implement the behaviour
                  outlined in this module.
 
-  * `:limit` - the request size limit we accept to parse.
-               Defaults to 8,000,000 bytes.
+  All options supported by `Plug.Conn.read_body/2` are also
+  supported here.
 
   ## Examples
 
@@ -88,7 +88,7 @@ defmodule Plug.Parsers do
     parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
     opts
     |> Keyword.put(:parsers, convert_parsers(parsers))
-    |> Keyword.put_new(:limit, 8_000_000)
+    |> Keyword.put_new(:length, 8_000_000)
   end
 
   defp raise_missing_parsers do

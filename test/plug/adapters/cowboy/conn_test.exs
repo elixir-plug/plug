@@ -144,7 +144,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def read_req_body_partial(conn) do
-    assert {:more, _body, conn} = read_body(conn, length: 5)
+    assert {:more, _body, conn} = read_body(conn, length: 5, read_length: 5)
     conn
   end
 

@@ -71,13 +71,15 @@ defmodule Plug.Conn.Adapter do
               :ok | {:ok, sent_body :: binary, payload} | {:error, term}
 
   @doc """
-  Streams the request body.
+  Reads the request body.
 
-  An approximate limit of data to be read from the socket per stream
-  can be passed as argument.
+  Read the docs in `Plug.Conn.read_body/2` for the supported
+  options and expected behaviour.
   """
   defcallback read_req_body(payload, options :: Keyword.t) ::
-              {:ok, data :: binary, payload} | {:more, payload}
+              {:ok, data :: binary, payload} |
+              {:more, data :: binary, payload} |
+              {:error, term}
 
   @doc """
   Parses a multipart request.
@@ -93,11 +95,11 @@ defmodule Plug.Conn.Adapter do
                                      and contents should be written to the given `file`
   * `:skip` - this multipart segment should be skipped
 
-  This function can respond with one of the three following values:
+  This function may return a `:ok` or `:more` tuple. The first one is
+  returned when there is no more multipart data to be processed.
 
-  * `{:ok, params, payload}` - the parameters are already processed as defined per `Conn.params`
-  * `{:error, :too_large, payload} - the request body goes over the given limit
+  For the supported options, please read `Plug.Conn.read_body/2` docs.
   """
-  defcallback parse_req_multipart(payload, limit :: pos_integer, fun) ::
-              {:ok, Conn.params, payload} | {:error, :too_large, payload}
+  defcallback parse_req_multipart(payload, options :: Keyword.t, fun) ::
+              {:ok, Conn.params, payload} | {:more, Conn.params, payload}
 end

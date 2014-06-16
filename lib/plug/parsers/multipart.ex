@@ -4,12 +4,11 @@ defmodule Plug.Parsers.MULTIPART do
 
   def parse(%Conn{} = conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
     {adapter, state} = conn.adapter
-    limit = Keyword.fetch!(opts, :limit)
 
-    case adapter.parse_req_multipart(state, limit, &handle_headers/1) do
+    case adapter.parse_req_multipart(state, opts, &handle_headers/1) do
       {:ok, params, state} ->
         {:ok, params, %{conn | adapter: {adapter, state}}}
-      {:error, :too_large, state} ->
+      {:more, _params, state} ->
         {:error, :too_large, %{conn | adapter: {adapter, state}}}
     end
   end

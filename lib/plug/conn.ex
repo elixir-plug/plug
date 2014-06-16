@@ -357,7 +357,8 @@ defmodule Plug.Conn do
 
   This function reads a chunk of the request body. If there is more data to be
   read, then `{:more, partial_body, conn}` is returned. Otherwise
-  `{:ok, body, conn}` is returned.
+  `{:ok, body, conn}` is returned. In case of error reading the socket,
+  `{:error, reason}` is returned as per `:gen_tcp.recv/2`.
 
   Because the request body can be of any size, reading the body will only
   work once, as Plug will not cache the result of these operations. If you
@@ -365,26 +366,23 @@ defmodule Plug.Conn do
   it. Finally keep in mind some plugs like `Plug.Parsers` may read the body,
   so the body may be unavailable after accessing such plugs.
 
+  This function is able to handle both chunked and identity transfer-encoding
+  by default.
+
   ## Options
 
-  * `:continue` - sets whether the server should send a `100 Continue` reply if required,
-                  defaults to true;
   * `:length` - sets the max body length to read, defaults to 8,000,000 bytes;
   * `:read_length` - set the amount of bytes to read at one time, defaults to 1,000,000 bytes;
-  * `:read_timeout` - set the time Cowboy waits before each chuch is received, defaults to 15ms;
-
-  Chunked transfer-encoding is handled by default. If any other transfer-encoding or
-  content-encoding has been used for the request, custom decoding functions can be
-  used. The `content_decode` and `transfer_decode` options allow setting the decode
-  functions manually.
+  * `:read_timeout` - set the timeout for each chunk received, defaults to 15ms;
 
   ## Example
 
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: 1_000_000)
+
   """
-  @spec read_body(t, Keyword.t) :: {:ok, binary, t}
-                                | {:more, binary, t}
-                                | {:error, binary}
+  @spec read_body(t, Keyword.t) :: {:ok, binary, t} |
+                                   {:more, binary, t} |
+                                   {:error, binary}
   def read_body(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
     case adapter.read_req_body(state, opts) do
       {:ok, data, state} ->
