@@ -353,11 +353,11 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Collects the request body into a collectable.
+  Reads the request body.
 
-  This function streams the request body from the adapter and returns
-  `{:ok, body, conn}` if the body length is within the :limit, otherwise
-  `{:error, :too_large, conn}`.
+  This function reads a chunk of the request body. If there is more data to be
+  read, then `{:more, partial_body, conn}` is returned. Otherwise
+  `{:ok, body, conn}` is returned.
 
   Because the request body can be of any size, reading the body will only
   work once, as Plug will not cache the result of these operations. If you
@@ -367,18 +367,20 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:limit` - sets the max body length to read (defaults to 8,000,000 bytes)
+  * `:continue` - sets whether the server should send a `100 Continue` reply if required,
+                  defaults to true;
+  * `:length` - sets the max body length to read, defaults to 8,000,000 bytes;
+  * `:read_length` - set the amount of bytes to read at one time, defaults to 1,000,000 bytes;
+  * `:read_timeout` - set the time Cowboy waits before each chuch is received, defaults to 15ms;
+
+  Chunked transfer-encoding is handled by default. If any other transfer-encoding or
+  content-encoding has been used for the request, custom decoding functions can be
+  used. The `content_decode` and `transfer_decode` options allow setting the decode
+  functions manually.
 
   ## Example
 
-      {:ok, body, conn} = Plug.Conn.collect_body(conn, "")
-
-  Since any collectable can be given, you can stream the body directly
-  into a file, for example:
-
-      {:ok, body, conn} = Plug.Conn.collect_body(conn, File.stream!("req_body"))
-
-  Check the documentation for `Collectable` in Elixir for more information.
+      {:ok, body, conn} = Plug.Conn.read_body(conn, length: 1_000_000)
   """
   @spec read_body(t, Keyword.t) :: {:ok, binary, t}
                                 | {:more, binary, t}
