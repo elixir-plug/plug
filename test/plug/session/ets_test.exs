@@ -9,11 +9,6 @@ defmodule Plug.Session.ETSTest do
     :ok
   end
 
-  teardown do
-    :ets.delete(@ets_table)
-    :ok
-  end
-
   test "put and get session" do
     opts = ETS.init([table: @ets_table])
 

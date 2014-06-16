@@ -1,6 +1,7 @@
-# v0.5.0-dev
+# v0.5.0
 
 * Enhancements
+  * Update to Elixir v0.14.0
   * Update Cowboy adapter to v0.10.0
   * Add `Plug.Conn.read_body/2`
 

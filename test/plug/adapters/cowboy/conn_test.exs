@@ -8,11 +8,12 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   setup_all do
     {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 8001
-    :ok
-  end
 
-  teardown_all do
-    :ok = Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP)
+    on_exit fn ->
+      :ok = Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP)
+    end
+
+    :ok
   end
 
   def init(opts) do
