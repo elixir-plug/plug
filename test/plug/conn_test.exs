@@ -243,7 +243,7 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn, "baz") == ["bat"]
   end
 
-  test "read_body/2" do
+  test "read_body/1" do
     body = :binary.copy("abcdefghij", 1000)
     conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
     assert {:ok, ^body, conn} = read_body(conn)
