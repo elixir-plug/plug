@@ -70,7 +70,7 @@ defmodule Plug.Conn.Cookies do
     if max_age = opts[:max_age] do
       time = opts[:universal_time] || :calendar.universal_time
       time = add_seconds(time, max_age)
-      header = header <> "; expires=" <> rfc2822(time) <> "; max-age=" <> integer_to_binary(max_age)
+      header = header <> "; expires=" <> rfc2822(time) <> "; max-age=" <> Integer.to_string(max_age)
     end
 
     if opts[:secure] do
@@ -85,11 +85,11 @@ defmodule Plug.Conn.Cookies do
   end
 
   defp pad(number) when number in 0..9 do
-    << ?0, ?0 + number >>
+    <<?0, ?0 + number>>
   end
 
   defp pad(number) do
-    integer_to_binary(number)
+    Integer.to_string(number)
   end
 
   defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
@@ -99,7 +99,7 @@ defmodule Plug.Conn.Cookies do
     padded_hour   = pad(hour)
     padded_minute = pad(minute)
     padded_second = pad(second)
-    binary_year   = integer_to_binary(year)
+    binary_year   = Integer.to_string(year)
 
     weekday_name <> ", " <> padded_day <>
       " " <> month_name <> " " <> binary_year <>

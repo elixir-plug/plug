@@ -21,7 +21,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def call(conn, []) do
-    function = binary_to_atom List.first(conn.path_info) || "root"
+    function = String.to_atom List.first(conn.path_info) || "root"
     apply __MODULE__, function, [conn]
   rescue
     exception ->
@@ -114,7 +114,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert List.keyfind(headers, "cache-control", 0) ==
            {"cache-control", "max-age=0, private, must-revalidate"}
     assert List.keyfind(headers, "content-length", 0) ==
-           {"content-length", File.stat!(__ENV__.file).size |> integer_to_binary}
+           {"content-length", File.stat!(__ENV__.file).size |> Integer.to_string}
   end
 
   test "skips file on head" do

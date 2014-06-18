@@ -19,7 +19,7 @@ defmodule Plug.Adapters.Test.Conn do
       port: uri.port || 80,
       req_headers: headers,
       query_string: uri.query || "",
-      scheme: (uri.scheme || "http") |> String.downcase |> binary_to_atom
+      scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom
    }
   end
 
@@ -28,7 +28,7 @@ defmodule Plug.Adapters.Test.Conn do
   def send_resp(%{method: "HEAD"} = state, _status, _headers, _body),
     do: {:ok, "", state}
   def send_resp(%{} = state, _status, _headers, body),
-    do: {:ok, iodata_to_binary(body), state}
+    do: {:ok, IO.iodata_to_binary(body), state}
 
   def send_file(%{method: "HEAD"} = state, _status, _headers, _path),
     do: {:ok, "", state}
@@ -40,7 +40,7 @@ defmodule Plug.Adapters.Test.Conn do
   def chunk(%{method: "HEAD"} = state, _body),
     do: {:ok, "", state}
   def chunk(%{chunks: chunks} = state, body) do
-    body = chunks <> iodata_to_binary(body)
+    body = chunks <> IO.iodata_to_binary(body)
     {:ok, body, %{state | chunks: body}}
   end
 

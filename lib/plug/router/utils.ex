@@ -145,6 +145,6 @@ defmodule Plug.Router.Utils do
   end
 
   defp binary_to_identifier(_, binary) do
-    binary_to_atom(binary)
+    String.to_atom(binary)
   end
 end

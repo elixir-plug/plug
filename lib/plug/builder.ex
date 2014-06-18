@@ -76,7 +76,7 @@ defmodule Plug.Builder do
   end
 
   defp init_plug({plug, opts}) do
-    case atom_to_list(plug) do
+    case Atom.to_char_list(plug) do
       'Elixir.' ++ _ ->
         init_module_plug(plug, opts)
       _ ->

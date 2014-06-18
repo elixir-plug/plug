@@ -147,7 +147,9 @@ defmodule Plug.Upload do
     {:too_many_attempts, tmp, attempts}
   end
 
-  defp i(integer), do: integer_to_binary(integer)
+  @compile {:inline, i: 1}
+
+  defp i(integer), do: Integer.to_string(integer)
 
   defp path(prefix, tmp) do
     {_mega, sec, mili} = :erlang.now

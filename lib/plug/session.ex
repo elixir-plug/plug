@@ -55,7 +55,7 @@ defmodule Plug.Session do
   end
 
   defp convert_store(store) do
-    case atom_to_binary(store) do
+    case Atom.to_string(store) do
       "Elixir." <> _ -> store
       reference      -> Module.concat(Plug.Session, String.upcase(reference))
     end
