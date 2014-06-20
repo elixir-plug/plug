@@ -12,33 +12,33 @@ defmodule Plug.Session.ETSTest do
   test "put and get session" do
     opts = ETS.init([table: @ets_table])
 
-    assert "foo" = ETS.put("foo", :foo, opts)
-    assert "bar" = ETS.put("bar", :bar, opts)
+    assert "foo" = ETS.put("foo", %{foo: :bar}, opts)
+    assert "bar" = ETS.put("bar", %{bar: :foo}, opts)
 
-    assert {"foo", :foo} = ETS.get("foo", opts)
-    assert {"bar", :bar} = ETS.get("bar", opts)
-    assert {nil, nil} = ETS.get("unknown", opts)
+    assert {"foo", %{foo: :bar}} = ETS.get("foo", opts)
+    assert {"bar", %{bar: :foo}} = ETS.get("bar", opts)
+    assert {nil, %{}} = ETS.get("unknown", opts)
   end
 
   test "delete session" do
     opts = ETS.init([table: @ets_table])
 
-    ETS.put("foo", :foo, opts)
-    ETS.put("bar", :bar, opts)
+    ETS.put("foo", %{foo: :bar}, opts)
+    ETS.put("bar", %{bar: :foo}, opts)
     ETS.delete("foo", opts)
 
-    assert {nil, nil} = ETS.get("foo", opts)
-    assert {"bar", :bar} = ETS.get("bar", opts)
+    assert {nil, %{}} = ETS.get("foo", opts)
+    assert {"bar", %{bar: :foo}} = ETS.get("bar", opts)
   end
 
   test "generate new sid" do
     opts = ETS.init([table: @ets_table])
-    sid = ETS.put(nil, :foo, opts)
+    sid = ETS.put(nil, %{}, opts)
     assert byte_size(sid) == 128
   end
 
   test "invalidate sid if unknown" do
     opts = ETS.init([table: @ets_table])
-    assert {nil, nil} = ETS.get("unknown_sid", opts)
+    assert {nil, %{}} = ETS.get("unknown_sid", opts)
   end
 end

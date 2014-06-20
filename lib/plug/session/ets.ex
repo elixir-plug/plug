@@ -34,7 +34,7 @@ defmodule Plug.Session.ETS do
   def get(sid, table) do
     case :ets.lookup(table, sid) do
       [{^sid, data}] -> {sid, data}
-      [] -> {nil, nil}
+      [] -> {nil, %{}}
     end
   end
 

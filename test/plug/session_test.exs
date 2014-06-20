@@ -5,7 +5,7 @@ defmodule Plug.SessionTest do
 
   alias Plug.ProcessStore
 
-  test "sets session cookie" do
+  test "puts session cookie" do
     conn = conn(:get, "/") |> fetch_cookies
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts) |> fetch_session
@@ -57,7 +57,7 @@ defmodule Plug.SessionTest do
   end
 
   test "renew session" do
-    Process.put({:session, "sid"}, [foo: :bar])
+    Process.put({:session, "sid"}, %{foo: :bar})
     conn = conn(:get, "/") |> fetch_cookies
     conn = %{conn | cookies: %{"foobar" => "sid"}}
 
@@ -70,7 +70,7 @@ defmodule Plug.SessionTest do
     refute %{"foobar" => %{value: "sid"}} = conn.resp_cookies
   end
 
-  test "reuses sid" do
+  test "reuses sid and as such does not generate new cookie" do
     Process.put({:session, "sid"}, [foo: :bar])
     conn = conn(:get, "/") |> fetch_cookies
     conn = %{conn | cookies: %{"foobar" => "sid"}}
@@ -79,7 +79,7 @@ defmodule Plug.SessionTest do
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = send_resp(conn, 200, "")
 
-    assert conn.resp_cookies == %{"foobar" => %{value: "sid"}}
+    assert conn.resp_cookies == %{}
   end
 
   test "generates sid" do

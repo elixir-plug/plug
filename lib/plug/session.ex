@@ -65,12 +65,15 @@ defmodule Plug.Session do
     %{store: store, store_config: store_config, key: key} = config
 
     fn conn ->
-      if sid = conn.cookies[key] do
-        {sid, session} = store.get(sid, store_config)
-      end
+      {sid, session} =
+        if cookie = conn.cookies[key] do
+          store.get(cookie, store_config)
+        else
+          {nil, %{}}
+        end
 
       conn
-      |> Conn.assign_private(:plug_session, session || %{})
+      |> Conn.assign_private(:plug_session, session)
       |> Conn.assign_private(:plug_session_fetch, &(&1))
       |> Conn.register_before_send(before_send(sid, config))
     end
@@ -81,21 +84,22 @@ defmodule Plug.Session do
       cookie_opts: cookie_opts} = config
 
     fn conn ->
-      case Map.get(conn.private, :plug_session_info) do
-        :write ->
-          sid = store.put(sid, conn.private[:plug_session], store_config)
-        :drop ->
-          if sid, do: store.delete(sid, store_config)
-          sid = nil
-        :renew ->
-          if sid, do: store.delete(sid, store_config)
-          sid = store.put(nil, conn.private[:plug_session], store_config)
-        nil ->
-         :ok
-      end
+      value =
+        case Map.get(conn.private, :plug_session_info) do
+          :write ->
+            store.put(sid, conn.private[:plug_session], store_config)
+          :drop ->
+            if sid, do: store.delete(sid, store_config)
+            nil
+          :renew ->
+            if sid, do: store.delete(sid, store_config)
+            store.put(nil, conn.private[:plug_session], store_config)
+          nil ->
+            nil
+        end
 
-      if sid do
-        conn = Conn.put_resp_cookie(conn, key, sid, cookie_opts)
+      if value do
+        conn = Conn.put_resp_cookie(conn, key, value, cookie_opts)
       end
 
       conn

@@ -8,7 +8,7 @@ defmodule Plug.ProcessStore do
   end
 
   def get(sid, nil) do
-    {sid, Process.get({:session, sid})}
+    {sid, Process.get({:session, sid}) || %{}}
   end
 
   def delete(sid, nil) do

@@ -4,26 +4,37 @@ defmodule Plug.Session.Store do
   """
   use Behaviour
 
-  @type sid :: binary
+  @type sid :: term | nil
+  @type cookie :: binary
+  @type session :: map
 
   @moduledoc """
-  Initializes the store. The options returned from this function will be given
+  Initializes the store.
+
+  The options returned from this function will be given
   to `get/2`, `put/2` and `delete/2`.
   """
   defcallback init(Plug.opts) :: Plug.opts
 
   @moduledoc """
-  Returns the session associated with given session id. If there is no value
-  associated with the id return `nil` as session. The store can generate a new
-  id for the session or return `nil` as the id if it was invalid.
+  Parses the given cookie.
+
+  Parses the given cookie and returns a session id and the session
+  contents. The session id is any value that can be used to identify
+  the session by the store.
+
+  The session id may be nil in case the cookie does not identify any
+  value in the store. The session contents must be a map.
   """
-  defcallback get(sid, Plug.opts) :: {sid, any}
+  defcallback get(cookie, Plug.opts) :: {sid, session}
 
   @moduledoc """
-  Stores the session associated with given session id. If `nil` is given as id
-  a new session id should be generated and returned.
+  Stores the session associated with given session id.
+
+  If `nil` is given as id, a new session id should be
+  generated and returned.
   """
-  defcallback put(sid | nil, any, Plug.opts) :: sid
+  defcallback put(sid, any, Plug.opts) :: cookie
 
   @moduledoc """
   Removes the session associated with given session id from the store.
