@@ -17,16 +17,16 @@ defmodule Plug.Session.Store do
   defcallback init(Plug.opts) :: Plug.opts
 
   @moduledoc """
-  Parses the given cookie.
+  Parses the given cookie (or nil) if there is no cookie.
 
-  Parses the given cookie and returns a session id and the session
-  contents. The session id is any value that can be used to identify
-  the session by the store.
+  Returns a session id and the session contents. The session
+  id is any value that can be used to identify the session by
+  the store.
 
   The session id may be nil in case the cookie does not identify any
   value in the store. The session contents must be a map.
   """
-  defcallback get(cookie, Plug.opts) :: {sid, session}
+  defcallback get(cookie | nil, Plug.opts) :: {sid, session}
 
   @moduledoc """
   Stores the session associated with given session id.

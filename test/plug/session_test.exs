@@ -57,6 +57,16 @@ defmodule Plug.SessionTest do
            %{"foobar" => %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}}}
   end
 
+  test "drop session without cookie when there is no sid" do
+    conn = conn(:get, "/") |> fetch_cookies
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+    conn = put_session(conn, :foo, :bar)
+    conn = configure_session(conn, drop: true)
+    conn = send_resp(conn, 200, "")
+    assert conn.resp_cookies == %{}
+  end
+
   test "renew session" do
     Process.put({:session, "sid"}, %{foo: :bar})
     conn = conn(:get, "/") |> fetch_cookies

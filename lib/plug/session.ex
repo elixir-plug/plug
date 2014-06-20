@@ -86,10 +86,14 @@ defmodule Plug.Session do
           value = put_session(sid, conn, config)
           put_cookie(value, conn, config)
         :drop ->
-          delete_session(sid, config)
-          delete_cookie(conn, config)
+          if sid do
+            delete_session(sid, config)
+            delete_cookie(conn, config)
+          else
+            conn
+          end
         :renew ->
-          delete_session(sid, config)
+          if sid, do: delete_session(sid, config)
           value = put_session(nil, conn, config)
           put_cookie(value, conn, config)
         nil ->
