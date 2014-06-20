@@ -80,29 +80,33 @@ defmodule Plug.Session do
   end
 
   defp before_send(sid, config) do
-    %{store: store, store_config: store_config, key: key,
-      cookie_opts: cookie_opts} = config
-
     fn conn ->
-      value =
-        case Map.get(conn.private, :plug_session_info) do
-          :write ->
-            store.put(sid, conn.private[:plug_session], store_config)
-          :drop ->
-            if sid, do: store.delete(sid, store_config)
-            nil
-          :renew ->
-            if sid, do: store.delete(sid, store_config)
-            store.put(nil, conn.private[:plug_session], store_config)
-          nil ->
-            nil
-        end
-
-      if value do
-        conn = Conn.put_resp_cookie(conn, key, value, cookie_opts)
+      case Map.get(conn.private, :plug_session_info) do
+        :write ->
+          value = put_session(sid, conn, config)
+          put_cookie(value, conn, config)
+        :drop ->
+          delete_session(sid, config)
+          delete_cookie(conn, config)
+        :renew ->
+          delete_session(sid, config)
+          value = put_session(nil, conn, config)
+          put_cookie(value, conn, config)
+        nil ->
+          conn
       end
-
-      conn
     end
   end
+
+  defp put_session(sid, conn, %{store: store, store_config: store_config}),
+    do: store.put(sid, conn.private[:plug_session], store_config)
+
+  defp delete_session(sid, %{store: store, store_config: store_config}),
+    do: store.delete(sid, store_config)
+
+  defp put_cookie(value, conn, %{cookie_opts: cookie_opts, key: key}),
+    do: Conn.put_resp_cookie(conn, key, value, cookie_opts)
+
+  defp delete_cookie(conn, %{cookie_opts: cookie_opts, key: key}),
+    do: Conn.delete_resp_cookie(conn, key, cookie_opts)
 end

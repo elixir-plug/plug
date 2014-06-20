@@ -53,7 +53,8 @@ defmodule Plug.SessionTest do
     conn = configure_session(conn, drop: true)
     conn = send_resp(conn, 200, "")
 
-    assert conn.resp_cookies == %{}
+    assert conn.resp_cookies ==
+           %{"foobar" => %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}}}
   end
 
   test "renew session" do
