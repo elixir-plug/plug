@@ -147,9 +147,9 @@ defmodule Plug.Conn do
 
   This storage is meant to be used by libraries and frameworks
   to avoid writing to the user storage (assigns). It is recommended
-  for libraries/framework to prefix the keys by the library name.
+  for libraries/frameworks to prefix the keys by the library name.
 
-  For example, if plug some plug needs to store a `:hello` key, it
+  For example, if some plug needs to store a `:hello` key, it
   should do so as `:plug_hello`:
 
       iex> conn.private[:plug_hello]
