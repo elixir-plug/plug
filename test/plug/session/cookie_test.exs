@@ -2,6 +2,8 @@ defmodule Plug.Session.CookieTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  alias Plug.Session.COOKIE, as: CookieStore
+
   @valid_secret String.duplicate("abcdef0123456789", 8)
 
   setup do
@@ -21,6 +23,13 @@ defmodule Plug.Session.CookieTest do
     assert_raise ArgumentError, ~r/must be at least 64 bytes/, fn ->
       Plug.Session.init(store: :cookie, key: "foobar", secret: "abcdef")
     end
+  end
+
+  test "session cookies are encoded and signed" do
+    opts = CookieStore.init(key: "foobar", secret: @valid_secret)
+    cookie = CookieStore.put(nil, %{foo: :bar}, opts)
+    refute cookie == %{foo: :bar}
+    assert decode_cookie(cookie) == %{foo: :bar}
   end
 
   test "put session cookie", %{conn: conn} do
