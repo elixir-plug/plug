@@ -373,7 +373,7 @@ defmodule Plug.Conn do
 
   * `:length` - sets the max body length to read, defaults to 8,000,000 bytes;
   * `:read_length` - set the amount of bytes to read at one time, defaults to 1,000,000 bytes;
-  * `:read_timeout` - set the timeout for each chunk received, defaults to 15ms;
+  * `:read_timeout` - set the timeout for each chunk received, defaults to 15000ms;
 
   ## Example
 
