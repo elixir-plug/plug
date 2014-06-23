@@ -33,19 +33,19 @@ defmodule Plug.Session.CookieTest do
   end
 
   test "put session cookie", %{conn: conn} do
-    conn = put_session(conn, %{foo: :bar})
+    conn = put_session(conn, :foo, "bar")
     conn = send_resp(conn, 200, "")
-    assert %{foo: :bar} = get_session(conn)
+    assert get_session(conn, :foo) == "bar"
   end
 
   test "get session cookie", %{conn: conn} do
-    conn = put_session(conn, %{foo: "bar", current_user: 1})
-    assert get_session(conn).current_user == 1
+    conn = put_session(conn, :current_user, 1)
+    assert get_session(conn, :current_user) == 1
   end
 
   test "delete session cookie", %{conn: conn} do
-    conn = put_session(conn, %{foo: :bar})
-    assert get_session(conn) == %{foo: :bar}
+    conn = put_session(conn, :foo, :bar)
+    assert get_session(conn, :foo) == :bar
     conn = configure_session(conn, drop: true)
     conn = send_resp(conn, 200, "")
 
