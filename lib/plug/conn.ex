@@ -481,8 +481,7 @@ defmodule Plug.Conn do
   """
   @spec get_session(t, any) :: any
   def get_session(conn, key) do
-    session = get_session(conn)
-    Map.get(session, key)
+    conn |> get_session |> Map.get(key)
   end
 
   @doc """
