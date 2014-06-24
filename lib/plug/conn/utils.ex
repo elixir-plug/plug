@@ -12,7 +12,7 @@ defmodule Plug.Conn.Utils do
   @space [?\s, ?\t]
   @specials [?(, ?), ?<, ?>, ?@, ?,, ?;, ?:, ?\\, ?", ?/, ?[, ?], ??, ?., ?=]
 
-  @doc """
+  @doc ~S"""
   Parses the request content type header.
 
   Type and subtype are case insensitive while the
@@ -33,6 +33,9 @@ defmodule Plug.Conn.Utils do
       iex> content_type "x-sample/json  ; charset=utf-8  ; foo=bar"
       {:ok, "x-sample", "json", %{"charset" => "utf-8", "foo" => "bar"}}
 
+      iex> content_type "\r\n text/plain;\r\n charset=utf-8\r\n"
+      {:ok, "text", "plain", %{"charset" => "utf-8"}}
+
       iex> content_type "x y"
       :error
 
@@ -45,7 +48,7 @@ defmodule Plug.Conn.Utils do
   """
   @spec content_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
   def content_type(binary) do
-    ct_first(binary, "")
+    ct_first(strip_spaces(binary), "")
   end
 
   defp ct_first(<< ?/, t :: binary >>, acc) when acc != "",
@@ -104,14 +107,12 @@ defmodule Plug.Conn.Utils do
   defp params([], acc),
     do: acc
   defp params([h|t], acc) do
-    case params_key(h, "") do
+    case params_key(strip_spaces(h), "") do
       {k, v} -> params(t, Map.put(acc, k, v))
       false  -> params(t, acc)
     end
   end
 
-  defp params_key(<< h, t :: binary >>, "") when h in @space,
-    do: params_key(t, "")
   defp params_key(<< ?=, t :: binary >>, acc) when acc != "",
     do: params_value(t, acc)
   defp params_key(<< h, _ :: binary >>, _acc) when h in @specials or h in @space or h < 32 or h === 127,
@@ -178,6 +179,8 @@ defmodule Plug.Conn.Utils do
   defp quoted_token(<< h, t :: binary >>, acc),
     do: quoted_token(t, << acc :: binary, h >>)
 
+  defp unquoted_token("\r\n" <> t, acc),
+    do: strip_spaces(t) == "" and acc
   defp unquoted_token(<< h, t :: binary >>, acc) when h in @space,
     do: strip_spaces(t) == "" and acc
   defp unquoted_token(<< h, _ :: binary >>, _acc) when h in @specials or h < 32 or h === 127,
@@ -213,7 +216,9 @@ defmodule Plug.Conn.Utils do
     end) |> Enum.reverse
   end
 
-  defp strip_spaces(<< h, t :: binary >>) when h in [?\s, ?\t],
+  defp strip_spaces("\r\n" <> t),
+    do: strip_spaces(t)
+  defp strip_spaces(<<h, t :: binary>>) when h in [?\s, ?\t],
     do: strip_spaces(t)
   defp strip_spaces(t),
     do: t
