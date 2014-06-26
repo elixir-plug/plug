@@ -48,8 +48,8 @@ defmodule Plug.ParsersTest do
 
   test "does not raise when request cannot be processed if :strict is false" do
     headers = [{"content-type", "text/plain"}]
-    assert parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers),
-                 strict: false)
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), strict: false)
+    assert conn.params["foo"] == "bar"
   end
 
 end
