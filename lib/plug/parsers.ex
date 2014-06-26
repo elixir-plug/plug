@@ -34,6 +34,10 @@ defmodule Plug.Parsers do
   * `:parsers` - a set of modules to be invoked for parsing.
                  These modules need to implement the behaviour
                  outlined in this module.
+  * `:strict` - an optional Boolean for strict mode. Default true.
+                When enabled, raises `Plug.Parsers.UnsupportedMediaTypeError` if
+                request cannot be parsed by any of the given types.
+
 
   All options supported by `Plug.Conn.read_body/2` are also
   supported here.
@@ -41,6 +45,7 @@ defmodule Plug.Parsers do
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart], strict: false
 
   ## Built-in parsers
 
@@ -49,9 +54,9 @@ defmodule Plug.Parsers do
   * `Plug.Parsers.URLENCODED` - parses "application/x-www-form-urlencoded" requests
   * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
 
-  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` if
-  the request cannot be parsed by any of the given types and raise
-  `Plug.Parsers.RequestTooLargeError` if the request goes over the
+  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if the request
+  cannot be parsed by any of the given types. Set `strict: false` to override.
+  `Plug.Parsers.RequestTooLargeError` will be raised  if the request goes over the
   given limit.
 
   ## File handling
@@ -89,6 +94,7 @@ defmodule Plug.Parsers do
     opts
     |> Keyword.put(:parsers, convert_parsers(parsers))
     |> Keyword.put_new(:length, 8_000_000)
+    |> Keyword.put_new(:strict, true)
   end
 
   defp raise_missing_parsers do
@@ -130,8 +136,12 @@ defmodule Plug.Parsers do
     end
   end
 
-  defp reduce(_conn, [], type, subtype, _headers, _opts) do
-    raise UnsupportedMediaTypeError,
-          message: "unsupported media type #{type}/#{subtype}"
+  defp reduce(conn, [], type, subtype, _headers, opts) do
+    if opts[:strict] do
+      raise UnsupportedMediaTypeError,
+            message: "unsupported media type #{type}/#{subtype}"
+    else
+      conn
+    end
   end
 end
