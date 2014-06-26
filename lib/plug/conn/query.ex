@@ -25,6 +25,32 @@ defmodule Plug.Conn.Query do
       iex> decode("foo[]=bar&foo[]=baz")["foo"]
       ["bar", "baz"]
 
+
+  Encoding Dicts:
+
+      iex> encode(%{foo: "bar", baz: "bat"})
+      "baz=bat&foo=bar"
+
+  Encoding keyword lists preserves field order:
+
+      iex> encode([foo: "bar", baz: "bat"])
+      "foo=bar&baz=bat"
+
+  Encoding keyword lists with duplicate keys, first one wins:
+
+      iex> encode([foo: "bar", foo: "bat"])
+      "foo=bar"
+
+  Encoding named lists:
+
+      iex> encode(%{foo: ["bar", "baz"]})
+      "foo[]=bar&foo[]=baz"
+
+  Encoding nested structures:
+
+      iex> encode(%{foo: %{bar: "baz"}})
+      "foo[bar]=baz"
+
   """
 
   @doc """
@@ -113,4 +139,43 @@ defmodule Plug.Conn.Query do
 
   defp assign_list([], value), do: value
   defp assign_list(t, value),  do: assign_parts(t, value, %{})
+
+
+  @doc """
+  Encodes the given dict.
+  """
+  def encode(dict) do
+    encode_pair(nil, dict)
+  end
+
+  # covers maps and keyword lists
+  defp encode_pair(parent_field, dict) when is_map(dict) or (is_list(dict) and is_tuple(hd(dict))) do
+    dict
+    |> Dict.keys
+    |> Enum.uniq # when keyword lists have duplicate keys, first one wins
+    |> Enum.map_join("&", fn field ->
+         value = dict[field]
+         field = if parent_field do
+           "#{parent_field}[#{encode_www_form(field)}]"
+         else
+           encode_www_form(field)
+         end
+
+         encode_pair(field, value)
+       end)
+  end
+
+  # covers non-keyword lists
+  defp encode_pair(parent_field, list) when is_list(list) do
+    Enum.map_join list, "&", &encode_pair("#{parent_field}[]", &1)
+  end
+
+  defp encode_pair(field, value) do
+    field <> "=" <> encode_www_form(value)
+  end
+
+  defp encode_www_form(item) do
+    item |> to_string |> URI.encode_www_form
+  end
+
 end
