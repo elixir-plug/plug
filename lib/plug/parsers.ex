@@ -58,7 +58,8 @@ defmodule Plug.Parsers do
   * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
 
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if the request
-  cannot be parsed by any of the given types. Set `strict: false` to override.
+  cannot be parsed by any of the given types and the mime type has not been
+  explicity accepted in the `:accept` option.
   `Plug.Parsers.RequestTooLargeError` will be raised  if the request goes over the
   given limit.
 
