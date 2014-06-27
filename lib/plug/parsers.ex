@@ -34,10 +34,12 @@ defmodule Plug.Parsers do
   * `:parsers` - a set of modules to be invoked for parsing.
                  These modules need to implement the behaviour
                  outlined in this module.
-  * `:strict` - an optional Boolean for strict mode. Default true.
-                When enabled, raises `Plug.Parsers.UnsupportedMediaTypeError` if
-                request cannot be parsed by any of the given types.
-
+  * `:accept`  - an optional list of accepted mime type strings. Any mime
+                 not handled by a parser and not explicitly accepted will
+                 raise UnsupportedMediaTypeError. ie:
+                 * ["*/*"] - never raise
+                 * ["text/html", "application/*"] - don't raise for those values
+                 * [] - always raise (default)
 
   All options supported by `Plug.Conn.read_body/2` are also
   supported here.
@@ -45,7 +47,8 @@ defmodule Plug.Parsers do
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart], strict: false
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart],
+                         accept:  ["application/json", "text/*"]
 
   ## Built-in parsers
 
@@ -94,7 +97,7 @@ defmodule Plug.Parsers do
     opts
     |> Keyword.put(:parsers, convert_parsers(parsers))
     |> Keyword.put_new(:length, 8_000_000)
-    |> Keyword.put_new(:strict, true)
+    |> Keyword.put_new(:accept, [])
   end
 
   defp raise_missing_parsers do
@@ -137,11 +140,15 @@ defmodule Plug.Parsers do
   end
 
   defp reduce(conn, [], type, subtype, _headers, opts) do
-    if opts[:strict] do
-      raise UnsupportedMediaTypeError,
-            message: "unsupported media type #{type}/#{subtype}"
-    else
+    ensure_accepted_mimes(conn, type, subtype, Keyword.fetch!(opts, :accept))
+  end
+
+  defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
+  defp ensure_accepted_mimes(conn, type, subtype, accept) do
+    if "#{type}/#{subtype}" in accept || "#{type}/*" in accept do
       conn
+    else
+      raise UnsupportedMediaTypeError, message: "unsupported media type #{type}/#{subtype}"
     end
   end
 end

@@ -46,10 +46,38 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 415
   end
 
-  test "does not raise when request cannot be processed if :strict is false" do
+  test "does not raise when request cannot be processed if accepts all mimes" do
     headers = [{"content-type", "text/plain"}]
-    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), strict: false)
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), accept: ["*/*"])
     assert conn.params["foo"] == "bar"
+  end
+
+  test "does not raise when request cannot be processed if mime accepted" do
+    headers = [{"content-type", "text/plain"}]
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), accept: [
+      "text/plain", "application/json"
+    ])
+    assert conn.params["foo"] == "bar"
+
+    headers = [{"content-type", "application/json"}]
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), accept: [
+      "text/plain", "application/json"
+    ])
+    assert conn.params["foo"] == "bar"
+  end
+
+  test "does not raise when request cannot be processed if accepts mime range" do
+    headers = [{"content-type", "text/plain"}]
+    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), accept: ["text/*"])
+    assert conn.params["foo"] == "bar"
+  end
+
+  test "raises when request cannot be processed if mime range not accepted" do
+    exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
+      headers = [{"content-type", "application/json"}]
+      parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers), accept: ["text/*"])
+    end
+    assert Plug.Exception.status(exception) == 415
   end
 
 end
