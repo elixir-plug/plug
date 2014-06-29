@@ -5,7 +5,9 @@ defmodule Plug.MIME do
 
   @default_type "application/octet-stream"
 
-  stream  = File.stream! Path.expand("mime.types", __DIR__)
+  @external_resource "lib/plug/mime.types"
+  stream = File.stream!("lib/plug/mime.types")
+
   mapping = Enum.flat_map(stream, fn (line) ->
     if String.match?(line, ~r/^[#\n]/) do
       []
