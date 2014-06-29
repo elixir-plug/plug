@@ -1,3 +1,5 @@
+# v0.5.2-dev
+
 # v0.5.1
 
 * Enhancements
