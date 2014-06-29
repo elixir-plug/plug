@@ -6,12 +6,12 @@ defmodule Plug.MessageVerifierTest do
   test "generates a signed message" do
     [content, encoded] = String.split MV.generate("secret", :hello), "--"
     assert content |> :base64.decode |> :erlang.binary_to_term == :hello
-    assert size(encoded) == 40
+    assert byte_size(encoded) == 40
   end
 
   test "verifies a signed message" do
     signed = MV.generate("secret", :hello)
-    assert MV.verify("secret", signed) == { :ok, :hello }
+    assert MV.verify("secret", signed) == {:ok, :hello}
   end
 
   test "does not verify a signed message if secret changed" do

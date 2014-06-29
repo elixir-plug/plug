@@ -42,7 +42,7 @@ defmodule Plug.MessageVerifier do
   to avoid timing attacks.
   """
   def secure_compare(left, right) do
-    if size(left) == size(right) do
+    if byte_size(left) == byte_size(right) do
       compare_each(left, right, true)
     else
       false

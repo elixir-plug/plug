@@ -172,7 +172,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     multipart = "------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nhello\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r\nContent-Type: text/plain\r\n\r\nhello\n\n\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"commit\"\r\n\r\nCreate User\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq--\r\n"
     headers =
       [{"Content-Type", "multipart/form-data; boundary=----WebKitFormBoundaryw58EW1cEpjzydSCq"},
-       {"Content-Length", size(multipart)}]
+       {"Content-Length", byte_size(multipart)}]
 
     assert {204, _, _} = request :get, "/multipart", headers, multipart
     assert {204, _, _} = request :get, "/multipart?name=overriden", headers, multipart

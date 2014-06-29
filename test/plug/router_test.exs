@@ -50,7 +50,7 @@ defmodule Plug.RouterTest do
       conn |> resp(200, "ok")
     end
 
-    get "/7/:bar" when size(bar) <= 3 do
+    get "/7/:bar" when byte_size(bar) <= 3 do
       conn |> resp(200, inspect(bar))
     end
 
