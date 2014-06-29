@@ -1,3 +1,13 @@
+# v0.5.1
+
+* Enhancements
+  * Add ability to configure when `Plug.Parsers` raises `UnsupportedMediaTypeError`
+  * Add `Plug.Conn.Query.encode/1`
+  * Add `CookieStore` for session
+
+* Bug fixes
+  * Ensure plug parses content-type with CRLF as LWS
+
 # v0.5.0
 
 * Enhancements

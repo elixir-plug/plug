@@ -140,7 +140,6 @@ defmodule Plug.Conn.Query do
   defp assign_list([], value), do: value
   defp assign_list(t, value),  do: assign_parts(t, value, %{})
 
-
   @doc """
   Encodes the given dict.
   """
@@ -148,21 +147,14 @@ defmodule Plug.Conn.Query do
     encode_pair(nil, dict)
   end
 
-  # covers maps and keyword lists
-  defp encode_pair(parent_field, dict) when is_map(dict) or (is_list(dict) and is_tuple(hd(dict))) do
-    dict
-    |> Dict.keys
-    |> Enum.uniq # when keyword lists have duplicate keys, first one wins
-    |> Enum.map_join("&", fn field ->
-         value = dict[field]
-         field = if parent_field do
-           "#{parent_field}[#{encode_www_form(field)}]"
-         else
-           encode_www_form(field)
-         end
+  # covers maps
+  defp encode_pair(parent_field, dict) when is_map(dict) do
+    encode_dict(dict, parent_field)
+  end
 
-         encode_pair(field, value)
-       end)
+  # covers keyword lists
+  defp encode_pair(parent_field, list) when is_list(list) and is_tuple(hd(list)) do
+    encode_dict(Enum.uniq(list, &elem(&1, 0)), parent_field)
   end
 
   # covers non-keyword lists
@@ -174,8 +166,19 @@ defmodule Plug.Conn.Query do
     field <> "=" <> encode_www_form(value)
   end
 
+  defp encode_dict(dict, parent_field) do
+    Enum.map_join(dict, "&", fn {field, value} ->
+      field = if parent_field do
+        "#{parent_field}[#{encode_www_form(field)}]"
+      else
+        encode_www_form(field)
+      end
+
+      encode_pair(field, value)
+    end)
+  end
+
   defp encode_www_form(item) do
     item |> to_string |> URI.encode_www_form
   end
-
 end
