@@ -461,10 +461,10 @@ defmodule Plug.Conn do
   """
   @spec fetch_session(t) :: t
   def fetch_session(%Conn{private: private} = conn) do
-    if fun = Map.get(private, :plug_session_fetch) do
-      conn |> fetch_cookies |> fun.()
-    else
-      raise ArgumentError, message: "cannot fetch session without a configured session plug"
+    case Map.fetch(private, :plug_session_fetch) do
+      {:ok, :done} -> conn
+      {:ok, fun} -> conn |> fetch_cookies |> fun.()
+      :error -> raise ArgumentError, "cannot fetch session without a configured session plug"
     end
   end
 

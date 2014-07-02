@@ -74,7 +74,7 @@ defmodule Plug.Session do
 
       conn
       |> Conn.assign_private(:plug_session, session)
-      |> Conn.assign_private(:plug_session_fetch, &(&1))
+      |> Conn.assign_private(:plug_session_fetch, :done)
       |> Conn.register_before_send(before_send(sid, config))
     end
   end
