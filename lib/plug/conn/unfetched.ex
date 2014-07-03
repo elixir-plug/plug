@@ -2,7 +2,9 @@ defmodule Plug.Conn.Unfetched do
   @moduledoc """
   A struct used as default on unfetched fields.
   """
+
   defstruct [:aspect]
+  @type t :: %__MODULE__{aspect: atom()}
 
   defimpl Access do
     def get(unfetched, key) do

@@ -15,6 +15,7 @@ defmodule Plug.Upload do
   """
 
   defstruct [:path, :content_type, :filename]
+  @type t :: %__MODULE__{path: binary, filename: binary, content_type: binary | nil}
 
   @doc """
   Requests a random file to be created in the upload directory
