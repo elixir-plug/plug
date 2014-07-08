@@ -11,6 +11,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {meth, req} = Request.method req
     {hdrs, req} = Request.headers req
     {qs, req}   = Request.qs req
+    {peer, req} = Request.peer req
 
     %Plug.Conn{
       adapter: {__MODULE__, req},
@@ -20,7 +21,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
       port: port,
       query_string: qs,
       req_headers: hdrs,
-      scheme: scheme(transport)
+      scheme: scheme(transport),
+      peer: join_peer_address(peer)
    }
   end
 
@@ -71,6 +73,11 @@ defmodule Plug.Adapters.Cowboy.Conn do
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
     for segment <- segments, segment != "", do: segment
+  end
+
+  defp join_peer_address({address_parts, port}) do
+    address = address_parts |> :inet.ntoa |> IO.iodata_to_binary
+    {address, port}
   end
 
   ## Multipart

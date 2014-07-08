@@ -21,6 +21,7 @@ defmodule Plug.Conn do
   * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
+  * `peer` - the request's originator as a tuple of ip and source port, example: `{"93.184.216.119", 53196}`
 
   ## Fetchable fields
 
@@ -83,6 +84,7 @@ defmodule Plug.Conn do
   @type params       :: %{binary => param}
   @type query_string :: String.t
   @type resp_cookies :: %{binary => %{}}
+  @type peer         :: {String.t, 0..65335}
   @type t            :: %__MODULE__{
                          adapter:      adapter,
                          assigns:      assigns,
@@ -103,7 +105,8 @@ defmodule Plug.Conn do
                          scheme:       scheme,
                          script_name:  segments,
                          state:        state,
-                         status:       status}
+                         status:       status,
+                         peer:         peer}
 
   defstruct adapter:      {Plug.Conn, nil},
             assigns:      %{},
@@ -124,7 +127,8 @@ defmodule Plug.Conn do
             scheme:       :http,
             script_name:  [],
             state:        :unset,
-            status:       nil
+            status:       nil,
+            peer:         {"127.0.0.1", 0}
 
 
   defmodule NotSentError do

@@ -71,6 +71,17 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert {204, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
   end
 
+  def peer(conn) do
+    {address, port} = conn.peer
+    assert address == "127.0.0.1"
+    assert port <= 65335 && port >= 0
+    conn
+  end
+
+  test "makes peer address information available" do
+    request :get, "/peer", []
+  end
+
   def send_200(conn) do
     assert conn.state == :unset
     assert conn.resp_body == nil
