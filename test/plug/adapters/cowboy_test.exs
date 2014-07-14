@@ -1,5 +1,11 @@
+defmodule Plug.Adapters.CowboyTest.Dummy do
+  def init([]) do
+    [foo: :bar]
+  end
+end
+
 defmodule Plug.Adapters.CowboyTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Plug.Adapters.Cowboy
 
@@ -7,7 +13,26 @@ defmodule Plug.Adapters.CowboyTest do
     [foo: :bar]
   end
 
+  def start_server(ref) do
+    result = http(ref, [], [])
+    on_exit fn ->
+      :cowboy.stop_listener(ref.HTTP)
+    end
+    result
+  end
+
   @dispatch [{:_, [], [{:_, [], Plug.Adapters.Cowboy.Handler, {Plug.Adapters.CowboyTest, [foo: :bar]}}]}]
+
+  test "starting a connection successfully" do
+    { status, _ } = start_server(__MODULE__)
+    assert status == :ok
+  end
+
+  test "returns {:error, :eaddrinuse} when binding to a port already in use" do
+    start_server(Plug.Adapters.CowboyTest.Dummy)
+    {:error, code} = start_server(__MODULE__)
+    assert code == :eaddrinuse
+  end
 
   test "builds args for cowboy dispatch" do
     assert args(:http, __MODULE__, [], []) ==
