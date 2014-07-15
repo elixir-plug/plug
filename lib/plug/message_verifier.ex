@@ -15,7 +15,7 @@ defmodule Plug.MessageVerifier do
     case String.split(encoded, "--") do
       [content, digest] when content != "" and digest != "" ->
         if secure_compare(digest(secret, content), digest) do
-          { :ok, content |> Base.decode64! |> :erlang.binary_to_term }
+          {:ok, content |> Base.decode64! |> :erlang.binary_to_term}
         else
           :error
         end
@@ -33,7 +33,7 @@ defmodule Plug.MessageVerifier do
   end
 
   defp digest(secret, data) do
-    <<mac :: [integer, size(160)]>> = :crypto.hmac(:sha, secret, data)
+    <<mac :: integer-size(160)>> = :crypto.hmac(:sha, secret, data)
     Integer.to_char_list(mac, 16) |> IO.iodata_to_binary
   end
 

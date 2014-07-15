@@ -1,14 +1,14 @@
-defmodule Plug.Adapters.Cowboy.ConnTest.Dummy do
-  def init(opts) do
-    opts
-  end
-end
-
 defmodule Plug.Adapters.Cowboy.ConnTest do
   use ExUnit.Case, async: true
 
   alias  Plug.Conn
   import Plug.Conn
+
+  defmodule Dummy do
+    def init(opts) do
+      opts
+    end
+  end
 
   ## Cowboy setup for testing
 
@@ -44,7 +44,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   ## Tests
 
   test "returns {:error, :eaddrinuse} when binding to a port already in use" do
-    assert Plug.Adapters.Cowboy.http(__MODULE__, [], port: 8001) ==
+    assert Plug.Adapters.Cowboy.http(Dummy, [], port: 8001) ==
            {:error, :eaddrinuse}
   end
 
