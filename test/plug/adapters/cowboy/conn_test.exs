@@ -1,3 +1,9 @@
+defmodule Plug.Adapters.Cowboy.ConnTest.Dummy do
+  def init(opts) do
+    opts
+  end
+end
+
 defmodule Plug.Adapters.Cowboy.ConnTest do
   use ExUnit.Case, async: true
 
@@ -36,6 +42,11 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   ## Tests
+
+  test "returns {:error, :eaddrinuse} when binding to a port already in use" do
+    {:error, code} = Plug.Adapters.Cowboy.http(Plug.Adapters.Cowboy.ConnTest.Dummy, [], port: 8001)
+    assert code == :eaddrinuse
+  end
 
   def root(%Conn{} = conn) do
     assert conn.method == "HEAD"

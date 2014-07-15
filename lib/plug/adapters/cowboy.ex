@@ -118,7 +118,12 @@ defmodule Plug.Adapters.Cowboy do
     :application.start(:ranch)
     :application.start(:cowlib)
     :application.start(:cowboy)
-    apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
+    case apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options)) do
+      {:ok,pid} -> {:ok,pid}
+      {:error, {{:shutdown,{_, _,{{_,{:error, :eaddrinuse}},_}}},_}} ->
+        {:error, :eaddrinuse}
+      result -> result
+    end
   end
 
   defp normalize_options(options, :http) do
