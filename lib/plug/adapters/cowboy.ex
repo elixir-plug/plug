@@ -50,6 +50,8 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTP
 
   """
+  @spec http(module(), Keyword.t, Keyword.t) ::
+        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def http(plug, opts, options \\ []) do
     run(:http, plug, opts, options)
   end
@@ -81,6 +83,8 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTPS
 
   """
+  @spec https(module(), Keyword.t, Keyword.t) ::
+        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def https(plug, opts, options \\ []) do
     :application.start(:asn1)
     :application.start(:public_key)
