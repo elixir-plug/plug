@@ -93,4 +93,19 @@ defmodule Plug.Test do
   def delete_req_cookie(_conn, key) when is_binary(key) do
     raise ArgumentError, message: "cannot put/delete request cookies after cookies were fetched"
   end
+
+
+  @doc """
+    Recycles the test connection so it can be used in subsequent requests.
+
+    Resets all fields to default values and copies previous response cookies
+    into the new connection's request cookies.
+  """
+  @spec recycle(Conn.t) :: Conn.t
+  def recycle(%Plug.Conn{resp_cookies: resp_cookies}) do
+    Enum.reduce resp_cookies, conn(:get, "/"), fn({key, %{value: value}}, acc) ->
+      put_req_cookie(acc, to_string(key), value)
+    end
+  end
+
 end
