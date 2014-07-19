@@ -26,7 +26,7 @@ defmodule Plug.Upload do
         {:too_many_attempts, binary, pos_integer} |
         {:no_tmp, [binary]}
   def random_file(prefix) do
-    :gen_server.call(plug_server, {:random, prefix})
+    GenServer.call(plug_server, {:random, prefix})
   end
 
   @doc """
@@ -56,7 +56,7 @@ defmodule Plug.Upload do
   Starts the upload handling server.
   """
   def start_link() do
-    :gen_server.start_link({:local, __MODULE__}, __MODULE__, :ok, [])
+    GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
   end
 
   ## Callbacks
