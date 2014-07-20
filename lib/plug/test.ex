@@ -27,6 +27,7 @@ defmodule Plug.Test do
   end
 
   alias Plug.Conn
+  @typep params :: binary | list | map | nil
 
   @doc """
   Creates a test connection.
@@ -48,13 +49,14 @@ defmodule Plug.Test do
   The only option supported so far is `:headers` which expects a
   list of headers.
   """
-  @spec conn(String.Chars.t, binary, binary | list | map | nil, [headers: Conn.headers]) :: Conn.t
+  @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
     Plug.Adapters.Test.Conn.conn(method, path, params_or_body, opts)
   end
 
   @doc """
   Puts a new request header.
+
   Previous entries of the same headers are removed.
   """
   @spec put_req_header(Conn.t, binary, binary) :: Conn.t
@@ -94,18 +96,18 @@ defmodule Plug.Test do
     raise ArgumentError, message: "cannot put/delete request cookies after cookies were fetched"
   end
 
-
   @doc """
-    Recycles the test connection so it can be used in subsequent requests.
+  Copies information from the old connection into the new one.
 
-    Resets all fields to default values and copies previous response cookies
-    into the new connection's request cookies.
+  This function copies the cookie information in `old_conn`
+  into `new_conn`, emulating multiple requests done by clients
+  were cookies are always passed forward.
   """
-  @spec recycle(Conn.t) :: Conn.t
-  def recycle(%Plug.Conn{resp_cookies: resp_cookies}) do
-    Enum.reduce resp_cookies, conn(:get, "/"), fn({key, %{value: value}}, acc) ->
-      put_req_cookie(acc, to_string(key), value)
+  @spec copy_conn(Conn.t, Conn.t) :: Conn.t
+  def copy_conn(new_conn, old_conn) do
+    Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
+      {key, value}, acc ->
+        put_req_cookie(acc, to_string(key), value)
     end
   end
-
 end
