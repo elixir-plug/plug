@@ -97,14 +97,14 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Copies information from the old connection into the new one.
+  Recycles data from old connection into a new connection for subsequent requests.
 
   This function copies the cookie information in `old_conn`
   into `new_conn`, emulating multiple requests done by clients
   were cookies are always passed forward.
   """
-  @spec copy_conn(Conn.t, Conn.t) :: Conn.t
-  def copy_conn(new_conn, old_conn) do
+  @spec recycle(Conn.t, Conn.t) :: Conn.t
+  def recycle(new_conn, old_conn) do
     Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
       {key, value}, acc ->
         put_req_cookie(acc, to_string(key), value)

@@ -39,7 +39,7 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
   end
 
-  test "copy_conn/2" do
+  test "recycle/2" do
     conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"], headers: [{"content-type", "text/plain"}])
            |> put_req_cookie("req_cookie", "req_cookie")
            |> put_req_cookie("del_cookie", "del_cookie")
@@ -48,7 +48,7 @@ defmodule Plug.Adapters.Test.ConnTest do
            |> Plug.Conn.put_resp_cookie("resp_cookie", "resp_cookie")
            |> Plug.Conn.delete_resp_cookie("del_cookie")
 
-    conn = copy_conn(conn(:get, "/"), conn)
+    conn = recycle(conn(:get, "/"), conn)
     assert conn.path_info == []
 
     conn = conn |> Plug.Conn.fetch_params |> Plug.Conn.fetch_cookies
