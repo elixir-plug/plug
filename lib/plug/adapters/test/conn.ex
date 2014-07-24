@@ -8,8 +8,8 @@ defmodule Plug.Adapters.Test.Conn do
     uri     = URI.parse(uri)
     method  = method |> to_string |> String.upcase
 
-    {body, params, headers} = body_or_params(body_or_params, opts[:headers] || [])
-    state = %{method: method, params: params, req_body: body, chunks: nil}
+    {body, params, headers, p_headers} = body_or_params(body_or_params, opts[:headers] || [], opts[:p_headers] || [])
+    state = %{method: method, params: params, req_body: body, chunks: nil, p_headers: p_headers}
 
     %Plug.Conn{
       adapter: {__MODULE__, state},
@@ -60,22 +60,29 @@ defmodule Plug.Adapters.Test.Conn do
     {:ok, multipart, %{state | params: nil}}
   end
 
+  def parse_req_headers(%{p_headers: p_headers} = state) do
+    # TODO: Use fallback implementation.
+    {:ok, p_headers, state}
+  end
+
   ## Private helpers
 
-  defp body_or_params(nil, headers),
-    do: {"", nil, headers}
+  defp body_or_params(nil, headers, p_headers),
+    do: {"", nil, headers, p_headers}
 
-  defp body_or_params(body, headers) when is_binary(body) do
+  defp body_or_params(body, headers, p_headers) when is_binary(body) do
     unless List.keyfind(headers, "content-type", 0) do
       raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
     end
-    {body, nil, headers}
+    {body, nil, headers, p_headers}
   end
 
-  defp body_or_params(params, headers) when is_list(params) or is_map(params) do
+  defp body_or_params(params, headers, p_headers) when is_list(params) or is_map(params) do
     headers = :lists.keystore("content-type", 1, headers,
                               {"content-type", "multipart/mixed; charset: utf-8"})
-    {"", stringify_params(params), headers}
+    p_headers = :lists.keystore("content-type", 1, p_headers,
+                                {"content-type", {"multipart", "mixed", [{"charset", "utf-8"}]}})
+    {"", stringify_params(params), headers, p_headers}
   end
 
   defp stringify_params([{_, _}|_] = params),

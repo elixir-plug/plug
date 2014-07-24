@@ -73,6 +73,7 @@ defmodule Plug.Conn do
   @type body         :: iodata | nil
   @type cookies      :: %{binary => binary} | Unfetched.t
   @type headers      :: [{binary, binary}]
+  @type p_headers    :: [headers | {binary, any}] | Unfetched.t
   @type host         :: binary
   @type method       :: binary
   @type scheme       :: :http | :https

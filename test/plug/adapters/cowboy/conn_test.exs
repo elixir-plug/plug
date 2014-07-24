@@ -82,6 +82,20 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert {204, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
   end
 
+  def p_headers(conn) do
+    assert get_req_p_header(conn, "foo") == nil
+    assert get_req_p_header(conn, "baz") == nil
+    conn = fetch_p_headers(conn)
+    #assert get_req_p_header(conn, "foo") == ["bar"]
+    #assert get_req_p_header(conn, "baz") == ["bat"]
+    #assert get_req_p_header(conn, "doesnotexist") == nil
+    conn
+  end
+
+  test "parses request headers when asked" do
+    assert {204, _, _} = request :get, "/p_headers", [{"foo", "bar"}, {"baz", "bat"}]
+  end
+
   def send_200(conn) do
     assert conn.state == :unset
     assert conn.resp_body == nil
