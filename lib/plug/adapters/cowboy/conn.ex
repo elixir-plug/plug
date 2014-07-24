@@ -63,6 +63,28 @@ defmodule Plug.Adapters.Cowboy.Conn do
     end
   end
 
+  def parse_req_headers(req) do
+    {headers, _} = Request.headers(req)
+
+    req = Enum.reduce(headers, req, fn({name, _}, req) ->
+      case Request.parse_header(name, req) do
+        {:ok, _, req} -> req
+        {:undefined, _, req} -> req
+        {:error, :badarg} -> req
+      end
+    end)
+
+    p_headers = Enum.map(headers, fn({name, raw}) ->
+      case Request.parse_header(name, req) do
+        {:ok, parsed, _} -> parsed
+        {:undefined, _, _} -> raw
+        {:error, :badarg} -> raw
+      end
+    end)
+
+    {:ok, p_headers, req}
+  end
+
   ## Helpers
 
   defp scheme(:tcp), do: :http

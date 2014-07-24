@@ -85,26 +85,27 @@ defmodule Plug.Conn do
   @type query_string :: String.t
   @type resp_cookies :: %{binary => %{}}
   @type t            :: %__MODULE__{
-                         adapter:      adapter,
-                         assigns:      assigns,
-                         before_send:  before_send,
-                         cookies:      cookies | Unfetched.t,
-                         host:         host,
-                         method:       method,
-                         params:       params | Unfetched.t,
-                         path_info:    segments,
-                         port:         0..65335,
-                         private:      assigns,
-                         query_string: query_string,
-                         req_cookies:  cookies | Unfetched.t,
-                         req_headers:  headers,
-                         resp_body:    body,
-                         resp_cookies: resp_cookies,
-                         resp_headers: headers,
-                         scheme:       scheme,
-                         script_name:  segments,
-                         state:        state,
-                         status:       status}
+                         adapter:       adapter,
+                         assigns:       assigns,
+                         before_send:   before_send,
+                         cookies:       cookies | Unfetched.t,
+                         host:          host,
+                         method:        method,
+                         params:        params | Unfetched.t,
+                         path_info:     segments,
+                         port:          0..65335,
+                         private:       assigns,
+                         query_string:  query_string,
+                         req_cookies:   cookies | Unfetched.t,
+                         req_headers:   headers,
+                         req_p_headers: p_headers | Unfetched.t,
+                         resp_body:     body,
+                         resp_cookies:  resp_cookies,
+                         resp_headers:  headers,
+                         scheme:        scheme,
+                         script_name:   segments,
+                         state:         state,
+                         status:        status}
 
   defstruct adapter:      {Plug.Conn, nil},
             assigns:      %{},
@@ -119,6 +120,7 @@ defmodule Plug.Conn do
             query_string: "",
             req_cookies:  %Unfetched{aspect: :cookies},
             req_headers:  [],
+            req_p_headers: %Unfetched{aspect: :p_headers},
             resp_body:    nil,
             resp_cookies: %{},
             resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
@@ -311,6 +313,18 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Gets a parsed request header.
+  """
+  @spec get_req_p_header(t, binary) :: [p_headers]
+  def get_req_p_header(%Conn{req_p_headers: %Unfetched{}}, key) when is_binary(key) do
+    nil
+  end
+
+  def get_req_p_header(%Conn{req_p_headers: p_headers}, key) when is_binary(key) do
+    for {k, v} <- p_headers, k == key, do: v
+  end
+
+  @doc """
   Gets a response header.
   """
   @spec get_resp_header(t, binary) :: [binary]
@@ -358,6 +372,20 @@ defmodule Plug.Conn do
         content_type <> "; charset=" <> charset
       end
     put_resp_header(conn, "content-type", value)
+  end
+
+  @doc """
+  Fetches parsed headers.
+  """
+  @spec fetch_p_headers(t) :: t
+  def fetch_p_headers(%Conn{req_p_headers: %Unfetched{},
+                          adapter: {adapter, state}} = conn) do
+    {:ok, req_p_headers, state} = adapter.parse_req_headers(state)
+    %{conn | req_p_headers: req_p_headers}
+  end
+
+  def fetch_p_headers(%Conn{} = conn) do
+    conn
   end
 
   @doc """
