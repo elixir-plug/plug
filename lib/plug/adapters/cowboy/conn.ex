@@ -63,6 +63,25 @@ defmodule Plug.Adapters.Cowboy.Conn do
     end
   end
 
+  def parse_req_headers(req) do
+    {headers, req} = Request.headers(req)
+
+    p_headers = Enum.filter(headers, fn({name, _}) ->
+      case Request.parse_header(name, req) do
+        {:ok, parsed, _} -> true
+        {:undefined, _, _} -> false
+        {:error, :badarg} -> false
+      end
+    end)
+
+    p_headers = Enum.map(p_headers, fn({name, _}) ->
+      {:ok, [parsed], _} = Request.parse_header(name, req)
+      {name, parsed}
+    end)
+
+    {:ok, p_headers, req}
+  end
+
   ## Helpers
 
   defp scheme(:tcp), do: :http

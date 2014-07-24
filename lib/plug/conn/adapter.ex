@@ -102,4 +102,73 @@ defmodule Plug.Conn.Adapter do
   """
   defcallback parse_req_multipart(payload, options :: Keyword.t, fun) ::
               {:ok, Conn.params, payload} | {:more, Conn.params, payload}
+
+  @doc """
+  Parses known request headers into well-defined data-structures.
+
+  If a request header is unknown and/or cannot be parsed, it is not returned.
+
+  ## Headers
+
+  The follow list summarizes the the types returned for known request headers.
+
+  ```
+  {"accept", [{{Type, SubType, Params}, Quality, AcceptExt}]}
+  {"accept-charset", [{Charset, Quality}]}
+  {"accept-encoding", [{Encoding, Quality}]}
+  {"accept-language", [{LanguageTag, Quality}]}
+  {"authorization", {AuthType, Credentials}}
+  {"content-length", non_neg_integer}
+  {"content-type", {Type, SubType, ContentTypeParams}}
+  {"cookie", [{binary, binary}]}
+  {"expect", [Expect | {Expect, ExpectValue, Params}]}
+  {"if-match", '*' | [{weak | strong, OpaqueTag}]}
+  {"if-modified-since", :calendar.datetime()}
+  {"if-none-match", '*' | [{weak | strong, OpaqueTag}]}
+  {"if-unmodified-since", :calendar.datetime()}
+  {"range", {Unit, [Range]}}
+  {"sec-websocket-protocol", [binary]}
+  {"transfer-encoding", [binary]}
+  {"upgrade", [binary]}
+  {"x-forwarded-for", [binary]}
+  ```
+
+  ## Types
+
+  The following list summarizes the different types referenced in the above
+  descriptions of parsed request headers.
+
+  ```
+  @type Type :: binary
+   @type SubType :: Type
+   @type Charset :: Type
+   @type Encoding :: Type
+   @type LanguageTag :: Type
+
+  @type AuthType :: binary
+   @type Expect :: binary
+   @type OpaqueTag :: binary
+   @type Unit :: binary
+
+  @type Params :: [{binary, binary}]
+   @type ContentTypeParams :: Params
+
+  @type Quality :: 0..1000
+
+  @type AcceptExt :: [{binary, binary} | binary]
+
+  @type Username :: binary
+  @type Password :: binary
+  @type Credentials :: {Username, Password}
+
+  @type Range :: {non_neg_integer, non_neg_integer | infinity} | neg_integer
+  ```
+
+  ## Fallback
+
+  If request header parsing is not exposed `Plug.Conn.Utils.parse_header/2` can
+  be used as a fallback implementation.
+  """
+  defcallback parse_req_headers(payload) ::
+              {:ok, Conn.p_headers, payload}
 end

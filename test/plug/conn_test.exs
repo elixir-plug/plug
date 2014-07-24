@@ -243,6 +243,20 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn, "baz") == ["bat"]
   end
 
+  test "fetch_p_headers/1 and get_req_p_headers/1" do
+    conn = conn(:get, "/foo", [])
+    assert get_req_p_header(conn, "foo") == nil
+    assert get_req_p_header(conn, "baz") == nil
+    conn = conn(:get, "/foo", [], p_headers: [])
+    conn = fetch_p_headers(conn)
+    assert get_req_p_header(conn, "foo") == []
+    assert get_req_p_header(conn, "baz") == []
+    conn = conn(:get, "/foo", [], p_headers: [{"foo", "bar"}, {"baz", "bat"}])
+    conn = fetch_p_headers(conn)
+    assert get_req_p_header(conn, "foo") == ["bar"]
+    assert get_req_p_header(conn, "baz") == ["bat"]
+  end
+
   test "read_body/1" do
     body = :binary.copy("abcdefghij", 1000)
     conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])

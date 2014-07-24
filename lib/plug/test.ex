@@ -49,7 +49,7 @@ defmodule Plug.Test do
   The only option supported so far is `:headers` which expects a
   list of headers.
   """
-  @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
+  @spec conn(String.Chars.t, binary, params, [headers: Conn.headers, p_headers: Conn.p_headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
     Plug.Adapters.Test.Conn.conn(method, path, params_or_body, opts)
   end
