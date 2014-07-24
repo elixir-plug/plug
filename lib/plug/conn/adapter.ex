@@ -106,8 +106,7 @@ defmodule Plug.Conn.Adapter do
   @doc """
   Parses known request headers into well-defined data-structures.
 
-  If a request header is unknown and/or cannot be parsed, it is returned in the
-  form of a raw request header (`{binary, binary}`).
+  If a request header is unknown and/or cannot be parsed, it is not returned.
 
   ## Headers
 
