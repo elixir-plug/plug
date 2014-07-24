@@ -64,22 +64,19 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def parse_req_headers(req) do
-    {headers, _} = Request.headers(req)
+    {headers, req} = Request.headers(req)
 
-    req = Enum.reduce(headers, req, fn({name, _}, req) ->
+    p_headers = Enum.filter(headers, fn({name, _}) ->
       case Request.parse_header(name, req) do
-        {:ok, _, req} -> req
-        {:undefined, _, req} -> req
-        {:error, :badarg} -> req
+        {:ok, parsed, _} -> true
+        {:undefined, _, _} -> false
+        {:error, :badarg} -> false
       end
     end)
 
-    p_headers = Enum.map(headers, fn({name, raw}) ->
-      case Request.parse_header(name, req) do
-        {:ok, parsed, _} -> parsed
-        {:undefined, _, _} -> raw
-        {:error, :badarg} -> raw
-      end
+    p_headers = Enum.map(p_headers, fn({name, _}) ->
+      {:ok, [parsed], _} = Request.parse_header(name, req)
+      {name, parsed}
     end)
 
     {:ok, p_headers, req}

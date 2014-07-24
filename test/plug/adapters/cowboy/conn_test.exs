@@ -86,9 +86,9 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert get_req_p_header(conn, "foo") == nil
     assert get_req_p_header(conn, "baz") == nil
     conn = fetch_p_headers(conn)
-    #assert get_req_p_header(conn, "foo") == ["bar"]
-    #assert get_req_p_header(conn, "baz") == ["bat"]
-    #assert get_req_p_header(conn, "doesnotexist") == nil
+    assert get_req_p_header(conn, "foo") == ["bar"]
+    assert get_req_p_header(conn, "baz") == ["bat"]
+    assert get_req_p_header(conn, "doesnotexist") == []
     conn
   end
 
