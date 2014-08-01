@@ -35,8 +35,7 @@ defmodule Plug.MessageVerifier do
   end
 
   defp digest(secret, data) do
-    <<mac :: integer-size(160)>> = :crypto.hmac(:sha, secret, data)
-    Integer.to_char_list(mac, 16) |> IO.iodata_to_binary
+    :crypto.hmac(:sha, secret, data) |> Base.encode64
   end
 
   @doc """
