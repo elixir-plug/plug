@@ -1,3 +1,10 @@
+# v0.5.3
+
+* Enhancements
+  * Update to Cowboy v1.0.0
+  * Update mime types list
+  * Update to Elixir v0.15.0
+
 # v0.5.2
 
 * Enhancements

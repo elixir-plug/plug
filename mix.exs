@@ -3,8 +3,8 @@ defmodule Plug.Mixfile do
 
   def project do
     [app: :plug,
-     version: "0.5.2",
-     elixir: "~> 0.14.3",
+     version: "0.5.3",
+     elixir: "~> 0.15.0-dev",
      deps: deps,
      package: package,
      description: "A specification and conveniences for composable " <>
@@ -19,7 +19,7 @@ defmodule Plug.Mixfile do
   end
 
   def deps do
-    [{:cowboy, "~> 0.10.0", github: "extend/cowboy", optional: true},
+    [{:cowboy, "~> 1.0.0", optional: true},
      {:ex_doc, github: "elixir-lang/ex_doc", only: [:docs]},
      {:hackney, github: "benoitc/hackney", only: [:test]}]
   end
