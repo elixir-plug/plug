@@ -8,6 +8,8 @@ defmodule Plug.MessageVerifier do
   cannot tamper it.
   """
 
+  use Bitwise
+
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
   """
@@ -38,27 +40,23 @@ defmodule Plug.MessageVerifier do
   end
 
   @doc """
-  Compares the two binaries completely, byte by byte,
-  to avoid timing attacks.
+  Compares the two binaries in constant-time to avoid timing attacks.
+
+  See: http://codahale.com/a-lesson-in-timing-attacks/
   """
   def secure_compare(left, right) do
     if byte_size(left) == byte_size(right) do
-      compare_each(left, right, true)
+      arithmetic_compare(left, right, 0) == 0
     else
       false
     end
   end
 
-  defp compare_each(<<h, left :: binary>>, <<h, right :: binary>>, acc) do
-    compare_each(left, right, acc)
+  defp arithmetic_compare(<<x, left :: binary>>, <<y, right :: binary>>, acc) do
+    arithmetic_compare(left, right, acc ||| (x ^^^ y))
   end
 
-  defp compare_each(<<_, left :: binary>>, <<_, right :: binary>>, _acc) do
-    compare_each(left, right, false)
-  end
-
-  defp compare_each(<<>>, <<>>, acc) do
+  defp arithmetic_compare(<<>>, <<>>, acc) do
     acc
   end
 end
-
