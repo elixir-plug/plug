@@ -36,7 +36,7 @@ defmodule Plug.Session.COOKIE do
   alias Plug.Utils.MessageEncryptor
 
   def init(opts) do
-    opts = opts
+    opts
     |> Keyword.put_new(:encrypt, true)
     |> Keyword.put_new(:serializer, :elixir)
     |> validate_secret_key_base
