@@ -46,8 +46,8 @@ You can use plug in your projects in two steps:
 
     ```elixir
     def deps do
-      [{:cowboy, github: "extend/cowboy"},
-       {:plug, "~> 0.4.2"}]
+      [{:cowboy, "~> 1.0.0"},
+       {:plug, "~> 0.5.3"}]
     end
     ```
 
