@@ -92,6 +92,7 @@ defmodule Plug.Parsers do
                     {:skip, Conn.t}
 
   @behaviour Plug
+  @methods ~w(POST PUT PATCH)
 
   def init(opts) do
     parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
@@ -114,7 +115,7 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(%Conn{req_headers: req_headers} = conn, opts) do
+  def call(%Conn{req_headers: req_headers, method: method} = conn, opts) when method in @methods do
     conn = Plug.Conn.fetch_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
@@ -127,6 +128,10 @@ defmodule Plug.Parsers do
       nil ->
         conn
     end
+  end
+
+  def call(conn, _opts) do
+    Plug.Conn.fetch_params(conn)
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do

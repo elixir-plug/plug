@@ -185,8 +185,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
       [{"Content-Type", "multipart/form-data; boundary=----WebKitFormBoundaryw58EW1cEpjzydSCq"},
        {"Content-Length", byte_size(multipart)}]
 
-    assert {204, _, _} = request :get, "/multipart", headers, multipart
-    assert {204, _, _} = request :get, "/multipart?name=overriden", headers, multipart
+    assert {204, _, _} = request :post, "/multipart", headers, multipart
+    assert {204, _, _} = request :post, "/multipart?name=overriden", headers, multipart
   end
 
   def https(conn) do
