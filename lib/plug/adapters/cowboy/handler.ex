@@ -1,22 +1,40 @@
 defmodule Plug.Adapters.Cowboy.Handler do
   @moduledoc false
-  @behaviour :cowboy_http_handler
   @connection Plug.Adapters.Cowboy.Conn
 
   def init({transport, :http}, req, {plug, opts}) when transport in [:tcp, :ssl] do
-    case plug.call(@connection.conn(req, transport), opts) do
+    {:upgrade, :protocol, __MODULE__, req, {transport, plug, opts}}
+  end
+
+  def upgrade(req, env, __MODULE__, {transport, plug, opts}) do
+    conn = @connection.conn(req, transport)
+    try do
+      plug.call(conn, opts)
+    else
       %Plug.Conn{adapter: {@connection, req}} ->
-        {:ok, req, nil}
+        {:ok, req, [{:result, :ok} | env]}
       other ->
         raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
+    catch
+      :error, value ->
+        stack = System.stacktrace()
+        exception = Exception.normalize(:error, value, stack)
+        reason = {{exception, stack}, {plug, :call, [conn, opts]}}
+        terminate(reason, req, stack)
+      :throw, value ->
+        stack = System.stacktrace()
+        reason = {{{:nocatch, value}, stack}, {plug, :call, [conn, opts]}}
+        terminate(reason, req, stack)
+      :exit, value ->
+        stack = System.stacktrace()
+        reason = {value, {plug, :call, [conn, opts]}}
+        terminate(reason, req, stack)
     end
   end
 
-  def handle(req, nil) do
-    {:ok, req, nil}
+  defp terminate(reason, req, stack) do
+    :cowboy_req.maybe_reply(stack, req)
+    exit(reason)
   end
 
-  def terminate(_reason, _req, nil) do
-    :ok
-  end
 end
