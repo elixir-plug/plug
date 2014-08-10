@@ -34,6 +34,11 @@ defmodule Plug.Adapters.Test.Conn do
     do: {:ok, "", state}
   def send_file(%{} = state, _status, _headers, path),
     do: {:ok, File.read!(path), state}
+  def send_file(%{} = state, _status, _headers, path, offset, length) do
+    device = File.open!(path, [:read, :binary])
+    {:ok, data} = :file.pread(device, offset, length)
+    {:ok, data, state}
+  end
 
   def send_chunked(state, _status, _headers),
     do: {:ok, "", %{state | chunks: ""}}

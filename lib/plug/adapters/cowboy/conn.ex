@@ -37,6 +37,13 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:ok, nil, req}
   end
 
+  def send_file(req, status, headers, path, offset, length) do
+    body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
+
+    {:ok, req} = Request.reply(status, headers, Request.set_resp_body_fun(length, body_fun, req))
+    {:ok, nil, req}
+  end
+
   def send_chunked(req, status, headers) do
     {:ok, req} = Request.chunked_reply(status, headers, req)
     {:ok, nil, req}
