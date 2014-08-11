@@ -162,6 +162,27 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["FILE"]
   end
 
+  test "send_file/5 limits on offset" do
+    %File.Stat{type: :regular, size: size} = File.stat!(__ENV__.file)
+    :random.seed(:erlang.now)
+    offset = round(:random.uniform * size)
+    conn = conn(:get, "/foo") |> send_file(206, __ENV__.file, offset)
+    assert conn.status == 206
+    assert conn.state == :sent
+    assert byte_size(conn.resp_body) == (size - offset)
+  end
+
+  test "send_file/5 limits on offset and length" do
+    %File.Stat{type: :regular, size: size} = File.stat!(__ENV__.file)
+    :random.seed(:erlang.now)
+    offset = round(:random.uniform * size)
+    length = round((size - offset) * 0.25)
+    conn = conn(:get, "/foo") |> send_file(206, __ENV__.file, offset, length)
+    assert conn.status == 206
+    assert conn.state == :sent
+    assert byte_size(conn.resp_body) == length
+  end
+
   test "send_chunked/3" do
     conn = conn(:get, "/foo") |> send_chunked(200)
     assert conn.status == 200
