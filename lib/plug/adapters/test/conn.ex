@@ -30,12 +30,19 @@ defmodule Plug.Adapters.Test.Conn do
   def send_resp(%{} = state, _status, _headers, body),
     do: {:ok, IO.iodata_to_binary(body), state}
 
-  def send_file(%{method: "HEAD"} = state, _status, _headers, _path),
+  def send_file(%{method: "HEAD"} = state, _status, _headers, _path, _offset, _length),
     do: {:ok, "", state}
-  def send_file(%{} = state, _status, _headers, path),
-    do: {:ok, File.read!(path), state}
   def send_file(%{} = state, _status, _headers, path, offset, length) do
     device = File.open!(path, [:read, :binary])
+    %File.Stat{type: :regular, size: size} = File.stat!(path)
+
+    length =
+      case length do
+        :all -> size
+        nil  -> size
+        _    -> length
+      end
+
     {:ok, data} = :file.pread(device, offset, length)
     {:ok, data, state}
   end

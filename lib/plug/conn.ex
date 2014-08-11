@@ -214,27 +214,8 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Sends a file as the response body with the given `status`.
-
-  If available, the file is sent directly over the socket using
-  the operating system `sendfile` operation.
-
-  It expects a connection that was not yet `:sent` and sets its
-  state to `:sent` afterwards. Otherwise raises
-  `Plug.Conn.AlreadySentError`.
-  """
-  @spec send_file(t, status, filename :: binary) :: t | no_return
-  def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file)
-      when is_integer(status) and is_binary(file) do
-    conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
-    {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file)
-    send self(), @already_sent
-    %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
-  end
-
-  @doc """
   Sends a file as the response body with the given `status`
-  while starting at the given offset until the given length.
+  and optionally starting at the given offset until the given length.
 
   If available, the file is sent directly over the socket using
   the operating system `sendfile` operation.
@@ -243,8 +224,8 @@ defmodule Plug.Conn do
   state to `:sent` afterwards. Otherwise raises
   `Plug.Conn.AlreadySentError`.
   """
-  @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer) :: t | no_return
-  def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file, offset, length)
+  @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | atom) :: t | no_return
+  def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file, offset \\ 0, length \\ :all)
       when is_integer(status) and is_binary(file) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
