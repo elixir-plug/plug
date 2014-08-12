@@ -3,6 +3,7 @@ defmodule Plug.MIME do
   Maps MIME types to file extensions and vice versa.
   """
 
+  @compile :no_native
   @default_type "application/octet-stream"
 
   @external_resource "lib/plug/mime.types"
