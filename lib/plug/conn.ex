@@ -224,7 +224,7 @@ defmodule Plug.Conn do
   state to `:sent` afterwards. Otherwise raises
   `Plug.Conn.AlreadySentError`.
   """
-  @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | atom) :: t | no_return
+  @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
   def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file, offset \\ 0, length \\ :all)
       when is_integer(status) and is_binary(file) do
     conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)

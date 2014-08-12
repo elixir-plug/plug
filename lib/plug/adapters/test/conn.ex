@@ -33,17 +33,18 @@ defmodule Plug.Adapters.Test.Conn do
   def send_file(%{method: "HEAD"} = state, _status, _headers, _path, _offset, _length),
     do: {:ok, "", state}
   def send_file(%{} = state, _status, _headers, path, offset, length) do
-    device = File.open!(path, [:read, :binary])
     %File.Stat{type: :regular, size: size} = File.stat!(path)
 
     length =
-      case length do
-        :all -> size
-        nil  -> size
-        _    -> length
+      cond do
+        length == :all -> size
+        is_integer(length) -> length
       end
 
-    {:ok, data} = :file.pread(device, offset, length)
+    {:ok, data} = File.open!(path, [:read, :binary], fn device ->
+      :file.pread(device, offset, length)
+    end)
+
     {:ok, data, state}
   end
 

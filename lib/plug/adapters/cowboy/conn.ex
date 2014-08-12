@@ -30,14 +30,12 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def send_file(req, status, headers, path, offset, length) do
-    device = File.open!(path, [:read, :binary])
     %File.Stat{type: :regular, size: size} = File.stat!(path)
 
     length =
-      case length do
-        :all -> size
-        nil  -> size
-        _    -> length
+      cond do
+        length == :all -> size
+        is_integer(length) -> length
       end
 
     body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
