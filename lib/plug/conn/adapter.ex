@@ -41,7 +41,7 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  defcallback send_file(payload, Conn.status, Conn.headers, file :: binary) ::
+  defcallback send_file(payload, Conn.status, Conn.headers, file :: binary, offset :: integer, length :: integer) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """

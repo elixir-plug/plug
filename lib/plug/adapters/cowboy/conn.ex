@@ -29,11 +29,20 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:ok, nil, req}
   end
 
-  def send_file(req, status, headers, path) do
+  def send_file(req, status, headers, path, offset, length) do
+    device = File.open!(path, [:read, :binary])
     %File.Stat{type: :regular, size: size} = File.stat!(path)
-    body_fun = fn(socket, transport) -> transport.sendfile(socket, path) end
 
-    {:ok, req} = Request.reply(status, headers, Request.set_resp_body_fun(size, body_fun, req))
+    length =
+      case length do
+        :all -> size
+        nil  -> size
+        _    -> length
+      end
+
+    body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
+
+    {:ok, req} = Request.reply(status, headers, Request.set_resp_body_fun(length, body_fun, req))
     {:ok, nil, req}
   end
 
