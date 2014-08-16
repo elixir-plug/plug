@@ -405,7 +405,7 @@ defmodule Plug.Conn do
   """
   @spec read_body(t, Keyword.t) :: {:ok, binary, t} |
                                    {:more, binary, t} |
-                                   {:error, binary}
+                                   {:error, term}
   def read_body(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
     case adapter.read_req_body(state, opts) do
       {:ok, data, state} ->
