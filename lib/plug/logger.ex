@@ -1,7 +1,7 @@
 defmodule Plug.Logger do
   @moduledoc """
-  A plug for logging basic request information. 
-  
+  A plug for logging basic request information.
+
   To use it, just plug it into the desired module. Currently it
   does not expect any option during initialization.
 
@@ -46,16 +46,18 @@ defmodule Plug.Logger do
     end
 
     before_time = :os.timestamp()
-    Conn.register_before_send(conn, fn (conn) -> 
-      Logger.info fn ->
-        after_time = :os.timestamp()
-        diff = :timer.now_diff(after_time, before_time)
-        [connection_type(conn), ?\s, Integer.to_string(conn.status),
-         " in ", formatted_diff(diff)]
-      end
 
-      Conn.put_resp_header(conn, "x-request-id", request_id)
-    end)
+    conn
+    |> Conn.put_resp_header("x-request-id", request_id)
+    |> Conn.register_before_send(fn conn ->
+         Logger.info fn ->
+           after_time = :os.timestamp()
+           diff = :timer.now_diff(after_time, before_time)
+           [connection_type(conn), ?\s, Integer.to_string(conn.status),
+            " in ", formatted_diff(diff)]
+         end
+         conn
+       end)
   end
 
   defp generate_request_id, do: :crypto.rand_bytes(15) |> Base.encode64
