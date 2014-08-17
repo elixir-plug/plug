@@ -20,8 +20,9 @@ defmodule Plug.Mixfile do
 
   def deps do
     [{:cowboy, "~> 1.0.0", optional: true},
-     {:ex_doc, github: "elixir-lang/ex_doc", only: [:docs]},
-     {:hackney, github: "benoitc/hackney", only: [:test]}]
+     {:earmark, "~> 0.1", only: :docs},
+     {:ex_doc, "~> 0.5", only: :docs},
+     {:hackney, "~> 0.13", only: :test}]
   end
 
   defp package do
