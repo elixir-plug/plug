@@ -36,7 +36,9 @@ defmodule Plug.Builder do
         opts
       end
 
-      defoverridable [init: 1]
+      def call(conn, opts), do: call_stack(conn, opts)
+
+      defoverridable [init: 1, call: 2]
 
       import Plug.Builder, only: [plug: 1, plug: 2]
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
@@ -49,7 +51,7 @@ defmodule Plug.Builder do
     plugs = Module.get_attribute(env.module, :plugs)
     {conn, body} = Plug.Builder.compile(plugs)
     quote do
-      def call(unquote(conn), _), do: unquote(body)
+      defp call_stack(unquote(conn), _), do: unquote(body)
     end
   end
 
