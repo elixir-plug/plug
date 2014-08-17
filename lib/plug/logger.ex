@@ -41,17 +41,18 @@ defmodule Plug.Logger do
     request_id = external_request_id(conn) || generate_request_id()
     Logger.metadata(request_id: request_id)
 
-    path = path_to_iodata(conn.path_info)
-    Logger.info [conn.method, ?\s, path]
+    Logger.info fn ->
+      [conn.method, ?\s, path_to_iodata(conn.path_info)]
+    end
 
     before_time = :os.timestamp()
     Conn.register_before_send(conn, fn (conn) -> 
-      after_time = :os.timestamp()
-      diff = :timer.now_diff(after_time, before_time)
-
-      resp_time = formatted_diff(diff)
-      type = connection_type(conn)
-      Logger.info [type, ?\s, Integer.to_string(conn.status), ?\s, "in", ?\s, resp_time]
+      Logger.info fn ->
+        after_time = :os.timestamp()
+        diff = :timer.now_diff(after_time, before_time)
+        [connection_type(conn), ?\s, Integer.to_string(conn.status),
+         " in ", formatted_diff(diff)]
+      end
 
       Conn.put_resp_header(conn, "x-request-id", request_id)
     end)
