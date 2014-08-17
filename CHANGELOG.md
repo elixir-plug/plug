@@ -1,3 +1,11 @@
+# v0.6.0
+
+* Enhancements
+  * Add `Plug.Logger`
+  * Add `conn.peer` and `conn.remote_ip`
+  * Add `Plug.Conn.sendfile/5`
+  * Allow `call/2` from `Plug.Builder` to be overridable
+
 # v0.5.3
 
 * Enhancements
