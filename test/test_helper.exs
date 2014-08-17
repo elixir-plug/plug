@@ -1,5 +1,7 @@
 ExUnit.start
 
+Logger.configure_backend(:console, colors: [enabled: false], metadata: [:request_id])
+
 defmodule Plug.ProcessStore do
   @behaviour Plug.Session.Store
 

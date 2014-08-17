@@ -2,16 +2,31 @@ defmodule Plug.Logger do
   @moduledoc """
   A plug for logging basic request information. 
   
-  It expects no options on initialization.
+  To use it, just plug it into the desired module. Currently it
+  does not expect any option during initialization.
 
-  To configure just add Logger to your own application and we will utilize it's configuration.
+  ## Request ID
 
-  To include logging of request id's include `:request_id` in your Logger `:metadata` field. 
+  This plug generates a `:request_id` metadata that can be used
+  to identify requests in production. In order to log the request_id,
+  you need to configure your logger backends to include it as part
+  of the metadata:
 
-  If you plan on sending your own request ids they must follow the following format:
-  1. Be greater than 20 characters
-  2. Be less than 200 characters
-  3. Consist of ASCII letters, digits, or the characters +, /, =, and -
+      config :logger, :console, metadata: [:request_id]
+
+  It is recommended to include this metadata in your production
+  configuration file.
+
+  The request id can be received as part of the request in the header
+  field `x-request-id` and it will be included in the response with the
+  same name.
+
+  If you plan on sending your own request ids they must follow the
+  following format:
+
+    1. Be greater than 20 characters
+    2. Be less than 200 characters
+    3. Consist of ASCII letters, digits, or the characters +, /, =, and -
 
   If we receive an invalid request id we will generate a new one.
   """
@@ -23,7 +38,7 @@ defmodule Plug.Logger do
   def init(opts), do: opts
 
   def call(conn, _config) do
-    request_id = get_request_id(conn)    
+    request_id = external_request_id(conn) || generate_request_id()
     Logger.metadata(request_id: request_id)
 
     path = path_to_iodata(conn.path_info)
@@ -58,20 +73,27 @@ defmodule Plug.Logger do
   defp path_to_iodata(path), do: Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
 
   defp valid_request_id?(s) do
-    Regex.match?(~r/[-A-Za-z0-9+\/=]+/, s) && byte_size(s) in 20..200
+    byte_size(s) in 20..200 and valid_base64?(s)
   end
 
-  defp get_request_id(conn) do
-    request_id = case Conn.get_req_header(conn, "x-request-id") do
-      [] -> generate_request_id()
-      [val | _] -> val
-    end
-  
-    unless valid_request_id?(request_id) do
-      request_id = generate_request_id()
-    end
+  defp valid_base64?(<<h, t::binary>>)
+      when h in ?a..?z
+      when h in ?A..?Z
+      when h in ?0..?9
+      when h in '+=/-',
+      do: valid_base64?(t)
 
-    request_id
+  defp valid_base64?(<<>>),
+    do: true
+
+  defp valid_base64?(_),
+    do: false
+
+  defp external_request_id(conn) do
+    case Conn.get_req_header(conn, "x-request-id") do
+      []      -> nil
+      [val|_] -> valid_request_id?(val) and val
+    end
   end
 end
 
