@@ -11,13 +11,17 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {meth, req} = Request.method req
     {hdrs, req} = Request.headers req
     {qs, req}   = Request.qs req
+    {peer, req} = Request.peer req
+    {remote_ip, _} = peer
 
     %Plug.Conn{
       adapter: {__MODULE__, req},
       host: host,
       method: meth,
       path_info: split_path(path),
+      peer: peer,
       port: port,
+      remote_ip: remote_ip,
       query_string: qs,
       req_headers: hdrs,
       scheme: scheme(transport)

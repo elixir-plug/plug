@@ -18,6 +18,11 @@ defmodule Plug.Conn do
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `port` - the requested port as an integer, example: `80`
+  * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this 
+    is not the actual IP and port of the client, but rather of a load-balancer or request-router.
+  * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
+    be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
+    protocol. It defaults to peer's IP.
   * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
@@ -81,6 +86,7 @@ defmodule Plug.Conn do
   @type status       :: non_neg_integer | nil
   @type param        :: binary | %{binary => param} | [param]
   @type params       :: %{binary => param}
+  @type peer         :: {:inet.ip_address, :inet.port_number}
   @type query_string :: String.t
   @type resp_cookies :: %{binary => %{}}
   @type t            :: %__MODULE__{
@@ -95,6 +101,8 @@ defmodule Plug.Conn do
                          port:         0..65335,
                          private:      assigns,
                          query_string: query_string,
+                         peer:         peer,
+                         remote_ip:    :inet.ip_address,
                          req_cookies:  cookies,
                          req_headers:  headers,
                          resp_body:    body,
@@ -116,6 +124,8 @@ defmodule Plug.Conn do
             port:         0,
             private:      %{},
             query_string: "",
+            peer:         nil,
+            remote_ip:    nil,
             req_cookies:  %Unfetched{aspect: :cookies},
             req_headers:  [],
             resp_body:    nil,
