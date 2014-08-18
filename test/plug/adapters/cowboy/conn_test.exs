@@ -11,6 +11,14 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   ## Cowboy setup for testing
+  #
+  # We use hackney to perform an HTTP request against the cowboy/plug running
+  # on port 8001. Plug then uses Kernel.apply/3 to dispatch based on the first
+  # element of the URI's path.
+  #
+  # e.g. `assert {204, _, _} = request :get, "/build/foo/bar"` will perform a
+  # GET http://127.0.0.1:8001/build/foo/bar and Plug will call build/1.
+
 
   setup_all do
     {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 8001
