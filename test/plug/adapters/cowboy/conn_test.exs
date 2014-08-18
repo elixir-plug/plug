@@ -21,6 +21,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
 
   setup_all do
+    {:ok, _} = Application.ensure_all_started(:hackney)
     {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 8001
 
     on_exit fn ->
@@ -213,7 +214,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   test "https" do
     {:ok, _pid} = Plug.Adapters.Cowboy.https __MODULE__, [], @https_options
     assert {:ok, 200, _headers, client} = :hackney.get("https://127.0.0.1:8002/https", [], "", [])
-    assert {:ok, "OK", _client} = :hackney.body(client)
+    assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
   after
     :ok = Plug.Adapters.Cowboy.shutdown __MODULE__.HTTPS
@@ -224,7 +225,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   defp request(verb, path, headers \\ [], body \\ "") do
     {:ok, status, headers, client} =
       :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, [])
-    {:ok, body, _} = :hackney.body(client)
+    {:ok, body} = :hackney.body(client)
     :hackney.close(client)
     {status, headers, body}
   end
