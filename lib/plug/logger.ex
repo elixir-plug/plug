@@ -64,7 +64,7 @@ defmodule Plug.Logger do
 
   defp formatted_diff(diff) do
     if diff > 1000 do
-      [Integer.to_string(div(diff, 100)), "ms"]
+      [Integer.to_string(div(diff, 1000)), "ms"]
     else
       [Integer.to_string(diff), "µs"]
     end
