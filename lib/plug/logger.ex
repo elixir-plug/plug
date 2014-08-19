@@ -62,13 +62,8 @@ defmodule Plug.Logger do
 
   defp generate_request_id, do: :crypto.rand_bytes(15) |> Base.encode64
 
-  defp formatted_diff(diff) do
-    if diff > 1000 do
-      [Integer.to_string(div(diff, 1000)), "ms"]
-    else
-      [Integer.to_string(diff), "µs"]
-    end
-  end
+  defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string, "ms"]
+  defp formatted_diff(diff), do: [diff |> Integer.to_string, "µs"]
 
   defp connection_type(%{state: :chunked}), do: "Chunked"
   defp connection_type(_), do: "Sent"
