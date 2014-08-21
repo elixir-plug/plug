@@ -18,7 +18,7 @@ defmodule Plug.Conn do
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `port` - the requested port as an integer, example: `80`
-  * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this 
+  * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
     is not the actual IP and port of the client, but rather of a load-balancer or request-router.
   * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
     be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
@@ -58,6 +58,8 @@ defmodule Plug.Conn do
 
   * `assigns` - shared user data as a dict
   * `state` - the connection state
+  * `halted` - the boolean status on whether the stack was halted
+  * `halt_reason` - the optional term reason for halting stack
 
   The connection state is used to track the connection lifecycle. It starts
   as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
@@ -89,6 +91,8 @@ defmodule Plug.Conn do
   @type peer         :: {:inet.ip_address, :inet.port_number}
   @type query_string :: String.t
   @type resp_cookies :: %{binary => %{}}
+  @type halted       :: boolean
+  @type halt_reason  :: term
   @type t            :: %__MODULE__{
                          adapter:      adapter,
                          assigns:      assigns,
@@ -134,7 +138,9 @@ defmodule Plug.Conn do
             scheme:       :http,
             script_name:  [],
             state:        :unset,
-            status:       nil
+            status:       nil,
+            halted:       false,
+            halt_reason:  nil
 
 
   defmodule NotSentError do
@@ -563,6 +569,14 @@ defmodule Plug.Conn do
 
   def register_before_send(%Conn{}, callback) when is_function(callback, 1) do
     raise AlreadySentError
+  end
+
+  @doc """
+  Halts the Plug stack by preventing further plugs downstream from being invoked
+  """
+  @spec halt(t, term) :: t
+  def halt(%Conn{} = conn, reason \\ nil) do
+    %{conn | halted: true, halt_reason: reason}
   end
 
   defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when state in @unsent do

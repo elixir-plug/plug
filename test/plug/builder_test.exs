@@ -55,6 +55,29 @@ defmodule Plug.BuilderTest do
     end
   end
 
+  defmodule Halter do
+    use Plug.Builder
+
+    plug :step, :first
+    plug :step, :second
+    plug :halt
+    plug :step, :end_of_chain_reached
+
+    def step(conn, step), do: assign(conn, step, true)
+  end
+
+  defmodule HalterWithReason do
+    use Plug.Builder
+
+    plug :step, :first
+    plug :step, :second
+    plug :halt, :unauthorized
+    plug :step, :end_of_chain_reached
+
+    def step(conn, step), do: assign(conn, step, true)
+  end
+
+
   use ExUnit.Case, async: true
   use Plug.Test
 
@@ -73,4 +96,22 @@ defmodule Plug.BuilderTest do
     assert conn.assigns[:not_found] == :caught
     assert conn.assigns[:entered_stack] == true
   end
+
+  test "halt/1 halts the plug stack" do
+    conn = conn(:get, "/") |> Halter.call([])
+    assert conn.halted == true
+    assert conn.assigns[:first] == true
+    assert conn.assigns[:second] == true
+    refute conn.assigns[:end_of_chain_reached] == true
+  end
+
+  test "halt/2 halts the plug stack with reason" do
+    conn = conn(:get, "/") |> HalterWithReason.call([])
+    assert conn.halted == true
+    assert conn.halt_reason == :unauthorized
+    assert conn.assigns[:first] == true
+    assert conn.assigns[:second] == true
+    refute conn.assigns[:end_of_chain_reached] == true
+  end
+
 end

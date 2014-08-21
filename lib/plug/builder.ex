@@ -1,4 +1,6 @@
 defmodule Plug.Builder do
+  alias Plug.Conn
+
   @moduledoc """
   Conveniences for building plugs.
 
@@ -23,6 +25,11 @@ defmodule Plug.Builder do
 
   Note this module also exports a `compile/1` function for those willing
   to collect and compile their plugs manually.
+
+  ## Halting a Plug Stack
+
+  A Plug Stack can be halted with `Conn.halt/1`. The Builder will prevent
+  further plugs downstream from being invoked and return current connection.
   """
 
   @type plug :: module | atom
@@ -120,8 +127,9 @@ defmodule Plug.Builder do
   defp quote_plug({:call, plug, opts}, acc) do
     quote do
       case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
-        %Plug.Conn{} = conn -> unquote(acc)
-        _                   -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
+        %Conn{halted: true} = conn -> conn
+        %Conn{} = conn             -> unquote(acc)
+        _ -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
       end
     end
   end
@@ -129,8 +137,9 @@ defmodule Plug.Builder do
   defp quote_plug({:fun, plug, opts}, acc) do
     quote do
       case unquote(plug)(conn, unquote(Macro.escape(opts))) do
-        %Plug.Conn{} = conn -> unquote(acc)
-        _                   -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
+        %Conn{halted: true} = conn -> conn
+        %Conn{} = conn             -> unquote(acc)
+        _ -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
       end
     end
   end

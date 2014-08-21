@@ -413,4 +413,19 @@ defmodule Plug.ConnTest do
     conn = put_session(conn, :foo, :bar)
     assert conn.private[:plug_session_info] == :renew
   end
+
+  test "halt/1 updates halted to true" do
+    conn = %Conn{}
+    assert conn.halted == false
+    conn = halt(conn)
+    assert conn.halted == true
+  end
+
+  test "halt/2 updates halted to true with halt_reason" do
+    conn = %Conn{}
+    assert conn.halted == false
+    conn = halt(conn, :unauthorized)
+    assert conn.halted == true
+    assert conn.halt_reason == :unauthorized
+  end
 end
