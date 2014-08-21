@@ -420,12 +420,4 @@ defmodule Plug.ConnTest do
     conn = halt(conn)
     assert conn.halted == true
   end
-
-  test "halt/2 updates halted to true with halt_reason" do
-    conn = %Conn{}
-    assert conn.halted == false
-    conn = halt(conn, :unauthorized)
-    assert conn.halted == true
-    assert conn.halt_reason == :unauthorized
-  end
 end

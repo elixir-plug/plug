@@ -59,7 +59,6 @@ defmodule Plug.Conn do
   * `assigns` - shared user data as a dict
   * `state` - the connection state
   * `halted` - the boolean status on whether the stack was halted
-  * `halt_reason` - the optional term reason for halting stack
 
   The connection state is used to track the connection lifecycle. It starts
   as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
@@ -92,7 +91,6 @@ defmodule Plug.Conn do
   @type query_string :: String.t
   @type resp_cookies :: %{binary => %{}}
   @type halted       :: boolean
-  @type halt_reason  :: term
   @type t            :: %__MODULE__{
                          adapter:      adapter,
                          assigns:      assigns,
@@ -139,8 +137,7 @@ defmodule Plug.Conn do
             script_name:  [],
             state:        :unset,
             status:       nil,
-            halted:       false,
-            halt_reason:  nil
+            halted:       false
 
 
   defmodule NotSentError do
@@ -574,9 +571,9 @@ defmodule Plug.Conn do
   @doc """
   Halts the Plug stack by preventing further plugs downstream from being invoked
   """
-  @spec halt(t, term) :: t
-  def halt(%Conn{} = conn, reason \\ nil) do
-    %{conn | halted: true, halt_reason: reason}
+  @spec halt(t) :: t
+  def halt(%Conn{} = conn) do
+    %{conn | halted: true}
   end
 
   defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when state in @unsent do
