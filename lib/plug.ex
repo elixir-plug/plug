@@ -20,17 +20,19 @@ defmodule Plug do
   The API expected by a module plug is defined as a behaviour by the
   `Plug` module (this module).
 
-  ## Wrappers
+  ## Wrapping a Plug Stack
 
-  A wrapper is a module that exports two functions: `init/1` and `wrap/3`.
+  A Plug Stack can be wrapped be overriding the `call/2` function and
+  using `super` to call the stack:
 
-  A wrapper is similar to a module plug except it receives a function
-  containing the remaining of the stack as third argument. Wrappers must
-  be reserved to the special cases where wrapping the whole stack is
-  required.
+      def call(conn, opts) do
+        try do
+          super(conn, opts)
+        catch
+          :throw, {:not_found, conn} -> send_resp(404, "not found")
+        end
+      end
 
-  The behaviour specification of a wrapper can be found in the `Plug.Wrapper`
-  module.
 
   ## The Plug stack
 

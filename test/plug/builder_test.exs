@@ -1,17 +1,6 @@
 defmodule Plug.BuilderTest do
   import Plug.Conn
 
-  defmodule Wrapper do
-    def init(val) do
-      {:init, val}
-    end
-
-    def wrap(conn, opts, fun) do
-      stack = [{:wrap, opts}|conn.assigns[:stack]]
-      fun.(assign(conn, :stack, stack))
-    end
-  end
-
   defmodule Module do
     def init(val) do
       {:init, val}
@@ -27,7 +16,6 @@ defmodule Plug.BuilderTest do
     use Plug.Builder
 
     plug :fun
-    plug Wrapper, ~r"opts"
     plug Module, :opts
 
     def fun(conn, opts) do
@@ -82,7 +70,7 @@ defmodule Plug.BuilderTest do
   test "builds plug stack in the order" do
     conn = conn(:get, "/") |> assign(:stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
-           [call: {:init, :opts}, wrap: {:init, ~r"opts"}, fun: []]
+           [call: {:init, :opts}, fun: []]
   end
 
   test "allows call/2 to be overridden with super" do

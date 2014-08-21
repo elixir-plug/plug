@@ -36,10 +36,10 @@ defmodule Plug.Static do
 
   """
 
-  @behaviour Plug.Wrapper
   @allowed_methods ~w(GET HEAD)
 
   import Plug.Conn
+  alias Plug.Conn
 
   def init(opts) do
     at   = Keyword.fetch!(opts, :at)
@@ -52,33 +52,30 @@ defmodule Plug.Static do
     {Plug.Router.Utils.split(at), from, opts[:gzip]}
   end
 
-  def wrap(conn, {at, from, gzip}, fun) do
-    if conn.method in @allowed_methods do
-      wrap(conn, at, from, gzip, fun)
-    else
-      fun.(conn)
-    end
+  def call(conn = %Conn{method: meth}, {at, from, gzip}) when meth in @allowed_methods do
+    send_static_file(conn, at, from, gzip)
   end
+  def call(conn, _opts), do: conn
 
-  def wrap(conn, at, from, gzip, fun) do
+  defp send_static_file(conn, at, from, gzip) do
     segments = subset(at, conn.path_info)
     segments = for segment <- List.wrap(segments), do: URI.decode(segment)
     path     = path(from, segments)
 
     cond do
       segments in [nil, []] ->
-        fun.(conn)
+        conn
       invalid_path?(segments) ->
-        send_resp(conn, 400, "Bad request")
+        send_resp(conn, 400, "Bad request") |> halt
       true ->
         case file_encoding(conn, path, gzip) do
           {conn, path} ->
             conn
             |> put_resp_header("content-type", Plug.MIME.path(List.last(segments)))
             |> put_resp_header("cache-control", "public, max-age=31536000")
-            |> send_file(200, path)
+            |> send_file(200, path) |> halt
           :error ->
-            fun.(conn)
+            conn
         end
     end
   end

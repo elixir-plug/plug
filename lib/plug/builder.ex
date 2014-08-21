@@ -94,34 +94,15 @@ defmodule Plug.Builder do
   end
 
   defp init_module_plug(plug, opts) do
-    opts  = plug.init(opts)
-    call? = function_exported?(plug, :call, 2)
-    wrap? = function_exported?(plug, :wrap, 3)
-
-    cond do
-      call? and wrap? ->
-        raise ArgumentError,
-          message: "#{inspect plug} plug implements both call/2 and wrap/3"
-      call? ->
-        {:call, plug, opts}
-      wrap? ->
-        {:wrap, plug, opts}
-      true ->
-        raise ArgumentError,
-          message: "#{inspect plug} plug must implement call/2 or wrap/3"
+    if Code.ensure_loaded?(plug) and function_exported?(plug, :call, 2) do
+      {:call, plug, plug.init(opts)}
+    else
+      raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
   end
 
   defp init_fun_plug(plug, opts) do
     {:fun, plug, opts}
-  end
-
-  defp quote_plug({:wrap, plug, opts}, acc) do
-    quote do
-      unquote(plug).wrap(conn, unquote(Macro.escape(opts)), fn conn ->
-        unquote(acc)
-      end)
-    end
   end
 
   defp quote_plug({:call, plug, opts}, acc) do
