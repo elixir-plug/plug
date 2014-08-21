@@ -4,6 +4,7 @@ notifications:
     - jose.valim@plataformatec.com.br
 otp_release:
   - 17.0
+  - 17.1
 before_install:
   - wget http://s3.hex.pm/builds/elixir/master.zip
   - unzip -d elixir master.zip
