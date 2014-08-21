@@ -20,18 +20,6 @@ defmodule Plug do
   The API expected by a module plug is defined as a behaviour by the
   `Plug` module (this module).
 
-  ## Wrappers
-
-  A wrapper is a module that exports two functions: `init/1` and `wrap/3`.
-
-  A wrapper is similar to a module plug except it receives a function
-  containing the remaining of the stack as third argument. Wrappers must
-  be reserved to the special cases where wrapping the whole stack is
-  required.
-
-  The behaviour specification of a wrapper can be found in the `Plug.Wrapper`
-  module.
-
   ## The Plug stack
 
   The plug specification was designed so it can connect all three different

@@ -1,4 +1,6 @@
 defmodule Plug.Builder do
+  alias Plug.Conn
+
   @moduledoc """
   Conveniences for building plugs.
 
@@ -23,6 +25,11 @@ defmodule Plug.Builder do
 
   Note this module also exports a `compile/1` function for those willing
   to collect and compile their plugs manually.
+
+  ## Halting a Plug Stack
+
+  A Plug Stack can be halted with `Conn.halt/1`. The Builder will prevent
+  further plugs downstream from being invoked and return current connection.
   """
 
   @type plug :: module | atom
@@ -87,21 +94,12 @@ defmodule Plug.Builder do
   end
 
   defp init_module_plug(plug, opts) do
-    opts  = plug.init(opts)
-    call? = function_exported?(plug, :call, 2)
-    wrap? = function_exported?(plug, :wrap, 3)
+    opts = plug.init(opts)
 
-    cond do
-      call? and wrap? ->
-        raise ArgumentError,
-          message: "#{inspect plug} plug implements both call/2 and wrap/3"
-      call? ->
-        {:call, plug, opts}
-      wrap? ->
-        {:wrap, plug, opts}
-      true ->
-        raise ArgumentError,
-          message: "#{inspect plug} plug must implement call/2 or wrap/3"
+    if function_exported?(plug, :call, 2) do
+      {:call, plug, opts}
+    else
+      raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
   end
 
@@ -109,19 +107,12 @@ defmodule Plug.Builder do
     {:fun, plug, opts}
   end
 
-  defp quote_plug({:wrap, plug, opts}, acc) do
-    quote do
-      unquote(plug).wrap(conn, unquote(Macro.escape(opts)), fn conn ->
-        unquote(acc)
-      end)
-    end
-  end
-
   defp quote_plug({:call, plug, opts}, acc) do
     quote do
       case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
-        %Plug.Conn{} = conn -> unquote(acc)
-        _                   -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
+        %Conn{halted: true} = conn -> conn
+        %Conn{} = conn             -> unquote(acc)
+        _ -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
       end
     end
   end
@@ -129,8 +120,9 @@ defmodule Plug.Builder do
   defp quote_plug({:fun, plug, opts}, acc) do
     quote do
       case unquote(plug)(conn, unquote(Macro.escape(opts))) do
-        %Plug.Conn{} = conn -> unquote(acc)
-        _                   -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
+        %Conn{halted: true} = conn -> conn
+        %Conn{} = conn             -> unquote(acc)
+        _ -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
       end
     end
   end

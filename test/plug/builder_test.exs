@@ -1,17 +1,6 @@
 defmodule Plug.BuilderTest do
   import Plug.Conn
 
-  defmodule Wrapper do
-    def init(val) do
-      {:init, val}
-    end
-
-    def wrap(conn, opts, fun) do
-      stack = [{:wrap, opts}|conn.assigns[:stack]]
-      fun.(assign(conn, :stack, stack))
-    end
-  end
-
   defmodule Module do
     def init(val) do
       {:init, val}
@@ -27,7 +16,6 @@ defmodule Plug.BuilderTest do
     use Plug.Builder
 
     plug :fun
-    plug Wrapper, ~r"opts"
     plug Module, :opts
 
     def fun(conn, opts) do
@@ -55,6 +43,23 @@ defmodule Plug.BuilderTest do
     end
   end
 
+  defmodule Halter do
+    use Plug.Builder
+
+    plug :step, :first
+    plug :step, :second
+    plug :authorize
+    plug :step, :end_of_chain_reached
+
+    def step(conn, step), do: assign(conn, step, true)
+
+    def authorize(conn, _) do
+      conn
+      |> assign(:authorize_reached, true)
+      |> halt
+    end
+  end
+
   use ExUnit.Case, async: true
   use Plug.Test
 
@@ -65,12 +70,21 @@ defmodule Plug.BuilderTest do
   test "builds plug stack in the order" do
     conn = conn(:get, "/") |> assign(:stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
-           [call: {:init, :opts}, wrap: {:init, ~r"opts"}, fun: []]
+           [call: {:init, :opts}, fun: []]
   end
 
   test "allows call/2 to be overridden with super" do
     conn = conn(:get, "/") |> Overridable.call([])
     assert conn.assigns[:not_found] == :caught
     assert conn.assigns[:entered_stack] == true
+  end
+
+  test "halt/1 halts the plug stack" do
+    conn = conn(:get, "/") |> Halter.call([])
+    assert conn.halted == true
+    assert conn.assigns[:first] == true
+    assert conn.assigns[:second] == true
+    assert conn.assigns[:authorize_reached] == true
+    refute conn.assigns[:end_of_chain_reached] == true
   end
 end
