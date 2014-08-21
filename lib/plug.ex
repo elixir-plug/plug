@@ -20,20 +20,6 @@ defmodule Plug do
   The API expected by a module plug is defined as a behaviour by the
   `Plug` module (this module).
 
-  ## Wrapping a Plug Stack
-
-  A Plug Stack can be wrapped be overriding the `call/2` function and
-  using `super` to call the stack:
-
-      def call(conn, opts) do
-        try do
-          super(conn, opts)
-        catch
-          :throw, {:not_found, conn} -> send_resp(404, "not found")
-        end
-      end
-
-
   ## The Plug stack
 
   The plug specification was designed so it can connect all three different

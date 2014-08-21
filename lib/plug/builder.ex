@@ -94,8 +94,10 @@ defmodule Plug.Builder do
   end
 
   defp init_module_plug(plug, opts) do
-    if Code.ensure_loaded?(plug) and function_exported?(plug, :call, 2) do
-      {:call, plug, plug.init(opts)}
+    opts = plug.init(opts)
+
+    if function_exported?(plug, :call, 2) do
+      {:call, plug, opts}
     else
       raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
