@@ -1,3 +1,15 @@
+# v0.7.0-dev
+
+* Enhancements
+  * Support haltable stacks with `Plug.Conn.halt/2`
+  * Ensure both Plug.Builder and Plug.Router's `call/2` are overridable
+
+* Bug fix
+  * Properly report times in Logger
+
+* Backwards incompatible changes
+  * Remove support for Plug wrappers
+
 # v0.6.0
 
 * Enhancements
