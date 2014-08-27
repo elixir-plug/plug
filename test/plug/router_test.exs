@@ -7,6 +7,10 @@ defmodule Plug.RouterTest do
       plug :match
       plug :dispatch
 
+      def call(conn, opts) do
+        super(assign(conn, :from_call, "set"), opts)
+      end
+
       get "/foo" do
         conn |> resp(200, "forwarded")
       end
@@ -130,6 +134,11 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/forward/foo"))
     assert conn.resp_body == "forwarded"
     assert conn.path_info == ["forward", "foo"]
+  end
+
+  test "dispatch with forwarding with custom call" do
+    conn = call(Sample, conn(:get, "/forward/foo"))
+    assert conn.assigns[:from_call] == "set"
   end
 
   test "dispatch with forwarding including slashes" do

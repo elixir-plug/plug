@@ -112,14 +112,10 @@ defmodule Plug.Router do
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-      import Plug.Builder, only: [plug: 1, plug: 2]
       import Plug.Router
+      @before_compile Plug.Router
 
-      @behaviour Plug
-
-      def init(opts) do
-        opts
-      end
+      use Plug.Builder
 
       def match(conn, _opts) do
         Plug.Conn.assign_private(conn,
@@ -131,20 +127,14 @@ defmodule Plug.Router do
         Map.get(conn.private, :plug_route).(conn)
       end
 
-      defoverridable [init: 1, dispatch: 2]
-
-      Module.register_attribute(__MODULE__, :plugs, accumulate: true)
-      @before_compile Plug.Router
+      defoverridable [match: 2, dispatch: 2]
     end
   end
 
   @doc false
-  defmacro __before_compile__(env) do
-    plugs = Module.get_attribute(env.module, :plugs)
-    {conn, body} = Plug.Builder.compile(plugs)
+  defmacro __before_compile__(_env) do
     quote do
       import Plug.Router, only: []
-      def call(unquote(conn), _), do: unquote(body)
     end
   end
 

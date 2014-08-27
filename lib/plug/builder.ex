@@ -28,7 +28,7 @@ defmodule Plug.Builder do
 
   ## Halting a Plug Stack
 
-  A Plug Stack can be halted with `Conn.halt/1`. The Builder will prevent
+  A Plug Stack can be halted with `Plug.Conn.halt/1`. The Builder will prevent
   further plugs downstream from being invoked and return current connection.
   """
 
@@ -43,7 +43,9 @@ defmodule Plug.Builder do
         opts
       end
 
-      def call(conn, opts), do: call_stack(conn, opts)
+      def call(conn, opts) do
+        plug_builder_call(conn, opts)
+      end
 
       defoverridable [init: 1, call: 2]
 
@@ -58,7 +60,7 @@ defmodule Plug.Builder do
     plugs = Module.get_attribute(env.module, :plugs)
     {conn, body} = Plug.Builder.compile(plugs)
     quote do
-      defp call_stack(unquote(conn), _), do: unquote(body)
+      defp plug_builder_call(unquote(conn), _), do: unquote(body)
     end
   end
 
