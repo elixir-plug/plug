@@ -363,9 +363,9 @@ defmodule Plug.Conn do
   """
   @spec put_resp_content_type(t, binary, binary | nil) :: t
   def put_resp_content_type(conn, content_type, charset \\ "utf-8") when
-      is_binary(content_type) and (is_binary(charset) or nil?(charset)) do
+      is_binary(content_type) and (is_binary(charset) or is_nil(charset)) do
     value =
-      if nil?(charset) do
+      if is_nil(charset) do
         content_type
       else
         content_type <> "; charset=" <> charset

@@ -27,7 +27,7 @@ defmodule Plug.Session.COOKIE do
     secret = opts[:secret]
 
     cond do
-      nil?(secret) ->
+      is_nil(secret) ->
         raise ArgumentError, "cookie store expects a secret as option"
       byte_size(secret) < 64 ->
         raise ArgumentError, "cookie store secret must be at least 64 bytes"

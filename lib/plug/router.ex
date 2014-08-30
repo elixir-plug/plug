@@ -232,7 +232,7 @@ defmodule Plug.Router do
     quote do
       {target, options} = Keyword.pop(unquote(options), :to)
 
-      if nil?(target) or !is_atom(target) do
+      if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
       end
 

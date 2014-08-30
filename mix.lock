@@ -1,7 +1,7 @@
 %{"cowboy": {:package, "1.0.0"},
   "cowlib": {:package, "1.0.0"},
   "earmark": {:package, "0.1.10"},
-  "ex_doc": {:package, "0.5.2"},
+  "ex_doc": {:package, "0.6.0"},
   "hackney": {:package, "0.13.1"},
   "idna": {:package, "1.0.1"},
   "ranch": {:package, "1.0.0"}}

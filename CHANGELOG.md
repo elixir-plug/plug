@@ -1,6 +1,7 @@
-# v0.7.0-dev
+# v0.7.0
 
 * Enhancements
+  * Support Elixir 1.0.0-rc1
   * Support haltable stacks with `Plug.Conn.halt/2`
   * Ensure both Plug.Builder and Plug.Router's `call/2` are overridable
 

@@ -163,7 +163,7 @@ defmodule Plug.Adapters.Cowboy do
     value = options[key]
 
     cond do
-      nil?(value) ->
+      is_nil(value) ->
         options
       Path.type(value) == :absolute ->
         Keyword.put(options, key, to_char_list(value))
