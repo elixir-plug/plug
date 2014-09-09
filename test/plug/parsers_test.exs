@@ -32,8 +32,11 @@ defmodule Plug.ParsersTest do
   end
 
   test "parses multipart bodies" do
+    conn = parse(conn(:post, "/?foo=bar", []))
+    assert conn.params == %{"foo" => "bar"}
+
     conn = parse(conn(:post, "/?foo=bar", [foo: "baz"]))
-    assert conn.params["foo"] == "baz"
+    assert conn.params == %{"foo" => "baz"}
   end
 
   test "raises on too large bodies" do

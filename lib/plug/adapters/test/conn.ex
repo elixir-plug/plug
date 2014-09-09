@@ -85,14 +85,16 @@ defmodule Plug.Adapters.Test.Conn do
     {body, nil, headers}
   end
 
-  defp body_or_params(params, headers) when is_list(params) or is_map(params) do
+  defp body_or_params(params, headers) when is_list(params) do
+    body_or_params(Enum.into(params, %{}), headers)
+  end
+
+  defp body_or_params(params, headers) when is_map(params) do
     headers = :lists.keystore("content-type", 1, headers,
                               {"content-type", "multipart/mixed; charset: utf-8"})
     {"", stringify_params(params), headers}
   end
 
-  defp stringify_params([{_, _}|_] = params),
-    do: Enum.into(params, %{}, &stringify_kv/1)
   defp stringify_params([_|_] = params),
     do: Enum.map(params, &stringify_params/1)
   defp stringify_params(%{} = params),

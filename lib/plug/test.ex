@@ -43,8 +43,8 @@ defmodule Plug.Test do
     must be given as option with a content-type;
   * a map or list - containing the parameters which will automatically
     set the content-type to multipart. The map or list may be contain
-    other lists or maps and all entries keywords and maps will be
-    normalized to string keys;
+    other lists or maps and all entries will be normalized to string
+    keys;
 
   The only option supported so far is `:headers` which expects a
   list of headers.

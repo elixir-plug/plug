@@ -43,7 +43,6 @@ defmodule Plug.Router.Utils do
 
   @doc """
   Forwards requests to another Plug at a new path.
-
   """
   def forward(%Plug.Conn{path_info: path, script_name: script} = conn, new_path, target, opts) do
     {base, ^new_path} = Enum.split(path, length(path) - length(new_path))
