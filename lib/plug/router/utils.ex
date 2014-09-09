@@ -140,11 +140,17 @@ defmodule Plug.Router.Utils do
     fun.({identifier, [], context})
   end
 
-  defp binary_to_identifier(prefix, "") do
-    raise Plug.Router.InvalidSpecError, message: "#{prefix} must be followed by lowercase letters in routes"
+  defp binary_to_identifier(prefix, <<letter, _::binary>> = binary) when letter in ?a..?z do
+    if binary =~ ~r/^\w+$/ do
+      String.to_atom(binary)
+    else
+      raise Plug.Router.InvalidSpecError,
+        message: "#{prefix}identifier in routes must be made of letters, numbers and underscore"
+    end
   end
 
-  defp binary_to_identifier(_, binary) do
-    String.to_atom(binary)
+  defp binary_to_identifier(prefix, _) do
+    raise Plug.Router.InvalidSpecError,
+      message: "#{prefix} in routes must be followed by lowercase letters"
   end
 end

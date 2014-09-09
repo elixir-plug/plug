@@ -65,8 +65,14 @@ defmodule Plug.Router.UtilsTest do
 
   test "build invalid match with empty matches" do
     assert_raise Plug.Router.InvalidSpecError,
-                 ": must be followed by lowercase letters in routes",
+                 ": in routes must be followed by lowercase letters",
                  fn -> build_match("/foo/:") end
+  end
+
+  test "build invalid match with non word character" do
+    assert_raise Plug.Router.InvalidSpecError,
+                 ":identifier in routes must be made of letters, numbers and underscore",
+                 fn -> build_match("/foo/:bar.baz") end
   end
 
   test "build invalid match with segments after glob" do
