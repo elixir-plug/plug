@@ -5,6 +5,7 @@
 * Enhancements
   * Add `fetch_session/2`, `fetch_params/2` and `fetch_cookies/2` so they can be pluggable
   * Raise an error message on invalid router indentifiers
+  * Add `put_status/2` and support atom status codes
 
 ## v0.7.0
 

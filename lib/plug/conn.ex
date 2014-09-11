@@ -1,7 +1,5 @@
 alias Plug.Conn.Unfetched
 
-# TODO: Support status codes
-
 defmodule Plug.Conn do
   @moduledoc """
   The Plug connection.
@@ -82,11 +80,12 @@ defmodule Plug.Conn do
   @type cookies      :: %{binary => binary} | Unfetched.t
   @type headers      :: [{binary, binary}]
   @type host         :: binary
+  @type int_status   :: non_neg_integer | nil
   @type method       :: binary
   @type scheme       :: :http | :https
   @type segments     :: [binary]
   @type state        :: :unset | :set | :file | :chunked | :sent
-  @type status       :: non_neg_integer | nil
+  @type status       :: atom | int_status
   @type param        :: binary | %{binary => param} | [param]
   @type params       :: %{binary => param}
   @type peer         :: {:inet.ip_address, :inet.port_number}
@@ -115,7 +114,7 @@ defmodule Plug.Conn do
                          scheme:       scheme,
                          script_name:  segments,
                          state:        state,
-                         status:       status}
+                         status:       int_status}
 
   defstruct adapter:      {Plug.Conn, nil},
             assigns:      %{},
@@ -208,6 +207,16 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Stores the given status code in the connection.
+
+  The status code can an nil, an integer or an atom.
+  The list of allowed atoms is available in `Plug.Conn.Status`.
+  """
+  @spec put_status(t, status) :: t
+  def put_status(%Conn{} = conn, nil),    do: %{conn | status: nil}
+  def put_status(%Conn{} = conn, status), do: %{conn | status: Plug.Conn.Status.code(status)}
+
+  @doc """
   Sends a response to the client.
 
   It expects the connection state is to be `:set`,
@@ -247,8 +256,8 @@ defmodule Plug.Conn do
   """
   @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
   def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file, offset \\ 0, length \\ :all)
-      when is_integer(status) and is_binary(file) do
-    conn = run_before_send(%{conn | status: status, resp_body: nil}, :file)
+      when is_binary(file) do
+    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send self(), @already_sent
     %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
@@ -263,14 +272,15 @@ defmodule Plug.Conn do
   """
   @spec send_chunked(t, status) :: t | no_return
   def send_chunked(%Conn{adapter: {adapter, payload}, state: state} = conn, status)
-      when state in @unsent and is_integer(status) do
-    conn = run_before_send(%{conn | status: status, resp_body: nil}, :chunked)
+      when state in @unsent do
+    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send self(), @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body}
   end
 
-  def send_chunked(%Conn{}, status) when is_integer(status) do
+  def send_chunked(%Conn{}, status) do
+    _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
 
@@ -313,13 +323,12 @@ defmodule Plug.Conn do
   """
   @spec resp(t, status, body) :: t
   def resp(%Conn{state: state} = conn, status, body)
-      when is_integer(status) and state in @unsent
-        and (is_binary(body) or is_list(body)) do
-    %{conn | status: status, resp_body: body, state: :set}
+      when state in @unsent and (is_binary(body) or is_list(body)) do
+    %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
   end
 
-  def resp(%Conn{}, status, body)
-      when is_integer(status) and (is_binary(body) or is_list(body)) do
+  def resp(%Conn{}, status, body) when is_binary(body) or is_list(body) do
+    _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
 

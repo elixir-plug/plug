@@ -11,6 +11,13 @@ defmodule Plug.ConnTest do
     assert conn.assigns[:hello] == :world
   end
 
+  test "put_status/2" do
+    conn = conn(:get, "/")
+    assert put_status(conn, nil).status == nil
+    assert put_status(conn, 200).status == 200
+    assert put_status(conn, :ok).status == 200
+  end
+
   test "put_private/3" do
     conn = conn(:get, "/")
     assert conn.private[:hello] == nil
@@ -59,6 +66,13 @@ defmodule Plug.ConnTest do
     assert conn.state == :unset
     conn = resp(conn, 200, "HELLO")
     assert conn.state == :set
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+
+    conn = resp(conn, :not_found, "WORLD")
+    assert conn.state == :set
+    assert conn.status == 404
+    assert conn.resp_body == "WORLD"
   end
 
   test "resp/3 raises when connection was already sent" do
