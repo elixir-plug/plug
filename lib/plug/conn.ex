@@ -1,5 +1,8 @@
 alias Plug.Conn.Unfetched
 
+# TODO: Support status codes
+# TODO: Support fetch_session(conn, opts)
+
 defmodule Plug.Conn do
   @moduledoc """
   The Plug connection.
@@ -379,12 +382,14 @@ defmodule Plug.Conn do
   This function does not fetch parameters from the body. To fetch
   parameters from the body, use the `Plug.Parsers` plug.
   """
-  @spec fetch_params(t) :: t
-  def fetch_params(%Conn{params: %Unfetched{}, query_string: query_string} = conn) do
+  @spec fetch_params(t, Keyword.t) :: t
+  def fetch_params(conn, opts \\ [])
+
+  def fetch_params(%Conn{params: %Unfetched{}, query_string: query_string} = conn, _opts) do
     %{conn | params: Plug.Conn.Query.decode(query_string)}
   end
 
-  def fetch_params(%Conn{} = conn) do
+  def fetch_params(%Conn{} = conn, _opts) do
     conn
   end
 
@@ -433,9 +438,11 @@ defmodule Plug.Conn do
   @doc """
   Fetches cookies from the request headers.
   """
-  @spec fetch_cookies(t) :: t
+  @spec fetch_cookies(t, Keyword.t) :: t
+  def fetch_cookies(conn, opts \\ [])
+
   def fetch_cookies(%Conn{req_cookies: %Unfetched{},
-                          resp_cookies: resp_cookies, req_headers: req_headers} = conn) do
+                          resp_cookies: resp_cookies, req_headers: req_headers} = conn, _opts) do
     req_cookies =
       for {"cookie", cookie} <- req_headers,
           kv <- Plug.Conn.Cookies.decode(cookie),
@@ -454,7 +461,7 @@ defmodule Plug.Conn do
     %{conn | req_cookies: req_cookies, cookies: cookies}
   end
 
-  def fetch_cookies(%Conn{} = conn) do
+  def fetch_cookies(%Conn{} = conn, _opts) do
     conn
   end
 
@@ -495,8 +502,10 @@ defmodule Plug.Conn do
   @doc """
   Fetches session from session store. Will also fetch cookies.
   """
-  @spec fetch_session(t) :: t
-  def fetch_session(%Conn{private: private} = conn) do
+  @spec fetch_session(t, Keyword.t) :: t
+  def fetch_session(conn, opts \\ [])
+
+  def fetch_session(%Conn{private: private} = conn, _opts) do
     case Map.fetch(private, :plug_session_fetch) do
       {:ok, :done} -> conn
       {:ok, fun} -> conn |> fetch_cookies |> fun.()
@@ -533,9 +542,9 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:renew` - generates a new session id for the cookie;
-  * `:drop` - drops the session, a session cookie will not be included in the
-              response;
+    * `:renew` - generates a new session id for the cookie;
+    * `:drop` - drops the session, a session cookie will not be included in the
+                response;
   """
   @spec configure_session(t, Keyword.t) :: t
   def configure_session(conn, opts) do
@@ -605,7 +614,7 @@ defmodule Plug.Conn do
     if session = Map.get(private, :plug_session) do
       session
     else
-      raise ArgumentError, message: "session not fetched, call fetch_session/1"
+      raise ArgumentError, message: "session not fetched, call fetch_session/2"
     end
   end
 

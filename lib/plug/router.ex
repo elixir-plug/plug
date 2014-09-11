@@ -117,6 +117,8 @@ defmodule Plug.Router do
 
       use Plug.Builder
 
+      # TODO: This needs to route if no route matches.
+      # We probably need a not_found hook.
       def match(conn, _opts) do
         Plug.Conn.assign_private(conn,
           :plug_route,

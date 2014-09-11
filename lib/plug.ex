@@ -22,15 +22,8 @@ defmodule Plug do
 
   ## The Plug stack
 
-  The plug specification was designed so it can connect all three different
-  mechanisms together in a same stack:
-
-  * function plugs
-  * module plugs
-  * and wrappers
-
-  An implementation of how such plug stacks can be achieved is defined in
-  the `Plug.Builder` module.
+  The `Plug.Builder` module provides conveniences for stacking many
+  plugs into a single module.
   """
 
   @type opts :: tuple | atom | integer | float | [opts]

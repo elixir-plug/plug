@@ -27,19 +27,21 @@ defmodule Plug.Parsers do
   end
 
   @moduledoc """
-  A plug for parsing the request body
+  A plug for parsing the request body.
 
   ## Options
 
-  * `:parsers` - a set of modules to be invoked for parsing.
-                 These modules need to implement the behaviour
-                 outlined in this module.
-  * `:accept`  - an optional list of accepted mime type strings. Any mime
-                 not handled by a parser and not explicitly accepted will
-                 raise UnsupportedMediaTypeError. ie:
-                 * ["*/*"] - never raise
-                 * ["text/html", "application/*"] - don't raise for those values
-                 * [] - always raise (default)
+    * `:parsers` - a set of modules to be invoked for parsing.
+      These modules need to implement the behaviour outlined in
+      this module.
+
+    * `:accept`  - an optional list of accepted mime type strings. Any mime
+      not handled by a parser and not explicitly accepted will
+      `raise UnsupportedMediaTypeError`. For example:
+
+        * `["*/*"]` - never raises
+        * `["text/html", "application/*"]` - doesn't raise for those values
+        * `[]` - always raises (default)
 
   All options supported by `Plug.Conn.read_body/2` are also
   supported here.

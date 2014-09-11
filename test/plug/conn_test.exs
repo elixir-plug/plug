@@ -277,13 +277,13 @@ defmodule Plug.ConnTest do
     assert {:more, _, _} = read_body(conn, length: 100)
   end
 
-  test "params/1 && fetch_params/1" do
+  test "params/1 and fetch_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
     conn = fetch_params(conn)
     assert conn.params == %{"a" => "b", "c" => "d"}
 
-    conn = conn(:get, "/foo") |> fetch_params
+    conn = conn(:get, "/foo") |> fetch_params([]) # Pluggable
     assert conn.params == %{}
   end
 
@@ -293,7 +293,7 @@ defmodule Plug.ConnTest do
     conn = fetch_cookies(conn)
     assert conn.req_cookies == %{"foo" => "bar", "baz" => "bat"}
 
-    conn = conn(:get, "/foo") |> fetch_cookies
+    conn = conn(:get, "/foo") |> fetch_cookies([]) # Pluggable
     assert conn.req_cookies == %{}
   end
 
@@ -366,7 +366,7 @@ defmodule Plug.ConnTest do
   test "session not fetched" do
     conn = conn(:get, "/")
 
-    assert_raise ArgumentError, "session not fetched, call fetch_session/1", fn ->
+    assert_raise ArgumentError, "session not fetched, call fetch_session/2", fn ->
       get_session(conn, :foo)
     end
 
@@ -377,12 +377,11 @@ defmodule Plug.ConnTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = Plug.Session.call(conn, opts)
 
-    assert_raise ArgumentError, "session not fetched, call fetch_session/1", fn ->
+    assert_raise ArgumentError, "session not fetched, call fetch_session/2", fn ->
       get_session(conn, :foo)
     end
 
-    conn = conn |> fetch_session
-
+    conn = conn |> fetch_session([]) # Pluggable
     get_session(conn, :foo)
   end
 
