@@ -1,7 +1,6 @@
 alias Plug.Conn.Unfetched
 
 # TODO: Support status codes
-# TODO: Support fetch_session(conn, opts)
 
 defmodule Plug.Conn do
   @moduledoc """
@@ -192,14 +191,20 @@ defmodule Plug.Conn do
 
       iex> conn.private[:plug_hello]
       nil
-      iex> conn = assign_private(conn, :plug_hello, :world)
+      iex> conn = put_private(conn, :plug_hello, :world)
       iex> conn.private[:plug_hello]
       :world
 
   """
-  @spec assign_private(t, atom, term) :: t
-  def assign_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
+  @spec put_private(t, atom, term) :: t
+  def put_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
     %{conn | private: Map.put(private, key, value)}
+  end
+
+  def assign_private(conn, key, value) do
+    IO.write :stderr, "assign_private/3 is deprecated in favor of put_private/3\n" <>
+                      Exception.format_stacktrace()
+    put_private(conn, key, value)
   end
 
   @doc """
@@ -551,11 +556,11 @@ defmodule Plug.Conn do
     get_session(conn)
 
     if opts[:renew] do
-      conn = assign_private(conn, :plug_session_info, :renew)
+      conn = put_private(conn, :plug_session_info, :renew)
     end
 
     if opts[:drop] do
-      conn = assign_private(conn, :plug_session_info, :drop)
+      conn = put_private(conn, :plug_session_info, :drop)
     end
 
     conn

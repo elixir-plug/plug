@@ -11,10 +11,10 @@ defmodule Plug.ConnTest do
     assert conn.assigns[:hello] == :world
   end
 
-  test "assign_private/3" do
+  test "put_private/3" do
     conn = conn(:get, "/")
     assert conn.private[:hello] == nil
-    conn = assign_private(conn, :hello, :world)
+    conn = put_private(conn, :hello, :world)
     assert conn.private[:hello] == :world
   end
 

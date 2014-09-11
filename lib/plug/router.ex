@@ -16,7 +16,9 @@ defmodule Plug.Router do
         end
 
         match _ do
-          send_resp(conn, 404, "oops")
+          # Halt the request so it doesn't go
+          # further in the plug stack.
+          halt send_resp(conn, 404, "oops")
         end
       end
 
@@ -120,7 +122,7 @@ defmodule Plug.Router do
       # TODO: This needs to route if no route matches.
       # We probably need a not_found hook.
       def match(conn, _opts) do
-        Plug.Conn.assign_private(conn,
+        Plug.Conn.put_private(conn,
           :plug_route,
           do_match(conn.method, conn.path_info))
       end

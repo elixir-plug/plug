@@ -51,7 +51,7 @@ defmodule Plug.Session do
   end
 
   def call(conn, config) do
-    Conn.assign_private(conn, :plug_session_fetch, fetch_session(config))
+    Conn.put_private(conn, :plug_session_fetch, fetch_session(config))
   end
 
   defp convert_store(store) do
@@ -73,8 +73,8 @@ defmodule Plug.Session do
         end
 
       conn
-      |> Conn.assign_private(:plug_session, session)
-      |> Conn.assign_private(:plug_session_fetch, :done)
+      |> Conn.put_private(:plug_session, session)
+      |> Conn.put_private(:plug_session_fetch, :done)
       |> Conn.register_before_send(before_send(sid, config))
     end
   end
