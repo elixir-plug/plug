@@ -30,7 +30,7 @@ defmodule Plug.Static do
         plug :not_found
 
         def not_found(conn, _) do
-          Plug.Conn.send(conn, 404, "not found")
+          Plug.Conn.send_resp(conn, 404, "not found")
         end
       end
 
