@@ -40,13 +40,13 @@ defmodule Plug.Conn do
 
   Those fields contain response information:
 
-  * `resp_body` - the response body, by default is an empty string.
-                  It it set to nil after the response is set, except for test connections.
+  * `resp_body` - the response body, by default is an empty string. It is set
+    to nil after the response is set, except for test connections.
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_content_type` - the response content-type, by default is nil
   * `resp_cookies` - the response cookies with their name and options
-  * `resp_headers` - the response headers as a dict,
-                     by default `cache-control` is set to `"max-age=0, private, must-revalidate"`
+  * `resp_headers` - the response headers as a dict, by default `cache-control`
+    is set to `"max-age=0, private, must-revalidate"`
   * `status` - the response status
 
   Furthermore, the `before_send` field stores callbacks that are invoked
@@ -557,8 +557,7 @@ defmodule Plug.Conn do
   ## Options
 
     * `:renew` - generates a new session id for the cookie;
-    * `:drop` - drops the session, a session cookie will not be included in the
-                response;
+    * `:drop` - drops the session, a session cookie will not be included in the response;
   """
   @spec configure_session(t, Keyword.t) :: t
   def configure_session(conn, opts) do
