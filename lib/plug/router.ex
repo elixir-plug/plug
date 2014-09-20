@@ -160,7 +160,7 @@ defmodule Plug.Router do
 
   * `:via` - matches the route against some specific HTTP methods
   * `:do` - contains the implementation to be invoked in case
-            the route matches
+    the route matches
 
   """
   defmacro match(expression, options, contents \\ []) do
