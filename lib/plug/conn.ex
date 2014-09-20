@@ -43,7 +43,6 @@ defmodule Plug.Conn do
   * `resp_body` - the response body, by default is an empty string. It is set
     to nil after the response is set, except for test connections.
   * `resp_charset` - the response charset, defaults to "utf-8"
-  * `resp_content_type` - the response content-type, by default is nil
   * `resp_cookies` - the response cookies with their name and options
   * `resp_headers` - the response headers as a dict, by default `cache-control`
     is set to `"max-age=0, private, must-revalidate"`
