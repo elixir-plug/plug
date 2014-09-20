@@ -69,7 +69,7 @@ defmodule Plug.Builder do
   """
   defmacro plug(plug, opts \\ []) do
     quote do
-      @plugs {unquote(plug), unquote(opts)}
+      @plugs {unquote(plug), unquote(opts), true}
     end
   end
 
@@ -86,32 +86,34 @@ defmodule Plug.Builder do
     {conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2))}
   end
 
-  defp init_plug({plug, opts}) do
+  defp init_plug({plug, opts, guard}) do
     case Atom.to_char_list(plug) do
       'Elixir.' ++ _ ->
-        init_module_plug(plug, opts)
+        init_module_plug(plug, opts, guard)
       _ ->
-        init_fun_plug(plug, opts)
+        init_fun_plug(plug, opts, guard)
     end
   end
 
-  defp init_module_plug(plug, opts) do
+  defp init_module_plug(plug, opts, guard) do
     opts = plug.init(opts)
 
     if function_exported?(plug, :call, 2) do
-      {:call, plug, opts}
+      {:call, plug, opts, guard}
     else
       raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
   end
 
-  defp init_fun_plug(plug, opts) do
-    {:fun, plug, opts}
+  defp init_fun_plug(plug, opts, guard) do
+    {:fun, plug, opts, guard}
   end
 
-  defp quote_plug({:call, plug, opts}, acc) do
+  defp quote_plug({:call, plug, opts, guard}, acc) do
+    call = quote do: unquote(plug).call(conn, unquote(Macro.escape(opts)))
+
     quote do
-      case unquote(plug).call(conn, unquote(Macro.escape(opts))) do
+      case unquote(compile_guard(call, guard)) do
         %Conn{halted: true} = conn -> conn
         %Conn{} = conn             -> unquote(acc)
         _ -> raise "expected #{unquote(inspect plug)}.call/2 to return a Plug.Conn"
@@ -119,12 +121,27 @@ defmodule Plug.Builder do
     end
   end
 
-  defp quote_plug({:fun, plug, opts}, acc) do
+  defp quote_plug({:fun, plug, opts, guard}, acc) do
+    call = quote do: unquote(plug)(conn, unquote(Macro.escape(opts)))
+
     quote do
-      case unquote(plug)(conn, unquote(Macro.escape(opts))) do
+      case unquote(compile_guard(call, guard)) do
         %Conn{halted: true} = conn -> conn
         %Conn{} = conn             -> unquote(acc)
         _ -> raise "expected #{unquote(plug)}/2 to return a Plug.Conn"
+      end
+    end
+  end
+
+  defp compile_guard(call, true) do
+    call
+  end
+
+  defp compile_guard(call, guard) do
+    quote do
+      case true do
+        true when unquote(guard) -> unquote(call)
+        true -> conn
       end
     end
   end
