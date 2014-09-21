@@ -67,7 +67,7 @@ defmodule Plug.Session do
     fn conn ->
       {sid, session} =
         if cookie = conn.cookies[key] do
-          store.get(cookie, store_config)
+          store.get(conn, cookie, store_config)
         else
           {nil, %{}}
         end
@@ -87,13 +87,13 @@ defmodule Plug.Session do
           put_cookie(value, conn, config)
         :drop ->
           if sid do
-            delete_session(sid, config)
+            delete_session(sid, conn, config)
             delete_cookie(conn, config)
           else
             conn
           end
         :renew ->
-          if sid, do: delete_session(sid, config)
+          if sid, do: delete_session(sid, conn, config)
           value = put_session(nil, conn, config)
           put_cookie(value, conn, config)
         nil ->
@@ -103,10 +103,10 @@ defmodule Plug.Session do
   end
 
   defp put_session(sid, conn, %{store: store, store_config: store_config}),
-    do: store.put(sid, conn.private[:plug_session], store_config)
+    do: store.put(conn, sid, conn.private[:plug_session], store_config)
 
-  defp delete_session(sid, %{store: store, store_config: store_config}),
-    do: store.delete(sid, store_config)
+  defp delete_session(sid, conn, %{store: store, store_config: store_config}),
+    do: store.delete(conn, sid, store_config)
 
   defp put_cookie(value, conn, %{cookie_opts: cookie_opts, key: key}),
     do: Conn.put_resp_cookie(conn, key, value, cookie_opts)

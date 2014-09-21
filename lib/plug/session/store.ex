@@ -25,7 +25,7 @@ defmodule Plug.Session.Store do
   The session id may be nil in case the cookie does not identify any
   value in the store. The session contents must be a map.
   """
-  defcallback get(cookie, Plug.opts) :: {sid, session}
+  defcallback get(Plug.Conn.t, cookie, Plug.opts) :: {sid, session}
 
   @moduledoc """
   Stores the session associated with given session id.
@@ -33,10 +33,10 @@ defmodule Plug.Session.Store do
   If `nil` is given as id, a new session id should be
   generated and returned.
   """
-  defcallback put(sid, any, Plug.opts) :: cookie
+  defcallback put(Plug.Conn.t, sid, any, Plug.opts) :: cookie
 
   @moduledoc """
   Removes the session associated with given session id from the store.
   """
-  defcallback delete(sid, Plug.opts) :: :ok
+  defcallback delete(Plug.Conn.t, sid, Plug.opts) :: :ok
 end

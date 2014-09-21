@@ -31,23 +31,23 @@ defmodule Plug.Session.ETS do
     Keyword.fetch!(opts, :table)
   end
 
-  def get(sid, table) do
+  def get(_conn, sid, table) do
     case :ets.lookup(table, sid) do
       [{^sid, data}] -> {sid, data}
       [] -> {nil, %{}}
     end
   end
 
-  def put(nil, data, table) do
+  def put(_conn, nil, data, table) do
     put_new(data, table)
   end
 
-  def put(sid, data, table) do
+  def put(_conn, sid, data, table) do
     :ets.insert(table, {sid, data})
     sid
   end
 
-  def delete(sid, table) do
+  def delete(_conn, sid, table) do
     :ets.delete(table, sid)
     :ok
   end
@@ -59,7 +59,7 @@ defmodule Plug.Session.ETS do
     if :ets.insert_new(table, {sid, data}) do
       sid
     else
-      put(data, table, counter + 1)
+      put_new(data, table, counter + 1)
     end
   end
 end

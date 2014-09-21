@@ -4,107 +4,111 @@ defmodule Plug.Session.CookieTest do
 
   alias Plug.Session.COOKIE, as: CookieStore
 
-  @secret_key_base String.duplicate("abcdef0123456789", 8)
   @default_opts [
     store: :cookie,
     key: "foobar",
-    secret_key_base: @secret_key_base,
     encryption_salt: "encrypted cookie salt",
     signing_salt: "signing salt"
   ]
 
-  setup do
-    opts = Plug.Session.init(Keyword.merge(@default_opts, encrypt: false))
-    encrypted_opts = Plug.Session.init(@default_opts)
+  @secret String.duplicate("abcdef0123456789", 8)
+  @signing_opts Plug.Session.init(Keyword.put(@default_opts, :encrypt, false))
+  @encrypted_opts Plug.Session.init(@default_opts)
 
-    conn = Plug.Session.call(conn(:get, "/"), opts) |> fetch_session
-    encrypted = Plug.Session.call(conn(:get, "/"), encrypted_opts) |> fetch_session
-
-    {:ok, %{conn: conn, encrypted: encrypted}}
+  defp sign_conn(conn, secret \\ @secret) do
+    put_in(conn.secret_key_base, secret)
+    |> Plug.Session.call(@signing_opts)
+    |> fetch_session
   end
 
-  test "requires secret_key_base option , socket: nilto be defined" do
-    assert_raise ArgumentError, ~r/cookie store expects a :secret_key_base option/, fn ->
-      Plug.Session.init(Keyword.delete(@default_opts, :secret_key_base))
-    end
+  defp encrypt_conn(conn) do
+    put_in(conn.secret_key_base, @secret)
+    |> Plug.Session.call(@encrypted_opts)
+    |> fetch_session
   end
 
   test "requires signing_salt option to be defined" do
-    assert_raise ArgumentError, ~r/expects a :signing_salt option/, fn ->
+    assert_raise ArgumentError, ~r/expects :signing_salt as option/, fn ->
       Plug.Session.init(Keyword.delete(@default_opts, :signing_salt))
     end
   end
 
-  test "requires the secret to be at least 64 bytes" do
-    assert_raise ArgumentError, ~r/must be at least 64 bytes/, fn ->
-      Plug.Session.init(Keyword.merge(@default_opts, secret_key_base: "abcdef"))
+  test "requires encrypted_salt option to be defined" do
+    assert_raise ArgumentError, ~r/expects :encryption_salt as option/, fn ->
+      Plug.Session.init(Keyword.delete(@default_opts, :encryption_salt))
     end
   end
 
-  test "session cookies are encoded and signed" do
-    opts = CookieStore.init(Keyword.merge(@default_opts, encrypt: false))
-    cookie = CookieStore.put(nil, %{foo: :bar}, opts)
-    refute cookie == %{foo: :bar}
-    assert decode_cookie(cookie) == %{foo: :bar}
+  test "requires the secret to be at least 64 bytes" do
+    assert_raise ArgumentError, ~r/to be at least 64 bytes/, fn ->
+      conn(:get, "/")
+      |> sign_conn("abcdef")
+      |> put_session(:foo, "bar")
+      |> send_resp(200, "OK")
+    end
   end
 
-  test "put session cookie", %{conn: conn} do
-    conn = put_session(conn, :foo, "bar")
-    conn = send_resp(conn, 200, "")
-    assert get_session(conn, :foo) == "bar"
+  ## Signed
+
+  test "session cookies are signed" do
+    conn = %{secret_key_base: @secret}
+    cookie = CookieStore.put(conn, nil, %{foo: :bar}, @signing_opts.store_config)
+    assert is_binary(cookie)
+    assert CookieStore.get(conn, cookie, @signing_opts.store_config) == {nil, %{foo: :bar}}
   end
 
-  test "get session cookie", %{conn: conn} do
-    conn = put_session(conn, :current_user, 1)
-    assert get_session(conn, :current_user) == 1
+  test "gets and sets signed session cookie" do
+    conn = conn(:get, "/")
+           |> sign_conn()
+           |> put_session(:foo, "bar")
+           |> send_resp(200, "")
+    assert conn(:get, "/")
+           |> recycle(conn)
+           |> sign_conn()
+           |> get_session(:foo) == "bar"
   end
 
-  test "delete session cookie", %{conn: conn} do
-    conn = put_session(conn, :foo, :bar)
-    assert get_session(conn, :foo) == :bar
-    conn = configure_session(conn, drop: true)
-    conn = send_resp(conn, 200, "")
-
-    assert conn.resp_cookies == %{}
+  test "deletes signed session cookie" do
+    conn = conn(:get, "/")
+           |> sign_conn()
+           |> put_session(:foo, :bar)
+           |> configure_session(drop: true)
+           |> send_resp(200, "")
+    assert conn(:get, "/")
+           |> recycle(conn)
+           |> sign_conn()
+           |> get_session(:foo) == nil
   end
 
-  test "encrypted session cookies are encoded and signed" do
-    opts = CookieStore.init(@default_opts)
-    cookie = CookieStore.put(nil, %{foo: :bar}, opts)
-    refute cookie == %{foo: :bar}
-    assert CookieStore.get(cookie, opts) == {nil, %{foo: :bar}}
+  ## Encrypted
+
+  test "session cookies are encrypted" do
+    conn = %{secret_key_base: @secret}
+    cookie = CookieStore.put(conn, nil, %{foo: :bar}, @encrypted_opts.store_config)
+    assert is_binary(cookie)
+    assert CookieStore.get(conn, cookie, @encrypted_opts.store_config) == {nil, %{foo: :bar}}
   end
 
-  test "put encrypted session cookie", %{encrypted: conn} do
-    conn = put_session(conn, :foo, "bar")
-    conn = send_resp(conn, 200, "")
-    assert get_session(conn, :foo) == "bar"
+  test "gets and sets encrypted session cookie" do
+    conn = conn(:get, "/")
+           |> encrypt_conn()
+           |> put_session(:foo, "bar")
+           |> send_resp(200, "")
+    assert conn(:get, "/")
+           |> recycle(conn)
+           |> encrypt_conn()
+           |> get_session(:foo) == "bar"
   end
 
-  test "get encrypted session cookie", %{encrypted: conn} do
-    conn = put_session(conn, :current_user, 1)
-    assert get_session(conn, :current_user) == 1
-  end
-
-  test "delete encrypted session cookie", %{encrypted: conn} do
-    conn = put_session(conn, :foo, :bar)
-    assert get_session(conn, :foo) == :bar
-    conn = configure_session(conn, drop: true)
-    conn = send_resp(conn, 200, "")
-
-    assert conn.resp_cookies == %{}
-  end
-
-  test "converts store reference" do
-    opts = Plug.Session.init(@default_opts)
-    assert opts.store == Plug.Session.COOKIE
-  end
-
-  defp decode_cookie(cookie) do
-    cookie
-    |> String.split("--")
-    |> List.first
-    |> Base.decode64!
-    |> :erlang.binary_to_term
+  test "deletes encrypted session cookie" do
+    conn = conn(:get, "/")
+           |> encrypt_conn()
+           |> put_session(:foo, :bar)
+           |> configure_session(drop: true)
+           |> send_resp(200, "")
+    assert conn(:get, "/")
+           |> recycle(conn)
+           |> encrypt_conn()
+           |> get_session(:foo) == nil
   end
 end

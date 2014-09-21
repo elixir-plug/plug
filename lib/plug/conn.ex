@@ -58,6 +58,10 @@ defmodule Plug.Conn do
   * `assigns` - shared user data as a dict
   * `state` - the connection state
   * `halted` - the boolean status on whether the stack was halted
+  * `secret_key_base` - a secret key used to verify and encrypt cookies.
+    the field must be set manually whenever one of those features are used.
+    This data must be kept in the connection and never used directly, always
+    use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it.
 
   The connection state is used to track the connection lifecycle. It starts
   as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
@@ -72,73 +76,76 @@ defmodule Plug.Conn do
   * `private` - shared library data as a dict
   """
 
-  @type adapter      :: {module, term}
-  @type assigns      :: %{atom => any}
-  @type before_send  :: [(t -> t)]
-  @type body         :: iodata | nil
-  @type cookies      :: %{binary => binary} | Unfetched.t
-  @type headers      :: [{binary, binary}]
-  @type host         :: binary
-  @type int_status   :: non_neg_integer | nil
-  @type method       :: binary
-  @type scheme       :: :http | :https
-  @type segments     :: [binary]
-  @type state        :: :unset | :set | :file | :chunked | :sent
-  @type status       :: atom | int_status
-  @type param        :: binary | %{binary => param} | [param]
-  @type params       :: %{binary => param}
-  @type peer         :: {:inet.ip_address, :inet.port_number}
-  @type query_string :: String.t
-  @type resp_cookies :: %{binary => %{}}
-  @type halted       :: boolean
-  @type t            :: %__MODULE__{
-                         adapter:      adapter,
-                         assigns:      assigns,
-                         before_send:  before_send,
-                         cookies:      cookies,
-                         host:         host,
-                         method:       method,
-                         params:       params | Unfetched.t,
-                         path_info:    segments,
-                         port:         0..65335,
-                         private:      assigns,
-                         query_string: query_string,
-                         peer:         peer,
-                         remote_ip:    :inet.ip_address,
-                         req_cookies:  cookies,
-                         req_headers:  headers,
-                         resp_body:    body,
-                         resp_cookies: resp_cookies,
-                         resp_headers: headers,
-                         scheme:       scheme,
-                         script_name:  segments,
-                         state:        state,
-                         status:       int_status}
+  @type adapter         :: {module, term}
+  @type assigns         :: %{atom => any}
+  @type before_send     :: [(t -> t)]
+  @type body            :: iodata | nil
+  @type cookies         :: %{binary => binary} | Unfetched.t
+  @type halted          :: boolean
+  @type headers         :: [{binary, binary}]
+  @type host            :: binary
+  @type int_status      :: non_neg_integer | nil
+  @type method          :: binary
+  @type param           :: binary | %{binary => param} | [param]
+  @type params          :: %{binary => param}
+  @type peer            :: {:inet.ip_address, :inet.port_number}
+  @type query_string    :: String.t
+  @type resp_cookies    :: %{binary => %{}}
+  @type scheme          :: :http | :https
+  @type secret_key_base :: binary | nil
+  @type segments        :: [binary]
+  @type state           :: :unset | :set | :file | :chunked | :sent
+  @type status          :: atom | int_status
 
-  defstruct adapter:      {Plug.Conn, nil},
-            assigns:      %{},
-            before_send:  [],
-            cookies:      %Unfetched{aspect: :cookies},
-            host:         "www.example.com",
-            method:       "GET",
-            params:       %Unfetched{aspect: :params},
-            path_info:    [],
-            port:         0,
-            private:      %{},
-            query_string: "",
-            peer:         nil,
-            remote_ip:    nil,
-            req_cookies:  %Unfetched{aspect: :cookies},
-            req_headers:  [],
-            resp_body:    nil,
-            resp_cookies: %{},
-            resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
-            scheme:       :http,
-            script_name:  [],
-            state:        :unset,
-            status:       nil,
-            halted:       false
+  @type t :: %__MODULE__{
+              adapter:         adapter,
+              assigns:         assigns,
+              before_send:     before_send,
+              cookies:         cookies,
+              host:            host,
+              method:          method,
+              params:          params | Unfetched.t,
+              path_info:       segments,
+              port:            0..65335,
+              private:         assigns,
+              query_string:    query_string,
+              peer:            peer,
+              remote_ip:       :inet.ip_address,
+              req_cookies:     cookies,
+              req_headers:     headers,
+              resp_body:       body,
+              resp_cookies:    resp_cookies,
+              resp_headers:    headers,
+              scheme:          scheme,
+              script_name:     segments,
+              secret_key_base: secret_key_base,
+              state:           state,
+              status:          int_status}
 
+  defstruct adapter:         {Plug.Conn, nil},
+            assigns:         %{},
+            before_send:     [],
+            cookies:         %Unfetched{aspect: :cookies},
+            halted:          false,
+            host:            "www.example.com",
+            method:          "GET",
+            params:          %Unfetched{aspect: :params},
+            path_info:       [],
+            port:            0,
+            private:         %{},
+            query_string:    "",
+            peer:            nil,
+            remote_ip:       nil,
+            req_cookies:     %Unfetched{aspect: :cookies},
+            req_headers:     [],
+            resp_body:       nil,
+            resp_cookies:    %{},
+            resp_headers:    [{"cache-control", "max-age=0, private, must-revalidate"}],
+            scheme:          :http,
+            script_name:     [],
+            secret_key_base: nil,
+            state:           :unset,
+            status:          nil
 
   defmodule NotSentError do
     defexception message: "no response was set nor sent from the connection"
