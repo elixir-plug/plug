@@ -21,46 +21,39 @@ defmodule Plug.Crypto.KeyGenerator do
                     Defaults to `:sha`;
   """
   def generate(secret, salt, opts \\ []) do
-    opts = opts
-    |> Keyword.put_new(:iterations, 1000)
-    |> Keyword.put_new(:length, 32)
-    |> Keyword.put_new(:digest, :sha)
-    |> Enum.into(%{})
+    iterations = Keyword.get(opts, :iterations, 1000)
+    length = Keyword.get(opts, :length, 32)
+    digest = Keyword.get(opts, :digest, :sha)
 
-    generate(mac_fun(opts[:digest]), secret, salt, opts, 1, [])
-  end
-
-  defp generate(_fun, _secret, _salt, %{length: length}, _, _)
-    when length > @max_length, do: {:error, :derived_key_too_long}
-
-  defp generate(fun, secret, salt, opts, block_index, acc) do
-    length = opts[:length]
-    if IO.iodata_length(acc) > length do
-      key = acc |> Enum.reverse |> IO.iodata_to_binary
-      <<bin::binary-size(length), _::binary>> = key
-      bin
+    if length > @max_length do
+      raise ArgumentError, "length must be less than or equal to #{@max_length}"
     else
-      block = generate(fun, secret, salt, opts, block_index, 1, "", "")
-      generate(fun, secret, salt, opts, block_index + 1, [block, acc])
+      generate(mac_fun(digest, secret), salt, iterations, length, 1, [], 0)
     end
   end
 
-  defp generate(_fun, _secret, _salt, %{iterations: iterations}, _block_index, iteration, _prev, acc)
-    when iteration > iterations, do: acc
-
-  defp generate(fun, secret, salt, opts, block_index, 1, _prev, _acc) do
-    initial = fun.(secret, <<salt::binary, block_index::integer-size(32)>>)
-    generate(fun, secret, salt, opts, block_index, 2, initial, initial)
+  defp generate(_fun, _salt, _iterations, max_length, _block_index, acc, length)
+      when length >= max_length do
+    key = acc |> Enum.reverse |> IO.iodata_to_binary
+    <<bin::binary-size(max_length), _::binary>> = key
+    bin
   end
 
-  defp generate(fun, secret, salt, opts, block_index, iteration, prev, acc) do
-    next = fun.(secret, prev)
-    generate(fun, secret, salt, opts, block_index, iteration + 1, next, :crypto.exor(next, acc))
+  defp generate(fun, salt, iterations, max_length, block_index, acc, length) do
+    initial = fun.(<<salt::binary, block_index::integer-size(32)>>)
+    block   = iterate(fun, iterations - 1, initial, initial)
+    generate(fun, salt, iterations, max_length, block_index + 1,
+             [block, acc], byte_size(block) + length)
   end
 
-  defp mac_fun(digest) do
-    fn key, data ->
-      :crypto.hmac(digest, key, data)
-    end
+  defp iterate(_fun, 0, _prev, acc), do: acc
+
+  defp iterate(fun, iteration, prev, acc) do
+    next = fun.(prev)
+    iterate(fun, iteration - 1, next, :crypto.exor(next, acc))
+  end
+
+  defp mac_fun(digest, secret) do
+    &:crypto.hmac(digest, secret, &1)
   end
 end

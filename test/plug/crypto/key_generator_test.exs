@@ -6,9 +6,10 @@ defmodule Plug.Crypto.KeyGeneratorTest do
 
   @max_length bsl(1, 32) - 1
 
-  test "returns an :error tuple when the length is too large" do
-    error = {:error, :derived_key_too_long}
-    assert generate("secret", "salt", length: @max_length + 1) == error
+  test "returns an error for length exceeds max_length" do
+    assert_raise ArgumentError, ~r/length must be less than or equal/, fn ->
+      generate("secret", "salt", length: @max_length + 1)
+    end
   end
 
   test "it works" do
@@ -35,9 +36,7 @@ defmodule Plug.Crypto.KeyGeneratorTest do
     key = generate("password", "salt")
     assert byte_size(key) == 32
     assert to_hex(key) == "6e88be8bad7eae9d9e10aa061224034fed48d03fcbad968b56006784539d5214"
-  end
 
-  test ":sha256" do
     key = generate("password", "salt", digest: :sha256)
     assert byte_size(key) == 32
     assert to_hex(key) == "632c2812e46d4604102ba7618e9d6d7d2f8128f6266b4a03264d2a0460b7dcb3"
