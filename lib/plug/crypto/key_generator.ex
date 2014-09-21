@@ -15,15 +15,15 @@ defmodule Plug.Crypto.KeyGenerator do
 
   ## Options
 
-  * `:iterations` - defaults to 1000;
+  * `:iterations` - defaults to 1000 (increase to at least 2^16 if used for passwords);
   * `:length`     - a length in octets for the derived key. Defaults to 32;
   * `:digest`     - an hmac function to use as the pseudo-random function.
-                    Defaults to `:sha`;
+                    Defaults to `:sha256`;
   """
   def generate(secret, salt, opts \\ []) do
     iterations = Keyword.get(opts, :iterations, 1000)
     length = Keyword.get(opts, :length, 32)
-    digest = Keyword.get(opts, :digest, :sha)
+    digest = Keyword.get(opts, :digest, :sha256)
 
     if length > @max_length do
       raise ArgumentError, "length must be less than or equal to #{@max_length}"
