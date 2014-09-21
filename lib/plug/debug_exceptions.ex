@@ -2,7 +2,7 @@ defmodule Plug.DebugExceptions do
   @moduledoc """
   Provides tools for debugging in development.
 
-  This module can be used in a module that has a plug stack so it catches errors:
+  This module can be used in a any Plug module so it catches errors:
 
       defmodule MyApp do
         use Plug.Builder
@@ -34,7 +34,7 @@ defmodule Plug.DebugExceptions do
         try do
           super(conn, opts)
         catch
-          _, err ->
+          kind, err ->
             debug_error(conn, err)
         end
       end
@@ -56,7 +56,7 @@ defmodule Plug.DebugExceptions do
           exception_type = exception.__struct__
 
           """
-          #{inspect exception_type}: #{Exception.message(exception)}
+          #{Exception.format_banner :error, exception, stacktrace}
           #{Exception.format_stacktrace stacktrace}
           """
         end

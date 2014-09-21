@@ -1,5 +1,5 @@
 defmodule Plug.DebugExceptionsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use Plug.Test
   import ExUnit.CaptureIO
 
@@ -45,14 +45,13 @@ defmodule Plug.DebugExceptionsTest do
   end
 
   test "call/2 is overridden and error is caught" do
-    {conn, log} = capture_log fn ->
+    {conn, _log} = capture_log fn ->
       conn(:get, "/") |> Router.call([])
     end
 
     assert conn.state == :sent
     assert get_resp_header(conn, "content-type") == ["text/html; charset=utf-8"]
     assert String.contains?(conn.resp_body, "<h2>(ArgumentError) argument error</h2>")
-    assert String.contains?(List.first(log), "ArgumentError: argument error")
   end
 
   test "verify logger" do
@@ -60,7 +59,9 @@ defmodule Plug.DebugExceptionsTest do
       conn(:get, "/") |> Router.call([])
     end
 
-    assert String.contains?(List.first(log), "[error] ArgumentError: argument error")
+    assert String.contains?(List.first(log), "[error] ** (ArgumentError) argument error")
+    trace = "    test/plug/debug_exceptions_test.exs:13: Plug.DebugExceptionsTest.Router.boom/2"
+    assert Enum.member?(log, trace)
   end
 
   test "debug template is overridable" do
