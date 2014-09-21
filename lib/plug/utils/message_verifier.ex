@@ -1,4 +1,4 @@
-defmodule Plug.MessageVerifier do
+defmodule Plug.Utils.MessageVerifier do
   @moduledoc """
   `MessageVerifier` makes it easy to generate and verify messages
   which are signed to prevent tampering.
@@ -9,15 +9,17 @@ defmodule Plug.MessageVerifier do
   """
 
   use Bitwise
+  import Plug.Serializer
 
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
   """
-  def verify(secret, encoded) do
+  def verify(secret, encoded, serializer \\ :elixir) do
+    
     case String.split(encoded, "--") do
       [content, digest] when content != "" and digest != "" ->
         if secure_compare(digest(secret, content), digest) do
-          {:ok, content |> Base.decode64! |> :erlang.binary_to_term}
+          { :ok, content |> Base.decode64! |> convert_serializer(serializer).decode}
         else
           :error
         end
@@ -29,8 +31,8 @@ defmodule Plug.MessageVerifier do
   @doc """
   Generates an encoded and signed binary for the given term.
   """
-  def generate(secret, term) do
-    encoded = term |> :erlang.term_to_binary |> Base.encode64
+  def generate(secret, term, serializer \\ :elixir) do
+    encoded = term |> convert_serializer(serializer).encode |> Base.encode64
     encoded <> "--" <> digest(secret, encoded)
   end
 

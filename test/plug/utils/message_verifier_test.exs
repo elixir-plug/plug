@@ -1,7 +1,7 @@
-defmodule Plug.MessageVerifierTest do
+defmodule Plug.Utils.MessageVerifierTest do
   use ExUnit.Case, async: true
 
-  alias Plug.MessageVerifier, as: MV
+  alias Plug.Utils.MessageVerifier, as: MV
 
   test "generates a signed message" do
     [content, encoded] = String.split MV.generate("secret", :hello), "--"
