@@ -2,10 +2,19 @@ defmodule Plug.Session.COOKIE do
   @moduledoc """
   Stores the session in a cookie.
 
-  Implements a cookie store. This cookie store is based on
-  `Plug.Crypto.MessageVerifier` and `Plug.Crypto.Message.Encryptor`
-  which encrypts and signs each cookie to ensure they won't be
-  tampered with.
+  This cookie store is based on `Plug.Crypto.MessageVerifier`
+  and `Plug.Crypto.Message.Encryptor` which encrypts and signs
+  each cookie to ensure they can't be read nor tampered with.
+
+  Since this store uses crypto features, it requires you to
+  set the `:secret_key_base` field in your connection. This
+  can be easily achieved with a plug:
+
+      plug :put_secret_key_base
+
+      def put_secret_key_base(conn, _) do
+        put_in conn.secret_key_base, "-- LONG STRING WITH AT LEAST 64 BYTES --"
+      end
 
   ## Options
 
@@ -24,8 +33,8 @@ defmodule Plug.Session.COOKIE do
       # Use the session plug with the table name
       plug Plug.Session, store: :cookie,
                          key: "_my_app_session",
-                         encryption_salt: Application.get_env(:plug, :encryption_salt),
-                         signing_salt: Application.get_env(:plug, :signing_salt)
+                         encryption_salt: "cookie store encryption salt",
+                         signing_salt: "cookie store signing salt"
   """
 
   @behaviour Plug.Session.Store

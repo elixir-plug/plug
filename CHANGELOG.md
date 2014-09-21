@@ -1,11 +1,15 @@
 ## Changelog
 
-## v0.7.1-dev
+## v0.8.0
 
 * Enhancements
   * Add `fetch_session/2`, `fetch_params/2` and `fetch_cookies/2` so they can be pluggable
   * Raise an error message on invalid router indentifiers
   * Add `put_status/2` and support atom status codes
+  * Add `secret_key_base` field to the connection
+
+* Backwards incompatible changes
+  * Add `encryption_salt` and `signing_salt` to the CookieStore and derive actual keys from `secret_key_base`
 
 ## v0.7.0
 
