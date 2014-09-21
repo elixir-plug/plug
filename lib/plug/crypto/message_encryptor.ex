@@ -21,33 +21,25 @@ defmodule Plug.Crypto.MessageEncryptor do
 
       data = %{current_user: %{name: "José"}}
       encrypted = MessageEncryptor.encrypt_and_sign(encryptor, data)
-      decrypted = MessageEncryptor.decrypt_and_verify(encryptor, encrypted)
+      decrypted = MessageEncryptor.verify_and_decrypt(encryptor, encrypted)
       decrypted.current_user.name # => "José"
   """
 
   alias Plug.Crypto.MessageVerifier
 
-  def new(secret, sign_secret, opts \\ []) do
-    opts = opts
-    |> Keyword.put_new(:cipher, :aes_cbc256)
-
-    %{secret: secret,
-      sign_secret: sign_secret,
-      cipher: opts[:cipher]}
-  end
-
   @doc """
   Encrypts and signs a message.
   """
-  def encrypt_and_sign(message, encryptor) when is_binary(message) do
+  def encrypt_and_sign(message, secret, sign_secret, cipher \\ :aes_cbc256)
+      when is_binary(message) and is_binary(secret) and is_binary(sign_secret) do
     iv = :crypto.strong_rand_bytes(16)
 
-    encrypted = message
+    message
     |> pad_message
-    |> encrypt(encryptor.cipher, encryptor.secret, iv)
-
-    encrypted = "#{Base.encode64(encrypted)}--#{Base.encode64(iv)}"
-    MessageVerifier.sign(encrypted, encryptor.sign_secret)
+    |> encrypt(cipher, secret, iv)
+    |> Base.encode64()
+    |> Kernel.<>("--#{Base.encode64(iv)}")
+    |> MessageVerifier.sign(sign_secret)
   end
 
   @doc """
@@ -56,14 +48,12 @@ defmodule Plug.Crypto.MessageEncryptor do
   We need to verify the message in order to avoid padding attacks.
   Reference: http://www.limited-entropy.com/padding-oracle-attacks
   """
-  def decrypt_and_verify(encrypted, encryptor) when is_binary(encrypted) do
-    case MessageVerifier.verify(encrypted, encryptor.sign_secret) do
+  def verify_and_decrypt(encrypted, secret, sign_secret, cipher \\ :aes_cbc256)
+      when is_binary(encrypted) and is_binary(secret) and is_binary(sign_secret) do
+    case MessageVerifier.verify(encrypted, sign_secret) do
       {:ok, verified} ->
         [encrypted, iv] = String.split(verified, "--") |> Enum.map(&Base.decode64!/1)
-
-        {:ok, encrypted
-              |> decrypt(encryptor.cipher, encryptor.secret, iv)
-              |> unpad_message}
+        encrypted |> decrypt(cipher, secret, iv) |> unpad_message
       :error ->
         :error
     end
@@ -86,7 +76,9 @@ defmodule Plug.Crypto.MessageEncryptor do
   defp unpad_message(msg) do
     <<padding_size, rest::binary>> = msg
     msg_size = byte_size(rest) - padding_size
-    <<msg::binary-size(msg_size), _::binary>> = rest
-    msg
+    case rest do
+      <<msg::binary-size(msg_size), _::binary>> -> {:ok, msg}
+      _ -> :error
+    end
   end
 end

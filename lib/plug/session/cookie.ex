@@ -36,27 +36,25 @@ defmodule Plug.Session.COOKIE do
   alias Plug.Crypto.MessageEncryptor
 
   def init(opts) do
-    opts
-    |> Keyword.put_new(:encrypt, true)
-    |> Keyword.put_new(:serializer, :elixir)
-    |> validate_secret_key_base
-    |> generate_signing_key
-    |> generate_encryption_key
-    |> generate_encryptor_if_encrypted
+    %{secret_key_base: validate_secret_key_base(opts),
+      encryption_key: generate_encryption_key(opts),
+      signing_key: generate_signing_key(opts)}
   end
 
   def get(cookie, opts) do
-    case opts[:encrypt] do
-      true  -> decrypt_and_verify(cookie, opts)
-      false -> verify(cookie, opts)
+    if key = opts.encryption_key do
+      MessageEncryptor.verify_and_decrypt(cookie, key, opts.signing_key)
+    else
+      MessageVerifier.verify(cookie, opts.signing_key)
     end |> decode()
   end
 
   def put(_sid, term, opts) do
     binary = encode(term)
-    case opts[:encrypt] do
-      true  -> encrypt_and_sign(binary, opts)
-      false -> sign(binary, opts)
+    if key = opts.encryption_key do
+      MessageEncryptor.encrypt_and_sign(binary, key, opts.signing_key)
+    else
+      MessageVerifier.sign(binary, opts.signing_key)
     end
   end
 
@@ -71,22 +69,6 @@ defmodule Plug.Session.COOKIE do
     {nil, :erlang.binary_to_term(binary)}
   defp decode(:error), do:
     {nil, %{}}
-
-  defp decrypt_and_verify(cookie, opts) do
-    MessageEncryptor.decrypt_and_verify(cookie, opts[:encryptor])
-  end
-
-  defp verify(cookie, opts) do
-    MessageVerifier.verify(cookie, opts[:signing_key])
-  end
-
-  defp encrypt_and_sign(binary, opts) do
-    MessageEncryptor.encrypt_and_sign(binary, opts[:encryptor])
-  end
-
-  defp sign(binary, opts) do
-    MessageVerifier.sign(binary, opts[:signing_key])
-  end
 
   defp validate_secret_key_base(opts) do
     cond do
@@ -104,29 +86,18 @@ defmodule Plug.Session.COOKIE do
       nil ->
         raise ArgumentError, "cookie store expects a :signing_salt option"
       salt ->
-        key = KeyGenerator.generate(opts[:secret_key_base], salt)
-        Keyword.put(opts, :signing_key, key)
+        KeyGenerator.generate(opts[:secret_key_base], salt)
     end
   end
 
   defp generate_encryption_key(opts) do
-    case opts[:encryption_salt] do
-      nil ->
-        raise ArgumentError, "encrypted cookies expect an :encryption_salt option"
-      salt ->
-        key = KeyGenerator.generate(opts[:secret_key_base], salt)
-        Keyword.put(opts, :encryption_key, key)
-    end
-  end
-
-  defp generate_encryptor_if_encrypted(opts) do
-    case opts[:encrypt] do
-      true ->
-        opts = generate_encryption_key(opts)
-        encryptor = MessageEncryptor.new(opts[:encryption_key], opts[:signing_key])
-        Keyword.put(opts, :encryptor, encryptor)
-      _ ->
-        opts
+    if Keyword.get(opts, :encrypt, true) do
+      case opts[:encryption_salt] do
+        nil ->
+          raise ArgumentError, "encrypted cookies expect an :encryption_salt option"
+        salt ->
+          KeyGenerator.generate(opts[:secret_key_base], salt)
+      end
     end
   end
 end
