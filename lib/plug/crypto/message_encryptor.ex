@@ -1,4 +1,4 @@
-defmodule Plug.Utils.MessageEncryptor do
+defmodule Plug.Crypto.MessageEncryptor do
   @moduledoc ~S"""
   `MessageEncryptor` is a simple way to encrypt values which get stored
   somewhere you don't trust.
@@ -25,7 +25,7 @@ defmodule Plug.Utils.MessageEncryptor do
       decrypted.current_user.name # => "José"
   """
 
-  alias Plug.Utils.MessageVerifier
+  alias Plug.Crypto.MessageVerifier
 
   def new(secret, sign_secret, opts \\ []) do
     opts = opts
@@ -36,7 +36,10 @@ defmodule Plug.Utils.MessageEncryptor do
       cipher: opts[:cipher]}
   end
 
-  def encrypt_and_sign(encryptor, message) when is_binary(message) do
+  @doc """
+  Encrypts and signs a message.
+  """
+  def encrypt_and_sign(message, encryptor) when is_binary(message) do
     iv = :crypto.strong_rand_bytes(16)
 
     encrypted = message
@@ -44,17 +47,17 @@ defmodule Plug.Utils.MessageEncryptor do
     |> encrypt(encryptor.cipher, encryptor.secret, iv)
 
     encrypted = "#{Base.encode64(encrypted)}--#{Base.encode64(iv)}"
-    MessageVerifier.sign(encryptor.sign_secret, encrypted)
+    MessageVerifier.sign(encrypted, encryptor.sign_secret)
   end
 
   @doc """
-  Decrypt and verify a message.
+  Decrypts and verifies a message.
 
   We need to verify the message in order to avoid padding attacks.
   Reference: http://www.limited-entropy.com/padding-oracle-attacks
   """
-  def decrypt_and_verify(encryptor, encrypted) when is_binary(encrypted) do
-    case MessageVerifier.verify(encryptor.sign_secret, encrypted) do
+  def decrypt_and_verify(encrypted, encryptor) when is_binary(encrypted) do
+    case MessageVerifier.verify(encrypted, encryptor.sign_secret) do
       {:ok, verified} ->
         [encrypted, iv] = String.split(verified, "--") |> Enum.map(&Base.decode64!/1)
 

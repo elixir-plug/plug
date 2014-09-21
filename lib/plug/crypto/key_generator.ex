@@ -1,4 +1,4 @@
-defmodule Plug.Utils.KeyGenerator do
+defmodule Plug.Crypto.KeyGenerator do
   @moduledoc """
   `KeyGenerator` is a simple implementation of PBFDF2.
 

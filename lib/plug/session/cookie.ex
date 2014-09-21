@@ -31,9 +31,9 @@ defmodule Plug.Session.COOKIE do
 
   @behaviour Plug.Session.Store
 
-  alias Plug.Utils.KeyGenerator
-  alias Plug.Utils.MessageVerifier
-  alias Plug.Utils.MessageEncryptor
+  alias Plug.Crypto.KeyGenerator
+  alias Plug.Crypto.MessageVerifier
+  alias Plug.Crypto.MessageEncryptor
 
   def init(opts) do
     opts
@@ -47,16 +47,16 @@ defmodule Plug.Session.COOKIE do
 
   def get(cookie, opts) do
     case opts[:encrypt] do
-      true  -> decrypt_and_verify(opts, cookie)
-      false -> verify(opts, cookie)
+      true  -> decrypt_and_verify(cookie, opts)
+      false -> verify(cookie, opts)
     end |> decode()
   end
 
   def put(_sid, term, opts) do
     binary = encode(term)
     case opts[:encrypt] do
-      true  -> encrypt_and_sign(opts, binary)
-      false -> sign(opts[:signing_key], binary)
+      true  -> encrypt_and_sign(binary, opts)
+      false -> sign(binary, opts)
     end
   end
 
@@ -72,20 +72,20 @@ defmodule Plug.Session.COOKIE do
   defp decode(:error), do:
     {nil, %{}}
 
-  defp decrypt_and_verify(opts, cookie) do
-    MessageEncryptor.decrypt_and_verify(opts[:encryptor], cookie)
+  defp decrypt_and_verify(cookie, opts) do
+    MessageEncryptor.decrypt_and_verify(cookie, opts[:encryptor])
   end
 
-  defp verify(opts, term) do
-    MessageVerifier.verify(opts[:signing_key], term)
+  defp verify(cookie, opts) do
+    MessageVerifier.verify(cookie, opts[:signing_key])
   end
 
-  defp encrypt_and_sign(opts, term) do
-    MessageEncryptor.encrypt_and_sign(opts[:encryptor], term)
+  defp encrypt_and_sign(binary, opts) do
+    MessageEncryptor.encrypt_and_sign(binary, opts[:encryptor])
   end
 
-  defp sign(key, term) do
-    MessageVerifier.sign(key, term)
+  defp sign(binary, opts) do
+    MessageVerifier.sign(binary, opts[:signing_key])
   end
 
   defp validate_secret_key_base(opts) do

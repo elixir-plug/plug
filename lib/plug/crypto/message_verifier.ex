@@ -1,4 +1,4 @@
-defmodule Plug.Utils.MessageVerifier do
+defmodule Plug.Crypto.MessageVerifier do
   @moduledoc """
   `MessageVerifier` makes it easy to generate and verify messages
   which are signed to prevent tampering.
@@ -13,8 +13,8 @@ defmodule Plug.Utils.MessageVerifier do
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
   """
-  def verify(secret, encoded) do
-    case String.split(encoded, "--") do
+  def verify(binary, secret) when is_binary(binary) and is_binary(secret) do
+    case String.split(binary, "--") do
       [content, digest] when content != "" and digest != "" ->
         if secure_compare(digest(secret, content), digest) do
           {:ok, Base.decode64!(content)}
@@ -29,7 +29,7 @@ defmodule Plug.Utils.MessageVerifier do
   @doc """
   Signs a binary according to the given secret.
   """
-  def sign(secret, binary) do
+  def sign(binary, secret) when is_binary(binary) and is_binary(secret) do
     encoded = Base.encode64(binary)
     encoded <> "--" <> digest(secret, encoded)
   end
