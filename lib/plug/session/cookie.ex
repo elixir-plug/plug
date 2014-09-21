@@ -86,7 +86,7 @@ defmodule Plug.Session.COOKIE do
       nil ->
         raise ArgumentError, "cookie store expects a :signing_salt option"
       salt ->
-        KeyGenerator.generate(opts[:secret_key_base], salt)
+        KeyGenerator.generate(opts[:secret_key_base], salt, cache: Plug.Keys)
     end
   end
 
@@ -96,7 +96,7 @@ defmodule Plug.Session.COOKIE do
         nil ->
           raise ArgumentError, "encrypted cookies expect an :encryption_salt option"
         salt ->
-          KeyGenerator.generate(opts[:secret_key_base], salt)
+          KeyGenerator.generate(opts[:secret_key_base], salt, cache: Plug.Keys)
       end
     end
   end
