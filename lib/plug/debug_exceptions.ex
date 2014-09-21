@@ -76,6 +76,8 @@ defmodule Plug.DebugExceptions do
         </html>
         """
       end
+
+      defoverridable [debug_template: 1, log_error: 1]
     end
   end
 end
