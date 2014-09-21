@@ -49,13 +49,14 @@ defmodule Plug.Session.COOKIE do
     case opts[:encrypt] do
       true  -> decrypt_and_verify(opts, cookie)
       false -> verify(opts, cookie)
-    end
+    end |> decode()
   end
 
   def put(_sid, term, opts) do
+    binary = encode(term)
     case opts[:encrypt] do
-      true  -> encrypt_and_sign(opts, term)
-      false -> sign(opts[:signing_key], term)
+      true  -> encrypt_and_sign(opts, binary)
+      false -> sign(opts[:signing_key], binary)
     end
   end
 
@@ -63,15 +64,20 @@ defmodule Plug.Session.COOKIE do
     :ok
   end
 
+  defp encode(term), do:
+    :erlang.term_to_binary(term)
+
+  defp decode({:ok, binary}), do:
+    {nil, :erlang.binary_to_term(binary)}
+  defp decode(:error), do:
+    {nil, %{}}
+
   defp decrypt_and_verify(opts, cookie) do
     MessageEncryptor.decrypt_and_verify(opts[:encryptor], cookie)
   end
 
   defp verify(opts, term) do
-    case MessageVerifier.verify(opts[:signing_key], term) do
-      {:ok, value} -> {nil, value}
-      :error       -> {nil, %{}}
-    end
+    MessageVerifier.verify(opts[:signing_key], term)
   end
 
   defp encrypt_and_sign(opts, term) do
@@ -79,7 +85,7 @@ defmodule Plug.Session.COOKIE do
   end
 
   defp sign(key, term) do
-    MessageVerifier.generate(key, term)
+    MessageVerifier.sign(key, term)
   end
 
   defp validate_secret_key_base(opts) do
@@ -117,7 +123,7 @@ defmodule Plug.Session.COOKIE do
     case opts[:encrypt] do
       true ->
         opts = generate_encryption_key(opts)
-        encryptor = MessageEncryptor.new(opts[:encryption_key], opts[:signing_key], serializer: opts[:serializer])
+        encryptor = MessageEncryptor.new(opts[:encryption_key], opts[:signing_key])
         Keyword.put(opts, :encryptor, encryptor)
       _ ->
         opts

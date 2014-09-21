@@ -16,9 +16,9 @@ defmodule Plug.Utils.MessageEncryptorTest do
   end
 
   test "it encrypts/decrypts a message", %{encryptor: encryptor} do
-    data = %{current_user: %{name: "José"}}
-    encrypted = ME.encrypt_and_sign(encryptor, data)
+    data = <<0, "helloworld", 0>>
+    encrypted = ME.encrypt_and_sign(encryptor, <<0, "helloworld", 0>>)
     decrypted = ME.decrypt_and_verify(encryptor, encrypted)
-    assert "José" == decrypted.current_user.name
+    assert decrypted == {:ok, data}
   end
 end

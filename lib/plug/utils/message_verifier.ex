@@ -9,17 +9,15 @@ defmodule Plug.Utils.MessageVerifier do
   """
 
   use Bitwise
-  import Plug.Serializer
 
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
   """
-  def verify(secret, encoded, serializer \\ :elixir) do
-    
+  def verify(secret, encoded) do
     case String.split(encoded, "--") do
       [content, digest] when content != "" and digest != "" ->
         if secure_compare(digest(secret, content), digest) do
-          { :ok, content |> Base.decode64! |> convert_serializer(serializer).decode}
+          {:ok, Base.decode64!(content)}
         else
           :error
         end
@@ -29,10 +27,10 @@ defmodule Plug.Utils.MessageVerifier do
   end
 
   @doc """
-  Generates an encoded and signed binary for the given term.
+  Signs a binary according to the given secret.
   """
-  def generate(secret, term, serializer \\ :elixir) do
-    encoded = term |> convert_serializer(serializer).encode |> Base.encode64
+  def sign(secret, binary) do
+    encoded = Base.encode64(binary)
     encoded <> "--" <> digest(secret, encoded)
   end
 

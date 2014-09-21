@@ -72,7 +72,7 @@ defmodule Plug.Session.CookieTest do
     opts = CookieStore.init(@default_opts)
     cookie = CookieStore.put(nil, %{foo: :bar}, opts)
     refute cookie == %{foo: :bar}
-    assert CookieStore.get(cookie, opts) == %{foo: :bar}
+    assert CookieStore.get(cookie, opts) == {nil, %{foo: :bar}}
   end
 
   test "put encrypted session cookie", %{encrypted: conn} do

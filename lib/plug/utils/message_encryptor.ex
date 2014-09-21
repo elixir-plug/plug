@@ -11,54 +11,59 @@ defmodule Plug.Utils.MessageEncryptor do
 
   ## Example
 
-    secret_key_base = "072d1e0157c008193fe48a670cce031faa4e..."
-    encrypted_cookie_salt = "encrypted cookie"
-    encrypted_signed_cookie_salt = "signed encrypted cookie"
+      secret_key_base = "072d1e0157c008193fe48a670cce031faa4e..."
+      encrypted_cookie_salt = "encrypted cookie"
+      encrypted_signed_cookie_salt = "signed encrypted cookie"
 
-    secret = KeyGenerator.generate(secret_key_base, encrypted_cookie_salt)
-    sign_secret = KeyGenerator.generate(secret_key_base, encrypted_signed_cookie_salt)
-    encryptor = MessageEncryptor.new(secret, sign_secret)
+      secret = KeyGenerator.generate(secret_key_base, encrypted_cookie_salt)
+      sign_secret = KeyGenerator.generate(secret_key_base, encrypted_signed_cookie_salt)
+      encryptor = MessageEncryptor.new(secret, sign_secret)
 
-    data = %{current_user: %{name: "José"}}
-    encrypted = MessageEncryptor.encrypt_and_sign(encryptor, data)
-    decrypted = MessageEncryptor.decrypt_and_verify(encryptor, encrypted)
-    decrypted.current_user.name # => "José"
+      data = %{current_user: %{name: "José"}}
+      encrypted = MessageEncryptor.encrypt_and_sign(encryptor, data)
+      decrypted = MessageEncryptor.decrypt_and_verify(encryptor, encrypted)
+      decrypted.current_user.name # => "José"
   """
 
   alias Plug.Utils.MessageVerifier
-  import Plug.Serializer
 
   def new(secret, sign_secret, opts \\ []) do
     opts = opts
     |> Keyword.put_new(:cipher, :aes_cbc256)
-    |> Keyword.put_new(:serializer, :elixir)
 
     %{secret: secret,
       sign_secret: sign_secret,
-      cipher: opts[:cipher],
-      serializer: convert_serializer(opts[:serializer])}
+      cipher: opts[:cipher]}
   end
 
-  def encrypt_and_sign(encryptor, message) do
+  def encrypt_and_sign(encryptor, message) when is_binary(message) do
     iv = :crypto.strong_rand_bytes(16)
 
     encrypted = message
-    |> encryptor.serializer.encode
     |> pad_message
     |> encrypt(encryptor.cipher, encryptor.secret, iv)
 
     encrypted = "#{Base.encode64(encrypted)}--#{Base.encode64(iv)}"
-    MessageVerifier.generate(encryptor.sign_secret, encrypted, :null)
+    MessageVerifier.sign(encryptor.sign_secret, encrypted)
   end
 
-  def decrypt_and_verify(encryptor, encrypted) do
-    {:ok, verified} = MessageVerifier.verify(encryptor.sign_secret, encrypted, :null)
-    [encrypted, iv] = String.split(verified, "--") |> Enum.map(&Base.decode64!/1)
+  @doc """
+  Decrypt and verify a message.
 
-    encrypted
-    |> decrypt(encryptor.cipher, encryptor.secret, iv)
-    |> unpad_message
-    |> encryptor.serializer.decode
+  We need to verify the message in order to avoid padding attacks.
+  Reference: http://www.limited-entropy.com/padding-oracle-attacks
+  """
+  def decrypt_and_verify(encryptor, encrypted) when is_binary(encrypted) do
+    case MessageVerifier.verify(encryptor.sign_secret, encrypted) do
+      {:ok, verified} ->
+        [encrypted, iv] = String.split(verified, "--") |> Enum.map(&Base.decode64!/1)
+
+        {:ok, encrypted
+              |> decrypt(encryptor.cipher, encryptor.secret, iv)
+              |> unpad_message}
+      :error ->
+        :error
+    end
   end
 
   defp encrypt(message, cipher, secret, iv) do
