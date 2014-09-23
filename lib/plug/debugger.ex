@@ -6,7 +6,9 @@ defmodule Plug.Debugger do
 
       defmodule MyApp do
         use Plug.Builder
-        use Plug.Debugger, [root: Path.expand("myapp"), sources: ["web/**/*"]]
+        use Plug.Debugger, root: Path.expand("myapp"),
+                           sources: ["web/**/*"],
+                           template_path: Path.expand("template.eex", "web/templates")
 
         plug :boom
 
@@ -26,6 +28,8 @@ defmodule Plug.Debugger do
 
   When using this module, make sure to specify `:root` and `:sources`. These are
   required so that the default debug_template will know where to look for files.
+  You will need to specify `:template_path` if you're plug copy is not found in
+  `deps` folder or if you want to use a different template file.
   """
 
   @doc false
@@ -77,8 +81,10 @@ defmodule Plug.Debugger do
 
       require EEx
 
-      EEx.function_from_file :defp, :debug_template,
-        Path.expand("template.eex", "lib/plug/debugger"), [:assigns]
+      template_path = unquote(env[:template_path]) ||
+        Path.expand("template.eex", "deps/plug/lib/plug/debugger")
+
+      EEx.function_from_file :defp, :debug_template, template_path, [:assigns]
 
       defoverridable [debug_template: 1, log_error: 1]
     end

@@ -5,7 +5,9 @@ defmodule Plug.DebuggerTest do
 
   defmodule Router do
     use Plug.Builder
-    use Plug.Debugger, [root: Path.expand("plug"), sources: ["plug/**/*"]]
+    use Plug.Debugger, root: Path.expand("plug"),
+                       sources: ["plug/**/*"],
+                       template_path: Path.expand("template.eex", "lib/plug/debugger")
 
     plug :boom
 
@@ -20,7 +22,9 @@ defmodule Plug.DebuggerTest do
 
   defmodule Logs do
     use Plug.Builder
-    use Plug.Debugger, [root: Path.expand("plug"), sources: ["plug/**/*"]]
+    use Plug.Debugger, root: Path.expand("plug"),
+                       sources: ["plug/**/*"],
+                       template_path: Path.expand("template.eex", "lib/plug/debugger")
 
     plug :boom
 
@@ -31,7 +35,9 @@ defmodule Plug.DebuggerTest do
 
   defmodule Exit do
     use Plug.Builder
-    use Plug.Debugger, [root: Path.expand("plug"), sources: ["plug/**/*"]]
+    use Plug.Debugger, root: Path.expand("plug"),
+                       sources: ["plug/**/*"],
+                       template_path: Path.expand("template.eex", "lib/plug/debugger")
 
     plug :boom
 
@@ -42,7 +48,9 @@ defmodule Plug.DebuggerTest do
 
   defmodule Overridable do
     use Plug.Builder
-    use Plug.Debugger, [root: Path.expand("plug"), sources: ["plug/**/*"]]
+    use Plug.Debugger, root: Path.expand("plug"),
+                       sources: ["plug/**/*"],
+                       template_path: Path.expand("template.eex", "lib/plug/debugger")
     require Logger
 
     plug :boom
@@ -81,10 +89,11 @@ defmodule Plug.DebuggerTest do
     {_conn, log} = capture_log fn ->
       conn(:get, "/") |> Logs.call([])
     end
-    trace = "    test/plug/debugger_test.exs:28: Plug.DebuggerTest.Logs.boom/2"
 
     assert String.contains?(List.first(log), "[error] ** (ArgumentError) argument error")
-    assert Enum.member?(log, trace)
+    assert Enum.any?(log, fn(trace) ->
+      String.contains?(trace, "test/plug/debugger_test.exs:")
+    end)
   end
 
   test "verify logger on exit" do
