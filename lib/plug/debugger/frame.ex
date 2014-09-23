@@ -62,7 +62,7 @@ defmodule Plug.Debugger.Frame do
     file = Path.relative_to(original, root)
 
     if Enum.member?(sources, file) do
-      context = :dynamo
+      context = :plug
       snippet = is_integer(line) and extract_snippet(file, line)
     else
       context = :all

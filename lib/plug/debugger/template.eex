@@ -342,13 +342,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
         left: 20px;
     }
 
-    ul.frames .icon.dynamo {
+    ul.frames .icon.plug {
         background: #808090;
         border-color: #555;
     }
 
-    ul.frames .icon.dynamo:before {
-        content: 'D';
+    ul.frames .icon.plug:before {
+        content: 'P';
         color: white;
         text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
     }
@@ -625,7 +625,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
     <section class="backtrace">
         <nav class="sidebar">
             <nav class="tabs">
-                <a href="#" id="dynamo_frames">Dynamo frames</a>
+                <a href="#" id="plug_frames">Plug frames</a>
                 <a href="#" id="all_frames">All frames</a>
             </nav>
             <ul class="frames">
@@ -666,7 +666,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
                               <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%=h line %></span></pre>
                             <% end %>
                           <% else %>
-                            <p class="no_snippet">No code snippets for code outside the Dynamo.</p>
+                            <p class="no_snippet">No code snippets for code outside the provided sources.</p>
                           <% end %>
                         </div>
                     </header>
@@ -714,18 +714,18 @@ function selectFrameInfo(index) {
 };
 
 (
-  document.querySelector(".frames li.dynamo") ||
+  document.querySelector(".frames li.plug") ||
   document.querySelector(".frames li")
 ).onclick();
 
-var dynamoFramesButton = document.getElementById("dynamo_frames");
+var plugFramesButton = document.getElementById("plug_frames");
 var allFramesButton = document.getElementById("all_frames");
 
-dynamoFramesButton.onclick = function() {
+plugFramesButton.onclick = function() {
     allFramesButton.className = "";
-    dynamoFramesButton.className = "selected";
+    plugFramesButton.className = "selected";
     for(var i = 0; i < allFrames.length; i++) {
-        if(allFrames[i].attributes["data-context"].value == "dynamo") {
+        if(allFrames[i].attributes["data-context"].value == "plug") {
             allFrames[i].style.display = "block";
         } else {
             allFrames[i].style.display = "none";
@@ -735,7 +735,7 @@ dynamoFramesButton.onclick = function() {
 };
 
 allFramesButton.onclick = function() {
-    dynamoFramesButton.className = "";
+    plugFramesButton.className = "";
     allFramesButton.className = "selected";
     for(var i = 0; i < allFrames.length; i++) {
         allFrames[i].style.display = "block";
@@ -743,6 +743,6 @@ allFramesButton.onclick = function() {
     return false;
 };
 
-dynamoFramesButton.onclick();
+plugFramesButton.onclick();
 </script>
 </html>

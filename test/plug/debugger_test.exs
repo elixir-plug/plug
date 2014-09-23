@@ -92,7 +92,7 @@ defmodule Plug.DebuggerTest do
 
     assert String.contains?(List.first(log), "[error] ** (ArgumentError) argument error")
     assert Enum.any?(log, fn(trace) ->
-      String.contains?(trace, "test/plug/debugger_test.exs:")
+      trace =~ "test/plug/debugger_test.exs:"
     end)
   end
 
@@ -101,7 +101,7 @@ defmodule Plug.DebuggerTest do
       conn(:get, "/") |> Exit.call([])
     end
 
-    assert String.contains?(List.first(log), "[error] ** (exit) normal")
+    assert List.first(log) =~ "[error] ** (exit) normal"
   end
 
   test "debug template is overridable" do
@@ -117,7 +117,7 @@ defmodule Plug.DebuggerTest do
       conn(:get, "/") |> Overridable.call([])
     end
 
-    assert String.contains?(List.first(log), "Overridden!")
+    assert List.first(log) =~ "Overridden!"
   end
 
   ## Default Template
@@ -146,6 +146,6 @@ defmodule Plug.DebuggerTest do
 
   test "does not show snippets if they are not part of the source_paths" do
     conn = conn(:get, "/") |> Router.call([])
-    assert conn.resp_body =~ ~r"No code snippets for code outside the Dynamo"
+    assert conn.resp_body =~ ~r"No code snippets for code outside the provided sources"
   end
 end
