@@ -1,8 +1,11 @@
 defmodule Plug.Parsers.URLENCODED do
-  @moduledoc false
+  @moduledoc """
+  Parses urlencoded request body
+  """
+
   alias Plug.Conn
 
-  def parse(%Conn{} = conn, "application", "x-www-form-urlencoded", _headers, opts) do
+  def parse(conn, "application", "x-www-form-urlencoded", _headers, opts) do
     case Conn.read_body(conn, opts) do
       {:ok, body, conn} ->
         {:ok, Plug.Conn.Query.decode(body), conn}

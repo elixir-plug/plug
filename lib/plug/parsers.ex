@@ -26,6 +26,18 @@ defmodule Plug.Parsers do
     end
   end
 
+  defmodule ParseError do
+    @moduledoc """
+    Error raised when the request body is malformed.
+    """
+
+    defexception [:message]
+
+    defimpl Plug.Exception do
+      def status(_exception), do: 400
+    end
+  end
+
   @moduledoc """
   A plug for parsing the request body.
 
@@ -49,8 +61,9 @@ defmodule Plug.Parsers do
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart],
-                         accept:  ["application/json", "text/*"]
+      plug Plug.Parsers, parsers: [:urlencoded, :json],
+                         accept:  ["application/json", "text/*"],
+                         json_decoder: Poison
 
   ## Built-in parsers
 
@@ -58,12 +71,17 @@ defmodule Plug.Parsers do
 
   * `Plug.Parsers.URLENCODED` - parses "application/x-www-form-urlencoded" requests
   * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
+  * `Plug.Parsers.JSON` - parses "application/json" requests with the given :json_decoder
 
-  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if the request
-  cannot be parsed by any of the given types and the mime type has not been
-  explicity accepted in the `:accept` option.
-  `Plug.Parsers.RequestTooLargeError` will be raised  if the request goes over the
-  given limit.
+  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
+  the request cannot be parsed by any of the given types and the mime type has
+  not been explicity accepted in the `:accept` option.
+
+  `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
+  the given limit.
+
+  Parsers may raise `Plug.Parsers.ParseError` if the request has a malformed
+  body.
 
   ## File handling
 

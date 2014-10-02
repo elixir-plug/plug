@@ -88,5 +88,4 @@ defmodule Plug.ParsersTest do
     end
     assert Plug.Exception.status(exception) == 415
   end
-
 end

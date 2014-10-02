@@ -1,5 +1,10 @@
 ## Changelog
 
+## v0.8.1
+
+* Enhancements
+  * Add a `Plug.Parsers.JSON` that expects a JSON decoder as argument
+
 ## v0.8.0
 
 * Enhancements

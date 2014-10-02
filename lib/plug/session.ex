@@ -14,6 +14,7 @@ defmodule Plug.Session do
   Plug ships with the following session stores:
 
   * `Plug.Session.ETS`
+  * `Plug.Session.COOKIE`
 
   ## Options
 
