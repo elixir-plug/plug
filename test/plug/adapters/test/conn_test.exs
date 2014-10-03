@@ -14,6 +14,11 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, "", _state} = adapter.read_req_body(state, length: 5)
   end
 
+  test "custom params" do
+    conn = conn(:get, "/", a: "b", c: [%{d: "e"}])
+    assert conn.params == %{"a" => "b", "c" => [%{"d" => "e"}]}
+  end
+
   test "no body or params" do
     conn = conn(:get, "/")
     {adapter, state} = conn.adapter
