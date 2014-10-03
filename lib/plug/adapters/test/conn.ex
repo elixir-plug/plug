@@ -19,6 +19,7 @@ defmodule Plug.Adapters.Test.Conn do
       port: uri.port || 80,
       req_headers: headers,
       query_string: uri.query || "",
+      params: params || %Plug.Conn.Unfetched{aspect: :params},
       scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom
    }
   end
