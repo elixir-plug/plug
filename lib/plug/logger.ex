@@ -68,6 +68,7 @@ defmodule Plug.Logger do
   defp connection_type(%{state: :chunked}), do: "Chunked"
   defp connection_type(_), do: "Sent"
 
+  defp path_to_iodata([]),   do: [?/]
   defp path_to_iodata(path), do: Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
 
   defp valid_request_id?(s) do

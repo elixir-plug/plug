@@ -40,6 +40,10 @@ defmodule Plug.LoggerTest do
   end
 
   test "logs proper message to console" do
+    {_conn, [first_message, second_message]} = conn(:get, "/") |> call
+    assert Regex.match?(~r/request_id=[^-A-Za-z0-9+\/=]|=[^=]|={3,} [info]  GET \//u, first_message)
+    assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
+
     {_conn, [first_message, second_message]} = conn(:get, "/hello/world") |> call
     assert Regex.match?(~r/request_id=[^-A-Za-z0-9+\/=]|=[^=]|={3,} [info]  GET hello\/world/u, first_message)
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
