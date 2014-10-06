@@ -1,5 +1,7 @@
 ## Changelog
 
+## v0.8.2-dev
+
 ## v0.8.1
 
 * Enhancements
