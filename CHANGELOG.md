@@ -5,6 +5,10 @@
 * Enhancements
   * Add a `Plug.Parsers.JSON` that expects a JSON decoder as argument
 
+* Bug fix
+  * Properly populate `params` field for test connections
+  * Fix `Plug.Logger` not reporting the proper path
+
 ## v0.8.0
 
 * Enhancements
