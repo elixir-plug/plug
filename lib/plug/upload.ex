@@ -120,7 +120,7 @@ defmodule Plug.Upload do
   end
 
   defp ensure_tmp_dir(tmps) do
-    {mega, _, _} = :erlang.now
+    {mega, _, _} = :os.timestamp
     subdir = "/plug-" <> i(mega)
     Enum.find_value(tmps, &write_tmp_dir(&1 <> subdir))
   end
@@ -135,7 +135,7 @@ defmodule Plug.Upload do
   defp open_random_file(prefix, tmp, attempts, pid, ets, paths) when attempts < @max_attempts do
     path = path(prefix, tmp)
 
-    case :file.write_file(path, "", [:write, :exclusive, :binary]) do
+    case :file.write_file(path, "", [:write, :raw, :exclusive, :binary]) do
       :ok ->
         :ets.update_element(ets, pid, {3, [path|paths]})
         {:ok, path}
