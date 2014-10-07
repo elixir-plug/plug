@@ -13,6 +13,17 @@ defmodule Plug.StaticTest do
     end
   end
 
+  defmodule MyPlugNoCache do
+    use Plug.Builder
+
+    plug Plug.Static, at: "/public", from: Path.expand("..", __DIR__), cache: false
+    plug :passthrough
+
+    defp passthrough(conn, _) do
+      Plug.Conn.send_resp(conn, 404, "Passthrough")
+    end
+  end
+
   defp call(conn) do
     MyPlug.call(conn, [])
   end
@@ -31,6 +42,12 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+  end
+
+  test "doesnt set cache headers" do
+    conn = conn(:get, "/public/fixtures/static.txt") |> MyPlugNoCache.call([])
+    assert conn.status == 200
+    refute get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
   end
 
   test "passes through on other paths" do
