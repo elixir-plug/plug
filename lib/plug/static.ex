@@ -4,13 +4,13 @@ defmodule Plug.Static do
 
   It expects two options on initialization:
 
-  * `:at` - the request path to reach for static assets.
-            It must be a binary.
+    * `:at` - the request path to reach for static assets.
+      It must be a binary.
 
-  * `:from` - the filesystem path to read static assets from.
-              It must be a binary, containing a file system path,
-              or an atom representing the application name,
-              where assets will be served from the priv/static.
+    * `:from` - the filesystem path to read static assets from.
+      It must be a binary, containing a file system path, or an
+      atom representing the application name, where assets will
+      be served from the priv/static.
 
   The preferred form is to use `:from` with an atom, since
   it will make your application independent from the starting
@@ -18,6 +18,14 @@ defmodule Plug.Static do
 
   If a static asset cannot be found, it simply forwards
   the connection to the rest of the stack.
+
+  ## Options
+
+    * `:gzip` - use `FILE.gz` if it exists in the static directory
+      and if `accept-encoding` is set to allow gzipped content
+      (defaults to `false`).
+
+    * `:cache` - sets cache headers on response (defaults to: `true`)
 
   ## Examples
 
@@ -42,22 +50,24 @@ defmodule Plug.Static do
   alias Plug.Conn
 
   def init(opts) do
-    at   = Keyword.fetch!(opts, :at)
-    from = Keyword.fetch!(opts, :from)
+    at    = Keyword.fetch!(opts, :at)
+    from  = Keyword.fetch!(opts, :from)
+    gzip  = Keyword.get(opts, :gzip, false)
+    cache = Keyword.get(opts, :cache, true)
 
     unless is_atom(from) or is_binary(from) do
       raise ArgumentError, message: ":from must be an atom or a binary"
     end
 
-    {Plug.Router.Utils.split(at), from, opts[:gzip]}
+    {Plug.Router.Utils.split(at), from, gzip, cache}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip}) when meth in @allowed_methods do
-    send_static_file(conn, at, from, gzip)
+  def call(conn = %Conn{method: meth}, {at, from, gzip, cache}) when meth in @allowed_methods do
+    send_static_file(conn, at, from, gzip, cache)
   end
   def call(conn, _opts), do: conn
 
-  defp send_static_file(conn, at, from, gzip) do
+  defp send_static_file(conn, at, from, gzip, cache) do
     segments = subset(at, conn.path_info)
     segments = for segment <- List.wrap(segments), do: URI.decode(segment)
     path     = path(from, segments)
@@ -70,9 +80,12 @@ defmodule Plug.Static do
       true ->
         case file_encoding(conn, path, gzip) do
           {conn, path} ->
+            if cache do
+              conn = put_resp_header(conn, "cache-control", "public, max-age=31536000")
+            end
+
             conn
             |> put_resp_header("content-type", Plug.MIME.path(List.last(segments)))
-            |> put_resp_header("cache-control", "public, max-age=31536000")
             |> send_file(200, path) |> halt
           :error ->
             conn
