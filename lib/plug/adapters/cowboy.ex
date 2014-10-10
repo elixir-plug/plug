@@ -175,7 +175,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp otp_app(options) do
     if app = options[:otp_app] do
-      :code.priv_dir(app)
+      Application.app_dir(app, "priv")
     else
       raise ArgumentError, message: "to use relative certificate with https, the :otp_app " <>
                                     "option needs to be given when invoking the handler"

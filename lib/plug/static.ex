@@ -114,7 +114,7 @@ defmodule Plug.Static do
   end
 
   defp path(from, segments) when is_atom(from),
-    do: Path.join([:code.priv_dir(from), "static" | segments])
+    do: Path.join([Application.app_dir(from), "priv/static" | segments])
 
   defp path(from, segments),
     do: Path.join([from | segments])
