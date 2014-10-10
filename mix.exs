@@ -20,8 +20,8 @@ defmodule Plug.Mixfile do
 
   def deps do
     [{:cowboy, "~> 1.0", optional: true},
-     {:earmark, "~> 0.1", only: :docs},
-     {:ex_doc, "~> 0.5", only: :docs},
+     {:earmark, "~> 0.1", only: :dev},
+     {:ex_doc, "~> 0.5", only: :dev},
      {:hackney, "~> 0.13", only: :test}]
   end
 
