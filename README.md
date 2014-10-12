@@ -7,7 +7,7 @@ Plug is:
 1. A specification for composable modules in between web applications
 2. Connection adapters for different web servers in the Erlang VM
 
-[Documentation for Plug is available online](http://elixir-lang.org/docs/plug/).
+[Documentation for Plug is available online](http://hexdocs.pm/plug/).
 
 ## Hello world
 
@@ -59,15 +59,13 @@ You can use plug in your projects in two steps:
     end
     ```
 
-Note: if you are using Elixir master, please use Plug master (from git) as well.
-
 ## The Plug.Conn
 
 In the hello world example, we defined our first plug. What is a plug after all?
 
 A plug takes two shapes. It is a function that receives a connection and a set of options as arguments and returns the connection or it is a module that provides an `init/1` function to initialize options and implement the `call/2` function, receiving the connection and the initialized options, and returning the connection.
 
-As per the specification above, a connection is represented by the `Plug.Conn` record ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)):
+As per the specification above, a connection is represented by the `Plug.Conn` struct:
 
 ```elixir
 %Plug.Conn{host: "www.example.com",
@@ -75,7 +73,7 @@ As per the specification above, a connection is represented by the `Plug.Conn` r
            ...}
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Conn` module ([docs](http://elixir-lang.org/docs/plug/Plug.Conn.html)). In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Conn`.
+Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Conn` module. In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Conn`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
@@ -89,7 +87,7 @@ Finally, keep in mind that a connection is a **direct interface to the underlyin
 
 ## Testing plugs and applications
 
-Plug ships with a `Plug.Test` module ([docs](http://elixir-lang.org/docs/plug/Plug.Test.html)) that makes testing your plugs easy. Here is how we can test our hello world example:
+Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test our hello world example:
 
 ```elixir
 defmodule MyPlugTest do
@@ -151,11 +149,13 @@ This also means that a catch all `match` is recommended to be defined, as in the
 
 This project aims to ship with different plugs that can be re-used accross applications:
 
-* `Plug.Head` ([docs](http://elixir-lang.org/docs/plug/Plug.Head.html)) - converts HEAD requests to GET requests;
-* `Plug.MethodOverride` ([docs](http://elixir-lang.org/docs/plug/Plug.MethodOverride.html)) - overrides a request method with one specified in headers;
-* `Plug.Parsers` ([docs](http://elixir-lang.org/docs/plug/Plug.Parsers.html)) - responsible for parsing the request body given its content-type;
-* `Plug.Session` ([docs](http://elixir-lang.org/docs/plug/Plug.Session.html)) - handles session management and storage;
-* `Plug.Static` ([docs](http://elixir-lang.org/docs/plug/Plug.Static.html)) - serves static files;
+* `Plug.Head` - converts HEAD requests to GET requests;
+* `Plug.MethodOverride` - overrides a request method with one specified in headers;
+* `Plug.Parsers` - responsible for parsing the request body given its content-type;
+* `Plug.Session` - handles session management and storage;
+* `Plug.Static` - serves static files;
+
+You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
 
 ## License
 
