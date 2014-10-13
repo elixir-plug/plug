@@ -34,13 +34,13 @@ defmodule Plug.Parsers.JSON do
   end
 
   defp decode({:ok, body, conn}, decoder) do
-    case decoder.decode(body) do
-      {:ok, terms} when is_list(terms)->
-        {:ok, %{"_json" => terms}, conn}
-      {:ok, terms} ->
+    case decoder.decode!(body) do
+      terms when is_map(terms)->
         {:ok, terms, conn}
-      _ ->
-        raise Plug.Parsers.ParseError, message: "malformed JSON"
+      terms ->
+        {:ok, %{"_json" => terms}, conn}
     end
+  rescue
+    e -> raise Plug.Parsers.ParseError, exception: e
   end
 end

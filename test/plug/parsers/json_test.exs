@@ -3,16 +3,16 @@ defmodule Phoenix.Parsers.JSONTest do
   use Plug.Test
 
   defmodule JSON do
-    def decode("[1, 2, 3]") do
-      {:ok, [1, 2, 3]}
+    def decode!("[1, 2, 3]") do
+      [1, 2, 3]
     end
 
-    def decode("{id: 1}") do
-      {:ok, %{"id" => 1}}
+    def decode!("{id: 1}") do
+      %{"id" => 1}
     end
 
-    def decode(_) do
-      :error
+    def decode!(_) do
+      raise "oops"
     end
   end
 
@@ -57,7 +57,8 @@ defmodule Phoenix.Parsers.JSONTest do
   end
 
   test "raises ParseError with malformed JSON" do
-    exception = assert_raise Plug.Parsers.ParseError, fn ->
+    exception = assert_raise Plug.Parsers.ParseError,
+                             ~r/malformed request, got RuntimeError with message oops/, fn ->
       headers = [{"content-type", "application/json"}]
       parse(conn(:post, "/", "invalid json", headers: headers))
     end

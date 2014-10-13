@@ -31,7 +31,13 @@ defmodule Plug.Parsers do
     Error raised when the request body is malformed.
     """
 
-    defexception [:message]
+    defexception [:exception]
+
+    def message(exception) do
+      exception = exception.exception
+      "malformed request, got #{inspect exception.__struct__} " <>
+        "with message #{Exception.message(exception)}"
+    end
 
     defimpl Plug.Exception do
       def status(_exception), do: 400
