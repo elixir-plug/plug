@@ -1,8 +1,9 @@
 defmodule Plug.Parsers.URLENCODED do
   @moduledoc """
-  Parses urlencoded request body
+  Parses urlencoded request body.
   """
 
+  @behaviour Plug.Parsers
   alias Plug.Conn
 
   def parse(conn, "application", "x-www-form-urlencoded", _headers, opts) do

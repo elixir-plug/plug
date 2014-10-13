@@ -1,18 +1,16 @@
 defmodule Plug.Parsers.JSON do
   @moduledoc """
-  Parses JSON request body
-  """
-
-  import Plug.Conn
-
-  @doc """
-  Parses JSON body into `conn.params`
+  Parses JSON request body.
 
   JSON arrays are parsed into a `"_json"` key to allow
   proper param merging.
 
   An empty request body is parsed as an empty map.
   """
+
+  @behaviour Plug.Parsers
+  import Plug.Conn
+
   def parse(conn, "application", "json", _headers, opts) do
     decoder = Keyword.get(opts, :json_decoder) ||
                 raise ArgumentError, "JSON parser expects a :json_decoder option"

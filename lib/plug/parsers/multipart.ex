@@ -1,7 +1,9 @@
 defmodule Plug.Parsers.MULTIPART do
   @moduledoc """
-  Parses multipart request body
+  Parses multipart request body.
   """
+
+  @behaviour Plug.Parsers
 
   def parse(conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
     {adapter, state} = conn.adapter

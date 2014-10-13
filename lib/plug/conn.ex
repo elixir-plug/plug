@@ -206,6 +206,7 @@ defmodule Plug.Conn do
     %{conn | private: Map.put(private, key, value)}
   end
 
+  @doc false
   def assign_private(conn, key, value) do
     IO.write :stderr, "assign_private/3 is deprecated in favor of put_private/3\n" <>
                       Exception.format_stacktrace()
