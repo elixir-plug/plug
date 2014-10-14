@@ -41,4 +41,21 @@ defmodule Plug.Adapters.CowboyTest do
             :supervisor,
             [:ranch_listener_sup]}
   end
+
+  defmodule MyPlug do
+    def init(opts), do: opts
+  end
+
+  test "errors when trying to run on https" do
+    assert_raise ArgumentError, ~r/missing option :keyfile/, fn ->
+      Plug.Adapters.Cowboy.https MyPlug, [], []
+    end
+
+    assert_raise ArgumentError, ~r/ssl\/key\.pem required by SSL's :keyfile does not exist/, fn ->
+      Plug.Adapters.Cowboy.https MyPlug, [],
+        keyfile: "ssl/key.pem",
+        certfile: "ssl/cert.pem",
+        otp_app: :plug
+    end
+  end
 end

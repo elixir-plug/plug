@@ -100,12 +100,12 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc """
-  Returns a child_spec to be supervised by your application.
+  Returns a child spec to be supervised by your application.
   """
   def child_spec(scheme, plug, opts, options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, options)
     ranch_module = case scheme do
-      :http -> :ranch_tcp
+      :http  -> :ranch_tcp
       :https -> :ranch_ssl
     end
     :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
@@ -135,6 +135,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp normalize_options(options, :https) do
+    assert_keys(options, [:keyfile, :certfile])
     options = Keyword.merge @https_options, options
     options = Enum.reduce [:keyfile, :certfile, :cacertfile], options, &normalize_ssl_file(&1, &2)
     options = Enum.reduce [:password], options, &to_char_list(&2, &1)
@@ -166,19 +167,33 @@ defmodule Plug.Adapters.Cowboy do
       is_nil(value) ->
         options
       Path.type(value) == :absolute ->
-        Keyword.put(options, key, to_char_list(value))
+        put_ssl_file options, key, value
       true ->
-        new = Path.expand(value, otp_app(options)) |> to_char_list
-        Keyword.put(options, key, new)
+        put_ssl_file options, key, Path.expand(value, otp_app(options))
     end
+  end
+
+  defp assert_keys(options, keys) do
+    for key <- keys,
+        not Keyword.has_key?(options, key) do
+      fail "missing option #{inspect key}"
+    end
+  end
+
+  defp put_ssl_file(options, key, value) do
+    value = to_char_list(value)
+    unless File.exists?(value) do
+      fail "the file #{value} required by SSL's #{inspect key} does not exist"
+    end
+    Keyword.put(options, key, value)
   end
 
   defp otp_app(options) do
     if app = options[:otp_app] do
       Application.app_dir(app, "priv")
     else
-      raise ArgumentError, message: "to use relative certificate with https, the :otp_app " <>
-                                    "option needs to be given when invoking the handler"
+      fail "to use relative certificate with https, the :otp_app " <>
+           "option needs to be given to the adapter"
     end
   end
 
@@ -188,5 +203,9 @@ defmodule Plug.Adapters.Cowboy do
     else
       options
     end
+  end
+
+  defp fail(message) do
+    raise ArgumentError, message: "could not start Cowboy adapter, " <> message
   end
 end
