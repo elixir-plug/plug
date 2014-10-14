@@ -44,6 +44,7 @@ defmodule Plug.Static do
 
   """
 
+  @behaviour Plug
   @allowed_methods ~w(GET HEAD)
 
   import Plug.Conn
