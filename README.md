@@ -1,6 +1,7 @@
 # Plug
 
 [![Build Status](https://travis-ci.org/elixir-lang/plug.png?branch=master)](https://travis-ci.org/elixir-lang/plug)
+[![Inline docs](http://inch-ci.org/github/elixir-lang/plug.svg?branch=master)](http://inch-ci.org/github/elixir-lang/plug)
 
 Plug is:
 
