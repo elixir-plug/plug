@@ -4,6 +4,11 @@ defmodule Plug.ConnTest do
 
   alias Plug.ProcessStore
 
+  test "inspect/2" do
+    assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
+    refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"
+  end
+
   test "assign/3" do
     conn = conn(:get, "/")
     assert conn.assigns[:hello] == nil

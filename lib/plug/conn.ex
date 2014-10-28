@@ -646,3 +646,16 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 end
+
+defimpl Inspect, for: Plug.Conn do
+  def inspect(conn, opts) do
+    conn =
+      if opts.limit == :infinity do
+        conn
+      else
+        update_in conn.adapter, fn {adapter, _data} -> {adapter, :...} end
+      end
+
+    Inspect.Any.inspect(conn, opts)
+  end
+end
