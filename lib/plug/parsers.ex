@@ -5,11 +5,8 @@ defmodule Plug.Parsers do
     """
 
     defexception message: "the request is too large. If you are willing to process " <>
-                          "larger requests, please give a :length to Plug.Parsers"
-
-    defimpl Plug.Exception do
-      def status(_exception), do: 413
-    end
+                          "larger requests, please give a :length to Plug.Parsers",
+                 plug_status: 413
   end
 
   defmodule UnsupportedMediaTypeError do
@@ -17,14 +14,10 @@ defmodule Plug.Parsers do
     Error raised when the request body cannot be parsed
     """
 
-    defexception [:media_type]
+    defexception media_type: nil, plug_status: 415
 
     def message(exception) do
       "unsupported media type #{exception.media_type}"
-    end
-
-    defimpl Plug.Exception do
-      def status(_exception), do: 415
     end
   end
 
@@ -33,16 +26,12 @@ defmodule Plug.Parsers do
     Error raised when the request body is malformed.
     """
 
-    defexception [:exception]
+    defexception exception: nil, plug_status: 400
 
     def message(exception) do
       exception = exception.exception
       "malformed request, got #{inspect exception.__struct__} " <>
         "with message #{Exception.message(exception)}"
-    end
-
-    defimpl Plug.Exception do
-      def status(_exception), do: 400
     end
   end
 

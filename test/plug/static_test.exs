@@ -75,13 +75,19 @@ defmodule Plug.StaticTest do
   end
 
   test "returns 400 for unsafe paths" do
-    conn = conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
-    assert conn.status    == 400
-    assert conn.resp_body == "Bad request"
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
+    end
 
-    conn = conn(:get, "/public/c:\\foo.txt") |> call
-    assert conn.status    == 400
-    assert conn.resp_body == "Bad request"
+    assert Plug.Exception.status(exception) == 400
+
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      conn(:get, "/public/c:\\foo.txt") |> call
+    end
+
+    assert Plug.Exception.status(exception) == 400
   end
 
   test "serves gzipped file" do

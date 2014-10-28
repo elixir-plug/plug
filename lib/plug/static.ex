@@ -50,6 +50,10 @@ defmodule Plug.Static do
   import Plug.Conn
   alias Plug.Conn
 
+  defmodule InvalidPathError do
+    defexception message: "invalid path for static asset", plug_status: 400
+  end
+
   def init(opts) do
     at    = Keyword.fetch!(opts, :at)
     from  = Keyword.fetch!(opts, :from)
@@ -77,7 +81,7 @@ defmodule Plug.Static do
       segments in [nil, []] ->
         conn
       invalid_path?(segments) ->
-        send_resp(conn, 400, "Bad request") |> halt
+        raise InvalidPathError
       true ->
         case file_encoding(conn, path, gzip) do
           {conn, path} ->
@@ -87,7 +91,8 @@ defmodule Plug.Static do
 
             conn
             |> put_resp_header("content-type", Plug.MIME.path(List.last(segments)))
-            |> send_file(200, path) |> halt
+            |> send_file(200, path)
+            |> halt
           :error ->
             conn
         end
