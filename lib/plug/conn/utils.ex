@@ -10,10 +10,10 @@ defmodule Plug.Conn.Utils do
   @alpha ?0..?9
   @other [?., ?-, ?+]
   @space [?\s, ?\t]
-  @specials [?(, ?), ?<, ?>, ?@, ?,, ?;, ?:, ?\\, ?", ?/, ?[, ?], ??, ?., ?=]
+  @specials [?(, ?), ?<, ?>, ?@, ?,, ?;, ?:, ?\\, ?", ?/, ?[, ?], ??, ?=, ?{, ?}]
 
   @doc ~S"""
-  Parses the request content type header.
+  Parses media types (with wildcards).
 
   Type and subtype are case insensitive while the
   sensitiveness of params depends on its key and
@@ -21,11 +21,75 @@ defmodule Plug.Conn.Utils do
 
   ## Examples
 
-      iex> content_type "text/plain"
+      iex> media_type "text/plain"
       {:ok, "text", "plain", %{}}
 
-      iex> content_type "APPLICATION/vnd.ms-data+XML"
+      iex> media_type "APPLICATION/vnd.ms-data+XML"
       {:ok, "application", "vnd.ms-data+xml", %{}}
+
+      iex> media_type "text/*; q=1.0"
+      {:ok, "text", "*", %{"q" => "1.0"}}
+
+      iex> media_type "*/*; q=1.0"
+      {:ok, "*", "*", %{"q" => "1.0"}}
+
+      iex> media_type "x y"
+      :error
+
+      iex> media_type "*/html"
+      :error
+
+      iex> media_type "/"
+      :error
+
+      iex> media_type "x/y z"
+      :error
+
+  """
+  @spec media_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
+  def media_type(binary) do
+    case strip_spaces(binary) do
+      "*/*" <> t -> mt_params(t, "*", "*")
+      t -> mt_first(t, "")
+    end
+  end
+
+  defp mt_first(<< ?/, t :: binary >>, acc) when acc != "",
+    do: mt_wildcard(t, acc)
+  defp mt_first(<< h, t :: binary >>, acc) when h in @upper,
+    do: mt_first(t, << acc :: binary, h + 32 >>)
+  defp mt_first(<< h, t :: binary >>, acc) when h in @lower or h in @alpha or h == ?-,
+    do: mt_first(t, << acc :: binary, h >>)
+  defp mt_first(_, _acc),
+    do: :error
+
+  defp mt_wildcard(<< ?*, t :: binary >>, first),
+    do: mt_params(t, first, "*")
+  defp mt_wildcard(t, first),
+    do: mt_second(t, "", first)
+
+  defp mt_second(<< h, t :: binary >>, acc, first) when h in @upper,
+    do: mt_second(t, << acc :: binary, h + 32 >>, first)
+  defp mt_second(<< h, t :: binary >>, acc, first) when h in @lower or h in @alpha or h in @other,
+    do: mt_second(t, << acc :: binary, h >>, first)
+  defp mt_second(t, acc, first),
+    do: mt_params(t, first, acc)
+
+  defp mt_params(t, first, second) do
+    case strip_spaces(t) do
+      ""       -> {:ok, first, second, %{}}
+      ";" <> t -> {:ok, first, second, params(t)}
+      _        -> :error
+    end
+  end
+
+  @doc ~S"""
+  Parses content type (without wildcards).
+
+  It is similar to `media_type/2` except wildcards are
+  not accepted in type nor subtype.
+
+  ## Examples
 
       iex> content_type "x-sample/json; charset=utf-8"
       {:ok, "x-sample", "json", %{"charset" => "utf-8"}}
@@ -36,42 +100,19 @@ defmodule Plug.Conn.Utils do
       iex> content_type "\r\n text/plain;\r\n charset=utf-8\r\n"
       {:ok, "text", "plain", %{"charset" => "utf-8"}}
 
-      iex> content_type "x y"
+      iex> content_type "x/*"
       :error
 
-      iex> content_type "/"
-      :error
-
-      iex> content_type "x/y z"
+      iex> content_type "*/*"
       :error
 
   """
   @spec content_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
   def content_type(binary) do
-    ct_first(strip_spaces(binary), "")
-  end
-
-  defp ct_first(<< ?/, t :: binary >>, acc) when acc != "",
-    do: ct_second(t, "", acc)
-  defp ct_first(<< h, t :: binary >>, acc) when h in @upper,
-    do: ct_first(t, << acc :: binary, h + 32 >>)
-  defp ct_first(<< h, t :: binary >>, acc) when h in @lower or h in @alpha or h == ?-,
-    do: ct_first(t, << acc :: binary, h >>)
-  defp ct_first(_, _acc),
-    do: :error
-
-  defp ct_second(<< h, t :: binary >>, acc, first) when h in @upper,
-    do: ct_second(t, << acc :: binary, h + 32 >>, first)
-  defp ct_second(<< h, t :: binary >>, acc, first) when h in @lower or h in @alpha or h in @other,
-    do: ct_second(t, << acc :: binary, h >>, first)
-  defp ct_second(t, acc, first),
-    do: ct_params(t, first, acc)
-
-  defp ct_params(t, first, second) do
-    case strip_spaces(t) do
-      ""       -> {:ok, first, second, %{}}
-      ";" <> t -> {:ok, first, second, params(t)}
-      _        -> :error
+    case media_type(binary) do
+      {:ok, _, "*", _}    -> :error
+      {:ok, _, _, _} = ok -> ok
+      :error              -> :error
     end
   end
 
