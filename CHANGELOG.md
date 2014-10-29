@@ -1,6 +1,15 @@
 ## Changelog
 
-## v0.8.2-dev
+## v0.8.2
+
+* Enhancements
+  * Add `Plug.Conn.Utils.media_type/1` to provide media type parsing with wildcard support
+  * Do not print adapter data by default when inspecting the connection
+  * Allow plug_status to simplify the definition of plug aware exceptions
+  * Allow cache headers in `Plug.Static` to be turned off
+
+* Bug fix
+  * Support dots on header parameter parsing
 
 ## v0.8.1
 
