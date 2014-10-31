@@ -12,7 +12,7 @@ defmodule Plug.Session.Store do
   Initializes the store.
 
   The options returned from this function will be given
-  to `get/2`, `put/3` and `delete/2`.
+  to `get/3`, `put/4` and `delete/3`.
   """
   defcallback init(Plug.opts) :: Plug.opts
 

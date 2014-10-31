@@ -35,9 +35,11 @@ defmodule Plug.Session.COOKIE do
     when generating the encryption and signing keys. Defaults to 32;
 
   * `:key_digest` - option passed to `Plug.Crypto.KeyGenerator`
-    when generating the encryption and signing keys. Defaults to `:sha256'.
+    when generating the encryption and signing keys. Defaults to `:sha256';
 
-
+  * `:serializer` - cookie serializer module that defines `encode/1` and
+    `decode/1` returning an `{:ok, value}` tuple. Defaults to
+    `:external_term_format`.
 
   ## Examples
 
@@ -46,7 +48,8 @@ defmodule Plug.Session.COOKIE do
                          key: "_my_app_session",
                          encryption_salt: "cookie store encryption salt",
                          signing_salt: "cookie store signing salt",
-                         key_length: 64
+                         key_length: 64,
+                         serializer: Poison
   """
 
   @behaviour Plug.Session.Store
@@ -67,9 +70,12 @@ defmodule Plug.Session.COOKIE do
                 digest: digest,
                 cache: Plug.Keys]
 
+    serializer = check_serializer(opts[:serializer] || :external_term_format)
+
     %{encryption_salt: encryption_salt,
       signing_salt: signing_salt,
-      key_opts: key_opts}
+      key_opts: key_opts,
+      serializer: serializer}
   end
 
   def get(conn, cookie, opts) do
@@ -80,11 +86,12 @@ defmodule Plug.Session.COOKIE do
                                           derive(conn, opts.signing_salt, key_opts))
     else
       MessageVerifier.verify(cookie, derive(conn, opts.signing_salt, key_opts))
-    end |> decode()
+    end |> decode(opts.serializer)
   end
 
+
   def put(conn, _sid, term, opts) do
-    binary = encode(term)
+    binary = encode(term, opts.serializer)
     key_opts = opts.key_opts
     if key = opts.encryption_salt do
       MessageEncryptor.encrypt_and_sign(binary,
@@ -99,12 +106,22 @@ defmodule Plug.Session.COOKIE do
     :ok
   end
 
-  defp encode(term), do:
-    :erlang.term_to_binary(term)
+  defp encode(term, :external_term_format), do: :erlang.term_to_binary(term)
+  defp encode(term, serializer) do
+    case serializer.encode(term) do
+      {:ok, binary} -> binary
+      _ -> nil
+    end
+  end
 
-  defp decode({:ok, binary}), do:
-    {nil, :erlang.binary_to_term(binary)}
-  defp decode(:error), do:
+  defp decode({:ok, binary}, :external_term_format), do: {nil, :erlang.binary_to_term(binary)}
+  defp decode({:ok, binary}, serializer) do
+    case serializer.decode(binary) do
+      {:ok, term} -> {nil, term}
+      _ -> {nil, %{}}
+    end
+  end
+  defp decode(:error, _serializer, _serializer_config), do:
     {nil, %{}}
 
   defp derive(conn, key, key_opts) do
@@ -135,4 +152,8 @@ defmodule Plug.Session.COOKIE do
       end
     end
   end
+
+  defp check_serializer(serializer) when is_atom(serializer), do: serializer
+  defp check_serializer(_), do:
+    raise(ArgumentError, "cookie store expects :serializer option to be a module")
 end
