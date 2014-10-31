@@ -20,10 +20,10 @@ defmodule Plug do
   The API expected by a module plug is defined as a behaviour by the
   `Plug` module (this module).
 
-  ## The Plug stack
+  ## The Plug pipeline
 
-  The `Plug.Builder` module provides conveniences for stacking many
-  plugs into a single module.
+  The `Plug.Builder` module provides conveniences for building plug
+  pipelines.
   """
 
   @type opts :: tuple | atom | integer | float | [opts]

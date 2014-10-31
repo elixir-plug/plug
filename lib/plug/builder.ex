@@ -5,11 +5,12 @@ defmodule Plug.Builder do
   Conveniences for building plugs.
 
   This module can be used into a module in order to build
-  a plug stack:
+  a plug pipeline:
 
       defmodule MyApp do
         use Plug.Builder
 
+        plug Plug.Logger
         plug :hello, upper: true
 
         def hello(conn, opts) do
@@ -18,18 +19,22 @@ defmodule Plug.Builder do
         end
       end
 
-  `Plug.Builder` will define a `init/1` function (which is overridable)
-  and a `call/2` function with the compiled stack. By implementing the
+  Multiple plugs can be defined with the `plug/2` macro, forming a
+  pipeline. `Plug.Builder` also imports the `Plug.Conn` module, making
+  functions like `send_resp/3` available.
+
+  ## Plug behaviour
+
+  Internally, `Plug.Builder` implements the `Plug` behaviour, which means
+  both `init/1` and `call/2` functions are defined. By implementing the
   Plug API, `Plug.Builder` guarantees this module can be handed to a web
-  server or used as part of another stack.
+  server or used as part of another pipeline.
 
-  Note this module also exports a `compile/1` function for those willing
-  to collect and compile their plugs manually.
+  ## Halting a Plug pipeline
 
-  ## Halting a Plug Stack
-
-  A Plug Stack can be halted with `Plug.Conn.halt/1`. The Builder will prevent
-  further plugs downstream from being invoked and return current connection.
+  A Plug pipeline can be halted with `Plug.Conn.halt/1`. The builder will
+  prevent further plugs downstream from being invoked and return the current
+  connection.
   """
 
   @type plug :: module | atom
@@ -74,16 +79,16 @@ defmodule Plug.Builder do
   end
 
   @doc """
-  Compiles a plug stack.
+  Compiles a plug pipeline.
 
-  It expects a reversed stack (with the last plug coming first)
+  It expects a reversed pipeline (with the last plug coming first)
   and returns a tuple containing the reference to the connection
-  as first argument and the compiled quote stack.
+  as first argument and the compiled quote pipeline.
   """
   @spec compile([{plug, Plug.opts}]) :: {Macro.t, Macro.t}
-  def compile(stack) do
+  def compile(pipeline) do
     conn = quote do: conn
-    {conn, Enum.reduce(stack, conn, &quote_plug(init_plug(&1), &2))}
+    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2))}
   end
 
   defp init_plug({plug, opts, guard}) do

@@ -35,7 +35,7 @@
 
 * Enhancements
   * Support Elixir 1.0.0-rc1
-  * Support haltable stacks with `Plug.Conn.halt/2`
+  * Support haltable pipelines with `Plug.Conn.halt/2`
   * Ensure both Plug.Builder and Plug.Router's `call/2` are overridable
 
 * Bug fix

@@ -2,6 +2,7 @@ defmodule Plug.ConnTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  alias Plug.Conn
   alias Plug.ProcessStore
 
   test "inspect/2" do

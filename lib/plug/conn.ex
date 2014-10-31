@@ -51,13 +51,13 @@ defmodule Plug.Conn do
   Furthermore, the `before_send` field stores callbacks that are invoked
   before the connection is sent. Callbacks are invoked in the reverse order
   they are registered (callbacks registered first are invoked last) in order
-  to mimic a Plug stack behaviour.
+  to reproduce a pipeline ordering.
 
   ## Connection fields
 
   * `assigns` - shared user data as a dict
   * `state` - the connection state
-  * `halted` - the boolean status on whether the stack was halted
+  * `halted` - the boolean status on whether the pipeline was halted
   * `secret_key_base` - a secret key used to verify and encrypt cookies.
     the field must be set manually whenever one of those features are used.
     This data must be kept in the connection and never used directly, always
@@ -598,7 +598,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Halts the Plug stack by preventing further plugs downstream from being invoked
+  Halts the Plug pipeline by preventing further plugs downstream from being invoked.
   """
   @spec halt(t) :: t
   def halt(%Conn{} = conn) do

@@ -17,7 +17,7 @@ defmodule Plug.Router do
 
         match _ do
           # Halt the request so it doesn't go
-          # further in the plug stack.
+          # further in the plug pipeline.
           halt send_resp(conn, 404, "oops")
         end
       end
@@ -30,7 +30,7 @@ defmodule Plug.Router do
 
       AppRouter.call(conn, [])
 
-  Notice the router contains a plug stack and by default it requires
+  Notice the router contains a plug pipeline and by default it requires
   two plugs: `match` and `dispatch`. `match` is responsible for
   finding a matching route which is then forwarded to `dispatch`.
   This means users can easily hook into the router mechanism and add

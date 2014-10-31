@@ -17,7 +17,7 @@ defmodule Plug.Static do
   directory.
 
   If a static asset cannot be found, it simply forwards
-  the connection to the rest of the stack.
+  the connection to the rest of the pipeline.
 
   ## Options
 

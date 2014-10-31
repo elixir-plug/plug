@@ -13,7 +13,6 @@ defmodule Plug.Test do
 
       * import all functions from this module
       * import all functions from `Plug.Conn`
-      * alias `Plug.Conn` to `Conn`
 
   """
 
@@ -22,7 +21,6 @@ defmodule Plug.Test do
     quote do
       import Plug.Test
       import Plug.Conn
-      alias  Plug.Conn
     end
   end
 
