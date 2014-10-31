@@ -86,9 +86,7 @@ defmodule Plug.Adapters.Cowboy do
   @spec https(module(), Keyword.t, Keyword.t) ::
         {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def https(plug, opts, options \\ []) do
-    :application.start(:asn1)
-    :application.start(:public_key)
-    :application.start(:ssl)
+    Application.ensure_all_started(:ssl)
     run(:https, plug, opts, options)
   end
 
@@ -118,10 +116,7 @@ defmodule Plug.Adapters.Cowboy do
   @not_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
 
   defp run(scheme, plug, opts, options) do
-    :application.start(:crypto)
-    :application.start(:ranch)
-    :application.start(:cowlib)
-    :application.start(:cowboy)
+    Application.ensure_all_started(:cowboy)
     case apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options)) do
       {:ok,pid} -> {:ok,pid}
       {:error, {{:shutdown,{_, _,{{_,{:error, :eaddrinuse}},_}}},_}} ->
