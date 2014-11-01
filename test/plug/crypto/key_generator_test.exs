@@ -41,6 +41,10 @@ defmodule Plug.Crypto.KeyGeneratorTest do
     key = generate("password", "salt")
     assert byte_size(key) == 32
     assert to_hex(key) == "632c2812e46d4604102ba7618e9d6d7d2f8128f6266b4a03264d2a0460b7dcb3"
+
+    key = generate("password", "salt", iterations: 1000, length: 64, digest: :sha)
+    assert byte_size(key) == 64
+    assert to_hex(key) == "6e88be8bad7eae9d9e10aa061224034fed48d03fcbad968b56006784539d5214ce970d912ec2049b04231d47c2eb88506945b26b2325e6adfeeba08895ff9587"
   end
 
   def to_hex(value), do: Base.encode16(value, case: :lower)
