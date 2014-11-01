@@ -61,7 +61,7 @@ defmodule Plug.Crypto.KeyGenerator do
     initial = fun.(<<salt::binary, block_index::integer-size(32)>>)
     block   = iterate(fun, iterations - 1, initial, initial)
     generate(fun, salt, iterations, max_length, block_index + 1,
-             [block, acc], byte_size(block) + length)
+             [block | acc], byte_size(block) + length)
   end
 
   defp iterate(_fun, 0, _prev, acc), do: acc
