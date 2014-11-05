@@ -60,11 +60,11 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   defp encrypt(message, cipher, secret, iv) do
-    :crypto.block_encrypt(cipher, secret, iv, message)
+    :crypto.block_encrypt(cipher, trim_secret(secret), iv, message)
   end
 
   defp decrypt(encrypted, cipher, secret, iv) do
-    :crypto.block_decrypt(cipher, secret, iv, encrypted)
+    :crypto.block_decrypt(cipher, trim_secret(secret), iv, encrypted)
   end
 
   defp pad_message(msg) do
@@ -79,6 +79,13 @@ defmodule Plug.Crypto.MessageEncryptor do
     case rest do
       <<msg::binary-size(msg_size), _::binary>> -> {:ok, msg}
       _ -> :error
+    end
+  end
+
+  defp trim_secret(secret) do
+    case byte_size(secret) do
+      large when large > 32 -> :binary.part(secret, 0, 32)
+      _ -> secret
     end
   end
 end
