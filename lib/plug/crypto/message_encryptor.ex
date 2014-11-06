@@ -68,17 +68,22 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   defp pad_message(msg) do
-    bytes_remaining = rem(byte_size(msg) + 1, 16)
-    padding_size = if bytes_remaining == 0, do: 0, else: 16 - bytes_remaining
-    <<padding_size>> <> msg <> :crypto.strong_rand_bytes(padding_size)
+    bytes_remaining = rem(byte_size(msg), 16)
+    padding_size = 16 - bytes_remaining
+    msg <> :binary.copy(<<padding_size>>, padding_size)
   end
 
   defp unpad_message(msg) do
-    <<padding_size, rest::binary>> = msg
-    msg_size = byte_size(rest) - padding_size
-    case rest do
-      <<msg::binary-size(msg_size), _::binary>> -> {:ok, msg}
-      _ -> :error
+    padding_size = :binary.last(msg)
+    if padding_size <= 16 do
+      msg_size = byte_size(msg)
+      if binary_part(msg, msg_size, -padding_size) == :binary.copy(<<padding_size>>, padding_size) do
+        {:ok, binary_part(msg, 0, msg_size - padding_size)}
+      else
+        :error
+      end
+    else
+      :error
     end
   end
 end

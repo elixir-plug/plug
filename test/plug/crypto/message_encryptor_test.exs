@@ -7,8 +7,8 @@ defmodule Plug.Crypto.MessageEncryptorTest do
   @wrong String.duplicate("12345678", 4)
 
   test "it encrypts/decrypts a message" do
-    data = <<0, "helloworld", 0>>
-    encrypted = ME.encrypt_and_sign(<<0, "helloworld", 0>>, @right, @right)
+    data = <<0, "hełłoworld", 0>>
+    encrypted = ME.encrypt_and_sign(<<0, "hełłoworld", 0>>, @right, @right)
 
     decrypted = ME.verify_and_decrypt(encrypted, @right, @wrong)
     assert decrypted == :error
