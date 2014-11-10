@@ -54,7 +54,9 @@ defmodule Plug.Builder do
 
       defoverridable [init: 1, call: 2]
 
+      import Plug.Conn
       import Plug.Builder, only: [plug: 1, plug: 2]
+
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
       @before_compile Plug.Builder
     end

@@ -6,7 +6,6 @@ defmodule Plug.Router do
 
       defmodule AppRouter do
         use Plug.Router
-        import Plug.Conn
 
         plug :match
         plug :dispatch

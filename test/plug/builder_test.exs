@@ -1,7 +1,7 @@
 defmodule Plug.BuilderTest do
-  import Plug.Conn
-
   defmodule Module do
+    import Plug.Conn
+
     def init(val) do
       {:init, val}
     end
