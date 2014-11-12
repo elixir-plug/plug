@@ -128,7 +128,7 @@ defmodule AppRouter do
   end
 
   match _ do
-    send_resp(conn, 404, "oops")
+    halt send_resp(conn, 404, "oops")
   end
 end
 ```
@@ -136,7 +136,7 @@ end
 The router is a plug, which means it can be invoked as:
 
 ```elixir
-AppRouter.call(conn, AppRouter.init([]))
+AppRouter.call(conn, [])
 ```
 
 Each route needs to return the connection as per the Plug specification.
