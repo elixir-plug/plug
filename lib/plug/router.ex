@@ -15,9 +15,7 @@ defmodule Plug.Router do
         end
 
         match _ do
-          # Halt the request so it doesn't go
-          # further in the plug pipeline.
-          halt send_resp(conn, 404, "oops")
+          send_resp(conn, 404, "oops")
         end
       end
 
@@ -27,7 +25,7 @@ defmodule Plug.Router do
 
   The router is a plug, which means it can be invoked as:
 
-      AppRouter.call(conn, [])
+      AppRouter.call(conn, AppRouter.init([]))
 
   Notice the router contains a plug pipeline and by default it requires
   two plugs: `match` and `dispatch`. `match` is responsible for
