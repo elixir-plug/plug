@@ -119,6 +119,7 @@ The Plug router allows developers to quickly match on incoming requests and perf
 ```elixir
 defmodule AppRouter do
   use Plug.Router
+  import Plug.Conn
 
   plug :match
   plug :dispatch
