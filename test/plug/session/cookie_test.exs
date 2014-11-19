@@ -48,6 +48,24 @@ defmodule Plug.Session.CookieTest do
     end
   end
 
+  test "defaults key generator opts" do
+    key_generator_opts = CookieStore.init(@default_opts).key_opts
+    assert key_generator_opts[:iterations] == 1000
+    assert key_generator_opts[:length] == 32
+    assert key_generator_opts[:digest] == :sha256
+  end
+
+  test "uses specified key generator opts" do
+    opts = @default_opts
+            |> Keyword.put(:key_iterations, 2000)
+            |> Keyword.put(:key_length, 64)
+            |> Keyword.put(:key_digest, :sha)
+    key_generator_opts = CookieStore.init(opts).key_opts
+    assert key_generator_opts[:iterations] == 2000
+    assert key_generator_opts[:length] == 64
+    assert key_generator_opts[:digest] == :sha
+  end
+
   ## Signed
 
   test "session cookies are signed" do
