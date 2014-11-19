@@ -121,7 +121,7 @@ defmodule Plug.Session.COOKIE do
       _ -> {nil, %{}}
     end
   end
-  defp decode(:error, _serializer, _serializer_config), do:
+  defp decode(:error, _serializer), do:
     {nil, %{}}
 
   defp derive(conn, key, key_opts) do
