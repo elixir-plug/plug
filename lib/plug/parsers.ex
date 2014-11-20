@@ -44,9 +44,9 @@ defmodule Plug.Parsers do
       These modules need to implement the behaviour outlined in
       this module.
 
-    * `:accept`  - an optional list of accepted mime type strings. Any mime
-      not handled by a parser and not explicitly accepted will
-      `raise UnsupportedMediaTypeError`. For example:
+    * `:pass` - an optional list of mime type strings that are allowed
+      to pass through. Any mime not handled by a parser and not explicitly
+      listed in `:pass` will `raise UnsupportedMediaTypeError`. For example:
 
         * `["*/*"]` - never raises
         * `["text/html", "application/*"]` - doesn't raise for those values
@@ -59,7 +59,7 @@ defmodule Plug.Parsers do
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
       plug Plug.Parsers, parsers: [:urlencoded, :json],
-                         accept:  ["application/json", "text/*"],
+                         pass:  [text/*"],
                          json_decoder: Poison
 
   ## Built-in parsers
@@ -113,10 +113,17 @@ defmodule Plug.Parsers do
 
   def init(opts) do
     parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
+
+    if accept = opts[:accept] do
+      IO.write :stderr, "warning: :accept in Plug.Parsers is deprecated, please use :pass instead\n" <>
+                        Exception.format_stacktrace()
+      opts = Keyword.put(opts, :pass, accept)
+    end
+
     opts
     |> Keyword.put(:parsers, convert_parsers(parsers))
     |> Keyword.put_new(:length, 8_000_000)
-    |> Keyword.put_new(:accept, [])
+    |> Keyword.put_new(:pass, [])
   end
 
   defp raise_missing_parsers do
@@ -163,12 +170,12 @@ defmodule Plug.Parsers do
   end
 
   defp reduce(conn, [], type, subtype, _headers, opts) do
-    ensure_accepted_mimes(conn, type, subtype, Keyword.fetch!(opts, :accept))
+    ensure_accepted_mimes(conn, type, subtype, Keyword.fetch!(opts, :pass))
   end
 
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
-  defp ensure_accepted_mimes(conn, type, subtype, accept) do
-    if "#{type}/#{subtype}" in accept || "#{type}/*" in accept do
+  defp ensure_accepted_mimes(conn, type, subtype, pass) do
+    if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
       conn
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
