@@ -1,5 +1,16 @@
 ## Changelog
 
+## v0.8.3-dev
+
+* Enhancements
+  * Use PKCS7 padding in MessageEncryptor (the same as OpenSSL)
+  * Add support for custom serializers in cookie session store
+  * Allow customization of key generation in cookie session store
+  * Automatically import `Plug.Conn` in Plug builder
+
+* Deprecations
+  * Deprecate `:accept` in favor of `:pass` in Plug.Parsers
+
 ## v0.8.2
 
 * Enhancements
