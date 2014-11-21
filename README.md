@@ -29,8 +29,8 @@ defmodule MyPlug do
   end
 end
 
-IO.puts "Running MyPlug with Cowboy on http://localhost:4000"
 Plug.Adapters.Cowboy.http MyPlug, []
+IO.puts "Running MyPlug with Cowboy on http://localhost:4000"
 ```
 
 The snippet above shows a very simple example on how to use Plug. Save that snippet to a file and run it inside the plug application with:

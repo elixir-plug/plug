@@ -36,5 +36,4 @@ defmodule Plug.Adapters.Cowboy.Handler do
     :cowboy_req.maybe_reply(stack, req)
     exit(reason)
   end
-
 end
