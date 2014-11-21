@@ -7,6 +7,7 @@
   * Add support for custom serializers in cookie session store
   * Allow customization of key generation in cookie session store
   * Automatically import `Plug.Conn` in Plug builder
+  * Render errors from Plug when using Ranch/Cowboy nicely
 
 * Deprecations
   * Deprecate `:accept` in favor of `:pass` in Plug.Parsers

@@ -19,9 +19,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   # e.g. `assert {204, _, _} = request :get, "/build/foo/bar"` will perform a
   # GET http://127.0.0.1:8001/build/foo/bar and Plug will call build/1.
 
-
   setup_all do
-    {:ok, _} = Application.ensure_all_started(:hackney)
     {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 8001
 
     on_exit fn ->

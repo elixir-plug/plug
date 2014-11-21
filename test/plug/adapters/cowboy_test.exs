@@ -7,7 +7,9 @@ defmodule Plug.Adapters.CowboyTest do
     [foo: :bar]
   end
 
-  @dispatch [{:_, [], [{:_, [], Plug.Adapters.Cowboy.Handler, {Plug.Adapters.CowboyTest, [foo: :bar]}}]}]
+  @dispatch [{:_, [], [
+              {:_, [], Plug.Adapters.Cowboy.Handler, {Plug.Adapters.CowboyTest, [foo: :bar]}}
+            ]}]
 
   test "builds args for cowboy dispatch" do
     assert args(:http, __MODULE__, [], []) ==

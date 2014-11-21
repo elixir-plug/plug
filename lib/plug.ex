@@ -36,6 +36,7 @@ defmodule Plug do
 
   @doc false
   def start(_type, _args) do
+    Logger.add_translator {Plug.Adapters.Translator, :translate}
     Plug.Supervisor.start_link()
   end
 end
