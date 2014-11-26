@@ -5,8 +5,8 @@ defmodule Plug.Adapters.Test.Conn do
   ## Test helpers
 
   def conn(method, uri, body_or_params, opts) do
-    uri     = URI.parse(uri)
-    method  = method |> to_string |> String.upcase
+    uri    = URI.parse(uri)
+    method = method |> to_string |> String.upcase
 
     {body, params, headers} = body_or_params(body_or_params, opts[:headers] || [])
     state = %{method: method, params: params, req_body: body, chunks: nil}
@@ -17,6 +17,8 @@ defmodule Plug.Adapters.Test.Conn do
       method: method,
       path_info: split_path(uri.path),
       port: uri.port || 80,
+      peer: {{127, 0, 0, 1}, 111317},
+      remote_ip: {127, 0, 0, 1},
       req_headers: headers,
       query_string: uri.query || "",
       params: params || %Plug.Conn.Unfetched{aspect: :params},

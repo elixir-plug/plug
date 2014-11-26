@@ -661,12 +661,66 @@
                 <div class="inset variables">
                     <table class="var_table">
                         <tr>
-                            <td class="name">Path</td>
-                            <td><pre><%= path(@conn) %></pre></td>
+                            <td class="name">URI</td>
+                            <td><%= url(@conn) %></td>
+                        </tr>
+                        <tr>
+                            <td class="name">Query String</td>
+                            <td><%= @conn.query_string %></td>
+                        </tr>
+                        <tr>
+                            <td class="name">Peer</td>
+                            <td><%= peer(@conn) %></td>
                         </tr>
                     </table>
                 </div>
             </div>
+
+            <div class="sub">
+                <h3>Headers</h3>
+                <div class="inset variables">
+                    <table class="var_table">
+                        <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+                            <tr>
+                                <td class="name"><%= key %></td>
+                                <td><%= value %></td>
+                            </tr>
+                        <% end %>
+                    </table>
+                </div>
+            </div>
+
+            <%= if @params do %>
+            <div class="sub">
+                <h3>Params</h3>
+                <div class="inset variables">
+                    <table class="var_table">
+                        <%= for {key, value} <- @params do %>
+                            <tr>
+                                <td class="name"><%= key %></td>
+                                <td><pre><%= inspect value %></pre></td>
+                            </tr>
+                        <% end %>
+                    </table>
+                </div>
+            </div>
+            <% end %>
+
+            <%= if @session do %>
+            <div class="sub">
+                <h3>Params</h3>
+                <div class="inset variables">
+                    <table class="var_table">
+                        <%= for {key, value} <- @session do %>
+                            <tr>
+                                <td class="name"><%= key %></td>
+                                <td><pre><%= inspect value %></pre></td>
+                            </tr>
+                        <% end %>
+                    </table>
+                </div>
+            </div>
+            <% end %>
         </div>
     </section>
 </body>
@@ -710,8 +764,10 @@ appFramesButton.onclick = function() {
     for(var i = 0; i < allFrames.length; i++) {
         if(allFrames[i].attributes["data-context"].value == "app") {
             allFrames[i].style.display = "block";
+            allFrames[i].setAttribute("data-display", "block");
         } else {
             allFrames[i].style.display = "none";
+            allFrames[i].setAttribute("data-display", "none");
         };
     };
     return false;
@@ -722,12 +778,13 @@ allFramesButton.onclick = function() {
     allFramesButton.className = "selected";
     for(var i = 0; i < allFrames.length; i++) {
         allFrames[i].style.display = "block";
+        allFrames[i].setAttribute("data-display", "block");
     };
     return false;
 };
 
 appFramesButton.onclick();
-if(document.querySelectorAll("ul.frames li[display=\"block\"]").length == 0) {
+if(document.querySelectorAll("ul.frames li[data-display=\"block\"]").length == 0) {
     allFramesButton.onclick();
 }
 </script>

@@ -31,7 +31,7 @@ defmodule Plug.ConnTest do
     assert conn.private[:hello] == :world
   end
 
-  test "scheme/1, host/1 and port/1" do
+  test "scheme, host and port fields" do
     conn = conn(:get, "/")
     assert conn.scheme == :http
     assert conn.host == "www.example.com"
@@ -46,6 +46,12 @@ defmodule Plug.ConnTest do
     assert conn.scheme == :http
     assert conn.host == "example.com"
     assert conn.port == 8080
+  end
+
+  test "peer and remote_ip fields" do
+    conn = conn(:get, "/")
+    assert conn.peer == {{127, 0, 0, 1}, 111317}
+    assert conn.remote_ip == {127, 0, 0, 1}
   end
 
   test "path_info/1" do

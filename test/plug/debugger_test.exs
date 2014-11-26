@@ -67,6 +67,7 @@ defmodule Plug.DebuggerTest do
     end)
 
     assert conn.status == 415
+    assert conn.resp_body =~ "<strong>Plug.Parsers.UnsupportedMediaTypeError</strong>"
     assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
   end
@@ -79,6 +80,49 @@ defmodule Plug.DebuggerTest do
     assert conn.status == 500
     assert conn.resp_body =~ "unhandled exit at GET /"
     assert conn.resp_body =~ "exited in: GenServer.call(:foo, :bar)"
+  end
+
+  test "shows request info" do
+    conn = render(conn(:get, "/foo/bar?baz=bat"), [], fn -> raise "oops" end)
+
+    assert conn.resp_body =~ "http://www.example.com:80/foo/bar"
+    assert conn.resp_body =~ "baz=bat"
+    assert conn.resp_body =~ "127.0.0.1:111317"
+  end
+
+  test "shows headers" do
+    conn =
+      conn(:get, "/foo/bar?baz=bat", [], headers: [{"my-header", "my-value"}])
+      |> render([], fn -> raise "oops" end)
+
+    assert conn.resp_body =~ "my-header"
+    assert conn.resp_body =~ "my-value"
+  end
+
+  test "shows params" do
+    conn =
+      conn(:get, "/foo/bar?from-qs-key=from-qs-value", %{"from-body-key" => "from-body-value"})
+      |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
+      |> render([], fn -> raise "oops" end)
+
+    assert conn.resp_body =~ "from-qs-key"
+    assert conn.resp_body =~ "from-qs-value"
+    assert conn.resp_body =~ "from-body-key"
+    assert conn.resp_body =~ "from-body-value"
+  end
+
+  test "shows session" do
+    Process.put({:session, "sid"}, %{session_key: "session_value"})
+
+    conn =
+      conn(:get, "/foo/bar")
+      |> fetch_cookies
+      |> (&put_in(&1.cookies["foobar"], "sid")).()
+      |> Plug.Session.call(Plug.Session.init(store: Plug.ProcessStore, key: "foobar"))
+      |> render([], fn -> raise "oops" end)
+
+    assert conn.resp_body =~ "session_key"
+    assert conn.resp_body =~ "session_value"
   end
 
   defp stack(stack) do

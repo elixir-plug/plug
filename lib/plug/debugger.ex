@@ -117,14 +117,29 @@ defmodule Plug.Debugger do
   # Made public with @doc false for testing.
   @doc false
   def render(conn, kind, error, stack, opts) do
+    session = maybe_fetch_session(conn)
+    params  = maybe_fetch_params(conn)
+
     error = Exception.normalize(kind, error, stack)
     {status, title, message} = info(kind, error)
+
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
-                                     title: title, message: message)
+                                     title: title, message: message,
+                                     session: session, params: params)
+  end
+
+  defp maybe_fetch_session(conn) do
+    if conn.private[:plug_session_fetch] do
+      fetch_session(conn).private[:plug_session]
+    end
+  end
+
+  defp maybe_fetch_params(conn) do
+    fetch_params(conn).params
   end
 
   defp info(:error, error) do
-    {Plug.Exception.status(error), error.__struct__, Exception.message(error)}
+    {Plug.Exception.status(error), inspect(error.__struct__), Exception.message(error)}
   end
 
   defp info(:throw, throw) do
@@ -198,11 +213,14 @@ defmodule Plug.Debugger do
   defp get_context(_app1, _app2),             do: :all
 
   defp get_source(module, file) do
-    if Code.ensure_loaded?(module) &&
-       (source = module.__info__(:compile)[:source]) do
-      to_string(source)
-    else
-      file
+    cond do
+      File.regular?(file) ->
+        file
+      Code.ensure_loaded?(module) &&
+        (source = module.__info__(:compile)[:source]) ->
+        to_string(source)
+      true ->
+        file
     end
   end
 
@@ -238,10 +256,19 @@ defmodule Plug.Debugger do
 
   ## Helpers
 
-  defp path(%Plug.Conn{path_info: []}),   do: "/"
-  defp path(%Plug.Conn{path_info: path}), do: Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
+  defp path(%Plug.Conn{path_info: []}), do:
+    "/"
+  defp path(%Plug.Conn{path_info: path}), do:
+    Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
 
-  defp method(%Plug.Conn{method: method}), do: method
+  defp method(%Plug.Conn{method: method}), do:
+    method
+
+  defp url(%Plug.Conn{scheme: scheme, host: host, port: port} = conn), do:
+    "#{scheme}://#{host}:#{port}#{path(conn)}"
+
+  defp peer(%Plug.Conn{peer: {host, port}}), do:
+    "#{:inet_parse.ntoa host}:#{port}"
 
   defp h(string) do
     for <<code <- to_string(string)>> do
