@@ -1,32 +1,7 @@
-<!--
-This debug page is based on Better Errors, under MIT LICENSE.
-
-Copyright (c) 2012 Charlie Somerville
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
-
-<% import Plug.Debugger, only: [h: 1] %>
 <!DOCTYPE html>
 <html>
 <head>
-    <title><%= "#{@title} at #{@method} #{@path}" %></title>
+    <title><%= @title %> at <%= method(@conn) %> <%= path(@conn) %></title>
     <style>
     /* Basic reset */
     * {
@@ -284,7 +259,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
         text-overflow: ellipsis;
     }
 
-    ul.frames .function {
+    ul.frames .app {
         color: #4E2A8E;
     }
 
@@ -342,13 +317,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
         left: 20px;
     }
 
-    ul.frames .icon.plug {
+    ul.frames .icon.app {
         background: #808090;
         border-color: #555;
     }
 
-    ul.frames .icon.plug:before {
-        content: 'P';
+    ul.frames .icon.app:before {
+        content: 'A';
         color: white;
         text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
     }
@@ -617,7 +592,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
 <body>
     <div class="top">
         <header class="exception">
-            <h2><strong><%= @title %></strong> <span>at <%= "#{@method} #{@path}" %></span></h2>
+            <h2><strong><%= @title %></strong> <span>at <%= method(@conn) %> <%= path(@conn) %></span></h2>
             <p><%= @message %></p>
         </header>
     </div>
@@ -625,7 +600,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
     <section class="backtrace">
         <nav class="sidebar">
             <nav class="tabs">
-                <a href="#" id="plug_frames">Plug frames</a>
+                <a href="#" id="app_frames">App frames</a>
                 <a href="#" id="all_frames">All frames</a>
             </nav>
             <ul class="frames">
@@ -635,7 +610,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
                         <i class="icon <%= frame.context %>"></i>
                         <div class="info">
                             <div class="name">
-                                <strong><%= frame.module %></strong>.<span class="function"><%=h frame.function %></span>
+                                <strong><%= h(frame.info) %></strong>
+
+                                <%= if app = frame.app do %>
+                                    <span class="app">(<%= app %>)</span>
+                                <% end %>
                             </div>
                             <div class="location">
                                 <span class="filename"><%= frame.file %></span>
@@ -654,10 +633,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
                 <div class="frame_info" id="frame_info_<%= frame.index %>" style="display: none;">
                     <header class="trace_info">
                         <div class="title">
-                            <h2 class="name"><%= frame.module %></h2>
-                            <div class="location">
-                                <span class="filename"><%= frame.file %></span>
-                            </div>
+                            <h2 class="name">
+                              <%= frame.info %>
+
+                              <%= if app = frame.app do %>
+                                  <span class="app">(<%= app %>)</span>
+                              <% end %>
+                            </h2>
+                            <div class="location"><span class="filename"><a href="<%= frame.link %>"><%= frame.file %></a></span></div>
                         </div>
 
                         <div class="code">
@@ -666,7 +649,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
                               <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%=h line %></span></pre>
                             <% end %>
                           <% else %>
-                            <p class="no_snippet">No code snippets for code outside the provided sources.</p>
+                            <p class="no_snippet">No code snippets available.</p>
                           <% end %>
                         </div>
                     </header>
@@ -679,7 +662,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
                     <table class="var_table">
                         <tr>
                             <td class="name">Path</td>
-                            <td><pre><%= @path %></pre></td>
+                            <td><pre><%= path(@conn) %></pre></td>
                         </tr>
                     </table>
                 </div>
@@ -714,18 +697,18 @@ function selectFrameInfo(index) {
 };
 
 (
-  document.querySelector(".frames li.plug") ||
+  document.querySelector(".frames li.app") ||
   document.querySelector(".frames li")
 ).onclick();
 
-var plugFramesButton = document.getElementById("plug_frames");
+var appFramesButton = document.getElementById("app_frames");
 var allFramesButton = document.getElementById("all_frames");
 
-plugFramesButton.onclick = function() {
+appFramesButton.onclick = function() {
     allFramesButton.className = "";
-    plugFramesButton.className = "selected";
+    appFramesButton.className = "selected";
     for(var i = 0; i < allFrames.length; i++) {
-        if(allFrames[i].attributes["data-context"].value == "plug") {
+        if(allFrames[i].attributes["data-context"].value == "app") {
             allFrames[i].style.display = "block";
         } else {
             allFrames[i].style.display = "none";
@@ -735,7 +718,7 @@ plugFramesButton.onclick = function() {
 };
 
 allFramesButton.onclick = function() {
-    plugFramesButton.className = "";
+    appFramesButton.className = "";
     allFramesButton.className = "selected";
     for(var i = 0; i < allFrames.length; i++) {
         allFrames[i].style.display = "block";
@@ -743,6 +726,9 @@ allFramesButton.onclick = function() {
     return false;
 };
 
-plugFramesButton.onclick();
+appFramesButton.onclick();
+if(document.querySelectorAll("ul.frames li[display=\"block\"]").length == 0) {
+    allFramesButton.onclick();
+}
 </script>
 </html>

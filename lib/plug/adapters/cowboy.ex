@@ -28,7 +28,7 @@ defmodule Plug.Adapters.Cowboy do
 
   """
 
-  # Used for testing of cowboy.
+  # Made public with @doc false for testing.
   @doc false
   def args(scheme, plug, opts, options) do
     options

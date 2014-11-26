@@ -65,7 +65,13 @@ defmodule Plug.Builder do
   @doc false
   defmacro __before_compile__(env) do
     plugs = Module.get_attribute(env.module, :plugs)
+
+    if plugs == [] do
+      raise "not plugs have been defined in #{__MODULE__}"
+    end
+
     {conn, body} = Plug.Builder.compile(plugs)
+
     quote do
       defp plug_builder_call(unquote(conn), _), do: unquote(body)
     end

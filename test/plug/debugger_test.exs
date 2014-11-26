@@ -1,151 +1,139 @@
 defmodule Plug.DebuggerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
-  import ExUnit.CaptureIO
 
   defmodule Router do
-    use Plug.Builder
-    use Plug.Debugger, root: Path.expand("plug"),
-                       sources: ["plug/**/*"],
-                       template_path: Path.expand("template.eex", "lib/plug/debugger")
+    use Plug.Router
+    use Plug.Debugger, otp_app: :plug
 
-    plug :boom
+    plug :match
+    plug :dispatch
 
-    def boom(_conn, _opts) do
-      raise ArgumentError
+    get "/boom" do
+      resp conn, 200, "oops"
+      raise "oops"
     end
 
-    # Overrride log_error/1 to silence default logs
-    def log_error(_err) do
-    end
-  end
-
-  defmodule Logs do
-    use Plug.Builder
-    use Plug.Debugger, root: Path.expand("plug"),
-                       sources: ["plug/**/*"],
-                       template_path: Path.expand("template.eex", "lib/plug/debugger")
-
-    plug :boom
-
-    def boom(_conn, _opts) do
-      raise ArgumentError
+    get "/send_and_boom" do
+      send_resp conn, 200, "oops"
+      raise "oops"
     end
   end
 
-  defmodule Exit do
-    use Plug.Builder
-    use Plug.Debugger, root: Path.expand("plug"),
-                       sources: ["plug/**/*"],
-                       template_path: Path.expand("template.eex", "lib/plug/debugger")
+  test "call/2 is overridden" do
+    assert_raise RuntimeError, "oops", fn ->
+      conn(:get, "/boom") |> Router.call([])
+    end
 
-    plug :boom
+    assert_received {:plug_conn, :sent}
+  end
 
-    def boom(_conn, _opts) do
-      exit(:normal)
+  test "call/2 is overridden but is a no-op when response is already sent" do
+    assert_raise RuntimeError, "oops", fn ->
+      conn(:get, "/send_and_boom") |> Router.call([])
+    end
+
+    assert_received {:plug_conn, :sent}
+  end
+
+  defp render(conn, opts, fun) do
+    opts =
+      opts
+      |> Keyword.put_new(:stack, [])
+      |> Keyword.put_new(:otp_app, :plug)
+
+    try do
+      fun.()
+    catch
+      kind, error -> Plug.Debugger.render(conn, kind, error, opts[:stack], opts)
+    else
+      _ -> flunk "function should have failed"
     end
   end
 
-  defmodule Overridable do
-    use Plug.Builder
-    use Plug.Debugger, root: Path.expand("plug"),
-                       sources: ["plug/**/*"],
-                       template_path: Path.expand("template.eex", "lib/plug/debugger")
-    require Logger
+  test "exception page for throws" do
+    conn = render(conn(:get, "/"), [], fn ->
+      throw :hello
+    end)
 
-    plug :boom
-
-    def boom(_conn, _opts) do
-      raise ArgumentError
-    end
-
-    defp debug_template(_assigns) do
-      "<h1>Foo</h1>"
-    end
-
-    defp log_error(_err) do
-      Logger.error fn ->
-        "Overridden!"
-      end
-    end
+    assert conn.status == 500
+    assert conn.resp_body =~ "unhandled throw at GET /"
+    assert conn.resp_body =~ ":hello"
   end
 
-  def capture_log(fun) do
-    data = capture_io(:user, fn ->
-      Process.put(:capture_log, fun.())
-      Logger.flush()
-    end) |> String.split("\n", trim: true)
-    {Process.get(:capture_log), data}
+  test "exception page for exceptions" do
+    conn = render(conn(:get, "/"), [], fn ->
+      raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
+    end)
+
+    assert conn.status == 415
+    assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError at GET /"
+    assert conn.resp_body =~ "unsupported media type foo/bar"
   end
 
-  test "call/2 is overridden and error is caught" do
-    conn = conn(:get, "/") |> Router.call([])
+  test "exception page for exits" do
+    conn = render(conn(:get, "/"), [], fn ->
+      exit {:timedout, {GenServer, :call, [:foo, :bar]}}
+    end)
 
-    assert conn.state == :sent
-    assert get_resp_header(conn, "content-type") == ["text/html; charset=utf-8"]
+    assert conn.status == 500
+    assert conn.resp_body =~ "unhandled exit at GET /"
+    assert conn.resp_body =~ "exited in: GenServer.call(:foo, :bar)"
   end
 
-  test "verify logger on error" do
-    {_conn, log} = capture_log fn ->
-      conn(:get, "/") |> Logs.call([])
-    end
-
-    assert String.contains?(List.first(log), "[error] ** (ArgumentError) argument error")
-    assert Enum.any?(log, fn(trace) ->
-      trace =~ "test/plug/debugger_test.exs:"
+  defp stack(stack) do
+    render(conn(:get, "/"), [stack: stack], fn ->
+      raise "oops"
     end)
   end
 
-  test "verify logger on exit" do
-    {_conn, log} = capture_log fn ->
-      conn(:get, "/") |> Exit.call([])
-    end
+  test "uses PLUG_EDITOR" do
+    System.put_env("PLUG_EDITOR", "hello://open?file=__FILE__&line=__LINE__")
 
-    assert List.first(log) =~ "[error] ** (exit) normal"
+    conn = stack [{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}]
+    file = Path.expand("lib/plug/conn.ex")
+    assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=1"
+
+    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
+    file = Path.expand(GenServer.__info__(:compile)[:source])
+    assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=10000"
   end
 
-  test "debug template is overridable" do
-    {conn, _log} = capture_log fn ->
-      conn(:get, "/") |> Overridable.call([])
-    end
-
-    assert conn.resp_body == "<h1>Foo</h1>"
+  test "stacktrace from otp_app" do
+    conn = stack [{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}]
+    assert conn.resp_body =~ "data-context=\"app\""
+    assert conn.resp_body =~ "<strong>Plug.Conn.unknown/1</strong>"
+    assert conn.resp_body =~ "<span class=\"filename\">lib/plug/conn.ex</span>"
+    assert conn.resp_body =~ "(line <span class=\"line\">1</span>)"
+    assert conn.resp_body =~ "<span class=\"app\">(plug)</span>"
+    assert conn.resp_body =~ "<span class=\"ln\">1</span>"
+    assert conn.resp_body =~ "<span>defmodule Plug.Conn do\n</span>"
   end
 
-  test "error logging is overridable" do
-    {_conn, log} = capture_log fn ->
-      conn(:get, "/") |> Overridable.call([])
-    end
-
-    assert List.first(log) =~ "Overridden!"
+  test "stacktrace from elixir" do
+    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
+    assert conn.resp_body =~ "data-context=\"all\""
+    assert conn.resp_body =~ "<strong>GenServer.call/2</strong>"
+    assert conn.resp_body =~ "(line <span class=\"line\">10000</span>)"
+    assert conn.resp_body =~ "<span class=\"filename\">lib/gen_server.ex</span>"
   end
 
-  ## Default Template
+  test "stacktrace from test" do
+    conn = stack [{__MODULE__, :unknown, 1,
+                   file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
 
-  test "prints exception name and title" do
-    conn =  conn(:get, "/") |> Router.call([])
-
-    assert conn.status == 500
-    assert conn.resp_body =~ ~r"ArgumentError"
-    assert conn.resp_body =~ ~r"argument error"
-    assert conn.resp_body =~ ~r"ArgumentError at GET /"
+    assert conn.resp_body =~ "data-context=\"all\""
+    assert conn.resp_body =~ "<strong>Plug.DebuggerTest.unknown/1</strong>"
+    assert conn.resp_body =~ "<span class=\"filename\">test/plug/debugger_test.exs</span>"
+    assert conn.resp_body =~ "Path.relative_to_cwd(__ENV__.file)"
+    refute conn.resp_body =~ "<span class=\"app\">(plug)</span>"
   end
 
-  test "shows shortcut file path, module and function" do
-    conn = conn(:get, "/") |> Router.call([])
+  # This should always be the last test as we are checing for end of line.
 
-    assert conn.resp_body =~ ~r"\bplug/debugger_test.exs\b"
-    assert conn.resp_body =~ ~r"\bPlug.DebuggerTest\b"
-    assert conn.resp_body =~ ~r"\bboom/2\b"
-  end
-
-  test "shows snippets if they are part of the source_paths" do
-    conn = conn(:get, "/") |> Router.call([])
-    assert conn.resp_body =~ ~r"<h2 class=\"name\">Plug.DebuggerTest.Router</h2>"
-  end
-
-  test "does not show snippets if they are not part of the source_paths" do
-    conn = conn(:get, "/") |> Router.call([])
-    assert conn.resp_body =~ ~r"No code snippets for code outside the provided sources"
+  test "stacktrace at the end of file" do
+    conn = stack [{__MODULE__, :unknown, 1,
+                   file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
+    assert conn.resp_body =~ "<span>end\n</span>"
   end
 end
