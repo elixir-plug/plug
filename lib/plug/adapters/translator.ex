@@ -27,8 +27,8 @@ defmodule Plug.Adapters.Translator do
   end
 
   defp translate_ranch(_min_level, ref, protocol, pid, reason) do
-    ["Ranch Protocol ", inspect(pid), " (", inspect(protocol),
-      ") of Listener ", inspect(ref), " terminated\n" |
+    ["Ranch protocol ", inspect(pid), " (", inspect(protocol),
+      ") of listener ", inspect(ref), " terminated\n" |
       Exception.format(:exit, reason, [])]
   end
 

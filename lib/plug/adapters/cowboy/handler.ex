@@ -9,12 +9,12 @@ defmodule Plug.Adapters.Cowboy.Handler do
   def upgrade(req, env, __MODULE__, {transport, plug, opts}) do
     conn = @connection.conn(req, transport)
     try do
-      plug.call(conn, opts)
-    else
-      %Plug.Conn{adapter: {@connection, req}} ->
-        {:ok, req, [{:result, :ok} | env]}
-      other ->
-        raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
+      case plug.call(conn, opts) do
+        %Plug.Conn{adapter: {@connection, req}} ->
+          {:ok, req, [{:result, :ok} | env]}
+        other ->
+          raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
+      end
     catch
       :error, value ->
         stack = System.stacktrace()

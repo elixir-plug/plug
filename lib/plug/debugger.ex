@@ -155,7 +155,6 @@ defmodule Plug.Debugger do
     editor = System.get_env("PLUG_EDITOR")
 
     stacktrace
-    |> Enum.take_while(& elem(&1, 0) != __MODULE__)
     |> Enum.map_reduce(0, &each_frame(&1, &2, app, editor))
     |> elem(0)
   end
@@ -217,7 +216,7 @@ defmodule Plug.Debugger do
       File.regular?(file) ->
         file
       Code.ensure_loaded?(module) &&
-        (source = module.__info__(:compile)[:source]) ->
+        (source = module.module_info(:compile)[:source]) ->
         to_string(source)
       true ->
         file
