@@ -61,6 +61,15 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ ":hello"
   end
 
+  test "exception page for error" do
+    conn = render(conn(:get, "/"), [], fn ->
+      :erlang.error(:badarg)
+    end)
+
+    assert conn.status == 500
+    assert conn.resp_body =~ "ArgumentError at GET /"
+  end
+
   test "exception page for exceptions" do
     conn = render(conn(:get, "/"), [], fn ->
       raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"

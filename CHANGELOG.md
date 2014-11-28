@@ -8,6 +8,7 @@
   * Allow customization of key generation in cookie session store
   * Automatically import `Plug.Conn` in Plug builder
   * Render errors from Plug when using Ranch/Cowboy nicely
+  * Provide `Plug.Crypto.secure_compare/2` for comparing binaries
 
 * Deprecations
   * Deprecate `:accept` in favor of `:pass` in Plug.Parsers

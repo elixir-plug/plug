@@ -59,7 +59,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert conn.method == "HEAD"
     assert conn.path_info == []
     assert conn.query_string == "foo=bar&baz=bat"
-    conn
+    resp(conn, 200, "ok")
   end
 
   def build(%Conn{} = conn) do
@@ -72,23 +72,23 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert conn.method == "GET"
     assert {{127, 0, 0, 1}, _} = conn.peer
     assert conn.remote_ip == {127, 0, 0, 1}
-    conn
+    resp(conn, 200, "ok")
   end
 
   test "builds a connection" do
-    assert {204, _, _} = request :head, "/?foo=bar&baz=bat"
-    assert {204, _, _} = request :get, "/build/foo/bar"
-    assert {204, _, _} = request :get, "//build//foo//bar"
+    assert {200, _, _} = request :head, "/?foo=bar&baz=bat"
+    assert {200, _, _} = request :get, "/build/foo/bar"
+    assert {200, _, _} = request :get, "//build//foo//bar"
   end
 
   def headers(conn) do
     assert get_req_header(conn, "foo") == ["bar"]
     assert get_req_header(conn, "baz") == ["bat"]
-    conn
+    resp(conn, 200, "ok")
   end
 
   test "stores request headers" do
-    assert {204, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
+    assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
   end
 
   def send_200(conn) do
@@ -161,19 +161,19 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     expected = :binary.copy("abcdefghij", 100_000)
     assert {:ok, ^expected, conn} = read_body(conn)
     assert {:ok, "", conn} = read_body(conn)
-    conn
+    resp(conn, 200, "ok")
   end
 
   def read_req_body_partial(conn) do
     assert {:more, _body, conn} = read_body(conn, length: 5, read_length: 5)
-    conn
+    resp(conn, 200, "ok")
   end
 
   test "reads body" do
     body = :binary.copy("abcdefghij", 100_000)
-    assert {204, _, ""} = request :get, "/read_req_body", [], body
-    assert {204, _, ""} = request :post, "/read_req_body", [], body
-    assert {204, _, ""} = request :post, "/read_req_body_partial", [], body
+    assert {200, _, "ok"} = request :get, "/read_req_body", [], body
+    assert {200, _, "ok"} = request :post, "/read_req_body", [], body
+    assert {200, _, "ok"} = request :post, "/read_req_body_partial", [], body
   end
 
   def multipart(conn) do
@@ -185,7 +185,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert file.content_type == "text/plain"
     assert file.filename == "foo.txt"
 
-    conn
+    resp(conn, 200, "ok")
   end
 
   test "parses multipart requests" do
@@ -194,8 +194,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
       [{"Content-Type", "multipart/form-data; boundary=----WebKitFormBoundaryw58EW1cEpjzydSCq"},
        {"Content-Length", byte_size(multipart)}]
 
-    assert {204, _, _} = request :post, "/multipart", headers, multipart
-    assert {204, _, _} = request :post, "/multipart?name=overriden", headers, multipart
+    assert {200, _, _} = request :post, "/multipart", headers, multipart
+    assert {200, _, _} = request :post, "/multipart?name=overriden", headers, multipart
   end
 
   def https(conn) do

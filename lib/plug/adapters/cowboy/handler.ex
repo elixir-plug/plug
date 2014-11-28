@@ -9,12 +9,12 @@ defmodule Plug.Adapters.Cowboy.Handler do
   def upgrade(req, env, __MODULE__, {transport, plug, opts}) do
     conn = @connection.conn(req, transport)
     try do
-      case plug.call(conn, opts) do
-        %Plug.Conn{adapter: {@connection, req}} ->
-          {:ok, req, [{:result, :ok} | env]}
-        other ->
-          raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
-      end
+      %{adapter: {@connection, req}} =
+        conn
+        |> plug.call(opts)
+        |> maybe_send(plug)
+
+      {:ok, req, [{:result, :ok} | env]}
     catch
       :error, value ->
         stack = System.stacktrace()
@@ -30,6 +30,13 @@ defmodule Plug.Adapters.Cowboy.Handler do
         reason = {value, {plug, :call, [conn, opts]}}
         terminate(reason, req, stack)
     end
+  end
+
+  defp maybe_send(%Plug.Conn{state: :unset}, _plug),      do: raise Plug.Conn.NotSentError
+  defp maybe_send(%Plug.Conn{state: :set} = conn, _plug), do: Plug.Conn.send_resp(conn)
+  defp maybe_send(%Plug.Conn{} = conn, _plug),            do: conn
+  defp maybe_send(other, plug) do
+    raise "Cowboy adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
   end
 
   defp terminate(reason, req, stack) do

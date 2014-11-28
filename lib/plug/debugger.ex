@@ -94,17 +94,17 @@ defmodule Plug.Debugger do
     try do
       fun.()
     catch
-      kind, error ->
+      kind, reason ->
         stack = System.stacktrace
 
         receive do
           @already_sent ->
             send self(), @already_sent
-            :erlang.raise kind, error, stack
+            :erlang.raise kind, reason, stack
         after
           0 ->
-            render conn, kind, error, stack, opts
-            :erlang.raise kind, error, stack
+            render conn, kind, reason, stack, opts
+            :erlang.raise kind, reason, stack
         end
     end
   end
@@ -116,12 +116,12 @@ defmodule Plug.Debugger do
 
   # Made public with @doc false for testing.
   @doc false
-  def render(conn, kind, error, stack, opts) do
+  def render(conn, kind, reason, stack, opts) do
     session = maybe_fetch_session(conn)
     params  = maybe_fetch_params(conn)
 
-    error = Exception.normalize(kind, error, stack)
-    {status, title, message} = info(kind, error)
+    reason = Exception.normalize(kind, reason, stack)
+    {status, title, message} = info(kind, reason)
 
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
                                      title: title, message: message,
@@ -255,10 +255,8 @@ defmodule Plug.Debugger do
 
   ## Helpers
 
-  defp path(%Plug.Conn{path_info: []}), do:
-    "/"
   defp path(%Plug.Conn{path_info: path}), do:
-    Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
+    "/" <> Enum.join(path, "/")
 
   defp method(%Plug.Conn{method: method}), do:
     method

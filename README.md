@@ -150,13 +150,20 @@ This also means that a catch all `match` is recommended to be defined, as in the
 
 This project aims to ship with different plugs that can be re-used accross applications:
 
-* `Plug.Head` - converts HEAD requests to GET requests;
-* `Plug.MethodOverride` - overrides a request method with one specified in headers;
-* `Plug.Parsers` - responsible for parsing the request body given its content-type;
-* `Plug.Session` - handles session management and storage;
-* `Plug.Static` - serves static files;
+  * `Plug.Head` - converts HEAD requests to GET requests;
+  * `Plug.Logger` - logs requests;
+  * `Plug.MethodOverride` - overrides a request method with one specified in headers;
+  * `Plug.Parsers` - responsible for parsing the request body given its content-type;
+  * `Plug.Session` - handles session management and storage;
+  * `Plug.Static` - serves static files;
 
 You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
+
+### Helper modules
+
+Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help development:
+
+  * `Plug.Debugger` - shows a helpful debugging page everytime there is a failure in a request;
 
 ## License
 
