@@ -48,7 +48,7 @@ You can use plug in your projects in two steps:
     ```elixir
     def deps do
       [{:cowboy, "~> 1.0.0"},
-       {:plug, "~> 0.8.0"}]
+       {:plug, "~> 0.8.3"}]
     end
     ```
 
@@ -119,7 +119,6 @@ The Plug router allows developers to quickly match on incoming requests and perf
 ```elixir
 defmodule AppRouter do
   use Plug.Router
-  import Plug.Conn
 
   plug :match
   plug :dispatch

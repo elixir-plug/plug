@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.8.3-dev
+## v0.8.3
 
 * Enhancements
   * Use PKCS7 padding in MessageEncryptor (the same as OpenSSL)
@@ -9,6 +9,7 @@
   * Automatically import `Plug.Conn` in Plug builder
   * Render errors from Plug when using Ranch/Cowboy nicely
   * Provide `Plug.Crypto.secure_compare/2` for comparing binaries
+  * Add `Plug.Debugger` for helpful pages whenever there is a failure during a request
 
 * Deprecations
   * Deprecate `:accept` in favor of `:pass` in Plug.Parsers
