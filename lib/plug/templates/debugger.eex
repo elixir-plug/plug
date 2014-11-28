@@ -708,7 +708,7 @@
 
             <%= if @session do %>
             <div class="sub">
-                <h3>Params</h3>
+                <h3>Session</h3>
                 <div class="inset variables">
                     <table class="var_table">
                         <%= for {key, value} <- @session do %>

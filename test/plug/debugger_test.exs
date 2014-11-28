@@ -94,6 +94,7 @@ defmodule Plug.DebuggerTest do
   test "shows request info" do
     conn = render(conn(:get, "/foo/bar?baz=bat"), [], fn -> raise "oops" end)
 
+    assert conn.resp_body =~ "<h3>Request info</h3>"
     assert conn.resp_body =~ "http://www.example.com:80/foo/bar"
     assert conn.resp_body =~ "baz=bat"
     assert conn.resp_body =~ "127.0.0.1:111317"
@@ -104,6 +105,7 @@ defmodule Plug.DebuggerTest do
       conn(:get, "/foo/bar?baz=bat", [], headers: [{"my-header", "my-value"}])
       |> render([], fn -> raise "oops" end)
 
+    assert conn.resp_body =~ "<h3>Headers</h3>"
     assert conn.resp_body =~ "my-header"
     assert conn.resp_body =~ "my-value"
   end
@@ -114,6 +116,7 @@ defmodule Plug.DebuggerTest do
       |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
       |> render([], fn -> raise "oops" end)
 
+    assert conn.resp_body =~ "<h3>Params</h3>"
     assert conn.resp_body =~ "from-qs-key"
     assert conn.resp_body =~ "from-qs-value"
     assert conn.resp_body =~ "from-body-key"
@@ -130,6 +133,7 @@ defmodule Plug.DebuggerTest do
       |> Plug.Session.call(Plug.Session.init(store: Plug.ProcessStore, key: "foobar"))
       |> render([], fn -> raise "oops" end)
 
+    assert conn.resp_body =~ "<h3>Session</h3>"
     assert conn.resp_body =~ "session_key"
     assert conn.resp_body =~ "session_value"
   end
