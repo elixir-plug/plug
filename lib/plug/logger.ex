@@ -42,7 +42,7 @@ defmodule Plug.Logger do
     Logger.metadata(request_id: request_id)
 
     Logger.info fn ->
-      [conn.method, ?\s, path_to_iodata(conn.path_info)]
+      [conn.method, ?\s, Conn.full_path(conn)]
     end
 
     before_time = :os.timestamp()
@@ -67,9 +67,6 @@ defmodule Plug.Logger do
 
   defp connection_type(%{state: :chunked}), do: "Chunked"
   defp connection_type(_), do: "Sent"
-
-  defp path_to_iodata([]),   do: [?/]
-  defp path_to_iodata(path), do: Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
 
   defp valid_request_id?(s) do
     byte_size(s) in 20..200 and valid_base64?(s)

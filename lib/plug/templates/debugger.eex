@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title><%= @title %> at <%= method(@conn) %> <%= path(@conn) %></title>
+    <title><%= @title %> at <%= method(@conn) %> <%= full_path(@conn) %></title>
     <style>
     /* Basic reset */
     * {
@@ -592,7 +592,7 @@
 <body>
     <div class="top">
         <header class="exception">
-            <h2><strong><%= @title %></strong> <span>at <%= method(@conn) %> <%= path(@conn) %></span></h2>
+            <h2><strong><%= @title %></strong> <span>at <%= method(@conn) %> <%= full_path(@conn) %></span></h2>
             <p><%= @message %></p>
         </header>
     </div>

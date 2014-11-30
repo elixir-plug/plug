@@ -255,14 +255,11 @@ defmodule Plug.Debugger do
 
   ## Helpers
 
-  defp path(%Plug.Conn{path_info: path}), do:
-    "/" <> Enum.join(path, "/")
-
   defp method(%Plug.Conn{method: method}), do:
     method
 
   defp url(%Plug.Conn{scheme: scheme, host: host, port: port} = conn), do:
-    "#{scheme}://#{host}:#{port}#{path(conn)}"
+    "#{scheme}://#{host}:#{port}#{full_path(conn)}"
 
   defp peer(%Plug.Conn{peer: {host, port}}), do:
     "#{:inet_parse.ntoa host}:#{port}"

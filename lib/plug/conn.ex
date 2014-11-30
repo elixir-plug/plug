@@ -86,7 +86,7 @@ defmodule Plug.Conn do
   @type headers         :: [{binary, binary}]
   @type host            :: binary
   @type int_status      :: non_neg_integer | nil
-  @type owner           :: pid | nil
+  @type owner           :: pid
   @type method          :: binary
   @type param           :: binary | %{binary => param} | [param]
   @type params          :: %{binary => param}
@@ -170,6 +170,24 @@ defmodule Plug.Conn do
   alias Plug.Conn
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
+
+  @doc """
+  Receives the connection and returns the full requested path as a string.
+
+  The full path of a request is made by joining its `script_path`
+  with its `path_info`.
+  """
+  @spec full_path(t) :: String.t
+  def full_path(conn)
+
+  def full_path(%Conn{script_name: [], path_info: []}), do:
+    "/"
+
+  def full_path(%Conn{script_name: script, path_info: path}), do:
+    path_to_string(script) <> path_to_string(path)
+
+  @compile {:inline, path_to_string: 1}
+  defp path_to_string(path), do: Enum.reduce(path, "", & &2 <> "/" <> &1)
 
   @doc """
   Assigns a new key and value in the connection.

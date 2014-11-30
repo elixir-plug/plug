@@ -1,5 +1,8 @@
 ## Changelog
 
+* Enhancements
+  * Add `Plug.Conn.full_path/1`
+
 ## v0.8.4
 
 * Bug fixes

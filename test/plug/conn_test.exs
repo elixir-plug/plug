@@ -73,6 +73,17 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == nil
   end
 
+  test "full_path/1" do
+    conn = conn(:get, "/")
+    assert full_path(conn) == "/"
+
+    conn = %{conn | path_info: ["bar", "baz"]}
+    assert full_path(conn) == "/bar/baz"
+
+    conn = %{conn | script_name: ["foo"]}
+    assert full_path(conn) == "/foo/bar/baz"
+  end
+
   test "resp/3" do
     conn = conn(:get, "/foo")
     assert conn.state == :unset

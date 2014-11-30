@@ -42,14 +42,10 @@ defmodule Plug.Adapters.Translator do
     ["Server: ", host, ":", Integer.to_string(port), ?\s, ?(, Atom.to_string(scheme), ?), ?\n]
   end
 
-  defp request_info(%Plug.Conn{method: method, path_info: path_info,
-                               query_string: query_string}) do
-    ["Request: ", method, ?\s, path_to_iodata(path_info, query_string), ?\n]
+  defp request_info(%Plug.Conn{method: method, query_string: query_string} = conn) do
+    ["Request: ", method, ?\s, path_to_iodata(conn, query_string), ?\n]
   end
 
-  defp path_to_iodata(path, ""), do: path_to_iodata(path)
-  defp path_to_iodata(path, qs), do: [path_to_iodata(path), ??, qs]
-
-  defp path_to_iodata([]),   do: [?/]
-  defp path_to_iodata(path), do: Enum.reduce(path, [], fn(i, acc) -> [acc, ?/, i] end)
+  defp path_to_iodata(path, ""), do: Plug.Conn.full_path(path)
+  defp path_to_iodata(path, qs), do: [Plug.Conn.full_path(path), ??, qs]
 end
