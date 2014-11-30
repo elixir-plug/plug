@@ -54,19 +54,19 @@ defmodule Plug.ConnTest do
     assert conn.remote_ip == {127, 0, 0, 1}
   end
 
-  test "path_info/1" do
+  test "path_info" do
     assert conn(:get, "/foo/bar").path_info == ~w(foo bar)s
     assert conn(:get, "/foo/bar/").path_info == ~w(foo bar)s
     assert conn(:get, "/foo//bar").path_info == ~w(foo bar)s
   end
 
-  test "query_string/1" do
+  test "query_string" do
     assert conn(:get, "/").query_string == ""
     assert conn(:get, "/foo?barbat").query_string == "barbat"
     assert conn(:get, "/foo/bar?bar=bat").query_string == "bar=bat"
   end
 
-  test "status/1, resp_headers/1 and resp_body/1" do
+  test "status, resp_headers and resp_body" do
     conn = conn(:get, "/foo")
     assert conn.status == nil
     assert conn.resp_headers == [{"cache-control", "max-age=0, private, must-revalidate"}]
@@ -104,10 +104,12 @@ defmodule Plug.ConnTest do
     assert conn.state == :sent
   end
 
-  test "send_resp/3 sends self a message" do
+  test "send_resp/3 sends owner a message" do
     refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_resp(200, "HELLO")
     assert_received {:plug_conn, :sent}
+    conn(:get, "/foo") |> resp(200, "HELLO")
+    refute_received {:plug_conn, :sent}
   end
 
   test "send_resp/3 does not send on head" do
@@ -358,6 +360,25 @@ defmodule Plug.ConnTest do
     assert_raise ArgumentError, fn ->
       conn |> put_req_cookie("foo", "bar")
     end
+  end
+
+  test "recycle_cookies/2" do
+    conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"], headers: [{"content-type", "text/plain"}])
+           |> put_req_cookie("req_cookie", "req_cookie")
+           |> put_req_cookie("del_cookie", "del_cookie")
+           |> put_req_cookie("over_cookie", "pre_cookie")
+           |> put_resp_cookie("over_cookie", "pos_cookie")
+           |> put_resp_cookie("resp_cookie", "resp_cookie")
+           |> delete_resp_cookie("del_cookie")
+
+    conn = recycle_cookies(conn(:get, "/"), conn)
+    assert conn.path_info == []
+
+    conn = conn |> fetch_params |> fetch_cookies
+    assert conn.params  == %{}
+    assert conn.cookies == %{"req_cookie"  => "req_cookie",
+                             "over_cookie" => "pos_cookie",
+                             "resp_cookie" => "resp_cookie"}
   end
 
   test "cookies/1 loaded early" do

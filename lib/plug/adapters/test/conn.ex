@@ -5,6 +5,8 @@ defmodule Plug.Adapters.Test.Conn do
   ## Test helpers
 
   def conn(method, uri, body_or_params, opts) do
+    maybe_flush()
+
     uri    = URI.parse(uri)
     method = method |> to_string |> String.upcase
 
@@ -15,6 +17,7 @@ defmodule Plug.Adapters.Test.Conn do
       adapter: {__MODULE__, state},
       host: uri.host || "www.example.com",
       method: method,
+      owner: self(),
       path_info: split_path(uri.path),
       port: uri.port || 80,
       peer: {{127, 0, 0, 1}, 111317},
@@ -111,5 +114,15 @@ defmodule Plug.Adapters.Test.Conn do
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
     for segment <- segments, segment != "", do: segment
+  end
+
+  @already_sent {:plug_conn, :sent}
+
+  defp maybe_flush() do
+    receive do
+      @already_sent -> :ok
+    after
+      0 -> :ok
+    end
   end
 end

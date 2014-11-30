@@ -114,7 +114,7 @@ defmodule Plug.Session.CookieTest do
            |> put_session(:foo, "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> sign_conn()
            |> get_session(:foo) == "bar"
   end
@@ -126,7 +126,7 @@ defmodule Plug.Session.CookieTest do
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> sign_conn()
            |> get_session(:foo) == nil
   end
@@ -146,7 +146,7 @@ defmodule Plug.Session.CookieTest do
            |> put_session(:foo, "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> encrypt_conn()
            |> get_session(:foo) == "bar"
   end
@@ -158,7 +158,7 @@ defmodule Plug.Session.CookieTest do
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> encrypt_conn()
            |> get_session(:foo) == nil
   end
@@ -178,7 +178,7 @@ defmodule Plug.Session.CookieTest do
            |> put_session(:foo, "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> custom_serialize_conn()
            |> get_session(:foo) == "bar"
   end
@@ -190,7 +190,7 @@ defmodule Plug.Session.CookieTest do
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
-           |> recycle(conn)
+           |> recycle_cookies(conn)
            |> custom_serialize_conn()
            |> get_session(:foo) == nil
   end

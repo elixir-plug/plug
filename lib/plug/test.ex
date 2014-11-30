@@ -95,17 +95,23 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Recycles data from old connection into a new connection for subsequent requests.
+  Moves cookies from old connection into a new connection for subsequent requests.
 
-  This function copies the cookie information in `old_conn`
-  into `new_conn`, emulating multiple requests done by clients
-  were cookies are always passed forward.
+  This function copies the cookie information in `old_conn` into `new_conn`, emulating
+  multiple requests done by clients were cookies are always passed forward.
   """
-  @spec recycle(Conn.t, Conn.t) :: Conn.t
-  def recycle(new_conn, old_conn) do
+  @spec recycle_cookies(Conn.t, Conn.t) :: Conn.t
+  def recycle_cookies(new_conn, old_conn) do
     Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
       {key, value}, acc ->
         put_req_cookie(acc, to_string(key), value)
     end
+  end
+
+  @doc false
+  def recyle(new_conn, old_conn) do
+    IO.write :stderr, "recycle/2 is deprecated in favor of recycle_cookies/2\n" <>
+                      Exception.format_stacktrace()
+    recycle_cookies(new_conn, old_conn)
   end
 end

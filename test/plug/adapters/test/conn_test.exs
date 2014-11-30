@@ -43,23 +43,4 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, params, _} = adapter.parse_req_multipart(state, 1_000_000, fn _ -> end)
     assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
   end
-
-  test "recycle/2" do
-    conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"], headers: [{"content-type", "text/plain"}])
-           |> put_req_cookie("req_cookie", "req_cookie")
-           |> put_req_cookie("del_cookie", "del_cookie")
-           |> put_req_cookie("over_cookie", "pre_cookie")
-           |> Plug.Conn.put_resp_cookie("over_cookie", "pos_cookie")
-           |> Plug.Conn.put_resp_cookie("resp_cookie", "resp_cookie")
-           |> Plug.Conn.delete_resp_cookie("del_cookie")
-
-    conn = recycle(conn(:get, "/"), conn)
-    assert conn.path_info == []
-
-    conn = conn |> Plug.Conn.fetch_params |> Plug.Conn.fetch_cookies
-    assert conn.params  == %{}
-    assert conn.cookies == %{"req_cookie"  => "req_cookie",
-                             "over_cookie" => "pos_cookie",
-                             "resp_cookie" => "resp_cookie"}
-  end
 end

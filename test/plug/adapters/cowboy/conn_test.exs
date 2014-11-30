@@ -29,11 +29,16 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     :ok
   end
 
+  @already_sent {:plug_conn, :sent}
+
   def init(opts) do
     opts
   end
 
   def call(conn, []) do
+    # Assert we never have a lingering @already_sent entry in the inbox
+    refute_received @already_sent
+
     function = String.to_atom List.first(conn.path_info) || "root"
     apply __MODULE__, function, [conn]
   rescue

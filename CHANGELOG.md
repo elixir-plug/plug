@@ -1,5 +1,13 @@
 ## Changelog
 
+## v0.8.4-dev
+
+* Bug fixes
+  * Clean up `{:plug_conn, :sent}` messages from listener inbox and ensure connection works accross processes
+
+* Deprecations
+  * Deprecate `recycle/2` in favor of `recycle_cookies` in Plug.Test
+
 ## v0.8.3
 
 * Enhancements

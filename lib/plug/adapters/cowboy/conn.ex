@@ -18,6 +18,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       adapter: {__MODULE__, req},
       host: host,
       method: meth,
+      owner: self(),
       path_info: split_path(path),
       peer: peer,
       port: port,

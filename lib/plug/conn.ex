@@ -56,12 +56,13 @@ defmodule Plug.Conn do
   ## Connection fields
 
   * `assigns` - shared user data as a dict
-  * `state` - the connection state
+  * `owner` - the Elixir process that owns the connection
   * `halted` - the boolean status on whether the pipeline was halted
   * `secret_key_base` - a secret key used to verify and encrypt cookies.
     the field must be set manually whenever one of those features are used.
     This data must be kept in the connection and never used directly, always
-    use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it.
+    use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it
+  * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts
   as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
@@ -85,6 +86,7 @@ defmodule Plug.Conn do
   @type headers         :: [{binary, binary}]
   @type host            :: binary
   @type int_status      :: non_neg_integer | nil
+  @type owner           :: pid | nil
   @type method          :: binary
   @type param           :: binary | %{binary => param} | [param]
   @type params          :: %{binary => param}
@@ -104,6 +106,7 @@ defmodule Plug.Conn do
               cookies:         cookies,
               host:            host,
               method:          method,
+              owner:           owner,
               params:          params | Unfetched.t,
               path_info:       segments,
               port:            0..65335,
@@ -129,6 +132,7 @@ defmodule Plug.Conn do
             halted:          false,
             host:            "www.example.com",
             method:          "GET",
+            owner:           nil,
             params:          %Unfetched{aspect: :params},
             path_info:       [],
             port:            0,
@@ -239,10 +243,10 @@ defmodule Plug.Conn do
     raise ArgumentError, message: "cannot send a response that was not set"
   end
 
-  def send_resp(%Conn{adapter: {adapter, payload}, state: :set} = conn) do
+  def send_resp(%Conn{adapter: {adapter, payload}, state: :set, owner: owner} = conn) do
     conn = run_before_send(conn, :set)
     {:ok, body, payload} = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
-    send self(), @already_sent
+    send owner, @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
   end
 
@@ -262,11 +266,11 @@ defmodule Plug.Conn do
   `Plug.Conn.AlreadySentError`.
   """
   @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
-  def send_file(%Conn{adapter: {adapter, payload}} = conn, status, file, offset \\ 0, length \\ :all)
+  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset \\ 0, length \\ :all)
       when is_binary(file) do
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
-    send self(), @already_sent
+    send owner, @already_sent
     %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
   end
 
@@ -278,11 +282,11 @@ defmodule Plug.Conn do
   `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
-  def send_chunked(%Conn{adapter: {adapter, payload}, state: state} = conn, status)
+  def send_chunked(%Conn{adapter: {adapter, payload}, state: state, owner: owner} = conn, status)
       when state in @unsent do
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
-    send self(), @already_sent
+    send owner, @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body}
   end
 
