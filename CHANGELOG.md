@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.8.4-dev
+## v0.8.4
 
 * Bug fixes
   * Clean up `{:plug_conn, :sent}` messages from listener inbox and ensure connection works accross processes
