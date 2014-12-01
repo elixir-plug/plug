@@ -2,6 +2,7 @@
 
 * Enhancements
   * Add `Plug.Conn.full_path/1`
+  * Add `handle_errors/2` support in router
 
 ## v0.8.4
 

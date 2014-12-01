@@ -74,7 +74,7 @@ As per the specification above, a connection is represented by the `Plug.Conn` s
            ...}
 ```
 
-Data can be read directly from the record and also pattern matched on. However, whenever you need to manipulate the record, you must use the functions defined in the `Plug.Conn` module. In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Conn`.
+Data can be read directly from the connection and also pattern matched on. Manipulating the connection often happens with the use of the functions defined in the `Plug.Conn` module. In our example, both `put_resp_content_type/2` and `send_resp/3` are defined in `Plug.Conn`.
 
 Remember that, as everything else in Elixir, **a connection is immutable**, so every manipulation returns a new copy of the connection:
 
@@ -86,35 +86,9 @@ conn
 
 Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send_resp/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
 
-## Testing plugs and applications
-
-Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test our hello world example:
-
-```elixir
-defmodule MyPlugTest do
-  use ExUnit.Case, async: true
-  use Plug.Test
-
-  @opts MyPlug.init([])
-
-  test "returns hello world" do
-    # Create a test connection
-    conn = conn(:get, "/")
-
-    # Invoke the plug
-    conn = MyPlug.call(conn, @opts)
-
-    # Assert the response and status
-    assert conn.state == :sent
-    assert conn.status == 200
-    assert conn.resp_body == "Hello world"
-  end
-end
-```
-
 ## The Plug Router
 
-The Plug router allows developers to quickly match on incoming requests and perform some action:
+In practice, developers rarely write their own plugs. For example, Plug ships with a router that allows developers to quickly match on incoming requests and perform some action:
 
 ```elixir
 defmodule AppRouter do
@@ -133,17 +107,47 @@ defmodule AppRouter do
 end
 ```
 
-The router is a plug, which means it can be invoked as:
+The router is a plug and, not only that, it contains its own plug pipeline too. The example above says that when the router is invoked, it will nvoke the `:match` plug, represented by a local `match/2` function, and then call the `:dispatch` plug which will execute the matched code.
+
+Plug ships with many plugs that you can add to the router plug pipeline, allowing you to plug something before a route matches or before a route is dispatched to. For example, if you want to add logging to the router, just do:
 
 ```elixir
-AppRouter.call(conn, AppRouter.init([]))
+plug Plug.Logger
+plug :match
+plug :dispatch
 ```
-
-Each route needs to return the connection as per the Plug specification.
 
 Note `Plug.Router` compiles all of your routes into a single function and relies on the Erlang VM to optimize the underlying routes into a tree lookup, instead of a linear lookup that would instead match route-per-route. This means route lookups are extremely fast in Plug!
 
 This also means that a catch all `match` is recommended to be defined, as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
+
+Each route needs to return the connection as per the Plug specification. See `Plug.Router` docs for more information.
+
+## Testing plugs
+
+Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test our the router above (or any other plug):
+
+```elixir
+defmodule MyPlugTest do
+  use ExUnit.Case, async: true
+  use Plug.Test
+
+  @opts AppRouter.init([])
+
+  test "returns hello world" do
+    # Create a test connection
+    conn = conn(:get, "/")
+
+    # Invoke the plug
+    conn = AppRouter.call(conn, @opts)
+
+    # Assert the response and status
+    assert conn.state == :sent
+    assert conn.status == 200
+    assert conn.resp_body == "Hello world"
+  end
+end
+```
 
 ### Available Plugs
 
