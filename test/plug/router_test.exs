@@ -63,8 +63,28 @@ defmodule Plug.RouterTest do
       conn |> resp(200, "ok")
     end
 
+    match "/9/throw" do
+      _ = conn
+      throw :oops
+    end
+
+    match "/9/raise" do
+      _ = conn
+      raise Plug.Parsers.RequestTooLargeError
+    end
+
+    match "/9/send_and_exit" do
+      send_resp(conn, 200, "ok")
+      exit(:oops)
+    end
+
     match _ do
       conn |> resp(404, "oops")
+    end
+
+    def handle_errors(conn, assigns) do
+      Process.put(:plug_handle_errors, Map.put(assigns, :status, conn.status))
+      super(conn, assigns)
     end
   end
 
@@ -177,6 +197,49 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/unknown"))
     assert conn.status == 404
     assert conn.resp_body == "oops"
+  end
+
+  @already_sent {:plug_conn, :sent}
+
+  test "handle errors" do
+    try do
+      call(Sample, conn(:get, "/9/throw"))
+      flunk "oops"
+    catch
+      :throw, :oops ->
+        assert_received @already_sent
+        assigns = Process.get(:plug_handle_errors)
+        assert assigns.status == 500
+        assert assigns.kind   == :throw
+        assert assigns.reason == :oops
+        assert is_list assigns.stack
+    end
+  end
+
+  test "handle errors translates exceptions to status code" do
+    try do
+      call(Sample, conn(:get, "/9/raise"))
+      flunk "oops"
+    rescue
+      Plug.Parsers.RequestTooLargeError ->
+        assert_received @already_sent
+        assigns = Process.get(:plug_handle_errors)
+        assert assigns.status == 413
+        assert assigns.kind   == :error
+        assert assigns.reason.__struct__ == Plug.Parsers.RequestTooLargeError
+        assert is_list assigns.stack
+    end
+  end
+
+  test "handle errors when response was sent" do
+    try do
+      call(Sample, conn(:get, "/9/send_and_exit"))
+      flunk "oops"
+    catch
+      :exit, :oops ->
+        assert_received @already_sent
+        assert is_nil Process.get(:plug_handle_errors)
+    end
   end
 
   defp call(mod, conn) do

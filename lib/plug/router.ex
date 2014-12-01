@@ -73,6 +73,40 @@ defmodule Plug.Router do
   Check `match/3` for more information on how route compilation
   works and a list of supported options.
 
+  ## Error handling
+
+  In case something wents wrong in a request, the router allows
+  the developer to customize what is rendered via the `handle_errors/2`
+  callback:
+
+      defmodule AppRouter do
+        use Plug.Router
+
+        plug :match
+        plug :dispatch
+
+        get "/hello" do
+          send_resp(conn, 200, "world")
+        end
+
+        defp handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
+          send_resp(conn, conn.status, "Something went wrong")
+        end
+      end
+
+  The callback receives a connection and a map containing the exception
+  kind (throw, error or exit), the reason (an exception for errors or
+  a term for others) and the stacktrace. After the callback is invoked,
+  the error is re-raised.
+
+  It is advised to do as little work as possible when handling errors
+  and avoid accessing data like parameters and session, as the parsing
+  of those is what could have led the error to trigger in the first place.
+
+  Also notice that those pages are going to be shown in production. If
+  you are looking for error handling to help during development, consider
+  using `Plug.Debugger`.
+
   ## Routes compilation
 
   All routes are compiled to a match function that receives
@@ -116,19 +150,30 @@ defmodule Plug.Router do
 
       use Plug.Builder
 
-      # TODO: This needs to route if no route matches.
-      # We probably need a not_found hook.
-      def match(conn, _opts) do
+      def call(conn, opts) do
+        try do
+          plug_builder_call(conn, opts)
+        catch
+          kind, reason ->
+            Plug.Router.__catch__(conn, kind, reason, System.stacktrace, &handle_errors/2)
+        end
+      end
+
+      defp match(conn, _opts) do
         Plug.Conn.put_private(conn,
           :plug_route,
           do_match(conn.method, conn.path_info))
       end
 
-      def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
+      defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
         Map.get(conn.private, :plug_route).(conn)
       end
 
-      defoverridable [match: 2, dispatch: 2]
+      defp handle_errors(conn, assigns) do
+        send_resp(conn, conn.status, "Something went wrong")
+      end
+
+      defoverridable [match: 2, dispatch: 2, call: 2, handle_errors: 2]
     end
   end
 
@@ -138,6 +183,29 @@ defmodule Plug.Router do
       import Plug.Router, only: []
     end
   end
+
+  @already_sent {:plug_conn, :sent}
+
+  @doc false
+  def __catch__(conn, kind, reason, stack, handle_errors) do
+    receive do
+      @already_sent ->
+        send self(), @already_sent
+    after
+      0 ->
+        reason = Exception.normalize(kind, reason, stack)
+
+        conn
+        |> Plug.Conn.put_status(status(kind, reason))
+        |> handle_errors.(%{kind: kind, reason: reason, stack: stack})
+    end
+
+    :erlang.raise(kind, reason, stack)
+  end
+
+  defp status(:error, error),  do: Plug.Exception.status(error)
+  defp status(:throw, _throw), do: 500
+  defp status(:exit, _exit),   do: 500
 
   ## Match
 
