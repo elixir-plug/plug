@@ -24,6 +24,10 @@ defmodule Plug.RouterTest do
     plug :match
     plug :dispatch
 
+    get "/", host: "foo.bar", do: conn |> resp(200, "foo.bar root")
+    get "/", host: "foo.",    do: conn |> resp(200, "foo.* root")
+    forward "/", to: Forward, host: "foo."
+
     get "/" do
       conn |> resp(200, "root")
     end
@@ -187,6 +191,17 @@ defmodule Plug.RouterTest do
 
     conn = call(Sample, conn(:unknown, "/6/bar"))
     assert conn.resp_body == "ok"
+  end
+
+  test "dispatches based on host" do
+    conn = call(Sample, conn(:get, "http://foo.bar/"))
+    assert conn.resp_body == "foo.bar root"
+
+    conn = call(Sample, conn(:get, "http://foo.other/"))
+    assert conn.resp_body == "foo.* root"
+
+    conn = call(Sample, conn(:get, "http://foo.other/foo"))
+    assert conn.resp_body == "forwarded"
   end
 
   test "dispatch not found" do

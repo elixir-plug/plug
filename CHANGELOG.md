@@ -3,6 +3,7 @@
 * Enhancements
   * Add `Plug.Conn.full_path/1`
   * Add `handle_errors/2` support in router
+  * Support host option in `Plug.Router`
 
 ## v0.8.4
 

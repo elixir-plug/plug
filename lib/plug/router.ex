@@ -162,7 +162,7 @@ defmodule Plug.Router do
       defp match(conn, _opts) do
         Plug.Conn.put_private(conn,
           :plug_route,
-          do_match(conn.method, conn.path_info))
+          do_match(conn.method, conn.path_info, conn.host))
       end
 
       defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
@@ -210,8 +210,10 @@ defmodule Plug.Router do
   ## Match
 
   @doc """
-  Main API to define routes. It accepts an expression representing
-  the path and many options allowing the match to be configured.
+  Main API to define routes.
+
+  It accepts an expression representing the path and many options
+  allowing the match to be configured.
 
   ## Examples
 
@@ -221,11 +223,16 @@ defmodule Plug.Router do
 
   ## Options
 
-  `match` accepts the following options:
+  `match/3` and the others route macros accepts the following options:
 
-  * `:via` - matches the route against some specific HTTP methods
-  * `:do` - contains the implementation to be invoked in case
-    the route matches
+    * `:host` - the host which the route should match. Defaults to `nil`,
+      meaning no host match, but can be a string like "example.com" or an
+      string ending with ".", like "subdomain." for a subdomain match
+
+    * `:via` - matches the route against some specific HTTP methods
+
+    * `:do` - contains the implementation to be invoked in case
+      the route matches
 
   """
   defmacro match(path, options, contents \\ []) do
@@ -298,17 +305,18 @@ defmodule Plug.Router do
   All remaining options are passed to the underlying plug.
   """
   defmacro forward(path, options) when is_binary(path) do
-    quote do
-      {target, options} = Keyword.pop(unquote(options), :to)
+    quote bind_quoted: [path: path, options: options] do
+      {target, options} = Keyword.pop(options, :to)
+      {options, plug}   = Keyword.split(options, [:host])
 
       if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
       end
 
       @plug_forward_target target
-      @plug_forward_opts   target.init(options)
+      @plug_forward_opts   target.init(plug)
 
-      match unquote(path <> "/*glob") do
+      match path <> "/*glob", options do
         Plug.Router.Utils.forward(var!(conn), var!(glob), @plug_forward_target, @plug_forward_opts)
       end
     end
@@ -318,9 +326,9 @@ defmodule Plug.Router do
 
   @doc false
   def __route__(method, path, guards, options) do
-    {method, guards} = convert_methods(List.wrap(method || options[:via]), guards)
+    {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {_vars, match}   = Plug.Router.Utils.build_match(path)
-    {method, match, guards}
+    {method, match, build_host(options[:host]), guards}
   end
 
   # Entry point for both forward and match that is actually
@@ -343,8 +351,8 @@ defmodule Plug.Router do
                         options: options,
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
-      {method, match, guards} = Plug.Router.__route__(method, path, guards, options)
-      defp do_match(unquote(method), unquote(match)) when unquote(guards) do
+      {method, match, host, guards} = Plug.Router.__route__(method, path, guards, options)
+      defp do_match(unquote(method), unquote(match), unquote(host)) when unquote(guards) do
         fn var!(conn) -> unquote(body) end
       end
     end
@@ -352,15 +360,15 @@ defmodule Plug.Router do
 
   # Convert the verbs given with :via into a variable
   # and guard set that can be added to the dispatch clause.
-  defp convert_methods([], guards) do
+  defp build_methods([], guards) do
     {quote(do: _), guards}
   end
 
-  defp convert_methods([method], guards) do
+  defp build_methods([method], guards) do
     {Plug.Router.Utils.normalize_method(method), guards}
   end
 
-  defp convert_methods(methods, guards) do
+  defp build_methods(methods, guards) do
     methods = Enum.map methods, &Plug.Router.Utils.normalize_method(&1)
     var     = quote do: method
     guards  = join_guards(quote(do: unquote(var) in unquote(methods)), guards)
@@ -370,15 +378,18 @@ defmodule Plug.Router do
   defp join_guards(fst, true), do: fst
   defp join_guards(fst, snd),  do: (quote do: unquote(fst) and unquote(snd))
 
+  defp build_host(host) do
+    cond do
+      is_nil host              -> quote do: _
+      String.last(host) == "." -> quote do: unquote(host) <> _
+      is_binary host           -> host
+    end
+  end
+
   # Extract the path and guards from the path.
-  defp extract_path_and_guards({:when, _, [path, guards]}) do
-    {escape_path(path), guards}
-  end
+  defp extract_path_and_guards({:when, _, [path, guards]}), do: {extract_path(path), guards}
+  defp extract_path_and_guards(path), do: {extract_path(path), true}
 
-  defp extract_path_and_guards(path) do
-    {escape_path(path), true}
-  end
-
-  defp escape_path({:_, _, var}) when is_atom(var), do: "/*_path"
-  defp escape_path(path), do: path
+  defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
+  defp extract_path(path), do: path
 end
