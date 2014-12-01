@@ -31,14 +31,8 @@ defmodule Plug.Router.Utils do
       {[:id], ["foo", {:id, [], nil}]}
 
   """
-  def build_match(spec, context \\ nil)
-
-  def build_match(spec, context) when is_binary(spec) do
+  def build_match(spec, context \\ nil) when is_binary(spec) do
     build_match split(spec), context, [], []
-  end
-
-  def build_match(spec, _context) do
-    {[], spec}
   end
 
   @doc """
@@ -139,7 +133,8 @@ defmodule Plug.Router.Utils do
     fun.({identifier, [], context})
   end
 
-  defp binary_to_identifier(prefix, <<letter, _::binary>> = binary) when letter in ?a..?z do
+  defp binary_to_identifier(prefix, <<letter, _::binary>> = binary)
+      when letter in ?a..?z or letter == ?_ do
     if binary =~ ~r/^\w+$/ do
       String.to_atom(binary)
     else
@@ -150,6 +145,6 @@ defmodule Plug.Router.Utils do
 
   defp binary_to_identifier(prefix, _) do
     raise Plug.Router.InvalidSpecError,
-      message: "#{prefix} in routes must be followed by lowercase letters"
+      message: "#{prefix} in routes must be followed by lowercase letters or underscore"
   end
 end

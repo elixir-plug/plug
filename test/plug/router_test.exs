@@ -48,32 +48,28 @@ defmodule Plug.RouterTest do
       conn |> resp(200, inspect(bar))
     end
 
-    get ["6", "bar"] do
+    match "/6/bar" do
       conn |> resp(200, "ok")
     end
 
-    get "/7/:bar" when byte_size(bar) <= 3 do
-      conn |> resp(200, inspect(bar))
-    end
+    get "/7/:bar" when byte_size(bar) <= 3,
+      some_option: :hello,
+      do: conn |> resp(200, inspect(bar))
 
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
 
-    match ["8", "bar"] do
-      conn |> resp(200, "ok")
-    end
-
-    match "/9/throw" do
+    match "/8/throw", via: [:get, :post] do
       _ = conn
       throw :oops
     end
 
-    match "/9/raise" do
+    match "/8/raise" do
       _ = conn
       raise Plug.Parsers.RequestTooLargeError
     end
 
-    match "/9/send_and_exit" do
+    match "/8/send_and_exit" do
       send_resp(conn, 200, "ok")
       exit(:oops)
     end
@@ -171,25 +167,25 @@ defmodule Plug.RouterTest do
   end
 
   test "dispatch any verb" do
-    conn = call(Sample, conn(:get, "/8/bar"))
+    conn = call(Sample, conn(:get, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:post, "/8/bar"))
+    conn = call(Sample, conn(:post, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:put, "/8/bar"))
+    conn = call(Sample, conn(:put, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:patch, "/8/bar"))
+    conn = call(Sample, conn(:patch, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:delete, "/8/bar"))
+    conn = call(Sample, conn(:delete, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:options, "/8/bar"))
+    conn = call(Sample, conn(:options, "/6/bar"))
     assert conn.resp_body == "ok"
 
-    conn = call(Sample, conn(:unknown, "/8/bar"))
+    conn = call(Sample, conn(:unknown, "/6/bar"))
     assert conn.resp_body == "ok"
   end
 
@@ -203,7 +199,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors" do
     try do
-      call(Sample, conn(:get, "/9/throw"))
+      call(Sample, conn(:get, "/8/throw"))
       flunk "oops"
     catch
       :throw, :oops ->
@@ -218,7 +214,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors translates exceptions to status code" do
     try do
-      call(Sample, conn(:get, "/9/raise"))
+      call(Sample, conn(:get, "/8/raise"))
       flunk "oops"
     rescue
       Plug.Parsers.RequestTooLargeError ->
@@ -233,7 +229,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors when response was sent" do
     try do
-      call(Sample, conn(:get, "/9/send_and_exit"))
+      call(Sample, conn(:get, "/8/send_and_exit"))
       flunk "oops"
     catch
       :exit, :oops ->
