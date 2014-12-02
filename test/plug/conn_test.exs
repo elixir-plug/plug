@@ -168,6 +168,20 @@ defmodule Plug.ConnTest do
     assert conn.resp_cookies["hello"] == %{value: "world"}
   end
 
+  test "send_resp/1 raises if the connection was unset" do
+    conn = conn(:get, "/goo")
+    assert_raise ArgumentError, fn ->
+      send_resp(conn)
+    end
+  end
+
+  test "send_resp/1 raises if the connection was already sent" do
+    conn = conn(:get, "/boo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      send_resp(conn)
+    end
+  end
+
   test "send_file/3" do
     conn = conn(:get, "/foo") |> send_file(200, __ENV__.file)
     assert conn.status == 200
@@ -267,11 +281,25 @@ defmodule Plug.ConnTest do
            length(conn2.resp_headers)
   end
 
-  test "delete_resp_header/3" do
+  test "put_resp_header/3 raises when the conn was already been sent" do
+    conn = conn(:get, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_resp_header("x-foo", "bar")
+    end
+  end
+
+  test "delete_resp_header/2" do
     conn = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
     assert get_resp_header(conn, "x-foo") == ["bar"]
     conn = conn |> delete_resp_header("x-foo")
     assert get_resp_header(conn, "x-foo") == []
+  end
+
+  test "delete_resp_header/2 raises when the conn was already been sent" do
+    conn = conn(:head, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> delete_resp_header("x-foo")
+    end
   end
 
   test "put_resp_content_type/3" do
@@ -373,6 +401,16 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection was already sent" do
+    conn = conn(:get, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_resp_cookie("foo", "bar")
+    end
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> delete_resp_cookie("foo")
+    end
+  end
+
   test "recycle_cookies/2" do
     conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"], headers: [{"content-type", "text/plain"}])
            |> put_req_cookie("req_cookie", "req_cookie")
@@ -419,6 +457,13 @@ defmodule Plug.ConnTest do
     assert conn.cookies["foo"] == "baz"
     assert conn.cookies["baz"] == "bat"
     refute conn.cookies["bar"]
+  end
+
+  test "fetch_session/2 returns the same conn on subsequent calls" do
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
+
+    assert fetch_session(conn) == conn
   end
 
   test "session not fetched" do
@@ -471,10 +516,30 @@ defmodule Plug.ConnTest do
     assert conn.private[:plug_session_info] == :renew
   end
 
+  test "delete_session/2" do
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
+
+    conn = conn
+            |> put_session(:foo, :bar)
+            |> put_session(:baz, :boom)
+            |> delete_session(:baz)
+
+    assert get_session(conn, :foo) == :bar
+    assert get_session(conn, :baz) == nil
+  end
+
   test "halt/1 updates halted to true" do
     conn = %Conn{}
     assert conn.halted == false
     conn = halt(conn)
     assert conn.halted == true
+  end
+
+  test "register_before_send/2 raises when a response has already been sent" do
+    conn = conn(:get, "/") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> register_before_send(fn(_) -> nil end)
+    end
   end
 end
