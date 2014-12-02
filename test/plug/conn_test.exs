@@ -272,6 +272,13 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
+  test "chunk/2 raises if send_chunked/3 hasn't been called yet" do
+    conn = conn(:get, "/")
+    assert_raise ArgumentError, fn ->
+      conn |> chunk("foobar")
+    end
+  end
+
   test "put_resp_header/3" do
     conn1 = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
     assert get_resp_header(conn1, "x-foo") == ["bar"]
