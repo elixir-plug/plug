@@ -226,7 +226,7 @@ defmodule Plug.Router do
   `match/3` and the others route macros accepts the following options:
 
     * `:host` - the host which the route should match. Defaults to `nil`,
-      meaning no host match, but can be a string like "example.com" or an
+      meaning no host match, but can be a string like "example.com" or a
       string ending with ".", like "subdomain." for a subdomain match
 
     * `:via` - matches the route against some specific HTTP methods
@@ -301,6 +301,8 @@ defmodule Plug.Router do
   `forward` accepts the following options:
 
   * `:to` - a Plug where the requests will be forwarded
+  * `:host` - a string representing the host or subdomain, exactly like in
+    `match/3`
 
   All remaining options are passed to the underlying plug.
   """
