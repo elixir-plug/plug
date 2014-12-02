@@ -150,15 +150,6 @@ defmodule Plug.Router do
 
       use Plug.Builder
 
-      def call(conn, opts) do
-        try do
-          plug_builder_call(conn, opts)
-        catch
-          kind, reason ->
-            Plug.Router.__catch__(conn, kind, reason, System.stacktrace, &handle_errors/2)
-        end
-      end
-
       defp match(conn, _opts) do
         Plug.Conn.put_private(conn,
           :plug_route,
@@ -173,7 +164,7 @@ defmodule Plug.Router do
         send_resp(conn, conn.status, "Something went wrong")
       end
 
-      defoverridable [match: 2, dispatch: 2, call: 2, handle_errors: 2]
+      defoverridable [match: 2, dispatch: 2, handle_errors: 2]
     end
   end
 
@@ -181,6 +172,17 @@ defmodule Plug.Router do
   defmacro __before_compile__(_env) do
     quote do
       import Plug.Router, only: []
+
+      defoverridable [call: 2]
+
+      def call(conn, opts) do
+        try do
+          super(conn, opts)
+        catch
+          kind, reason ->
+            Plug.Router.__catch__(conn, kind, reason, System.stacktrace, &handle_errors/2)
+        end
+      end
     end
   end
 

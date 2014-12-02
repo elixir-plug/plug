@@ -7,15 +7,40 @@ defmodule Plug.RouterTest do
       plug :dispatch
 
       def call(conn, opts) do
-        super(assign(conn, :from_call, "set"), opts)
+        super(conn, opts)
+      after
+        Process.put(:plug_forward_call, true)
       end
 
-      get "/foo" do
+      get "/" do
         conn |> resp(200, "forwarded")
       end
 
       get "/script_name" do
         conn |> resp(200, Enum.join(conn.script_name, ","))
+      end
+
+      match "/throw", via: [:get, :post] do
+        _ = conn
+        throw :oops
+      end
+
+      match "/raise" do
+        _ = conn
+        raise Plug.Parsers.RequestTooLargeError
+      end
+
+      match "/send_and_exit" do
+        send_resp(conn, 200, "ok")
+        exit(:oops)
+      end
+
+      def handle_errors(conn, assigns) do
+        # Custom call is always invoked before
+        true = Process.get(:plug_forward_call)
+
+        Process.put(:plug_handle_errors, Map.put(assigns, :status, conn.status))
+        super(conn, assigns)
       end
     end
 
@@ -63,28 +88,8 @@ defmodule Plug.RouterTest do
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
 
-    match "/8/throw", via: [:get, :post] do
-      _ = conn
-      throw :oops
-    end
-
-    match "/8/raise" do
-      _ = conn
-      raise Plug.Parsers.RequestTooLargeError
-    end
-
-    match "/8/send_and_exit" do
-      send_resp(conn, 200, "ok")
-      exit(:oops)
-    end
-
     match _ do
       conn |> resp(404, "oops")
-    end
-
-    def handle_errors(conn, assigns) do
-      Process.put(:plug_handle_errors, Map.put(assigns, :status, conn.status))
-      super(conn, assigns)
     end
   end
 
@@ -149,20 +154,20 @@ defmodule Plug.RouterTest do
   end
 
   test "dispatch with forwarding" do
-    conn = call(Sample, conn(:get, "/forward/foo"))
+    conn = call(Sample, conn(:get, "/forward"))
     assert conn.resp_body == "forwarded"
-    assert conn.path_info == ["forward", "foo"]
+    assert conn.path_info == ["forward"]
   end
 
   test "dispatch with forwarding with custom call" do
-    conn = call(Sample, conn(:get, "/forward/foo"))
-    assert conn.assigns[:from_call] == "set"
+    call(Sample, conn(:get, "/forward"))
+    assert Process.get(:plug_forward_call, true)
   end
 
   test "dispatch with forwarding including slashes" do
-    conn = call(Sample, conn(:get, "/nested/forward/foo"))
+    conn = call(Sample, conn(:get, "/nested/forward"))
     assert conn.resp_body == "forwarded"
-    assert conn.path_info == ["nested", "forward", "foo"]
+    assert conn.path_info == ["nested", "forward"]
   end
 
   test "forwarding modifies script_name" do
@@ -200,8 +205,8 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "http://foo.other/"))
     assert conn.resp_body == "foo.* root"
 
-    conn = call(Sample, conn(:get, "http://foo.other/foo"))
-    assert conn.resp_body == "forwarded"
+    conn = call(Sample, conn(:get, "http://foo.other/script_name"))
+    assert conn.resp_body == ""
   end
 
   test "dispatch not found" do
@@ -214,7 +219,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors" do
     try do
-      call(Sample, conn(:get, "/8/throw"))
+      call(Sample, conn(:get, "/forward/throw"))
       flunk "oops"
     catch
       :throw, :oops ->
@@ -229,7 +234,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors translates exceptions to status code" do
     try do
-      call(Sample, conn(:get, "/8/raise"))
+      call(Sample, conn(:get, "/forward/raise"))
       flunk "oops"
     rescue
       Plug.Parsers.RequestTooLargeError ->
@@ -244,7 +249,7 @@ defmodule Plug.RouterTest do
 
   test "handle errors when response was sent" do
     try do
-      call(Sample, conn(:get, "/8/send_and_exit"))
+      call(Sample, conn(:get, "/forward/send_and_exit"))
       flunk "oops"
     catch
       :exit, :oops ->
