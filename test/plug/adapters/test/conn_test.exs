@@ -22,6 +22,9 @@ defmodule Plug.Adapters.Test.ConnTest do
   test "custom struct params" do
     conn = conn(:get, "/", a: "b", file: %Plug.Upload{})
     assert conn.params == %{"a" => "b", "file" => %Plug.Upload{content_type: nil, filename: nil, path: nil}}
+
+    conn = conn(:get, "/", a: "b", file: %{__struct__: "Foo"})
+    assert conn.params == %{"a" => "b", "file" => %{"__struct__" => "Foo"}}
   end
 
   test "no body or params" do
