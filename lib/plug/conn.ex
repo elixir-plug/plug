@@ -242,8 +242,12 @@ defmodule Plug.Conn do
   The list of allowed atoms is available in `Plug.Conn.Status`.
   """
   @spec put_status(t, status) :: t
-  def put_status(%Conn{} = conn, nil),    do: %{conn | status: nil}
-  def put_status(%Conn{} = conn, status), do: %{conn | status: Plug.Conn.Status.code(status)}
+  def put_status(%Conn{state: state} = conn, nil)
+      when state in @unsent, do: %{conn | status: nil}
+  def put_status(%Conn{state: state} = conn, status)
+      when state in @unsent, do: %{conn | status: Plug.Conn.Status.code(status)}
+  def put_status(%Conn{}, _status), do: raise AlreadySentError
+
 
   @doc """
   Sends a response to the client.

@@ -24,6 +24,18 @@ defmodule Plug.ConnTest do
     assert put_status(conn, :ok).status == 200
   end
 
+  test "put_status/2 raises when the connection had already been sent" do
+    conn = conn(:get, "/") |> send_resp(200, "foo")
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_status(200)
+    end
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_status(nil)
+    end
+  end
+
   test "put_private/3" do
     conn = conn(:get, "/")
     assert conn.private[:hello] == nil
