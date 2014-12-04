@@ -107,7 +107,7 @@ defmodule AppRouter do
 end
 ```
 
-The router is a plug and, not only that, it contains its own plug pipeline too. The example above says that when the router is invoked, it will nvoke the `:match` plug, represented by a local `match/2` function, and then call the `:dispatch` plug which will execute the matched code.
+The router is a plug and, not only that, it contains its own plug pipeline too. The example above says that when the router is invoked, it will invoke the `:match` plug, represented by a local `match/2` function, and then call the `:dispatch` plug which will execute the matched code.
 
 Plug ships with many plugs that you can add to the router plug pipeline, allowing you to plug something before a route matches or before a route is dispatched to. For example, if you want to add logging to the router, just do:
 
@@ -151,7 +151,7 @@ end
 
 ### Available Plugs
 
-This project aims to ship with different plugs that can be re-used accross applications:
+This project aims to ship with different plugs that can be re-used across applications:
 
   * `Plug.Head` - converts HEAD requests to GET requests;
   * `Plug.Logger` - logs requests;
@@ -166,7 +166,7 @@ You can go into more details about each of them [in our docs](http://hexdocs.pm/
 
 Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help development:
 
-  * `Plug.Debugger` - shows a helpful debugging page everytime there is a failure in a request;
+  * `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
 
 ## License
 
