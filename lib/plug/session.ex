@@ -30,7 +30,7 @@ defmodule Plug.Session do
 
   ## Examples
 
-      plug Plug.Session, store: :ets, key: "_my_app_session", secure: true, table: :session
+      plug Plug.Session, store: :ets, key: "_my_app_session", table: :session
   """
 
   alias Plug.Conn
