@@ -236,18 +236,57 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Stores the given status code in the connection.
+  Stores the given status code in the connection. If the connection has already
+  a response body (i.e., `resp_body` is not `nil`) then the connection's state
+  is set to `:set` and the response is ready to be sent, in agreement with the
+  behavior of `Plug.Conn.resp/3`. If the connection's `resp_body` is `nil`, its
+  state is left unchanged. This is done so that these are equivalent:
 
-  The status code can an nil, an integer or an atom.
-  The list of allowed atoms is available in `Plug.Conn.Status`.
+      iex> conn |> resp(200, "foo") |> send_resp()
+      iex> conn |> put_status(200) |> put_resp_body("foo") |> send_resp()
+
+  The status code can be `nil`, an integer in `100..999` or an atom. The list of
+  allowed atoms is available in `Plug.Conn.Status`.
+
+  An exception is raised if the connection has already been sent.
   """
   @spec put_status(t, status) :: t
-  def put_status(%Conn{state: state} = conn, nil)
-      when state in @unsent, do: %{conn | status: nil}
-  def put_status(%Conn{state: state} = conn, status)
-      when state in @unsent, do: %{conn | status: Plug.Conn.Status.code(status)}
-  def put_status(%Conn{}, _status), do: raise AlreadySentError
 
+  def put_status(%Conn{state: state}, _status)
+      when not state in @unsent, do: raise AlreadySentError
+
+  def put_status(%Conn{} = conn, nil), do: %{conn | status: nil}
+
+  def put_status(%Conn{resp_body: nil} = conn, status) do
+    %{conn | status: Plug.Conn.Status.code(status)}
+  end
+
+  def put_status(%Conn{} = conn, status) do
+    %{conn | status: Plug.Conn.Status.code(status), state: :set}
+  end
+
+  @doc """
+  Stores the given response body in the connection. The behavior is similar to
+  `Plug.Conn.put_status/2`: if the connection has already a non-`nil` status,
+  then setting its response body also sets its state to `:set`, making it ready
+  to be sent. Otherwise, the state is left unchanged. This is done so that these
+  are equivalent:
+
+      iex> conn |> resp(200, "foo") |> send_resp()
+      iex> conn |> put_status(200) |> put_resp_body("foo") |> send_resp()
+
+  An exception is raised if the connection has already been sent.
+  """
+  @spec put_resp_body(t, body) :: t
+
+  def put_resp_body(%Conn{state: state}, _)
+      when not state in @unsent, do: raise AlreadySentError
+
+  def put_resp_body(%Conn{} = conn, nil), do: %{conn | resp_body: nil}
+
+  def put_resp_body(%Conn{status: nil} = conn, body), do: %{conn | resp_body: body}
+
+  def put_resp_body(%Conn{} = conn, body), do: %{conn | resp_body: body, state: :set}
 
   @doc """
   Sends a response to the client.
