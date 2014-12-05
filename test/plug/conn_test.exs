@@ -17,11 +17,36 @@ defmodule Plug.ConnTest do
     assert conn.assigns[:hello] == :world
   end
 
-  test "put_status/2" do
+  test "put_status/2 when the body isn't set yet" do
     conn = conn(:get, "/")
-    assert put_status(conn, nil).status == nil
-    assert put_status(conn, 200).status == 200
-    assert put_status(conn, :ok).status == 200
+
+    c = conn |> put_status(nil)
+    assert c.status == nil
+    assert c.state != :set
+
+    c = conn |> put_status(200)
+    assert c.status == 200
+    assert c.state != :set
+
+    c = conn |> put_status(:ok)
+    assert c.status == 200
+    assert c.state != :set
+  end
+
+  test "put_status/2 when the body has been already set" do
+    conn = %{conn(:get, "/") | resp_body: "foo"}
+
+    c = conn |> put_status(nil)
+    assert c.status == nil
+    assert c.state != :set
+
+    c = conn |> put_status(200)
+    assert c.status == 200
+    assert c.state == :set
+
+    c = conn |> put_status(:ok)
+    assert c.status == 200
+    assert c.state == :set
   end
 
   test "put_status/2 raises when the connection had already been sent" do
@@ -33,6 +58,38 @@ defmodule Plug.ConnTest do
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
       conn |> put_status(nil)
+    end
+  end
+
+  test "put_resp_body/2 when the status isn't set yet" do
+    conn = conn(:get, "/")
+
+    c = conn |> put_resp_body(nil)
+    assert c.resp_body == nil
+    assert c.state != :set
+
+    c = conn |> put_resp_body("foo")
+    assert c.resp_body == "foo"
+    assert c.state != :set
+  end
+
+  test "put_resp_body/2 when the status has been already set" do
+    conn = %{conn(:get, "/") | status: 200}
+
+    c = conn |> put_resp_body(nil)
+    assert c.resp_body == nil
+    assert c.state != :set
+
+    c = conn |> put_resp_body("foo")
+    assert c.resp_body == "foo"
+    assert c.state == :set
+  end
+
+  test "put_resp_body/2 raises when the connection had already been sent" do
+    conn = conn(:get, "/") |> send_resp(200, "foo")
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_resp_body(200)
     end
   end
 
