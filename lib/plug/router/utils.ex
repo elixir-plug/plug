@@ -58,6 +58,37 @@ defmodule Plug.Router.Utils do
     for segment <- String.split(bin, "/"), segment != "", do: segment
   end
 
+  @doc """
+  "Scope" the method call passed as the first argument by prefixing
+  `prefix_path` to the path passed to the method and by passing all the
+  additional `opts` to the method.
+
+  ## Examples
+
+      iex> method = {:forward, [], ["/foo", [to: :bar]]}
+      {:forward, [], ["/foo", [to: :bar]]}
+      iex> Plug.Router.Utils.scope_method(method, "/prefix", [host: "foo."])
+      {:forward, [], ["/prefix/foo", [to: :bar, host: "foo."]]}
+  """
+  def scope_method({method_name, meta, [path | rest]}, prefix, [] = _opts) do
+    prefixed_path = case path do
+      {:_, _, _} -> quote do: (unquote(prefix) <> _)
+      _ -> prefix <> path
+    end
+
+    new_args = [prefixed_path | rest]
+    {method_name, meta, new_args}
+  end
+
+  def scope_method({method_name, meta, [path | [rest]]}, prefix, opts) do
+    # Merge the options passed to `scope` with the options passed to the method,
+    # giving precedence to the ones passed to the method.
+    rest = Keyword.merge(opts, rest)
+
+    new_args = [(prefix <> path) | [rest]]
+    {method_name, meta, new_args}
+  end
+
   ## Helpers
 
   # Loops each segment checking for matches.

@@ -88,6 +88,31 @@ defmodule Plug.RouterTest do
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
 
+    # Scoping
+
+    scope "/scoped" do
+      put "/bar" do
+        conn |> resp(200, "bar")
+      end
+      get "/baz", do: conn |> resp(200, "baz")
+      get "/gne", host: "api.", do: conn |> resp(200, "gne")
+    end
+
+    scope "/", host: "api." do
+      get "foo", do: conn |> resp(200, "foo")
+      get "bar" do
+        conn |> resp(200, "bar")
+      end
+    end
+
+    scope "/forward_scope" do
+      forward "/f", to: Forward
+    end
+
+    scope "/forward_scope_with_host", host: "a.b" do
+      forward "", to: Forward
+    end
+
     match _ do
       conn |> resp(404, "oops")
     end
@@ -95,6 +120,43 @@ defmodule Plug.RouterTest do
 
   use ExUnit.Case, async: true
   use Plug.Test
+
+  test "scope /scoped without method options" do
+    conn = call(Sample, conn(:put, "/scoped/bar"))
+    assert conn.resp_body == "bar"
+
+    conn = call(Sample, conn(:get, "/scoped/baz"))
+    assert conn.resp_body == "baz"
+  end
+
+  test "scope /scoped with method options" do
+    conn = call(Sample, conn(:get, "http://api.a.b/scoped/gne"))
+    assert conn.resp_body == "gne"
+  end
+
+  test "scope with :host specified to the scope macro" do
+    conn = call(Sample, conn(:get, "http://api.a.b/foo"))
+    assert conn.resp_body == "foo"
+
+    conn = call(Sample, conn(:get, "http://api.a.b/bar"))
+    assert conn.resp_body == "bar"
+
+    conn = call(Sample, conn(:get, "http://a.b/foo"))
+    assert conn.status == 404
+
+    conn = call(Sample, conn(:get, "http://a.b/bar"))
+    assert conn.status == 404
+  end
+
+  test "forward inside scope" do
+    conn = call(Sample, conn(:get, "/forward_scope/f"))
+    assert conn.resp_body == "forwarded"
+  end
+
+  test "forward inside a scoped (with host) block" do
+    conn = call(Sample, conn(:get, "http://a.b/forward_scope_with_host"))
+    assert conn.resp_body == "forwarded"
+  end
 
   test "dispatch root" do
     conn = call(Sample, conn(:get, "/"))
