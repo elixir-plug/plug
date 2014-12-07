@@ -67,7 +67,7 @@ defmodule Plug.Builder do
     plugs = Module.get_attribute(env.module, :plugs)
 
     if plugs == [] do
-      raise "not plugs have been defined in #{__MODULE__}"
+      raise "no plugs have been defined in #{__MODULE__}"
     end
 
     {conn, body} = Plug.Builder.compile(plugs)
