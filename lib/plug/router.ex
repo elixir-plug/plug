@@ -336,6 +336,46 @@ defmodule Plug.Router do
     end
   end
 
+  @scopable_methods [
+    :match,
+    :forward,
+    :get,
+    :post,
+    :put,
+    :patch,
+    :delete,
+    :options,
+  ]
+
+  @doc """
+  """
+  defmacro scope(prefix, opts \\ [], do_block)
+
+  # Multiple calls inside the block that gets passed to the `scope` macro
+  # (identified by `:__block__`).
+  defmacro scope(prefix, opts, do: {:__block__, metadata, methods}) do
+    allowed_filter = fn({name, _, _}) -> name in @scopable_methods end
+
+    unless Enum.all?(methods, allowed_filter) do
+      raise ArgumentError, message: "Only these methods are allowed in a" <>
+                                    "`scope` block: #{@scopable_methods}"
+    end
+
+    methods = Enum.map methods, fn(method) ->
+      Plug.Router.Utils.scope_method(method, prefix, opts)
+    end
+
+    {:__block__, metadata, methods}
+  end
+
+  # Single call inside the block passed to `scope`. In this case, the quoted
+  # expression that gets passed to `scope` is not a list of other calls but it's
+  # the quoted call itself.
+  defmacro scope(prefix, opts, do: method) do
+    Plug.Router.Utils.scope_method(method, prefix, opts)
+  end
+
+
   ## Match Helpers
 
   @doc false
