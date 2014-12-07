@@ -15,7 +15,28 @@ defmodule Plug.Router.Utils do
 
   """
   def normalize_method(method) do
-    String.upcase(to_string(method))
+    method |> to_string |> String.upcase
+  end
+
+  @doc """
+  Build the pattern that will be used to match against the request's host
+  (provided via the `:host`) option.
+
+  ## Examples
+
+      iex> Plug.Router.Utils.build_host_match(nil)
+      {:_, [], Plug.Router.Utils}
+
+      iex> Plug.Router.Utils.build_host_match("foo.com")
+      "foo.com"
+
+  """
+  def build_host_match(host) do
+    cond do
+      is_nil host              -> quote do: _
+      String.last(host) == "." -> quote do: unquote(host) <> _
+      is_binary host           -> host
+    end
   end
 
   @doc """
@@ -27,12 +48,12 @@ defmodule Plug.Router.Utils do
 
   ## Examples
 
-      iex> Plug.Router.Utils.build_match("/foo/:id")
+      iex> Plug.Router.Utils.build_path_match("/foo/:id")
       {[:id], ["foo", {:id, [], nil}]}
 
   """
-  def build_match(spec, context \\ nil) when is_binary(spec) do
-    build_match split(spec), context, [], []
+  def build_path_match(spec, context \\ nil) when is_binary(spec) do
+    build_path_match split(spec), context, [], []
   end
 
   @doc """
@@ -62,11 +83,11 @@ defmodule Plug.Router.Utils do
 
   # Loops each segment checking for matches.
 
-  defp build_match([h|t], context, vars, acc) do
+  defp build_path_match([h|t], context, vars, acc) do
     handle_segment_match segment_match(h, "", context), t, context, vars, acc
   end
 
-  defp build_match([], _context, vars, acc) do
+  defp build_path_match([], _context, vars, acc) do
     {vars |> Enum.uniq |> Enum.reverse, Enum.reverse(acc)}
   end
 
@@ -74,11 +95,11 @@ defmodule Plug.Router.Utils do
   # :literal ("foo"), an identifier (":bar") or a glob ("*path")
 
   defp handle_segment_match({:literal, literal}, t, context, vars, acc) do
-    build_match t, context, vars, [literal|acc]
+    build_path_match t, context, vars, [literal|acc]
   end
 
   defp handle_segment_match({:identifier, identifier, expr}, t, context, vars, acc) do
-    build_match t, context, [identifier|vars], [expr|acc]
+    build_path_match t, context, [identifier|vars], [expr|acc]
   end
 
   defp handle_segment_match({:glob, identifier, expr}, t, context, vars, acc) do
@@ -89,9 +110,9 @@ defmodule Plug.Router.Utils do
     case acc do
       [hs|ts] ->
         acc = [{:|, [], [hs, expr]} | ts]
-        build_match([], context, [identifier|vars], acc)
+        build_path_match([], context, [identifier|vars], acc)
       _ ->
-        {vars, expr} = build_match([], context, [identifier|vars], [expr])
+        {vars, expr} = build_path_match([], context, [identifier|vars], [expr])
         {vars, hd(expr)}
     end
   end

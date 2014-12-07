@@ -307,21 +307,31 @@ defmodule Plug.Router do
     `match/3`
 
   All remaining options are passed to the underlying plug.
+
+      forward "/foo/bar", to: :foo_bar_plug, host: "foobar."
+      forward "/api", to: ApiRouter, plug_specific_option: true
   """
   defmacro forward(path, options) when is_binary(path) do
     quote bind_quoted: [path: path, options: options] do
-      {target, options} = Keyword.pop(options, :to)
-      {options, plug}   = Keyword.split(options, [:host])
+      {target, options}       = Keyword.pop(options, :to)
+      {options, plug_options} = Keyword.split(options, [:host])
 
       if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
       end
 
       @plug_forward_target target
-      @plug_forward_opts   target.init(plug)
+      @plug_forward_opts   target.init(plug_options)
 
+      # Delegate the matching to the match/3 macro along with the options
+      # specified by Keyword.split/2.
       match path <> "/*glob", options do
-        Plug.Router.Utils.forward(var!(conn), var!(glob), @plug_forward_target, @plug_forward_opts)
+        Plug.Router.Utils.forward(
+          var!(conn),
+          var!(glob),
+          @plug_forward_target,
+          @plug_forward_opts
+        )
       end
     end
   end
@@ -331,8 +341,8 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {_vars, match}   = Plug.Router.Utils.build_match(path)
-    {method, match, build_host(options[:host]), guards}
+    {_vars, match}   = Plug.Router.Utils.build_path_match(path)
+    {method, match, Plug.Router.Utils.build_host_match(options[:host]), guards}
   end
 
   # Entry point for both forward and match that is actually
@@ -362,8 +372,8 @@ defmodule Plug.Router do
     end
   end
 
-  # Convert the verbs given with :via into a variable
-  # and guard set that can be added to the dispatch clause.
+  # Convert the verbs given with `:via` into a variable and guard set that can
+  # be added to the dispatch clause.
   defp build_methods([], guards) do
     {quote(do: _), guards}
   end
@@ -381,14 +391,6 @@ defmodule Plug.Router do
 
   defp join_guards(fst, true), do: fst
   defp join_guards(fst, snd),  do: (quote do: unquote(fst) and unquote(snd))
-
-  defp build_host(host) do
-    cond do
-      is_nil host              -> quote do: _
-      String.last(host) == "." -> quote do: unquote(host) <> _
-      is_binary host           -> host
-    end
-  end
 
   # Extract the path and guards from the path.
   defp extract_path_and_guards({:when, _, [path, guards]}), do: {extract_path(path), guards}
