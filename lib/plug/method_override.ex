@@ -1,11 +1,18 @@
 defmodule Plug.MethodOverride do
   @moduledoc """
-  A plug to overwrite "POST" method with the one defined in _method parameter
-  or x-http-method-override header.
+  This plug overrides the request's `POST` method with the method defined in
+  the `_method` request parameter.
+
+  The `POST` method can be overridden only with on of these HTTP methods:
+
+  * `PUT`
+  * `PATCH`
+  * `DELETE`
 
   This plug expects the parameters to be already parsed and fetched. Parameters
-  are fetched with `Plug.Conn.fetch_params/1` and parsed with
-  `Plug.Parsers`.
+  are fetched with `Plug.Conn.fetch_params/1` and parsed with `Plug.Parsers`.
+
+  This plug doesn't accept any options.
 
   ## Examples
 
@@ -14,25 +21,25 @@ defmodule Plug.MethodOverride do
 
   @behaviour Plug
 
-  def init([]) do
-    []
-  end
+  @allowed_methods ~w(DELETE PUT PATCH)
+
+  def init([]), do: []
 
   def call(conn, []) do
     if conn.method == "POST" do
-      case method_override(conn) do
-        "DELETE" -> %{conn | method: "DELETE"}
-        "PUT"    -> %{conn | method: "PUT"}
-        "PATCH"  -> %{conn | method: "PATCH"}
-        _        -> conn
-      end
+      override_method(conn)
     else
       conn
     end
   end
 
-  defp method_override(conn) do
-    conn.params["_method"] ||
-      (Plug.Conn.get_req_header(conn, "x-http-method-override") |> List.first)
+  @spec override_method(Plug.Conn.t) :: Plug.Conn.t
+  defp override_method(conn) do
+    method = (conn.params["_method"] || "") |> String.upcase
+
+    cond do
+      method in @allowed_methods -> %{conn | method: method}
+      true                       -> conn
+    end
   end
 end
