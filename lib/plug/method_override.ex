@@ -1,10 +1,7 @@
 defmodule Plug.MethodOverride do
   @moduledoc """
   This plug overrides the request's `POST` method with the method defined in
-  either:
-
-  * the `_method` parameter of the request or
-  * the `X-HTTP-Method-Override` request header.
+  the `_method` request parameter.
 
   The `POST` method can be overridden only with on of these HTTP methods:
 
@@ -38,18 +35,11 @@ defmodule Plug.MethodOverride do
 
   @spec override_method(Plug.Conn.t) :: Plug.Conn.t
   defp override_method(conn) do
-    method = conn |> fetch_method |> String.upcase
+    method = (conn.params["_method"] || "") |> String.upcase
 
     cond do
       method in @allowed_methods -> %{conn | method: method}
       true                       -> conn
     end
-  end
-
-  @spec fetch_method(Plug.Conn.t) :: String.t
-  defp fetch_method(conn) do
-    header = Plug.Conn.get_req_header(conn, "x-http-method-override")
-              |> List.first
-    conn.params["_method"] || header || ""
   end
 end
