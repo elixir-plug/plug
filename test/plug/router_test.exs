@@ -2,6 +2,7 @@ defmodule Plug.RouterTest do
   defmodule Sample do
     defmodule Forward do
       use Plug.Router
+      use Plug.ErrorHandler
 
       plug :match
       plug :dispatch
@@ -45,6 +46,7 @@ defmodule Plug.RouterTest do
     end
 
     use Plug.Router
+    use Plug.ErrorHandler
 
     plug :match
     plug :dispatch
