@@ -1,6 +1,6 @@
 defmodule Plug.Head do
   @moduledoc """
-  A Plug to convert "HEAD" requests to "GET".
+  A Plug to convert `HEAD` requests to `GET` requests.
 
   ## Examples
 
@@ -9,15 +9,10 @@ defmodule Plug.Head do
 
   @behaviour Plug
 
-  def init([]) do
-    []
-  end
+  alias Plug.Conn
 
-  def call(conn, []) do
-    if conn.method == "HEAD" do
-      %{conn | method: "GET"}
-    else
-      conn
-    end
-  end
+  def init([]), do: []
+
+  def call(%Conn{method: "HEAD"} = conn, []), do: %{conn | method: "GET"}
+  def call(conn, []), do: conn
 end
