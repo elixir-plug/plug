@@ -49,6 +49,9 @@ defmodule Plug.Debugger do
   This module does not perform any logging either, as all logging is done
   by the web server handler.
 
+  **Note:** If this module is used with `Plug.ErrorHandler`, it must be used
+  before `Plug.ErrorHandler`.
+
   ## PLUG_EDITOR
 
   If a PLUG_EDITOR environment variable is set, `Plug.Debugger` is going
@@ -71,12 +74,18 @@ defmodule Plug.Debugger do
   defmacro __using__(opts) do
     quote do
       @plug_debugger unquote(opts)
+      @before_compile Plug.Debugger
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(_) do
+    quote location: :keep do
+      defoverridable [call: 2]
 
       def call(conn, opts) do
         Plug.Debugger.wrap(conn, @plug_debugger, fn -> super(conn, opts) end)
       end
-
-      defoverridable [call: 2]
     end
   end
 

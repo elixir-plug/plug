@@ -32,6 +32,9 @@ defmodule Plug.ErrorHandler do
   Also notice that those pages are going to be shown in production. If
   you are looking for error handling to help during development, consider
   using `Plug.Debugger`.
+
+  **Note:** If this module is used with `Plug.Debugger`, it must be used
+  after `Plug.Debugger`.
   """
   @doc false
   defmacro __using__(_) do
@@ -48,9 +51,7 @@ defmodule Plug.ErrorHandler do
 
   @doc false
   defmacro __before_compile__(_env) do
-    quote do
-      import Plug.Router, only: []
-
+    quote location: :keep do
       defoverridable [call: 2]
 
       def call(conn, opts) do

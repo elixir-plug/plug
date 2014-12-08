@@ -87,15 +87,16 @@ defmodule Plug.Router do
     about the failure. This module is recommended to be used only in
     development mode
 
-  Here is an example of how both modules could be used in an application: 
+  Here is an example of how both modules could be used in an application:
 
       defmodule AppRouter do
         use Plug.Router
-        use Plug.ErrorHandler
 
-        if Mix.env == dev do
+        if Mix.env == :dev do
           use Plug.Debugger
         end
+
+        use Plug.ErrorHandler
 
         plug :match
         plug :dispatch

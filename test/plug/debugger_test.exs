@@ -9,9 +9,12 @@ defmodule Plug.DebuggerTest do
     plug :match
     plug :dispatch
 
-    get "/boom" do
-      resp conn, 200, "oops"
-      raise "oops"
+    def call(conn, opts) do
+      if conn.path_info == ~w(boom) do
+        raise "oops"
+      else
+        super(conn, opts)
+      end
     end
 
     get "/send_and_boom" do
