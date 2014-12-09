@@ -20,10 +20,10 @@ defmodule Plug.Router do
       end
 
   Each route needs to return a connection, as per the Plug spec.
-  A catch all `match` is recommended to be defined, as in the example
+  A catch-all `match` is recommended to be defined as in the example
   above, otherwise routing fails with a function clause error.
 
-  The router is a plug, which means it can be invoked as:
+  The router is itself a plug, which means it can be invoked as:
 
       AppRouter.call(conn, AppRouter.init([]))
 
@@ -39,10 +39,9 @@ defmodule Plug.Router do
         send_resp(conn, 200, "world")
       end
 
-  In the example above, a request will only match if it is
-  a `GET` request and the route "/hello". The supported
-  HTTP methods are `get`, `post`, `put`, `patch`, `delete`
-  and `options`.
+  In the example above, a request will only match if it is a `GET` request and
+  the route is "/hello". The supported HTTP methods are `get`, `post`, `put`,
+  `patch`, `delete` and `options`.
 
   A route can also specify parameters which will then be
   available in the function body:
@@ -53,7 +52,7 @@ defmodule Plug.Router do
 
   Routes allow for globbing which will match the remaining parts
   of a route and can be available as a parameter in the function
-  body, also note that a glob can't be followed by other segments:
+  body. Also note that a glob can't be followed by other segments:
 
       get "/hello/*_rest" do
         send_resp(conn, 200, "matches all routes starting with /hello")
@@ -75,17 +74,17 @@ defmodule Plug.Router do
 
   ## Error handling
 
-  In case something wents wrong in a request, the router by default
+  In case something goes wrong in a request, the router by default
   will crash, without returning any response to the client. This
   behaviour can be configured in two ways, by using two different
   modules:
 
   * `Plug.ErrorHandler` - allows the developer to customize exactly
-    which page is sent to the client via the `handle_errors/2` function
+    which page is sent to the client via the `handle_errors/2` function;
 
-  * `Plug.Debugger` - automatically show debugging and request information
-    about the failure. This module is recommended to be used only in
-    development mode
+  * `Plug.Debugger` - automatically shows debugging and request information
+    about the failure. This module is recommended to be used only in a
+    development environment.
 
   Here is an example of how both modules could be used in an application:
 
@@ -113,7 +112,7 @@ defmodule Plug.Router do
   ## Routes compilation
 
   All routes are compiled to a match function that receives
-  three arguments: the method, the request path split on "/"
+  three arguments: the method, the request path split on `/`
   and the connection. Consider this example:
 
       match "/foo/bar", via: :get do
@@ -127,14 +126,14 @@ defmodule Plug.Router do
       end
 
   This opens up a few possibilities. First, guards can be given
-  to match:
+  to `match`:
 
       match "/foo/:bar" when size(bar) <= 3, via: :get do
         send_resp(conn, 200, "hello world")
       end
 
-  Second, a list of splitten paths (which is the compiled result)
-  is also allowed:
+  Second, a list of split paths (which is the compiled result) is
+  also allowed:
 
       match ["foo", bar], via: :get do
         send_resp(conn, 200, "hello world")
@@ -190,16 +189,17 @@ defmodule Plug.Router do
 
   ## Options
 
-  `match/3` and the others route macros accepts the following options:
+  `match/3` and the others route macros accept the following options:
 
     * `:host` - the host which the route should match. Defaults to `nil`,
       meaning no host match, but can be a string like "example.com" or a
-      string ending with ".", like "subdomain." for a subdomain match
+      string ending with ".", like "subdomain." for a subdomain match.
 
-    * `:via` - matches the route against some specific HTTP methods
+    * `:via` - matches the route against some specific HTTP method (specified as
+      an atom, like `:get` or `:put`.
 
     * `:do` - contains the implementation to be invoked in case
-      the route matches
+      the route matches.
 
   """
   defmacro match(path, options, contents \\ []) do
@@ -207,7 +207,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is get request.
+  Dispatches to the path only if the request is a GET request.
   See `match/3` for more examples.
   """
   defmacro get(path, options, contents \\ []) do
@@ -215,7 +215,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is post request.
+  Dispatches to the path only if the request is a POST request.
   See `match/3` for more examples.
   """
   defmacro post(path, options, contents \\ []) do
@@ -223,7 +223,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is put request.
+  Dispatches to the path only if the request is a PUT request.
   See `match/3` for more examples.
   """
   defmacro put(path, options, contents \\ []) do
@@ -231,7 +231,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is patch request.
+  Dispatches to the path only if the request is a PATCH request.
   See `match/3` for more examples.
   """
   defmacro patch(path, options, contents \\ []) do
@@ -239,7 +239,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is delete request.
+  Dispatches to the path only if the request is a DELETE request.
   See `match/3` for more examples.
   """
   defmacro delete(path, options, contents \\ []) do
@@ -247,7 +247,7 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Dispatches to the path only if it is options request.
+  Dispatches to the path only if the request is an OPTIONS request.
   See `match/3` for more examples.
   """
   defmacro options(path, options, contents \\ []) do
@@ -255,23 +255,29 @@ defmodule Plug.Router do
   end
 
   @doc """
-  Forwards requests to another Plug. The path_info of the forwarded
+  Forwards requests to another Plug. The `path_info` of the forwarded
   connection will exclude the portion of the path specified in the
   call to `forward`.
-
-  ## Examples
-
-      forward "/users", to: UserRouter
 
   ## Options
 
   `forward` accepts the following options:
 
-  * `:to` - a Plug where the requests will be forwarded
+  * `:to` - a Plug where the requests will be forwarded to.
   * `:host` - a string representing the host or subdomain, exactly like in
-    `match/3`
+    `match/3`.
 
-  All remaining options are passed to the underlying plug.
+  All remaining options are passed to the target plug.
+
+  ## Examples
+
+      forward "/users", to: UserRouter
+
+  Assuming the above code, a request to `/users/sign_in` will be forwarded to
+  the `UserRouter` plug, which will receive what it will see as a request to
+  `/sign_in`.
+
+  Some other examples:
 
       forward "/foo/bar", to: :foo_bar_plug, host: "foobar."
       forward "/api", to: ApiRouter, plug_specific_option: true

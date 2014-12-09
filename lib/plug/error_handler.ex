@@ -20,9 +20,13 @@ defmodule Plug.ErrorHandler do
       end
 
   Once this module is used, a callback named `handle_errors/2` should
-  be define in your plug. The callback receives a connection and a map
-  containing the exception kind (throw, error or exit), the reason
-  (an exception for errors or a term for others) and the stacktrace.
+  be defined in your plug. This callback should receive a connection and a map
+  containing:
+
+  * the exception kind (`:throw`, `:error` or `:exit`),
+  * the reason (an exception for errors or a term for others),
+  * the stacktrace.
+
   After the callback is invoked, the error is re-raised.
 
   It is advised to do as little work as possible when handling errors

@@ -3,7 +3,7 @@
 
 defprotocol Plug.Exception do
   @moduledoc """
-  A protocol that extends exceptions to be status code aware.
+  A protocol that extends exceptions to be status-code aware.
 
   By default, it looks for an implementation of the protocol,
   otherwise checks if the exception has the `:plug_status` field

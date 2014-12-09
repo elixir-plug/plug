@@ -4,7 +4,7 @@ defmodule Plug.HeadTest do
 
   @opts Plug.Head.init([])
 
-  test "converts HEAD requests to GET" do
+  test "converts HEAD requests to GET requests" do
     conn = Plug.Head.call(conn(:head, "/"), @opts)
     assert conn.method == "GET"
   end
