@@ -1,9 +1,9 @@
-%{"cowboy": {:package, "1.0.0"},
-  "cowlib": {:package, "1.0.0"},
-  "earmark": {:package, "0.1.10"},
-  "ex_doc": {:package, "0.6.0"},
-  "hackney": {:package, "0.13.1"},
-  "idna": {:package, "1.0.1"},
-  "inch_ex": {:package, "0.2.1"},
-  "json": {:package, "0.3.2"},
-  "ranch": {:package, "1.0.0"}}
+%{"cowboy": {:hex, :cowboy, "1.0.0"},
+  "cowlib": {:hex, :cowlib, "1.0.0"},
+  "earmark": {:hex, :earmark, "0.1.10"},
+  "ex_doc": {:hex, :ex_doc, "0.6.0"},
+  "hackney": {:hex, :hackney, "0.13.1"},
+  "idna": {:hex, :idna, "1.0.1"},
+  "inch_ex": {:hex, :inch_ex, "0.2.1"},
+  "json": {:hex, :json, "0.3.2"},
+  "ranch": {:hex, :ranch, "1.0.0"}}
