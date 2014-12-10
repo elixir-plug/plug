@@ -1,13 +1,12 @@
 defmodule Plug.Conn.Cookies do
   @moduledoc """
-  Conveniences for encoding and decoding cookies
+  Conveniences for encoding and decoding cookies.
   """
 
   @doc """
   Decodes the given cookies as given in a request header.
 
-  If a cookie is invalid, it is automatically
-  discarded from the result.
+  If a cookie is invalid, it is automatically discarded from the result.
 
   ## Examples
 
@@ -16,15 +15,15 @@ defmodule Plug.Conn.Cookies do
 
   """
   def decode(cookie) do
-    decode(:binary.split(cookie, [";", ","], [:global]), %{})
+    do_decode(:binary.split(cookie, [";", ","], [:global]), %{})
   end
 
-  defp decode([], acc),
+  defp do_decode([], acc),
     do: acc
-  defp decode([h|t], acc) do
+  defp do_decode([h|t], acc) do
     case decode_kv(h) do
-      {k, v} -> decode(t, Map.put(acc, k, v))
-      false  -> decode(t, acc)
+      {k, v} -> do_decode(t, Map.put(acc, k, v))
+      false  -> do_decode(t, acc)
     end
   end
 
@@ -84,13 +83,8 @@ defmodule Plug.Conn.Cookies do
     header
   end
 
-  defp pad(number) when number in 0..9 do
-    <<?0, ?0 + number>>
-  end
-
-  defp pad(number) do
-    Integer.to_string(number)
-  end
+  defp pad(number) when number in 0..9, do: <<?0, ?0 + number>>
+  defp pad(number), do: Integer.to_string(number)
 
   defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
     weekday_name  = weekday_name(:calendar.day_of_the_week(date))

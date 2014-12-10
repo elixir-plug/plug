@@ -1,10 +1,8 @@
 defmodule Plug.Test do
   @moduledoc """
-  Conveniences for testing plugs
+  Conveniences for testing plugs.
 
-  ## Examples
-
-  This module can be used in your test cases:
+  This module can be used in your test cases, like this:
 
       use ExUnit.Case, async: true
       use Plug.Test
@@ -30,9 +28,9 @@ defmodule Plug.Test do
   @doc """
   Creates a test connection.
 
-  The request `method` and `path` must be given as required
-  arguments. `method` may be any value that implements `to_string/1`
-  and it will properly converted and normalized.
+  The request `method` and `path` are required arguments. `method` may be any
+  value that implements `to_string/1` and it will properly converted and
+  normalized (e.g., `:get` or `"post"`).
 
   The `params_or_body` field must be one of:
 
@@ -40,12 +38,19 @@ defmodule Plug.Test do
   * a binary - containing a request body. For such cases, `:headers`
     must be given as option with a content-type;
   * a map or list - containing the parameters which will automatically
-    set the content-type to multipart. The map or list may be contain
+    set the content-type to multipart. The map or list may contain
     other lists or maps and all entries will be normalized to string
     keys;
 
-  The only option supported so far is `:headers` which expects a
+  The only option supported so far is `:headers`, which expects a
   list of headers.
+
+  ## Examples
+
+      conn(:get, "/foo", "bar=10")
+      conn(:post, "/")
+      conn("patch", "/", "", headers: [{"content-type", "application/json"}])
+
   """
   @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
@@ -55,7 +60,7 @@ defmodule Plug.Test do
   @doc """
   Puts a new request header.
 
-  Previous entries of the same headers are removed.
+  Previous entries of the same header are overridden.
   """
   @spec put_req_header(Conn.t, binary, binary) :: Conn.t
   def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
@@ -83,7 +88,8 @@ defmodule Plug.Test do
   Deletes a request cookie.
   """
   @spec delete_req_cookie(Conn.t, binary) :: Conn.t
-  def delete_req_cookie(%Conn{req_cookies: %Plug.Conn.Unfetched{}} = conn, key) when is_binary(key) do
+  def delete_req_cookie(%Conn{req_cookies: %Plug.Conn.Unfetched{}} = conn, key)
+      when is_binary(key) do
     key  = "#{key}="
     size = byte_size(key)
     fun  = &match?({"cookie", value} when binary_part(value, 0, size) == key, &1)
@@ -91,20 +97,21 @@ defmodule Plug.Test do
   end
 
   def delete_req_cookie(_conn, key) when is_binary(key) do
-    raise ArgumentError, message: "cannot put/delete request cookies after cookies were fetched"
+    raise ArgumentError,
+      message: "cannot put/delete request cookies after cookies were fetched"
   end
 
   @doc """
-  Moves cookies from old connection into a new connection for subsequent requests.
+  Moves cookies from a connection into a new connection for subsequent requests.
 
-  This function copies the cookie information in `old_conn` into `new_conn`, emulating
-  multiple requests done by clients were cookies are always passed forward.
+  This function copies the cookie information in `old_conn` into `new_conn`,
+  emulating multiple requests done by clients where cookies are always passed
+  forward, and returns the new version of `new_conn`.
   """
   @spec recycle_cookies(Conn.t, Conn.t) :: Conn.t
   def recycle_cookies(new_conn, old_conn) do
     Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
-      {key, value}, acc ->
-        put_req_cookie(acc, to_string(key), value)
+      {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
     end
   end
 
