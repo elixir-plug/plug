@@ -37,6 +37,7 @@ defmodule Plug.CsrfProtection do
 
   def init(opts), do: opts
 
+  def call(%Conn{private: %{plug_skip_csrf_protection: true}} = conn, _opts), do: conn
   def call(%Conn{method: method} = conn, _opts) when not method in @unprotected_methods do
     if verified_request?(conn) do
       conn
@@ -44,7 +45,6 @@ defmodule Plug.CsrfProtection do
       raise InvalidAuthenticityToken
     end
   end
-
   def call(conn, _opts), do: ensure_csrf_token(conn)
 
   defp verified_request?(conn) do

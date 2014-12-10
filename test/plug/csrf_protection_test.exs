@@ -115,4 +115,11 @@ defmodule Plug.CsrfProtectionTest do
     conn = call(:get, "/") |> CsrfProtection.call([])
     assert !!Conn.get_session(conn, :csrf_token)
   end
+
+  test "csrf plug is skipped when plug_skip_csrf_protection is true" do
+    conn =  call(:get, "/")
+            |> Conn.put_private(:plug_skip_csrf_protection, true)
+            |> CsrfProtection.call([])
+    assert !Conn.get_session(conn, :csrf_token)
+  end
 end
