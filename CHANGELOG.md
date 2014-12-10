@@ -1,9 +1,15 @@
 ## Changelog
 
+## v0.9.0
+
 * Enhancements
   * Add `Plug.Conn.full_path/1`
-  * Add `handle_errors/2` support in router
+  * Add `Plug.CSRFProtection` that adds cross-forgery protection
+  * Add `Plug.ErrorHandler` that allows an error page to be sent on crashes (instead of a blank one)
   * Support host option in `Plug.Router`
+
+* Backwards incompatible changes
+  * Add `Plug.Router.Utils.build_match/1` was renamed to `build_path_match/1`
 
 ## v0.8.4
 

@@ -517,18 +517,23 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:domain` - the domain the cookie applies to;
-  * `:max_age` - the cookie max-age;
-  * `:path` - the path the cookie applies to;
-  * `:secure` - if the cookie must be sent only over https;
+    * `:domain` - the domain the cookie applies to;
+    * `:max_age` - the cookie max-age;
+    * `:path` - the path the cookie applies to;
+    * `:secure` - if the cookie must be sent only over https. Defaults
+      to true when the connection is https.
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t
-  def put_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, value, opts \\ []) when
+  def put_resp_cookie(%Conn{resp_cookies: resp_cookies, scheme: scheme} = conn, key, value, opts \\ []) when
       is_binary(key) and is_binary(value) and is_list(opts) do
-    resp_cookies = Map.put(resp_cookies, key, :maps.from_list([{:value, value}|opts]))
+    cookie = [{:value, value}|opts] |> :maps.from_list() |> maybe_secure_cookie(scheme)
+    resp_cookies = Map.put(resp_cookies, key, cookie)
     %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.put(&1, key, value))
   end
+
+  defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
+  defp maybe_secure_cookie(cookie, _),      do: cookie
 
   @epoch {{1970, 1, 1}, {0, 0, 0}}
 

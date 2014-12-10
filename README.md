@@ -153,6 +153,7 @@ end
 
 This project aims to ship with different plugs that can be re-used across applications:
 
+  * `Plug.CSRFProtection` - adds Cross-Site Request Forgery protection to your application. Typically required if you are using `Plug.Session`;
   * `Plug.Head` - converts HEAD requests to GET requests;
   * `Plug.Logger` - logs requests;
   * `Plug.MethodOverride` - overrides a request method with one specified in headers;
@@ -167,6 +168,7 @@ You can go into more details about each of them [in our docs](http://hexdocs.pm/
 Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help development:
 
   * `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
+  * `Plug.ErrorHandler` - allows developers to customize error pages in case of crashes instead of sending a blank one;
 
 ## License
 

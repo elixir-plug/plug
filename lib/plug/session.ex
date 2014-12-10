@@ -6,6 +6,8 @@ defmodule Plug.Session do
   session have to be fetched with `Plug.Conn.fetch_session/1` before the
   session can be accessed.
 
+  Consider using `Plug.CSRFProtection` when using `Plug.Session`.
+
   ## Session stores
 
   See `Plug.Session.Store` for the specification session stores are required to
@@ -13,17 +15,17 @@ defmodule Plug.Session do
 
   Plug ships with the following session stores:
 
-  * `Plug.Session.ETS`
-  * `Plug.Session.COOKIE`
+    * `Plug.Session.ETS`
+    * `Plug.Session.COOKIE`
 
   ## Options
 
-  * `:store` - session store module (required);
-  * `:key` - session cookie key (required);
-  * `:domain` - see `Plug.Conn.put_resp_cookies/4`;
-  * `:max_age` - see `Plug.Conn.put_resp_cookies/4`;
-  * `:path` - see `Plug.Conn.put_resp_cookies/4`;
-  * `:secure` - see `Plug.Conn.put_resp_cookies/4`;
+    * `:store` - session store module (required);
+    * `:key` - session cookie key (required);
+    * `:domain` - see `Plug.Conn.put_resp_cookies/4`;
+    * `:max_age` - see `Plug.Conn.put_resp_cookies/4`;
+    * `:path` - see `Plug.Conn.put_resp_cookies/4`;
+    * `:secure` - see `Plug.Conn.put_resp_cookies/4`;
 
   Additional options can be given to the session store, see the store's
   documentation for the options it accepts.

@@ -401,6 +401,20 @@ defmodule Plug.ConnTest do
            ["foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"]
   end
 
+  test "put_resp_cookie/4 is secure on https" do
+    conn = conn(:get, "https://example.com/")
+           |> put_resp_cookie("foo", "baz", path: "/baz")
+           |> send_resp(200, "ok")
+    assert conn.resp_cookies["foo"] ==
+           %{value: "baz", path: "/baz", secure: true}
+
+    conn = conn(:get, "https://example.com/")
+           |> put_resp_cookie("foo", "baz", path: "/baz", secure: false)
+           |> send_resp(200, "ok")
+    assert conn.resp_cookies["foo"] ==
+           %{value: "baz", path: "/baz", secure: false}
+  end
+
   test "put_req_cookie/3 and delete_req_cookie/2" do
     conn = conn(:get, "/")
     assert get_req_header(conn, "cookie") == []
