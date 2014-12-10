@@ -4,6 +4,7 @@ defmodule Plug.CsrfProtectionTest do
 
   alias Plug.CsrfProtection
   alias Plug.CsrfProtection.InvalidAuthenticityToken
+  alias Plug.CsrfProtection.InvalidCrossOriginRequest
   alias Plug.Conn
 
   @default_opts Plug.Session.init(
@@ -88,25 +89,25 @@ defmodule Plug.CsrfProtectionTest do
 
     conn = conn(:post, "/")
     |> recycle_data(old_conn)
-    |> put_req_header("X-CSRF-Token", @csrf_token)
+    |> put_req_header("x-csrf-token", @csrf_token)
     |> CsrfProtection.call([])
     assert conn.halted == false
 
     conn = conn(:put, "/")
     |> recycle_data(old_conn)
-    |> put_req_header("X-CSRF-Token", @csrf_token)
+    |> put_req_header("x-csrf-token", @csrf_token)
     |> CsrfProtection.call([])
     assert conn.halted == false
 
     conn = conn(:patch, "/")
     |> recycle_data(old_conn)
-    |> put_req_header("X-CSRF-Token", @csrf_token)
+    |> put_req_header("x-csrf-token", @csrf_token)
     |> CsrfProtection.call([])
     assert conn.halted == false
 
     conn = conn(:delete, "/")
     |> recycle_data(old_conn)
-    |> put_req_header("X-CSRF-Token", @csrf_token)
+    |> put_req_header("x-csrf-token", @csrf_token)
     |> CsrfProtection.call([])
     assert conn.halted == false
   end
@@ -121,5 +122,20 @@ defmodule Plug.CsrfProtectionTest do
             |> Conn.put_private(:plug_skip_csrf_protection, true)
             |> CsrfProtection.call([])
     assert !Conn.get_session(conn, :csrf_token)
+  end
+
+  test "non-XHR Javascript GET requests are forbidden" do
+    headers = [{"accept", "application/javascript"}]
+    conn = %{call(:get, "/") | req_headers: headers}
+    assert_raise InvalidCrossOriginRequest, fn ->
+      CsrfProtection.call(conn, [])
+    end
+  end
+
+  test "only XHR Javascript GET requests are allowed" do
+    headers = [{"x-requested-with", "XMLHttpRequest"}, {"accept", "application/javascript"}]
+    conn = %{call(:get, "/") | req_headers: headers}
+    conn = CsrfProtection.call(conn, [])
+    assert !!Conn.get_session(conn, :csrf_token)
   end
 end
