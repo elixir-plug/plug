@@ -31,7 +31,7 @@ defmodule Plug.MIME do
   end
 
   @doc """
-  Returns the extensions associated with a MIME type.
+  Returns the extensions associated with a given MIME type.
 
       iex> Plug.MIME.extensions("text/html")
       ["html", "htm"]

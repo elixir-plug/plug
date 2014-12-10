@@ -1,16 +1,16 @@
 defmodule Plug.Conn.Query do
   @moduledoc """
-  Conveniences for decoding and encoding url encoded queries
+  Conveniences for decoding and encoding url encoded queries.
 
   Plug allows a developer to build query strings
-  that maps to Elixir structures in order to make
+  that map to Elixir structures in order to make
   manipulation of such structures easier on the server
   side. Here are some examples:
 
       iex> decode("foo=bar")["foo"]
       "bar"
 
-  If a value is given more than once, the last value wins:
+  If a value is given more than once, the last value takes precedence:
 
       iex> decode("foo=bar&foo=baz")["foo"]
       "baz"
@@ -25,18 +25,18 @@ defmodule Plug.Conn.Query do
       iex> decode("foo[]=bar&foo[]=baz")["foo"]
       ["bar", "baz"]
 
-
-  Encoding Dicts:
+  Dicts can be encoded:
 
       iex> encode(%{foo: "bar", baz: "bat"})
       "baz=bat&foo=bar"
 
-  Encoding keyword lists preserves field order:
+  Encoding keyword lists preserves the order of the fields:
 
       iex> encode([foo: "bar", baz: "bat"])
       "foo=bar&baz=bat"
 
-  Encoding keyword lists with duplicate keys, first one wins:
+  When encoding keyword lists with duplicate keys, the key that comes first
+  takes precedence:
 
       iex> encode([foo: "bar", foo: "bat"])
       "foo=bar"
