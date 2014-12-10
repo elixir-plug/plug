@@ -1,11 +1,10 @@
-defmodule Plug.CsrfProtectionTest do
+defmodule Plug.CSRFProtectionTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  alias Plug.CsrfProtection
-  alias Plug.CsrfProtection.InvalidAuthenticityToken
-  alias Plug.CsrfProtection.InvalidCrossOriginRequest
-  alias Plug.Conn
+  alias Plug.CSRFProtection
+  alias Plug.CSRFProtection.InvalidCSRFTokenError
+  alias Plug.CSRFProtection.InvalidCrossOriginRequestError
 
   @default_opts Plug.Session.init(
     store: :cookie,
@@ -18,124 +17,135 @@ defmodule Plug.CsrfProtectionTest do
   @secret String.duplicate("abcdef0123456789", 8)
   @csrf_token "hello123"
 
-  def call_with_token(method, path, params \\ nil) do
-    call(method, path, params)
-    |> put_session(:csrf_token, @csrf_token)
+  def call(conn) do
+    conn
+    |> sign_cookie(@secret)
+    |> fetch_params
+    |> Plug.Session.call(@default_opts)
+    |> fetch_session
+    |> CSRFProtection.call([])
+    |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
     |> send_resp(200, "ok")
   end
 
-  defp call(method, path, params \\ nil) do
-    conn(method, path, params)
-    |> sign_cookie(@secret)
-    |> Plug.Session.call(@default_opts)
-    |> fetch_session
-    |> fetch_params
-  end
-
-  defp recycle_data(conn, old_conn) do
-    opts = Plug.Parsers.init(parsers: [:urlencoded, :multipart, :json], pass: ["*/*"])
-
-    sign_cookie(conn, @secret)
+  def call(conn, old_conn) do
+    conn
     |> recycle_cookies(old_conn)
-    |> Plug.Parsers.call(opts)
-    |> Plug.Session.call(@default_opts)
-    |> fetch_session
+    |> call()
   end
 
   defp sign_cookie(conn, secret) do
     put_in conn.secret_key_base, secret
   end
 
-  test "raise error for invalid authenticity token" do
-    old_conn = call_with_token(:get, "/")
-
-    assert_raise InvalidAuthenticityToken, fn ->
-      conn(:post, "/", %{csrf_token: "foo"})
-      |> recycle_data(old_conn)
-      |> CsrfProtection.call([])
+  test "raise error for missing authenticity token in session" do
+    assert_raise InvalidCSRFTokenError, fn ->
+      conn(:post, "/") |> call()
     end
 
-    assert_raise InvalidAuthenticityToken, fn ->
+    assert_raise InvalidCSRFTokenError, fn ->
+      conn(:post, "/", %{csrf_token: "foo"}) |> call()
+    end
+  end
+
+  test "raise error for invalid authenticity token in params" do
+    old_conn = call(conn(:get, "/"))
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      conn(:post, "/", %{csrf_token: "foo"})
+      |> call(old_conn)
+    end
+
+    assert_raise InvalidCSRFTokenError, fn ->
       conn(:post, "/", %{})
-      |> recycle_data(old_conn)
-      |> CsrfProtection.call([])
+      |> call(old_conn)
     end
   end
 
   test "unprotected requests are always valid" do
-    conn = call(:get, "/") |> CsrfProtection.call([])
+    conn = conn(:get, "/") |> call()
     assert conn.halted == false
+    assert get_session(conn, :csrf_token)
 
-    conn = call(:head, "/") |> CsrfProtection.call([])
+    conn = conn(:head, "/") |> call()
     assert conn.halted == false
+    assert get_session(conn, :csrf_token)
   end
 
-  test "protected requests with valid token in params are allowed except DELETE" do
-    old_conn = call_with_token(:get, "/")
-    params = %{csrf_token: @csrf_token}
+  test "protected requests with valid token in params are allowed" do
+    old_conn = conn(:get, "/") |> call
+    params = %{csrf_token: get_session(old_conn, :csrf_token)}
 
-    conn = conn(:post, "/", params) |> recycle_data(old_conn) |> CsrfProtection.call([])
+    conn = conn(:post, "/", params) |> call(old_conn)
     assert conn.halted == false
 
-    conn = conn(:put, "/", params) |> recycle_data(old_conn) |> CsrfProtection.call([])
+    conn = conn(:put, "/", params) |> call(old_conn)
     assert conn.halted == false
 
-    conn = conn(:patch, "/", params) |> recycle_data(old_conn) |> CsrfProtection.call([])
+    conn = conn(:patch, "/", params) |> call(old_conn)
     assert conn.halted == false
   end
 
   test "protected requests with valid token in header are allowed" do
-    old_conn = call_with_token(:get, "/")
+    old_conn = conn(:get, "/") |> call
+    csrf_token = get_session(old_conn, :csrf_token)
 
-    conn = conn(:post, "/")
-    |> recycle_data(old_conn)
-    |> put_req_header("x-csrf-token", @csrf_token)
-    |> CsrfProtection.call([])
+    conn =
+      conn(:post, "/")
+      |> put_req_header("x-csrf-token", csrf_token)
+      |> call(old_conn)
     assert conn.halted == false
 
-    conn = conn(:put, "/")
-    |> recycle_data(old_conn)
-    |> put_req_header("x-csrf-token", @csrf_token)
-    |> CsrfProtection.call([])
+    conn =
+      conn(:put, "/")
+      |> put_req_header("x-csrf-token", csrf_token)
+      |> call(old_conn)
     assert conn.halted == false
 
-    conn = conn(:patch, "/")
-    |> recycle_data(old_conn)
-    |> put_req_header("x-csrf-token", @csrf_token)
-    |> CsrfProtection.call([])
+    conn =
+      conn(:patch, "/")
+      |> put_req_header("x-csrf-token", csrf_token)
+      |> call(old_conn)
     assert conn.halted == false
-
-    conn = conn(:delete, "/")
-    |> recycle_data(old_conn)
-    |> put_req_header("x-csrf-token", @csrf_token)
-    |> CsrfProtection.call([])
-    assert conn.halted == false
-  end
-
-  test "csrf_token is generated when it isn't available" do
-    conn = call(:get, "/") |> CsrfProtection.call([])
-    assert !!Conn.get_session(conn, :csrf_token)
-  end
-
-  test "csrf plug is skipped when plug_skip_csrf_protection is true" do
-    conn =  call(:get, "/")
-            |> Conn.put_private(:plug_skip_csrf_protection, true)
-            |> CsrfProtection.call([])
-    assert !Conn.get_session(conn, :csrf_token)
   end
 
   test "non-XHR Javascript GET requests are forbidden" do
-    headers = [{"accept", "application/javascript"}]
-    conn = %{call(:get, "/") | req_headers: headers}
-    assert_raise InvalidCrossOriginRequest, fn ->
-      CsrfProtection.call(conn, [])
+    assert_raise InvalidCrossOriginRequestError, fn ->
+      conn(:get, "/") |> assign(:content_type, "application/javascript") |> call()
+    end
+
+    assert_raise InvalidCrossOriginRequestError, fn ->
+      conn(:get, "/") |> assign(:content_type, "text/javascript") |> call()
     end
   end
 
   test "only XHR Javascript GET requests are allowed" do
-    headers = [{"x-requested-with", "XMLHttpRequest"}, {"accept", "application/javascript"}]
-    conn = %{call(:get, "/") | req_headers: headers}
-    conn = CsrfProtection.call(conn, [])
-    assert !!Conn.get_session(conn, :csrf_token)
+    conn =
+      conn(:get, "/")
+      |> assign(:content_type, "text/javascript")
+      |> put_req_header("x-requested-with", "XMLHttpRequest")
+      |> call()
+    assert get_session(conn, :csrf_token)
+  end
+
+  test "csrf plug is skipped when plug_skip_csrf_protection is true" do
+    conn =
+      conn(:get, "/")
+      |> put_private(:plug_skip_csrf_protection, true)
+      |> call()
+    assert get_session(conn, :csrf_token)
+
+    conn =
+      conn(:post, "/", %{})
+      |> put_private(:plug_skip_csrf_protection, true)
+      |> call()
+    assert get_session(conn, :csrf_token)
+
+    conn =
+      conn(:get, "/")
+      |> put_private(:plug_skip_csrf_protection, true)
+      |> assign(:content_type, "text/javascript")
+      |> call()
+    assert get_session(conn, :csrf_token)
   end
 end
