@@ -23,9 +23,9 @@
 
 defmodule Plug.Debugger do
   @moduledoc """
-  A module (not a plug) for debugging in development.
+  A module (**not a plug**) for debugging in development.
 
-  The module is commonly used within a `Plug.Builder` or a `Plug.Router`
+  This module is commonly used within a `Plug.Builder` or a `Plug.Router`
   and it wraps the `call/2` function:
 
       defmodule MyApp do
@@ -38,23 +38,23 @@ defmodule Plug.Debugger do
         plug :boom
 
         def boom(conn, _) do
-          # Error raised here will be caught and displayed in a debug
-          # page complete with a stacktrace and other helpful info
+          # Error raised here will be caught and displayed in a debug page
+          # complete with a stacktrace and other helpful infos.
           raise "oops"
         end
       end
 
   Notice `Plug.Debugger` *does not* catch errors, as errors should still
-  propagate so the Elixir process finishes with the proper reason.
+  propagate so that the Elixir process finishes with the proper reason.
   This module does not perform any logging either, as all logging is done
   by the web server handler.
 
   **Note:** If this module is used with `Plug.ErrorHandler`, it must be used
   before `Plug.ErrorHandler`.
 
-  ## PLUG_EDITOR
+  ## Links to the text editor
 
-  If a PLUG_EDITOR environment variable is set, `Plug.Debugger` is going
+  If a `PLUG_EDITOR` environment variable is set, `Plug.Debugger` is going
   to use it to generate links to your text editor. The variable should be
   set with __FILE__ and __LINE__ placeholders which will be correctly
   replaced, for example:
@@ -90,8 +90,9 @@ defmodule Plug.Debugger do
   end
 
   @doc """
-  Wraps a given function and renders a nice error page
-  in case the function fails.
+  Wraps a given function and renders a nice error page in case the function
+  fails. The page is rendered by setting it as the body of `conn`, which is then
+  sent.
 
   ## Options
 
@@ -99,6 +100,7 @@ defmodule Plug.Debugger do
       to be the main application
 
   """
+  @spec wrap(Plug.Conn.t, any, (() -> any)) :: any
   def wrap(conn, opts, fun) do
     try do
       fun.()
@@ -151,12 +153,12 @@ defmodule Plug.Debugger do
     {Plug.Exception.status(error), inspect(error.__struct__), Exception.message(error)}
   end
 
-  defp info(:throw, throw) do
-    {500, "unhandled throw", inspect(throw)}
+  defp info(:throw, thrown) do
+    {500, "unhandled throw", inspect(thrown)}
   end
 
-  defp info(:exit, exit) do
-    {500, "unhandled exit", Exception.format_exit(exit)}
+  defp info(:exit, reason) do
+    {500, "unhandled exit", Exception.format_exit(reason)}
   end
 
   defp frames(stacktrace, opts) do
@@ -233,9 +235,10 @@ defmodule Plug.Debugger do
   end
 
   defp get_editor(file, line, editor) do
-    editor = :binary.replace(editor, "__FILE__", URI.encode(Path.expand(file)))
-    editor = :binary.replace(editor, "__LINE__", to_string(line))
-    h(editor)
+    editor
+    |> :binary.replace("__FILE__", URI.encode(Path.expand(file)))
+    |> :binary.replace("__LINE__", to_string(line))
+    |> h
   end
 
   @radius 5
