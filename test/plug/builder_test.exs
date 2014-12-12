@@ -60,6 +60,26 @@ defmodule Plug.BuilderTest do
     end
   end
 
+  defmodule FaultyModulePlug do
+    defmodule FaultyPlug do
+      def init([]), do: []
+
+      # Doesn't return a Plug.Conn
+      def call(_conn, _opts), do: "foo"
+    end
+
+    use Plug.Builder
+    plug FaultyPlug
+  end
+
+  defmodule FaultyFunctionPlug do
+    use Plug.Builder
+    plug :faulty_function
+
+    # Doesn't return a Plug.Conn
+    def faulty_function(_conn, _opts), do: "foo"
+  end
+
   use ExUnit.Case, async: true
   use Plug.Test
 
@@ -86,5 +106,36 @@ defmodule Plug.BuilderTest do
     assert conn.assigns[:second]
     assert conn.assigns[:authorize_reached]
     refute conn.assigns[:end_of_chain_reached]
+  end
+
+  test "an exception is raised if a plug doesn't return a connection" do
+    assert_raise RuntimeError, fn ->
+      conn(:get, "/") |> FaultyModulePlug.call([])
+    end
+
+    assert_raise RuntimeError, fn ->
+      conn(:get, "/") |> FaultyFunctionPlug.call([])
+    end
+  end
+
+  test "an exception is raised at compile time if a Plug.Builder plug " <>
+      "doesn't call plug/2" do
+    assert_raise RuntimeError, fn ->
+      defmodule BadPlug, do: use Plug.Builder
+    end
+  end
+
+  test "an exception is raised at compile time if a plug with no call/2 " <>
+      "function is plugged" do
+    assert_raise ArgumentError, fn ->
+      defmodule BadPlug do
+        defmodule Bad do
+          def init(opts), do: opts
+        end
+
+        use Plug.Builder
+        plug Bad
+      end
+    end
   end
 end
