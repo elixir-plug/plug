@@ -29,7 +29,7 @@ defmodule MyPlug do
   end
 end
 
-Plug.Adapters.Cowboy.http MyPlug, []
+{:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
 IO.puts "Running MyPlug with Cowboy on http://localhost:4000"
 ```
 

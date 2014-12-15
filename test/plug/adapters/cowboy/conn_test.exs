@@ -55,11 +55,6 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   ## Tests
 
-  test "returns {:error, :eaddrinuse} when binding to a port already in use" do
-    assert Plug.Adapters.Cowboy.http(Dummy, [], port: 8001) ==
-           {:error, :eaddrinuse}
-  end
-
   def root(%Conn{} = conn) do
     assert conn.method == "HEAD"
     assert conn.path_info == []

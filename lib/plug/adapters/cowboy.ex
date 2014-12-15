@@ -117,12 +117,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp run(scheme, plug, opts, options) do
     Application.ensure_all_started(:cowboy)
-    case apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options)) do
-      {:ok,pid} -> {:ok,pid}
-      {:error, {{:shutdown,{_, _,{{_,{:error, :eaddrinuse}},_}}},_}} ->
-        {:error, :eaddrinuse}
-      result -> result
-    end
+    apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
   end
 
   defp normalize_options(options, :http) do
