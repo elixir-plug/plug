@@ -535,9 +535,12 @@ defmodule Plug.ConnTest do
     assert get_session(conn, :key) == 42
   end
 
-  test "configure session" do
+  test "configure_session/2" do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
+
+    conn = configure_session(conn, drop: false, renew: false)
+    assert conn.private[:plug_session_info] == nil
 
     conn = configure_session(conn, drop: true)
     assert conn.private[:plug_session_info] == :drop
@@ -547,6 +550,13 @@ defmodule Plug.ConnTest do
 
     conn = put_session(conn, :foo, :bar)
     assert conn.private[:plug_session_info] == :renew
+  end
+
+  test "configure_session/2 fails when there is no session" do
+    conn = conn(:get, "/")
+    assert_raise ArgumentError, fn ->
+      configure_session(conn, drop: true)
+    end
   end
 
   test "delete_session/2" do
