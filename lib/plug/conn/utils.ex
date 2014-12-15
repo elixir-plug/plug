@@ -10,7 +10,7 @@ defmodule Plug.Conn.Utils do
   @alpha ?0..?9
   @other [?., ?-, ?+]
   @space [?\s, ?\t]
-  @specials [?(, ?), ?<, ?>, ?@, ?,, ?;, ?:, ?\\, ?", ?/, ?[, ?], ??, ?=, ?{, ?}]
+  @specials ~c|()<>@,;:\\"/[]?={}|
 
   @doc ~S"""
   Parses media types (with wildcards).
@@ -18,6 +18,11 @@ defmodule Plug.Conn.Utils do
   Type and subtype are case insensitive while the
   sensitiveness of params depends on its key and
   therefore are not handled by this parser.
+
+  Returns:
+
+    * `{:ok, type, subtype, map_of_params}` if everything goes fine
+    * `:error` if the media type isn't valid
 
   ## Examples
 
@@ -54,24 +59,24 @@ defmodule Plug.Conn.Utils do
     end
   end
 
-  defp mt_first(<< ?/, t :: binary >>, acc) when acc != "",
+  defp mt_first(<<?/, t :: binary>>, acc) when acc != "",
     do: mt_wildcard(t, acc)
-  defp mt_first(<< h, t :: binary >>, acc) when h in @upper,
-    do: mt_first(t, << acc :: binary, h + 32 >>)
-  defp mt_first(<< h, t :: binary >>, acc) when h in @lower or h in @alpha or h == ?-,
-    do: mt_first(t, << acc :: binary, h >>)
+  defp mt_first(<<h, t :: binary>>, acc) when h in @upper,
+    do: mt_first(t, <<acc :: binary, downcase_char(h)>>)
+  defp mt_first(<<h, t :: binary>>, acc) when h in @lower or h in @alpha or h == ?-,
+    do: mt_first(t, <<acc :: binary, h>>)
   defp mt_first(_, _acc),
     do: :error
 
-  defp mt_wildcard(<< ?*, t :: binary >>, first),
+  defp mt_wildcard(<<?*, t :: binary>>, first),
     do: mt_params(t, first, "*")
   defp mt_wildcard(t, first),
     do: mt_second(t, "", first)
 
-  defp mt_second(<< h, t :: binary >>, acc, first) when h in @upper,
-    do: mt_second(t, << acc :: binary, h + 32 >>, first)
-  defp mt_second(<< h, t :: binary >>, acc, first) when h in @lower or h in @alpha or h in @other,
-    do: mt_second(t, << acc :: binary, h >>, first)
+  defp mt_second(<<h, t :: binary>>, acc, first) when h in @upper,
+    do: mt_second(t, <<acc :: binary, downcase_char(h)>>, first)
+  defp mt_second(<<h, t :: binary>>, acc, first) when h in @lower or h in @alpha or h in @other,
+    do: mt_second(t, <<acc :: binary, h>>, first)
   defp mt_second(t, acc, first),
     do: mt_params(t, first, acc)
 
@@ -86,8 +91,8 @@ defmodule Plug.Conn.Utils do
   @doc ~S"""
   Parses content type (without wildcards).
 
-  It is similar to `media_type/2` except wildcards are
-  not accepted in type nor subtype.
+  It is similar to `media_type/1` except wildcards are
+  not accepted in the type nor in the subtype.
 
   ## Examples
 
@@ -99,6 +104,9 @@ defmodule Plug.Conn.Utils do
 
       iex> content_type "\r\n text/plain;\r\n charset=utf-8\r\n"
       {:ok, "text", "plain", %{"charset" => "utf-8"}}
+
+      iex> content_type "text/plain"
+      {:ok, "text", "plain", %{}}
 
       iex> content_type "x/*"
       :error
@@ -133,6 +141,9 @@ defmodule Plug.Conn.Utils do
       iex> params("FOO=bar")
       %{"foo" => "bar"}
 
+      iex> params("Foo=bar; baz=BOING")
+      %{"foo" => "bar", "baz" => "BOING"}
+
       iex> params("foo=BAR ; wat")
       %{"foo" => "BAR"}
 
@@ -142,26 +153,24 @@ defmodule Plug.Conn.Utils do
   """
   @spec params(binary) :: params
   def params(t) do
-    params(:binary.split(t, ";", [:global]), %{})
+    t
+    |> :binary.split(";", [:global])
+    |> Enum.reduce(%{}, &params/2)
   end
 
-  defp params([], acc),
-    do: acc
-  defp params([h|t], acc) do
-    case params_key(strip_spaces(h), "") do
-      {k, v} -> params(t, Map.put(acc, k, v))
-      false  -> params(t, acc)
+  defp params(param, acc) do
+    case params_key(strip_spaces(param), "") do
+      {k, v} -> Map.put(acc, k, v)
+      false  -> acc
     end
   end
 
-  defp params_key(<< ?=, t :: binary >>, acc) when acc != "",
+  defp params_key(<<?=, t :: binary>>, acc) when acc != "",
     do: params_value(t, acc)
-  defp params_key(<< h, _ :: binary >>, _acc) when h in @specials or h in @space or h < 32 or h === 127,
+  defp params_key(<<h, _ :: binary>>, _acc) when h in @specials or h in @space or h < 32 or h === 127,
     do: false
-  defp params_key(<< h, t :: binary >>, acc) when h in @upper,
-    do: params_key(t, << acc :: binary, h + 32 >>)
-  defp params_key(<< h, t :: binary >>, acc),
-    do: params_key(t, << acc :: binary, h >>)
+  defp params_key(<<h, t :: binary>>, acc),
+    do: params_key(t, <<acc :: binary, downcase_char(h)>>)
   defp params_key(<<>>, _acc),
     do: false
 
@@ -173,9 +182,9 @@ defmodule Plug.Conn.Utils do
   end
 
   @doc ~S"""
-  Parses a value as defined in [RFC-1341](1).
+  Parses a value as defined in [RFC-1341][1].
   For convenience, trims whitespace at the end of the token.
-  Returns false is the token is invalid.
+  Returns `false` if the token is invalid.
 
   [1]: http://www.w3.org/Protocols/rfc1341/4_Content-Type.html
 
@@ -206,33 +215,33 @@ defmodule Plug.Conn.Utils do
   @spec token(binary) :: binary | false
   def token(""),
     do: false
-  def token(<< ?", quoted :: binary >>),
+  def token(<<?", quoted :: binary>>),
     do: quoted_token(quoted, "")
   def token(token),
     do: unquoted_token(token, "")
 
   defp quoted_token(<<>>, _acc),
     do: false
-  defp quoted_token(<< ?", t :: binary >>, acc),
+  defp quoted_token(<<?", t :: binary>>, acc),
     do: strip_spaces(t) == "" and acc
-  defp quoted_token(<< ?\\, h, t :: binary >>, acc),
-    do: quoted_token(t, << acc :: binary, h >>)
-  defp quoted_token(<< h, t :: binary >>, acc),
-    do: quoted_token(t, << acc :: binary, h >>)
+  defp quoted_token(<<?\\, h, t :: binary>>, acc),
+    do: quoted_token(t, <<acc :: binary, h>>)
+  defp quoted_token(<<h, t :: binary>>, acc),
+    do: quoted_token(t, <<acc :: binary, h>>)
 
+  defp unquoted_token(<<>>, acc),
+    do: acc
   defp unquoted_token("\r\n" <> t, acc),
     do: strip_spaces(t) == "" and acc
-  defp unquoted_token(<< h, t :: binary >>, acc) when h in @space,
+  defp unquoted_token(<<h, t :: binary>>, acc) when h in @space,
     do: strip_spaces(t) == "" and acc
-  defp unquoted_token(<< h, _ :: binary >>, _acc) when h in @specials or h < 32 or h === 127,
+  defp unquoted_token(<<h, _ :: binary>>, _acc) when h in @specials or h < 32 or h === 127,
     do: false
-  defp unquoted_token(<< h, t :: binary >>, acc),
-    do: unquoted_token(t, << acc :: binary, h >>)
-  defp unquoted_token(<< >>, acc),
-    do: acc
+  defp unquoted_token(<<h, t :: binary>>, acc),
+    do: unquoted_token(t, <<acc :: binary, h>>)
 
   @doc """
-  Parses a comma-separated header list.
+  Parses a comma-separated list of header values.
 
   ## Examples
 
@@ -247,15 +256,17 @@ defmodule Plug.Conn.Utils do
 
       iex> list("empties, , are,, filtered")
       ["empties", "are", "filtered"]
+
   """
   @spec list(binary) :: [binary]
   def list(binary) do
-    elems = :binary.split(binary, ",", [:global])
-    Enum.reduce(elems, [], fn elem, acc ->
-      elem = strip_spaces(elem)
-      if elem != "", do: [elem|acc], else: acc
-    end) |> Enum.reverse
+    for elem <- :binary.split(binary, ",", [:global]),
+      (stripped = strip_spaces(elem)) != "",
+      do: stripped
   end
+
+
+  ## Helpers
 
   defp strip_spaces("\r\n" <> t),
     do: strip_spaces(t)
@@ -263,4 +274,7 @@ defmodule Plug.Conn.Utils do
     do: strip_spaces(t)
   defp strip_spaces(t),
     do: t
+
+  defp downcase_char(char) when char in @upper, do: char + 32
+  defp downcase_char(char), do: char
 end
