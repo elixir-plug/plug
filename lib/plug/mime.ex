@@ -91,7 +91,7 @@ defmodule Plug.MIME do
 
   """
 
-  @spec path(Path.r) :: String.t
+  @spec path(Path.t) :: String.t
   def path(path) do
     case Path.extname(path) do
       "." <> ext -> type(ext)
