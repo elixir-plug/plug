@@ -134,6 +134,7 @@ defmodule Plug.Debugger do
     reason = Exception.normalize(kind, reason, stack)
     {status, title, message} = info(kind, reason)
 
+    conn = put_resp_content_type(conn, "text/html")
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
                                      title: title, message: message,
                                      session: session, params: params)
