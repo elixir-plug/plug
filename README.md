@@ -125,7 +125,7 @@ Each route needs to return the connection as per the Plug specification. See `Pl
 
 ## Testing plugs
 
-Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test our the router above (or any other plug):
+Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test the router from above (or any other plug):
 
 ```elixir
 defmodule MyPlugTest do
