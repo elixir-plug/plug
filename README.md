@@ -29,13 +29,17 @@ defmodule MyPlug do
   end
 end
 
-{:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
-IO.puts "Running MyPlug with Cowboy on http://localhost:4000"
+defmodule CLI do
+  def start do
+    {:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
+    IO.puts "Running MyPlug with Cowboy on http://localhost:4000"
+  end
+end
 ```
 
 The snippet above shows a very simple example on how to use Plug. Save that snippet to a file and run it inside the plug application with:
 
-    mix run --no-halt path/to/file.exs
+    mix run --no-halt -e CLI.start
 
 Access "http://localhost:4000" and we are done!
 
