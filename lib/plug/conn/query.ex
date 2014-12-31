@@ -69,7 +69,7 @@ defmodule Plug.Conn.Query do
 
   @doc """
   Decodes the given tuple and store it in the accumulator.
-  It parses the key and stores the value into te current
+  It parses the key and stores the value into the current
   accumulator.
 
   Parameters lists are added to the accumulator in reverse
