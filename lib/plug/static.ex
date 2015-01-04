@@ -2,13 +2,13 @@ defmodule Plug.Static do
   @moduledoc """
   A plug for serving static assets.
 
-  It expects two options on initialization:
+  It requires two options on initialization:
 
     * `:at` - the request path to reach for static assets.
-      It must be a binary.
+      It must be a string.
 
     * `:from` - the filesystem path to read static assets from.
-      It must be a binary, containing a file system path, or an
+      It must be a string, containing a file system path, or an
       atom representing the application name, where assets will
       be served from the priv/static.
 
@@ -16,20 +16,22 @@ defmodule Plug.Static do
   it will make your application independent from the starting
   directory.
 
-  If a static asset cannot be found, it simply forwards
+  If a static asset cannot be found, `Plug.Static` simply forwards
   the connection to the rest of the pipeline.
 
   ## Options
 
-    * `:gzip` - use `FILE.gz` if it exists in the static directory
-      and if `accept-encoding` is set to allow gzipped content
-      (defaults to `false`).
+    * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists in the
+      static directory and if the `accept-encoding` ehader is set to allow
+      gzipped content (defaults to `false`).
 
-    * `:cache` - sets cache headers on response (defaults to: `true`)
+    * `:cache_control_for_query_strings` - sets cache headers on response
+      (defaults to `true`). If there is no query string, only the `etag` header
+      is set; if there's a query string, the `cache-control` header is set.
 
   ## Examples
 
-  This filter can be mounted in a Plug.Builder as follow:
+  This plug can be mounted in a `Plug.Builder` pipeline as follow:
 
       defmodule MyPlug do
         use Plug.Builder
@@ -58,7 +60,7 @@ defmodule Plug.Static do
     at    = Keyword.fetch!(opts, :at)
     from  = Keyword.fetch!(opts, :from)
     gzip  = Keyword.get(opts, :gzip, false)
-    cache = Keyword.get(opts, :cache, true)
+    cache = Keyword.get(opts, :cache_control_for_query_strings, true)
 
     unless is_atom(from) or is_binary(from) do
       raise ArgumentError, message: ":from must be an atom or a binary"
@@ -73,30 +75,38 @@ defmodule Plug.Static do
   def call(conn, _opts), do: conn
 
   defp send_static_file(conn, at, from, gzip, cache) do
-    segments = subset(at, conn.path_info)
-    segments = for segment <- List.wrap(segments), do: URI.decode(segment)
+    # subset/2 returns the segments in `conn.path_info` without the segments at
+    # the beginning that are shared with `at`.
+    segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
     path     = path(from, segments)
 
-    cond do
-      segments in [nil, []] ->
-        conn
-      invalid_path?(segments) ->
-        raise InvalidPathError
-      true ->
-        case file_encoding(conn, path, gzip) do
-          {conn, path} ->
-            if cache do
-              conn = put_resp_header(conn, "cache-control", "public, max-age=31536000")
-            end
-
-            conn
-            |> put_resp_header("content-type", Plug.MIME.path(List.last(segments)))
-            |> send_file(200, path)
-            |> halt
-          :error ->
-            conn
-        end
+    if invalid_path?(segments) do
+      raise InvalidPathError
     end
+
+    case file_encoding(conn, path, gzip) do
+      {conn, path} ->
+        if cache, do: conn = set_cache_header(conn, path)
+
+        content_type = segments |> List.last |> Plug.MIME.path
+
+        conn
+        |> put_resp_header("content-type", content_type)
+        |> send_file(200, path)
+        |> halt
+      :error ->
+        conn
+    end
+  end
+
+  defp set_cache_header(%Conn{query_string: ""} = conn, path),
+    do: conn |> put_resp_header("etag", etag_string_for_path(path))
+  defp set_cache_header(conn, _path),
+    do: conn |> put_resp_header("cache-control", "public, max-age=31536000")
+
+  defp etag_string_for_path(path) do
+    %File.Stat{size: size, mtime: mtime} = File.stat!(path)
+    {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
   end
 
   defp file_encoding(conn, path, gzip) do
@@ -113,9 +123,9 @@ defmodule Plug.Static do
   end
 
   defp gzip?(conn) do
-    fun = &(:binary.match(&1, ["gzip", "*"]) != :nomatch)
+    gzip_header? = &String.contains?(&1, ["gzip", "*"])
     Enum.any? get_req_header(conn, "accept-encoding"), fn accept ->
-      Enum.any?(Plug.Conn.Utils.list(accept), fun)
+      accept |> Plug.Conn.Utils.list() |> Enum.any?(gzip_header?)
     end
   end
 
@@ -129,15 +139,12 @@ defmodule Plug.Static do
     do: subset(expected, actual)
   defp subset([], actual),
     do: actual
-  defp subset(_, _), do:
-    nil
+  defp subset(_, _),
+    do: []
 
   defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
   defp invalid_path?([h|t]) do
-    case :binary.match(h, ["/", "\\", ":"]) do
-      {_, _} -> true
-      :nomatch -> invalid_path?(t)
-    end
+    if String.contains?(h, ["/", "\\", ":"]), do: true, else: invalid_path?(t)
   end
   defp invalid_path?([]), do: false
 end
