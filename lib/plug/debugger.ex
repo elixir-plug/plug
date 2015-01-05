@@ -26,7 +26,17 @@ defmodule Plug.Debugger do
   A module (**not a plug**) for debugging in development.
 
   This module is commonly used within a `Plug.Builder` or a `Plug.Router`
-  and it wraps the `call/2` function:
+  and it wraps the `call/2` function.
+
+  Notice `Plug.Debugger` *does not* catch errors, as errors should still
+  propagate so that the Elixir process finishes with the proper reason.
+  This module does not perform any logging either, as all logging is done
+  by the web server handler.
+
+  **Note:** If this module is used with `Plug.ErrorHandler`, it must be used
+  before `Plug.ErrorHandler`.
+
+  ## Examples
 
       defmodule MyApp do
         use Plug.Builder
@@ -44,27 +54,37 @@ defmodule Plug.Debugger do
         end
       end
 
-  Notice `Plug.Debugger` *does not* catch errors, as errors should still
-  propagate so that the Elixir process finishes with the proper reason.
-  This module does not perform any logging either, as all logging is done
-  by the web server handler.
+  ## Options
 
-  **Note:** If this module is used with `Plug.ErrorHandler`, it must be used
-  before `Plug.ErrorHandler`.
+    * `:otp_app` - same as in `wrap/3`
 
   ## Links to the text editor
 
   If a `PLUG_EDITOR` environment variable is set, `Plug.Debugger` is going
   to use it to generate links to your text editor. The variable should be
-  set with __FILE__ and __LINE__ placeholders which will be correctly
-  replaced, for example:
+  set with `__FILE__` and `__LINE__` placeholders which will be correctly
+  replaced. For example (with the [TextMate](http://macromates.com) editor):
 
       txmt://open/?url=file://__FILE__&line=__LINE__
 
   ## Manual usage
 
-  One can also manually use `Plug.Debugger` by invoking the `wrap/3`
-  function directly.
+  `Plug.Debugger` can also be used manually by invoking the `wrap/3` function
+  directly. For example:
+
+      defmodule Plt do
+        use Plug.Builder
+        # No `use Plug.Builder` here.
+
+        plug :bomb
+
+        def bomb(conn, _opts) do
+          Plug.Debugger.wrap conn, [otp_app: :my_app], fn ->
+            raise "this exception will be wrapped!"
+          end
+        end
+      end
+
   """
 
   @already_sent {:plug_conn, :sent}
@@ -90,14 +110,20 @@ defmodule Plug.Debugger do
   end
 
   @doc """
-  Wraps a given function and renders a nice error page in case the function
-  fails. The page is rendered by setting it as the body of `conn`, which is then
-  sent.
+  Wraps a given function `fun` and renders a nice error page in case the
+  function fails. The page is rendered by setting it as the body of `conn`,
+  which is then sent. Because the connection is sent, no further plugs in the
+  plug pipeline can modify it.
 
   ## Options
 
     * `:otp_app` - the name of the OTP application considered
       to be the main application
+
+  ## Examples
+
+      dangerous_fun = fn -> raise "told ya!" end
+      Plug.Debugger.wrap(conn, [otp_app: :my_app], dangerous_fun)
 
   """
   @spec wrap(Plug.Conn.t, any, (() -> any)) :: any
@@ -123,7 +149,7 @@ defmodule Plug.Debugger do
   ## Rendering
 
   require EEx
-  EEx.function_from_file :def, :template, "lib/plug/templates/debugger.eex", [:assigns]
+  EEx.function_from_file :defp, :template, "lib/plug/templates/debugger.eex", [:assigns]
 
   # Made public with @doc false for testing.
   @doc false
@@ -244,7 +270,7 @@ defmodule Plug.Debugger do
 
   @radius 5
 
-  def get_snippet(file, line) do
+  defp get_snippet(file, line) do
     if File.regular?(file) and is_integer(line) do
       to_discard = max(line - @radius - 1, 0)
       lines = File.stream!(file) |> Stream.take(line + 5) |> Stream.drop(to_discard)
