@@ -2,38 +2,43 @@ defmodule Plug.StaticTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  @cache_header "public, max-age=31536000"
+
   defmodule MyPlug do
     use Plug.Builder
 
-    plug Plug.Static, at: "/public", from: Path.expand("..", __DIR__), gzip: true
+    plug Plug.Static,
+      at: "/public",
+      from: Path.expand("..", __DIR__),
+      gzip: true
+
     plug :passthrough
 
-    defp passthrough(conn, _) do
+    defp passthrough(conn, _), do:
       Plug.Conn.send_resp(conn, 404, "Passthrough")
-    end
   end
 
   defmodule MyPlugNoCache do
     use Plug.Builder
 
-    plug Plug.Static, at: "/public", from: Path.expand("..", __DIR__), cache: false
+    plug Plug.Static,
+      at: "/public",
+      from: Path.expand("..", __DIR__),
+      cache_control_for_query_strings: false
     plug :passthrough
 
-    defp passthrough(conn, _) do
+    defp passthrough(conn, _), do:
       Plug.Conn.send_resp(conn, 404, "Passthrough")
-    end
   end
 
-  defp call(conn) do
-    MyPlug.call(conn, [])
-  end
+  defp call(conn), do: MyPlug.call(conn, [])
 
   test "serves the file" do
     conn = conn(:get, "/public/fixtures/static.txt") |> call
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+    assert_non_empty_etag_header(conn)
   end
 
   test "serves the file with a urlencoded filename" do
@@ -41,13 +46,24 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+    assert_non_empty_etag_header(conn)
+  end
+
+  test "sets the cache-control header only if there's a query string" do
+    conn = conn(:get, "/public/fixtures/static.txt?foo=bar") |> call
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type")  == ["text/plain"]
+
+    assert get_resp_header(conn, "cache-control") == [@cache_header]
+    assert get_resp_header(conn, "etag") == []
   end
 
   test "doesnt set cache headers" do
     conn = conn(:get, "/public/fixtures/static.txt") |> MyPlugNoCache.call([])
     assert conn.status == 200
-    refute get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+    refute get_resp_header(conn, "cache-control") == [@cache_header]
+    assert get_resp_header(conn, "etag") == []
   end
 
   test "passes through on other paths" do
@@ -110,5 +126,19 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-encoding") != ["gzip"]
+  end
+
+  test "raises an exception if :from isn't a binary or an atom" do
+    assert_raise ArgumentError, fn ->
+      defmodule ExceptionPlug do
+        use Plug.Builder
+        plug Plug.Static, from: 42, at: "foo"
+      end
+    end
+  end
+
+  defp assert_non_empty_etag_header(conn) do
+    etag_length = conn |> get_resp_header("etag") |> hd |> String.length
+    assert etag_length > 0
   end
 end
