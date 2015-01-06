@@ -19,15 +19,33 @@ defmodule Plug.Static do
   If a static asset cannot be found, `Plug.Static` simply forwards
   the connection to the rest of the pipeline.
 
+  ## Cache mechanisms
+
+  `Plug.Static` uses etags for HTTP caching. This means browsers/clients
+  should cache assets on the first request and validate the cache on
+  following requests, not downloading the static asset once again if it
+  has not changed. The cache-control for etags is specified by the
+  `cache_control_for_etags` option and defaults to "public".
+
+  However, `Plug.Static` also support direct cache control by using
+  versioned query strings. If the request query string starts with
+  "?vsn=", `Plug.Static` assumes the application is versioning assets
+  and does not set the `ETag` header, meaning the cache behaviour will
+  be specified solely by the `cache_control_for_vsn_requests` config,
+  which defaults to "public, max-age=31536000".
+
   ## Options
 
-    * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists in the
-      static directory and if the `accept-encoding` ehader is set to allow
-      gzipped content (defaults to `false`).
+    * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists
+      in the static directory and if the `accept-encoding` ehader is set
+      to allow gzipped content (defaults to `false`)
 
-    * `:cache_control_for_query_strings` - sets cache headers on response
-      (defaults to `true`). If there is no query string, only the `etag` header
-      is set; if there's a query string, the `cache-control` header is set.
+    * `:cache_control_for_etags` - sets cache header for requests
+      that use etags. Defaults to "public".
+
+    * `:cache_control_for_vsn_requests` - sets cache header for requests
+      starting with "?vsn=" in the query string. Defaults to
+      "public, max-age=31536000"
 
   ## Examples
 
@@ -52,6 +70,9 @@ defmodule Plug.Static do
   import Plug.Conn
   alias Plug.Conn
 
+  require Record
+  Record.defrecordp :file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl")
+
   defmodule InvalidPathError do
     defexception message: "invalid path for static asset", plug_status: 400
   end
@@ -60,21 +81,24 @@ defmodule Plug.Static do
     at    = Keyword.fetch!(opts, :at)
     from  = Keyword.fetch!(opts, :from)
     gzip  = Keyword.get(opts, :gzip, false)
-    cache = Keyword.get(opts, :cache_control_for_query_strings, true)
+
+    qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
+    et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
 
     unless is_atom(from) or is_binary(from) do
       raise ArgumentError, message: ":from must be an atom or a binary"
     end
 
-    {Plug.Router.Utils.split(at), from, gzip, cache}
+    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, cache}) when meth in @allowed_methods do
-    send_static_file(conn, at, from, gzip, cache)
+  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache})
+      when meth in @allowed_methods do
+    send_static_file(conn, at, from, gzip, qs_cache, et_cache)
   end
   def call(conn, _opts), do: conn
 
-  defp send_static_file(conn, at, from, gzip, cache) do
+  defp send_static_file(conn, at, from, gzip, qs_cache, et_cache) do
     # subset/2 returns the segments in `conn.path_info` without the segments at
     # the beginning that are shared with `at`.
     segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
@@ -85,27 +109,51 @@ defmodule Plug.Static do
     end
 
     case file_encoding(conn, path, gzip) do
-      {conn, path} ->
-        if cache, do: conn = set_cache_header(conn, path)
+      {conn, file_info, path} ->
+        case put_cache_header(conn, qs_cache, et_cache, file_info) do
+          {:stale, conn} ->
+            content_type = segments |> List.last |> Plug.MIME.path
 
-        content_type = segments |> List.last |> Plug.MIME.path
-
-        conn
-        |> put_resp_header("content-type", content_type)
-        |> send_file(200, path)
-        |> halt
+            conn
+            |> put_resp_header("content-type", content_type)
+            |> send_file(200, path)
+            |> halt
+          {:fresh, conn} ->
+            conn
+            |> send_resp(304, "")
+            |> halt
+        end
       :error ->
         conn
     end
   end
 
-  defp set_cache_header(%Conn{query_string: ""} = conn, path),
-    do: conn |> put_resp_header("etag", etag_string_for_path(path))
-  defp set_cache_header(conn, _path),
-    do: conn |> put_resp_header("cache-control", "public, max-age=31536000")
+  defp put_cache_header(%Conn{query_string: "vsn=" <> _} = conn, qs_cache, _et_cache, _file_info)
+      when is_binary(qs_cache) do
+    {:stale, put_resp_header(conn, "cache-control", qs_cache)}
+  end
 
-  defp etag_string_for_path(path) do
-    %File.Stat{size: size, mtime: mtime} = File.stat!(path)
+  defp put_cache_header(conn, _qs_cache, et_cache, file_info) when is_binary(et_cache) do
+    etag = etag_for_path(file_info)
+
+    conn =
+      conn
+      |> put_resp_header("cache-control", et_cache)
+      |> put_resp_header("etag", etag)
+
+    if etag in get_req_header(conn, "if-none-match") do
+      {:fresh, conn}
+    else
+      {:stale, conn}
+    end
+  end
+
+  defp put_cache_header(conn, _, _, _) do
+    {:stale, conn}
+  end
+
+  defp etag_for_path(file_info) do
+    file_info(size: size, mtime: mtime) = file_info
     {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
   end
 
@@ -113,12 +161,21 @@ defmodule Plug.Static do
     path_gz = path <> ".gz"
 
     cond do
-      gzip && gzip?(conn) && File.regular?(path_gz) ->
-        {put_resp_header(conn, "content-encoding", "gzip"), path_gz}
-      File.regular?(path) ->
-        {conn, path}
+      gzip && gzip?(conn) && (file_info = regular_file_info(path_gz)) ->
+        {put_resp_header(conn, "content-encoding", "gzip"), file_info, path_gz}
+      file_info = regular_file_info(path) ->
+        {conn, file_info, path}
       true ->
         :error
+    end
+  end
+
+  defp regular_file_info(path) do
+    case :file.read_file_info(path) do
+      {:ok, file_info(type: :regular) = file_info} ->
+        file_info
+      _ ->
+        nil
     end
   end
 
@@ -143,8 +200,6 @@ defmodule Plug.Static do
     do: []
 
   defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
-  defp invalid_path?([h|t]) do
-    if String.contains?(h, ["/", "\\", ":"]), do: true, else: invalid_path?(t)
-  end
+  defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":"]) or invalid_path?(t)
   defp invalid_path?([]), do: false
 end
