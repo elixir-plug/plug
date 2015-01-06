@@ -83,7 +83,7 @@ defmodule Plug.Conn do
   @type assigns         :: %{atom => any}
   @type before_send     :: [(t -> t)]
   @type body            :: iodata | nil
-  @type cookies         :: %{binary => binary} | Unfetched.t
+  @type cookies         :: %{binary => binary}
   @type halted          :: boolean
   @type headers         :: [{binary, binary}]
   @type host            :: binary
@@ -106,7 +106,7 @@ defmodule Plug.Conn do
               adapter:         adapter,
               assigns:         assigns,
               before_send:     before_send,
-              cookies:         cookies,
+              cookies:         cookies | Unfetched.t,
               host:            host,
               method:          method,
               owner:           owner,
@@ -117,7 +117,7 @@ defmodule Plug.Conn do
               query_string:    query_string,
               peer:            peer,
               remote_ip:       :inet.ip_address,
-              req_cookies:     cookies,
+              req_cookies:     cookies | Unfetched.t,
               req_headers:     headers,
               resp_body:       body,
               resp_cookies:    resp_cookies,
