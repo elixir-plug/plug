@@ -45,6 +45,8 @@ defmodule Plug.CSRFProtection do
     defexception message: message, plug_status: 403
   end
 
+  @behaviour Plug
+
   def init(opts), do: opts
 
   def call(conn, _opts) do
@@ -76,7 +78,7 @@ defmodule Plug.CSRFProtection do
 
   # Cross origin
 
-  def mark_for_cross_origin_check(conn) do
+  defp mark_for_cross_origin_check(conn) do
     if conn.method == "GET" and not xhr?(conn) and not plug_skip_csrf_protection?(conn) do
       register_before_send conn, &check_for_cross_origin/1
     else
