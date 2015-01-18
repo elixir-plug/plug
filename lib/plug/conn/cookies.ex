@@ -59,24 +59,26 @@ defmodule Plug.Conn.Cookies do
   @doc """
   Encodes the given cookies as expected in a response header.
   """
-  def encode(key, opts \\ %{}) do
-    header = "#{key}=#{opts[:value]}; path=#{opts[:path] || "/"}"
+  def encode(key, opts \\ %{}) when is_map(opts) do
+    value  = Map.get(opts, :value)
+    path   = Map.get(opts, :path, "/")
+    header = "#{key}=#{value}; path=#{path}"
 
-    if domain = opts[:domain] do
+    if domain = Map.get(opts, :domain) do
       header = header <> "; domain=#{domain}"
     end
 
-    if max_age = opts[:max_age] do
-      time = opts[:universal_time] || :calendar.universal_time
+    if max_age = Map.get(opts, :max_age) do
+      time = Map.get(opts, :universal_time) || :calendar.universal_time
       time = add_seconds(time, max_age)
       header = header <> "; expires=" <> rfc2822(time) <> "; max-age=" <> Integer.to_string(max_age)
     end
 
-    if opts[:secure] do
+    if Map.get(opts, :secure, false) do
       header = header <> "; secure"
     end
 
-    unless opts[:http_only] == false do
+    if Map.get(opts, :http_only, true) do
       header = header <> "; HttpOnly"
     end
 
