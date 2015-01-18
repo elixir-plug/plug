@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.10.0
+## v0.10.0-dev
 
 * Enhancements
   * Add `:only` option to `Plug.Static` to avoid all requests triggering file system queries
@@ -11,6 +11,9 @@
 
 * Backwards incompatible changes
   * `Plug.CSRFProtection` now uses a cookie instead of session and expects a `"_csrf_token"` parameter instead of `"csrf_token"`
+
+* Deprecations
+  * Deprecate non-string keys in `Plug.Conn.put_session/3` and friends
 
 ## v0.9.0
 

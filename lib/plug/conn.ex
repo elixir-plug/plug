@@ -582,7 +582,15 @@ defmodule Plug.Conn do
   Puts the specified `value` in the session for the given key.
   """
   @spec put_session(t, any, any) :: t
+  def put_session(conn, key, value) when is_binary(key) do
+    put_session(conn, &Map.put(&1, key, value))
+  end
+
   def put_session(conn, key, value) do
+    IO.write :stderr,
+             "WARNING: put_session/3 expects a key to be a string but got #{inspect key}. " <>
+             "Convert the key to a string as it will be required in upcoming releases.\n" <>
+             Exception.format_stacktrace()
     put_session(conn, &Map.put(&1, key, value))
   end
 

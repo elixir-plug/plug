@@ -525,14 +525,14 @@ defmodule Plug.ConnTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
-    conn = put_session(conn, :foo, :bar)
-    conn = put_session(conn, :key, 42)
+    conn = put_session(conn, "foo", :bar)
+    conn = put_session(conn, "key", 42)
 
     assert conn.private[:plug_session_info] == :write
 
-    assert get_session(conn, :unknown) == nil
-    assert get_session(conn, :foo) == :bar
-    assert get_session(conn, :key) == 42
+    assert get_session(conn, "unknown") == nil
+    assert get_session(conn, "foo") == :bar
+    assert get_session(conn, "key") == 42
   end
 
   test "configure_session/2" do
@@ -548,7 +548,7 @@ defmodule Plug.ConnTest do
     conn = configure_session(conn, renew: true)
     assert conn.private[:plug_session_info] == :renew
 
-    conn = put_session(conn, :foo, :bar)
+    conn = put_session(conn, "foo", "bar")
     assert conn.private[:plug_session_info] == :renew
   end
 
@@ -564,12 +564,12 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = conn
-            |> put_session(:foo, :bar)
-            |> put_session(:baz, :boom)
-            |> delete_session(:baz)
+            |> put_session("foo", "bar")
+            |> put_session("baz", "boom")
+            |> delete_session("baz")
 
-    assert get_session(conn, :foo) == :bar
-    assert get_session(conn, :baz) == nil
+    assert get_session(conn, "foo") == "bar"
+    assert get_session(conn, "baz") == nil
   end
 
   test "halt/1 updates halted to true" do

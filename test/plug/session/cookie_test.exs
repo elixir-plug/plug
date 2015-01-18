@@ -16,13 +16,13 @@ defmodule Plug.Session.CookieTest do
   @encrypted_opts Plug.Session.init(@default_opts)
 
   defmodule CustomSerializer do
-    def encode(%{foo: "bar"}), do: {:ok, "encoded session"}
-    def encode(%{foo: :bar}), do: {:ok, "another encoded session"}
+    def encode(%{"foo" => "bar"}), do: {:ok, "encoded session"}
+    def encode(%{"foo" => "baz"}), do: {:ok, "another encoded session"}
     def encode(%{}), do: {:ok, ""}
     def encode(_), do: :error
 
-    def decode("encoded session"), do: {:ok, %{foo: "bar"}}
-    def decode("another encoded session"), do: {:ok, %{foo: :bar}}
+    def decode("encoded session"), do: {:ok, %{"foo" => "bar"}}
+    def decode("another encoded session"), do: {:ok, %{"foo" => "baz"}}
     def decode(nil), do: {:ok, nil}
     def decode(_), do: :error
   end
@@ -62,7 +62,7 @@ defmodule Plug.Session.CookieTest do
     assert_raise ArgumentError, ~r/to be at least 64 bytes/, fn ->
       conn(:get, "/")
       |> sign_conn("abcdef")
-      |> put_session(:foo, "bar")
+      |> put_session("foo", "bar")
       |> send_resp(200, "OK")
     end
   end
@@ -103,95 +103,98 @@ defmodule Plug.Session.CookieTest do
 
   test "session cookies are signed" do
     conn = %{secret_key_base: @secret}
-    cookie = CookieStore.put(conn, nil, %{foo: :bar}, @signing_opts.store_config)
+    cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @signing_opts.store_config)
     assert is_binary(cookie)
-    assert CookieStore.get(conn, cookie, @signing_opts.store_config) == {nil, %{foo: :bar}}
+    assert CookieStore.get(conn, cookie, @signing_opts.store_config) ==
+           {nil, %{"foo" => "baz"}}
   end
 
   test "gets and sets signed session cookie" do
     conn = conn(:get, "/")
            |> sign_conn()
-           |> put_session(:foo, "bar")
+           |> put_session("foo", "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> sign_conn()
-           |> get_session(:foo) == "bar"
+           |> get_session("foo") == "bar"
   end
 
   test "deletes signed session cookie" do
     conn = conn(:get, "/")
            |> sign_conn()
-           |> put_session(:foo, :bar)
+           |> put_session("foo", "bar")
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> sign_conn()
-           |> get_session(:foo) == nil
+           |> get_session("foo") == nil
   end
 
   ## Encrypted
 
   test "session cookies are encrypted" do
     conn = %{secret_key_base: @secret}
-    cookie = CookieStore.put(conn, nil, %{foo: :bar}, @encrypted_opts.store_config)
+    cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @encrypted_opts.store_config)
     assert is_binary(cookie)
-    assert CookieStore.get(conn, cookie, @encrypted_opts.store_config) == {nil, %{foo: :bar}}
+    assert CookieStore.get(conn, cookie, @encrypted_opts.store_config) ==
+           {nil, %{"foo" => "baz"}}
   end
 
   test "gets and sets encrypted session cookie" do
     conn = conn(:get, "/")
            |> encrypt_conn()
-           |> put_session(:foo, "bar")
+           |> put_session("foo", "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> encrypt_conn()
-           |> get_session(:foo) == "bar"
+           |> get_session("foo") == "bar"
   end
 
   test "deletes encrypted session cookie" do
     conn = conn(:get, "/")
            |> encrypt_conn()
-           |> put_session(:foo, :bar)
+           |> put_session("foo", "bar")
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> encrypt_conn()
-           |> get_session(:foo) == nil
+           |> get_session("foo") == nil
   end
 
   ## Custom Serializer
 
   test "session cookies are serialized by the custom serializer" do
     conn = %{secret_key_base: @secret}
-    cookie = CookieStore.put(conn, nil, %{foo: :bar}, @custom_serializer_opts.store_config)
+    cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @custom_serializer_opts.store_config)
     assert is_binary(cookie)
-    assert CookieStore.get(conn, cookie, @custom_serializer_opts.store_config) == {nil, %{foo: :bar}}
+    assert CookieStore.get(conn, cookie, @custom_serializer_opts.store_config) ==
+           {nil, %{"foo" => "baz"}}
   end
 
   test "gets and sets custom serialized session cookie" do
     conn = conn(:get, "/")
            |> custom_serialize_conn()
-           |> put_session(:foo, "bar")
+           |> put_session("foo", "bar")
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> custom_serialize_conn()
-           |> get_session(:foo) == "bar"
+           |> get_session("foo") == "bar"
   end
 
   test "deletes custom serialized session cookie" do
     conn = conn(:get, "/")
            |> custom_serialize_conn()
-           |> put_session(:foo, :bar)
+           |> put_session("foo", "bar")
            |> configure_session(drop: true)
            |> send_resp(200, "")
     assert conn(:get, "/")
            |> recycle_cookies(conn)
            |> custom_serialize_conn()
-           |> get_session(:foo) == nil
+           |> get_session("foo") == nil
   end
 end
