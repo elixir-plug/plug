@@ -1,7 +1,7 @@
 defmodule Plug.Parsers do
   defmodule RequestTooLargeError do
     @moduledoc """
-    Error raised when the request is too large
+    Error raised when the request is too large.
     """
 
     defexception message: "the request is too large. If you are willing to process " <>
@@ -11,7 +11,7 @@ defmodule Plug.Parsers do
 
   defmodule UnsupportedMediaTypeError do
     @moduledoc """
-    Error raised when the request body cannot be parsed
+    Error raised when the request body cannot be parsed.
     """
 
     defexception media_type: nil, plug_status: 415
@@ -38,13 +38,16 @@ defmodule Plug.Parsers do
   @moduledoc """
   A plug for parsing the request body.
 
+  This module also specifies a behaviour that all the parsers to be used with
+  Plug should adopt.
+
   ## Options
 
     * `:parsers` - a set of modules to be invoked for parsing.
       These modules need to implement the behaviour outlined in
       this module.
 
-    * `:pass` - an optional list of mime type strings that are allowed
+    * `:pass` - an optional list of MIME type strings that are allowed
       to pass through. Any mime not handled by a parser and not explicitly
       listed in `:pass` will `raise UnsupportedMediaTypeError`. For example:
 
@@ -52,8 +55,8 @@ defmodule Plug.Parsers do
         * `["text/html", "application/*"]` - doesn't raise for those values
         * `[]` - always raises (default)
 
-  All options supported by `Plug.Conn.read_body/2` are also
-  supported here.
+  All options supported by `Plug.Conn.read_body/2` are also supported here (for
+  example the `:length` option which specifies the max body length to read).
 
   ## Examples
 
@@ -66,39 +69,53 @@ defmodule Plug.Parsers do
 
   Plug ships with the following parsers:
 
-  * `Plug.Parsers.URLENCODED` - parses "application/x-www-form-urlencoded" requests
-  * `Plug.Parsers.MULTIPART` - parses "multipart/form-data" and "multipart/mixed" requests
-  * `Plug.Parsers.JSON` - parses "application/json" requests with the given :json_decoder
+  * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
+    requests
+  * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
+    `multipart/mixed` requests
+  * `Plug.Parsers.JSON` - parses `application/json` requests with the given
+    `:json_decoder`
 
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
-  the request cannot be parsed by any of the given types and the mime type has
-  not been explicity accepted in the `:accept` option.
+  the request cannot be parsed by any of the given types and the MIME type has
+  not been explicity accepted with the `:accept` option.
 
   `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
   the given limit.
 
-  Parsers may raise `Plug.Parsers.ParseError` if the request has a malformed
+  Parsers may raise a `Plug.Parsers.ParseError` if the request has a malformed
   body.
 
   ## File handling
 
   If a file is uploaded via any of the parsers, Plug will
-  stream the uploaded contents to a file in a temporary directory,
-  avoiding loading the whole file into memory. For such, it is
-  required that the `:plug` application is started.
+  stream the uploaded contents to a file in a temporary directory in order to
+  avoid loading the whole file into memory. For such, the `:plug` application
+  needs to be started in order for file uploads to work. More details on how the
+  uploaded file is handled can be found in the documentation for `Plug.Upload`.
 
-  In those cases, the parameter will return a `Plug.Upload`
-  struct with information about the file and its content type.
+  When a file is uploaded, the request parameter that identifies that file will
+  be a `Plug.Upload` struct with informations about the uploaded file (e.g.,
+  filename and content type) and about where the file is stored.
 
-  You can customize the temporary directory by setting the `PLUG_TMPDIR`
-  environment variable in your system.
+  The temporary directory where files are streamed to can be customized by
+  setting the `PLUG_TMPDIR` environment variable on the host system. If
+  `PLUG_TMPDIR` isn't set, Plug will look at some environment
+  variables which usually hold the value of the system's temporary directory
+  (like `TMPDIR` or `TMP`). If no value is found in any of those variables,
+  `/tmp` is used as a default.
   """
 
   alias Plug.Conn
   use Behaviour
 
   @doc """
-  Attempt to parse the connection request body given the type,
+  Attempts to parse the connection's request body given the content-type type
+  and subtype and the headers. Returns:
+
+    * `{:ok, conn}` if the parser is able to handle the given content-type
+    * `{:error, :too_large, conn}` if the request goes over the given limit
+
   subtype and headers. Returns `{:ok, conn}` if the parser can
   handle the given content type, `{:halt, conn}` otherwise.
   """
@@ -106,7 +123,7 @@ defmodule Plug.Parsers do
                     headers :: Keyword.t, opts :: Keyword.t) ::
                     {:ok, Conn.params, Conn.t} |
                     {:error, :too_large, Conn.t} |
-                    {:skip, Conn.t}
+                    {:next, Conn.t}
 
   @behaviour Plug
   @methods ~w(POST PUT PATCH)

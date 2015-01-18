@@ -1,21 +1,29 @@
 defmodule Plug.Upload do
   @moduledoc """
-  A server that manages uploaded files.
+  A server (a `GenServer` specifically) that manages uploaded files.
 
   Uploaded files are stored in a temporary directory
-  and removed from the directory after the process that
+  and removed from that directory after the process that
   requested the file dies.
 
-  During the request, those files are represented with
-  the Plug.Upload struct that contains three fields:
+  During the request, files are represented with
+  a `Plug.Upload` struct that contains three fields:
 
   * `:path` - the path to the uploaded file on the filesystem
   * `:content_type` - the content type of the uploaded file
   * `:filename` - the filename of the uploaded file given in the request
+
+  **Note**: as mentioned in the documentation for `Plug.Parsers`, the `:plug`
+  application has to be started in order to upload files and use the
+  `Plug.Upload` module.
   """
 
   defstruct [:path, :content_type, :filename]
-  @type t :: %__MODULE__{path: binary, filename: binary, content_type: binary | nil}
+  @type t :: %__MODULE__{
+    path: Path.t,
+    filename: binary,
+    content_type: binary | nil
+  }
 
   @doc """
   Requests a random file to be created in the upload directory
