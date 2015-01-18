@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.10.0-dev
+## v0.10.0
 
 * Enhancements
   * Add `:only` option to `Plug.Static` to avoid all requests triggering file system queries
