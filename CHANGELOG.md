@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.9.1-dev
+## v0.10.0
 
 * Enhancements
   * Add `:only` option to `Plug.Static` to avoid all requests triggering file system queries
@@ -8,6 +8,9 @@
 
 * Bug fixes
   * Add UTF-8 tag to debugger templates
+
+* Backwards incompatible changes
+  * `Plug.CSRFProtection` now uses a cookie instead of session and expects a `"_csrf_token"` parameter instead of `"csrf_token"`
 
 ## v0.9.0
 

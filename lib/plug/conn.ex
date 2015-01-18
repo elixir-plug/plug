@@ -529,11 +529,12 @@ defmodule Plug.Conn do
 
   ## Options
 
-    * `:domain` - the domain the cookie applies to;
-    * `:max_age` - the cookie max-age;
-    * `:path` - the path the cookie applies to;
+    * `:domain` - the domain the cookie applies to
+    * `:max_age` - the cookie max-age
+    * `:path` - the path the cookie applies to
+    * `:http_only` - when false, the cookie is accessible beyond http
     * `:secure` - if the cookie must be sent only over https. Defaults
-      to true when the connection is https.
+      to true when the connection is https
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t

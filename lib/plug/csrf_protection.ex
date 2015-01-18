@@ -2,24 +2,30 @@ defmodule Plug.CSRFProtection do
   @moduledoc """
   Plug to protect from cross-site request forgery.
 
-  For this plug to work, it expects a session to have been previously fetched.
-  If a CSRF token in the session does not previously exist, a CSRF token will
-  be generated and put into the session.
+  This plug stores the CSRF token in a cookie during HEAD and GET requests
+  and compare the value of the cookie with the token given as parameter or
+  as part the request header as "x-csrf-token" during POST/PUT/etc requests.
+  If the token is invalid, InvalidCSRFTokenError` is raised.
 
-  When a token is invalid, an `InvalidCSRFTokenError` error is raised.
+  Javascript GET requests are only allowed if they are XHR requests.
+  Otherwise, an `InvalidCrossOriginRequestError` error will be raised.
 
-  The session's CSRF token will be compared with a token in the params with key
-  "csrf_token" or a token in the request headers with key "x-csrf-token".
+  You may disable this plug in certain occasions, usually during tests,
+  by doing:
 
-  Only GET and HEAD requests are unprotected.
+      Plug.Conn.put_private(:plug_skip_csrf_protection, true)
 
-  Javascript GET requests are only allowed if they are XHR requests. Otherwise,
-  an `InvalidCrossOriginRequestError` error will be raised.
+  ## Options
 
-  You may disable this plug by doing `Plug.Conn.put_private(:plug_skip_csrf_protection, true)`.
+    * `:name` - the name of the cookie, defaults to "_csrf_token"
+    * `:domain` - the domain of the csrf cookie
+    * `:path` - the path the cookie applies to
+    * `:http_only` - if the cookie should be http only (by default is false)
 
   ## Examples
 
+      plug :fetch_cookies
+      plug :fetch_params
       plug Plug.CSRFProtection
 
   """
@@ -30,7 +36,7 @@ defmodule Plug.CSRFProtection do
   defmodule InvalidCSRFTokenError do
     @moduledoc "Error raised when CSRF token is invalid."
     message = "Invalid CSRF (Cross Site Forgery Protection) token. Make sure that all " <>
-              "your non-HEAD and non-GET requests include the csrf_token as part of form " <>
+              "your non-HEAD and non-GET requests include the '_csrf_token' as part of form " <>
               "params or as a value in your request's headers with the key 'x-csrf-token'"
 
     defexception message: message, plug_status: 403
@@ -49,8 +55,9 @@ defmodule Plug.CSRFProtection do
 
   def init(opts), do: opts
 
-  def call(conn, _opts) do
-    csrf_token = get_session(conn, :csrf_token)
+  def call(conn, opts) do
+    name = Keyword.get(opts, :name, "_csrf_token")
+    csrf_token = Map.get(conn.req_cookies, name)
 
     if not verified_request?(conn, csrf_token) do
       raise InvalidCSRFTokenError
@@ -58,12 +65,12 @@ defmodule Plug.CSRFProtection do
 
     conn
     |> mark_for_cross_origin_check
-    |> ensure_csrf_token(csrf_token)
+    |> ensure_csrf_token(name, csrf_token, opts)
   end
 
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods
-      || valid_csrf_token?(csrf_token, conn.params["csrf_token"])
+      || valid_csrf_token?(csrf_token, conn.params["_csrf_token"])
       || valid_csrf_token?(csrf_token, get_req_header(conn, "x-csrf-token") |> Enum.at(0))
       || plug_skip_csrf_protection?(conn)
   end
@@ -103,11 +110,12 @@ defmodule Plug.CSRFProtection do
 
   # Token generation
 
-  defp ensure_csrf_token(conn, csrf_token) do
+  defp ensure_csrf_token(conn, name, csrf_token, opts) do
     if csrf_token do
       conn
     else
-      put_session(conn, :csrf_token, generate_token())
+      opts = Keyword.put_new(opts, :http_only, false)
+      put_resp_cookie(conn, name, generate_token(), opts)
     end
   end
 
