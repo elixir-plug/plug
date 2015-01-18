@@ -47,6 +47,10 @@ defmodule Plug.Static do
       starting with "?vsn=" in the query string. Defaults to
       "public, max-age=31536000"
 
+    * `:only` - filter which paths to lookup. This is useful to avoid
+      file system traversals on every request when the plug is mounted
+      at "/"
+
   ## Examples
 
   This plug can be mounted in a `Plug.Builder` pipeline as follow:
@@ -81,6 +85,7 @@ defmodule Plug.Static do
     at    = Keyword.fetch!(opts, :at)
     from  = Keyword.fetch!(opts, :from)
     gzip  = Keyword.get(opts, :gzip, false)
+    only  = Keyword.get(opts, :only, nil)
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
@@ -89,43 +94,52 @@ defmodule Plug.Static do
       raise ArgumentError, message: ":from must be an atom or a binary"
     end
 
-    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache}
+    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache})
+  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only})
       when meth in @allowed_methods do
-    send_static_file(conn, at, from, gzip, qs_cache, et_cache)
-  end
-  def call(conn, _opts), do: conn
-
-  defp send_static_file(conn, at, from, gzip, qs_cache, et_cache) do
-    # subset/2 returns the segments in `conn.path_info` without the segments at
-    # the beginning that are shared with `at`.
+    # subset/2 returns the segments in `conn.path_info` without the
+    # segments at the beginning that are shared with `at`.
     segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
-    path     = path(from, segments)
 
-    if invalid_path?(segments) do
-      raise InvalidPathError
-    end
-
-    case file_encoding(conn, path, gzip) do
-      {conn, file_info, path} ->
-        case put_cache_header(conn, qs_cache, et_cache, file_info) do
-          {:stale, conn} ->
-            content_type = segments |> List.last |> Plug.MIME.path
-
-            conn
-            |> put_resp_header("content-type", content_type)
-            |> send_file(200, path)
-            |> halt
-          {:fresh, conn} ->
-            conn
-            |> send_resp(304, "")
-            |> halt
-        end
-      :error ->
+    cond do
+      not allowed?(only, segments) ->
         conn
+      invalid_path?(segments) ->
+        raise InvalidPathError
+      true ->
+        path = path(from, segments)
+        serve_static(file_encoding(conn, path, gzip), segments, qs_cache, et_cache)
     end
+  end
+
+  def call(conn, _opts) do
+    conn
+  end
+
+  defp allowed?(_only, []),   do: false
+  defp allowed?(nil, _list),  do: true
+  defp allowed?(only, [h|_]), do: h in only
+
+  defp serve_static({:ok, conn, file_info, path}, segments, qs_cache, et_cache) do
+    case put_cache_header(conn, qs_cache, et_cache, file_info) do
+      {:stale, conn} ->
+        content_type = segments |> List.last |> Plug.MIME.path
+
+        conn
+        |> put_resp_header("content-type", content_type)
+        |> send_file(200, path)
+        |> halt
+      {:fresh, conn} ->
+        conn
+        |> send_resp(304, "")
+        |> halt
+    end
+  end
+
+  defp serve_static({:error, conn}, _segments, _qs_cache, _et_cache) do
+    conn
   end
 
   defp put_cache_header(%Conn{query_string: "vsn=" <> _} = conn, qs_cache, _et_cache, _file_info)
@@ -162,11 +176,11 @@ defmodule Plug.Static do
 
     cond do
       gzip && gzip?(conn) && (file_info = regular_file_info(path_gz)) ->
-        {put_resp_header(conn, "content-encoding", "gzip"), file_info, path_gz}
+        {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path_gz}
       file_info = regular_file_info(path) ->
-        {conn, file_info, path}
+        {:ok, conn, file_info, path}
       true ->
-        :error
+        {:error, conn}
     end
   end
 
@@ -188,7 +202,6 @@ defmodule Plug.Static do
 
   defp path(from, segments) when is_atom(from),
     do: Path.join([Application.app_dir(from), "priv/static" | segments])
-
   defp path(from, segments),
     do: Path.join([from | segments])
 

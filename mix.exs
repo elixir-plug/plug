@@ -3,7 +3,7 @@ defmodule Plug.Mixfile do
 
   def project do
     [app: :plug,
-     version: "0.9.0",
+     version: "0.9.1-dev",
      elixir: "~> 1.0",
      deps: deps,
      package: package,

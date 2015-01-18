@@ -145,4 +145,33 @@ defmodule Plug.StaticTest do
       end
     end
   end
+
+  defmodule FilterPlug do
+    use Plug.Builder
+
+    plug Plug.Static,
+      at: "/",
+      from: Path.expand("..", __DIR__),
+      only: ~w(fixtures test_helper.exs)
+
+    plug :passthrough
+
+    defp passthrough(conn, _), do:
+      Plug.Conn.send_resp(conn, 404, "Passthrough")
+  end
+
+
+  test "serves only allowed files file" do
+    conn = conn(:get, "/test_helper.exs") |> FilterPlug.call([])
+    assert conn.status == 200
+
+    conn = conn(:get, "/fixtures/static.txt") |> FilterPlug.call([])
+    assert conn.status == 200
+
+    conn = conn(:get, "/") |> FilterPlug.call([])
+    assert conn.status == 404
+
+    conn = conn(:get, "/plug/conn_test.exs") |> FilterPlug.call([])
+    assert conn.status == 404
+  end
 end

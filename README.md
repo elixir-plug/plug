@@ -38,7 +38,7 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     iex> {:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
     {:ok, #PID<...>}
 
-Access "http://localhost:4000" and we are done!
+Access "http://localhost:4000/" and we are done!
 
 ## Installation
 

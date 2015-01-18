@@ -89,7 +89,6 @@ defmodule Plug.Session.COOKIE do
     end |> decode(opts.serializer)
   end
 
-
   def put(conn, _sid, term, opts) do
     binary = encode(term, opts.serializer)
     key_opts = opts.key_opts

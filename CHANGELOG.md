@@ -1,5 +1,14 @@
 ## Changelog
 
+## v0.9.1-dev
+
+* Enhancements
+  * Add `:only` option to `Plug.Static` to avoid all requests triggering file system queries
+  * Add ETag management to `Plug.Static` when requests to not contain a versioned query string
+
+* Bug fixes
+  * Add UTF-8 tag to debugger templates
+
 ## v0.9.0
 
 * Enhancements
