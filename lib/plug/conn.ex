@@ -579,35 +579,36 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Puts the specified `value` in the session for the given key.
-  """
-  @spec put_session(t, any, any) :: t
-  def put_session(conn, key, value) when is_binary(key) do
-    put_session(conn, &Map.put(&1, key, value))
-  end
+  Puts the specified `value` in the session for the given `key`.
 
+  The key can be a string or an atom, where atoms are
+  automatically convert to strings.
+  """
+  @spec put_session(t, String.t | atom, any) :: t
   def put_session(conn, key, value) do
-    IO.write :stderr,
-             "WARNING: put_session/3 expects a key to be a string but got #{inspect key}. " <>
-             "Convert the key to a string as it will be required in upcoming releases.\n" <>
-             Exception.format_stacktrace()
-    put_session(conn, &Map.put(&1, key, value))
+    put_session(conn, &Map.put(&1, session_key(key), value))
   end
 
   @doc """
-  Returns session value for given key.
+  Returns session value for the given `key`.
+
+  The key can be a string or an atom, where atoms are
+  automatically convert to strings.
   """
-  @spec get_session(t, any) :: any
+  @spec get_session(t, String.t | atom) :: any
   def get_session(conn, key) do
-    conn |> get_session |> Map.get(key)
+    conn |> get_session |> Map.get(session_key(key))
   end
 
   @doc """
   Deletes the session for the given `key`.
+
+  The key can be a string or an atom, where atoms are
+  automatically convert to strings.
   """
-  @spec delete_session(t, any) :: t
+  @spec delete_session(t, String.t | atom) :: t
   def delete_session(conn, key) do
-    put_session(conn, &Map.delete(&1, key))
+    put_session(conn, &Map.delete(&1, session_key(key)))
   end
 
   @doc """
@@ -658,7 +659,6 @@ defmodule Plug.Conn do
     %{conn | halted: true}
   end
 
-
   ## Helpers
 
   defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when
@@ -686,6 +686,9 @@ defmodule Plug.Conn do
     do: conn
   defp update_cookies(%Conn{cookies: cookies} = conn, fun),
     do: %{conn | cookies: fun.(cookies)}
+
+  defp session_key(binary) when is_binary(binary), do: binary
+  defp session_key(atom) when is_atom(atom), do: Atom.to_string(atom)
 
   defp get_session(%Conn{private: private}) do
     if session = Map.get(private, :plug_session) do

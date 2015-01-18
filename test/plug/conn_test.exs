@@ -526,13 +526,16 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
     conn = put_session(conn, "foo", :bar)
-    conn = put_session(conn, "key", 42)
+    conn = put_session(conn, :key, 42)
 
     assert conn.private[:plug_session_info] == :write
 
-    assert get_session(conn, "unknown") == nil
+    assert get_session(conn, :foo) == :bar
+    assert get_session(conn, :key) == 42
+    assert get_session(conn, :unknown) == nil
     assert get_session(conn, "foo") == :bar
     assert get_session(conn, "key") == 42
+    assert get_session(conn, "unknown") == nil
   end
 
   test "configure_session/2" do

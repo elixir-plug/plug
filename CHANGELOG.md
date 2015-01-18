@@ -5,15 +5,13 @@
 * Enhancements
   * Add `:only` option to `Plug.Static` to avoid all requests triggering file system queries
   * Add ETag management to `Plug.Static` when requests to not contain a versioned query string
+  * Enforce atom or string keys in `Plug.Conn.put_session/3` and friends and normalize keys to strings
 
 * Bug fixes
   * Add UTF-8 tag to debugger templates
 
 * Backwards incompatible changes
   * `Plug.CSRFProtection` now uses a cookie instead of session and expects a `"_csrf_token"` parameter instead of `"csrf_token"`
-
-* Deprecations
-  * Deprecate non-string keys in `Plug.Conn.put_session/3` and friends
 
 ## v0.9.0
 
