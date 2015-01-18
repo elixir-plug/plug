@@ -50,7 +50,7 @@ defmodule Plug.CSRFProtection do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    csrf_token = get_session(conn, :csrf_token)
+    csrf_token = get_session(conn, "csrf_token")
 
     if not verified_request?(conn, csrf_token) do
       raise InvalidCSRFTokenError
@@ -107,7 +107,7 @@ defmodule Plug.CSRFProtection do
     if csrf_token do
       conn
     else
-      put_session(conn, :csrf_token, generate_token())
+      put_session(conn, "csrf_token", generate_token())
     end
   end
 

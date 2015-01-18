@@ -65,16 +65,16 @@ defmodule Plug.CSRFProtectionTest do
   test "unprotected requests are always valid" do
     conn = conn(:get, "/") |> call()
     assert conn.halted == false
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
 
     conn = conn(:head, "/") |> call()
     assert conn.halted == false
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
   end
 
   test "protected requests with valid token in params are allowed" do
     old_conn = conn(:get, "/") |> call
-    params = %{csrf_token: get_session(old_conn, :csrf_token)}
+    params = %{csrf_token: get_session(old_conn, "csrf_token")}
 
     conn = conn(:post, "/", params) |> call(old_conn)
     assert conn.halted == false
@@ -88,7 +88,7 @@ defmodule Plug.CSRFProtectionTest do
 
   test "protected requests with valid token in header are allowed" do
     old_conn = conn(:get, "/") |> call
-    csrf_token = get_session(old_conn, :csrf_token)
+    csrf_token = get_session(old_conn, "csrf_token")
 
     conn =
       conn(:post, "/")
@@ -125,7 +125,7 @@ defmodule Plug.CSRFProtectionTest do
       |> assign(:content_type, "text/javascript")
       |> put_req_header("x-requested-with", "XMLHttpRequest")
       |> call()
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
   end
 
   test "csrf plug is skipped when plug_skip_csrf_protection is true" do
@@ -133,19 +133,19 @@ defmodule Plug.CSRFProtectionTest do
       conn(:get, "/")
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
 
     conn =
       conn(:post, "/", %{})
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
 
     conn =
       conn(:get, "/")
       |> put_private(:plug_skip_csrf_protection, true)
       |> assign(:content_type, "text/javascript")
       |> call()
-    assert get_session(conn, :csrf_token)
+    assert get_session(conn, "csrf_token")
   end
 end
