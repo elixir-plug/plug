@@ -83,15 +83,22 @@ defmodule Plug.Parsers do
   ## File handling
 
   If a file is uploaded via any of the parsers, Plug will
-  stream the uploaded contents to a file in a temporary directory,
-  avoiding loading the whole file into memory. For such, it is
-  required that the `:plug` application is started.
+  stream the uploaded contents to a file in a temporary directory in order to
+  avoid loading the whole file into memory. For such, the `:plug` application
+  needs to be started in order for file uploads to work. More details on how the
+  uploaded file is handled can be found in the documentation for `Plug.Upload`.
 
-  In those cases, the parameter will return a `Plug.Upload`
-  struct with information about the file and its content type.
+  When a file is uploaded, the request parameter that identifies that file will
+  be a `Plug.Upload` struct with informations about the uploaded file (e.g.,
+  filename and content type) and about where the file is stored.
 
-  You can customize the temporary directory by setting the `PLUG_TMPDIR`
-  environment variable in your system.
+
+  The temporary directory where files are streamed to can be customized by
+  setting the `PLUG_TMPDIR` environment variable on the host system. If
+  `PLUG_TMPDIR` isn't set, Plug will look at some environment
+  variables which usually hold the value of the system's temporary directory
+  (like `TMPDIR` or `TMP`). If no value is found in any of those variables,
+  `/tmp` is used as a default.
   """
 
   alias Plug.Conn
