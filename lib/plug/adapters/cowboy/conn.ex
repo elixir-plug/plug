@@ -64,7 +64,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   def parse_req_multipart(req, opts, callback) do
     limit = Keyword.get(opts, :length, 8_000_000)
-    {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, opts, %{}, callback)
+    {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, opts, [], callback)
 
     params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
 
@@ -91,11 +91,11 @@ defmodule Plug.Adapters.Cowboy.Conn do
     case callback.(headers) do
       {:binary, name} ->
         {:ok, limit, body, req} = parse_multipart_body(Request.part_body(req, opts), limit, opts, "")
-        parse_multipart(Request.part(req), limit, opts, Map.put(acc, name, body), callback)
+        parse_multipart(Request.part(req), limit, opts, [{name, body}|acc], callback)
 
       {:file, name, file, %Plug.Upload{} = uploaded} ->
         {:ok, limit, req} = parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
-        parse_multipart(Request.part(req), limit, opts, Map.put(acc, name, uploaded), callback)
+        parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
 
       :skip ->
         {:ok, req} = Request.multipart_skip(req)

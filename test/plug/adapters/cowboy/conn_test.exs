@@ -179,6 +179,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   def multipart(conn) do
     conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
     assert conn.params["name"] == "hello"
+    assert conn.params["status"] == ["choice1", "choice2"]
 
     assert %Plug.Upload{} = file = conn.params["pic"]
     assert File.read!(file.path) == "hello\n\n"
@@ -189,9 +190,35 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   test "parses multipart requests" do
-    multipart = "------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nhello\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r\nContent-Type: text/plain\r\n\r\nhello\n\n\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq\r\nContent-Disposition: form-data; name=\"commit\"\r\n\r\nCreate User\r\n------WebKitFormBoundaryw58EW1cEpjzydSCq--\r\n"
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
+    Content-Type: text/plain\r
+    \r
+    hello
+
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice1\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice2\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"commit\"\r
+    \r
+    Create User\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----WebKitFormBoundaryw58EW1cEpjzydSCq"},
+      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
        {"Content-Length", byte_size(multipart)}]
 
     assert {200, _, _} = request :post, "/multipart", headers, multipart
