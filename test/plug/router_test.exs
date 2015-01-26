@@ -45,6 +45,16 @@ defmodule Plug.RouterTest do
       end
     end
 
+    defmodule Reforward do
+      use Plug.Router
+      use Plug.ErrorHandler
+
+      plug :match
+      plug :dispatch
+
+      forward "/step2", to: Forward
+    end
+
     use Plug.Router
     use Plug.ErrorHandler
 
@@ -87,37 +97,9 @@ defmodule Plug.RouterTest do
       some_option: :hello,
       do: conn |> resp(200, inspect(bar))
 
+    forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
-
-    defmodule Forward1 do
-      use Plug.Router
-      use Plug.ErrorHandler
-
-      plug :match
-      plug :dispatch
-
-      defmodule Forward2 do
-        use Plug.Router
-        use Plug.ErrorHandler
-
-        plug :match
-        plug :dispatch
-
-        get "/script_name" do
-          conn |> resp(200, Enum.join(conn.script_name, ","))
-        end
-
-        get "/full_path" do
-          conn |> resp(200, Plug.Conn.full_path(conn))
-        end
-
-      end
-
-      forward "/step2", to: Forward2
-    end
-    forward "/step1", to: Forward1
-
 
     match _ do
       conn |> resp(404, "oops")
@@ -201,16 +183,12 @@ defmodule Plug.RouterTest do
     assert conn.path_info == ["nested", "forward"]
   end
 
-  test "forwarding modifies script_name" do
+  test "dispatch with forwarding modifies script_name" do
     conn = call(Sample, conn(:get, "/nested/forward/script_name"))
     assert conn.resp_body == "nested,forward"
-  end
 
-  test "multiple forwarding orders script_name and full_path correctly" do
     conn = call(Sample, conn(:get, "/step1/step2/script_name"))
     assert conn.resp_body == "step1,step2"
-    conn = call(Sample, conn(:get, "/step1/step2/full_path"))
-    assert conn.resp_body == "/step1/step2/full_path"
   end
 
   test "dispatch any verb" do
