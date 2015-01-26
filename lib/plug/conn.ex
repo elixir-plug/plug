@@ -19,6 +19,8 @@ defmodule Plug.Conn do
   * `host` - the requested host as a binary, example: `"www.example.com"`
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
+  * `script_name` - the initial portion of the URL's path that corresponds to the application 
+    routing, as segments, example: ["sub","app"]. It can be used to recover the `full_path/1`
   * `port` - the requested port as an integer, example: `80`
   * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
     is not the actual IP and port of the client, but rather of a load-balancer or request-router.
@@ -177,7 +179,7 @@ defmodule Plug.Conn do
   @doc """
   Receives the connection and returns the full requested path as a string.
 
-  The full path of a request is made by joining its `script_path`
+  The full path of a request is made by joining its `script_name`
   with its `path_info`.
 
   ## Examples
