@@ -1,9 +1,11 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
+  @version "0.10.0"
+
   def project do
     [app: :plug,
-     version: "0.10.0",
+     version: @version,
      elixir: "~> 1.0",
      deps: deps,
      package: package,
