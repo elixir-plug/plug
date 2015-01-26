@@ -7,10 +7,10 @@ defmodule Plug.Test do
       use ExUnit.Case, async: true
       use Plug.Test
 
-  and it will:
+  Using this module will:
 
-      * import all functions from this module
-      * import all functions from `Plug.Conn`
+    * import all the functions from this module
+    * import all the functions from the `Plug.Conn` module
 
   """
 
