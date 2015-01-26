@@ -10,6 +10,7 @@ defmodule Plug.Mixfile do
      description: "A specification and conveniences for composable " <>
                   "modules in between web applications",
      docs: [readme: true, main: "README",
+            source_ref: "v#{@version}",
             source_url: "https://github.com/elixir-lang/plug"]]
   end
 
