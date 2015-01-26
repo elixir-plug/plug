@@ -61,7 +61,7 @@ defmodule Plug.Router.Utils do
   """
   def forward(%Plug.Conn{path_info: path, script_name: script} = conn, new_path, target, opts) do
     {base, ^new_path} = Enum.split(path, length(path) - length(new_path))
-    conn = %{conn | path_info: new_path, script_name: base ++ script} |> target.call(opts)
+    conn = %{conn | path_info: new_path, script_name: script ++ base} |> target.call(opts)
     %{conn | path_info: path, script_name: script}
   end
 
