@@ -9,7 +9,8 @@ defmodule Plug.Mixfile do
      package: package,
      description: "A specification and conveniences for composable " <>
                   "modules in between web applications",
-     docs: [readme: true, main: "README"]]
+     docs: [readme: true, main: "README",
+            source_url: "https://github.com/elixir-lang/plug"]]
   end
 
   # Configuration for the OTP application
