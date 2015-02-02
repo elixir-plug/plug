@@ -8,13 +8,15 @@ defmodule Plug.Static do
       It must be a string.
 
     * `:from` - the filesystem path to read static assets from.
-      It must be a string, containing a file system path, or an
+      It must be a string, containing a file system path, an
       atom representing the application name, where assets will
-      be served from the priv/static.
+      be served from the priv/static, or a tuple containing the
+      application name and directory to serve them besides
+      priv/static.
 
-  The preferred form is to use `:from` with an atom, since
-  it will make your application independent from the starting
-  directory.
+  The preferred form is to use `:from` with an atom or tuple,
+  since it will make your application independent from the
+  starting directory.
 
   If a static asset cannot be found, `Plug.Static` simply forwards
   the connection to the rest of the pipeline.
@@ -90,9 +92,13 @@ defmodule Plug.Static do
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
 
-    unless is_atom(from) or is_binary(from) do
-      raise ArgumentError, message: ":from must be an atom or a binary"
-    end
+    from =
+      case from do
+        {_, _} -> from
+        _ when is_atom(from) -> {from, "priv/static"}
+        _ when is_binary(from) -> from
+        _ -> raise ArgumentError, ":from must be an atom or a binary"
+      end
 
     {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only}
   end
@@ -200,8 +206,8 @@ defmodule Plug.Static do
     end
   end
 
-  defp path(from, segments) when is_atom(from),
-    do: Path.join([Application.app_dir(from), "priv/static" | segments])
+  defp path({app, from}, segments) when is_atom(app) and is_binary(from),
+    do: Path.join([Application.app_dir(app), from | segments])
   defp path(from, segments),
     do: Path.join([from | segments])
 
