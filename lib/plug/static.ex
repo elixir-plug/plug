@@ -185,7 +185,7 @@ defmodule Plug.Static do
   end
 
   defp regular_file_info(path) do
-    case :prim_file.read_file_info(path) do
+    case :file.read_file_info(path) do
       {:ok, file_info(type: :regular) = file_info} ->
         file_info
       _ ->
