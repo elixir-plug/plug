@@ -1,4 +1,5 @@
 language: elixir
+sudo: false # to use faster container based build environment
 notifications:
   recipients:
     - jose.valim@plataformatec.com.br
