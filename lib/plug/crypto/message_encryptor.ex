@@ -17,12 +17,11 @@ defmodule Plug.Crypto.MessageEncryptor do
 
       secret = KeyGenerator.generate(secret_key_base, encrypted_cookie_salt)
       sign_secret = KeyGenerator.generate(secret_key_base, encrypted_signed_cookie_salt)
-      encryptor = MessageEncryptor.new(secret, sign_secret)
 
-      data = %{current_user: %{name: "José"}}
-      encrypted = MessageEncryptor.encrypt_and_sign(encryptor, data)
-      decrypted = MessageEncryptor.verify_and_decrypt(encryptor, encrypted)
-      decrypted.current_user.name # => "José"
+      datsa = "José"
+      encrypted = MessageEncryptor.encrypt_and_sign(data, secret, sign_secret)
+      decrypted = MessageEncryptor.verify_and_decrypt(encrypted, secret, sign_secret)
+      decrypted # => "José"
   """
 
   alias Plug.Crypto.MessageVerifier
