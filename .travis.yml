@@ -9,7 +9,7 @@ notifications:
     - jose.valim@plataformatec.com.br
 otp_release:
   - 17.0
-  - 17.1
+  - 17.3
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
