@@ -97,7 +97,7 @@ defmodule Plug.Static do
         {_, _} -> from
         _ when is_atom(from) -> {from, "priv/static"}
         _ when is_binary(from) -> from
-        _ -> raise ArgumentError, ":from must be an atom or a binary"
+        _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
     {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only}
