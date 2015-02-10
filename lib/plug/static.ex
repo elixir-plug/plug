@@ -39,19 +39,19 @@ defmodule Plug.Static do
   ## Options
 
     * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists
-      in the static directory and if the `accept-encoding` ehader is set
-      to allow gzipped content (defaults to `false`)
+      in the static directory and if the `accept-encoding` header is set
+      to allow gzipped content (defaults to `false`).
 
     * `:cache_control_for_etags` - sets cache header for requests
-      that use etags. Defaults to "public".
+      that use etags. Defaults to `"public"`.
 
     * `:cache_control_for_vsn_requests` - sets cache header for requests
       starting with "?vsn=" in the query string. Defaults to
-      "public, max-age=31536000"
+      `"public, max-age=31536000"`.
 
-    * `:only` - filter which paths to lookup. This is useful to avoid
-      file system traversals on every request when the plug is mounted
-      at "/"
+    * `:only` - filters which paths to lookup. This is useful to avoid
+      file system traversals on every request when this plug is mounted
+      at `"/"`. Defaults to `nil` (no filtering).
 
   ## Examples
 
@@ -64,7 +64,7 @@ defmodule Plug.Static do
         plug :not_found
 
         def not_found(conn, _) do
-          Plug.Conn.send_resp(conn, 404, "not found")
+          send_resp(conn, 404, "not found")
         end
       end
 
@@ -207,9 +207,9 @@ defmodule Plug.Static do
   end
 
   defp path({app, from}, segments) when is_atom(app) and is_binary(from),
-    do: Path.join([Application.app_dir(app), from | segments])
+    do: Path.join([Application.app_dir(app), from|segments])
   defp path(from, segments),
-    do: Path.join([from | segments])
+    do: Path.join([from|segments])
 
   defp subset([h|expected], [h|actual]),
     do: subset(expected, actual)
