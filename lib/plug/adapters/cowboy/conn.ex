@@ -98,7 +98,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
         parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
 
       :skip ->
-        {:ok, req} = skip_multipart_body(Request.part(req))
+        {:ok, req} = skip_multipart_body(Request.part_body(req))
         parse_multipart(Request.part(req), limit, opts, acc, callback)
     end
   end

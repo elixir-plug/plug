@@ -180,6 +180,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
     assert conn.params["name"] == "hello"
     assert conn.params["status"] == ["choice1", "choice2"]
+    assert conn.params["empty"] == nil
 
     assert %Plug.Upload{} = file = conn.params["pic"]
     assert File.read!(file.path) == "hello\n\n"
@@ -201,6 +202,11 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     \r
     hello
 
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"empty\"; filename=\"\"\r
+    Content-Type: application/octet-stream\r
+    \r
     \r
     ------w58EW1cEpjzydSCq\r
     Content-Disposition: form-data; name="status[]"\r
