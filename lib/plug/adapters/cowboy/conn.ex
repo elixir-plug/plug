@@ -98,7 +98,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
         parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
 
       :skip ->
-        {:ok, req} = Request.multipart_skip(req)
+        {:ok, req} = skip_multipart_body(Request.part(req))
         parse_multipart(Request.part(req), limit, opts, acc, callback)
     end
   end
@@ -125,6 +125,14 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   defp parse_multipart_body({:ok, _tail, req}, limit, _opts, body) do
     {:ok, limit, body, req}
+  end
+
+  defp skip_multipart_body({:more, _tail, req}) do
+    skip_multipart_body(Request.part_body(req))
+  end
+
+  defp skip_multipart_body({:ok, _tail, req}) do
+    {:ok, req}
   end
 
   defp parse_multipart_file({:more, tail, req}, limit, opts, file) when limit >= 0 do
