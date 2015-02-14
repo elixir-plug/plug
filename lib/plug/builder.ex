@@ -11,6 +11,11 @@ defmodule Plug.Builder do
         plug Plug.Logger
         plug :hello, upper: true
 
+        # A function from another module can be plugged too, provided it's
+        # imported into the current module first.
+        import AnotherModule, only: [interesting_plug: 2]
+        plug :interesting_plug
+
         def hello(conn, opts) do
           body = if opts[:upper], do: "WORLD", else: "world"
           send_resp(conn, 200, body)
