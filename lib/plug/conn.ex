@@ -215,6 +215,53 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Starts a task to assign a value to a key in the connection
+
+  ## Examples
+
+    iex> conn.assigns[:hello]
+    nil
+
+    # f is some function that returns :world  
+    iex> conn = assign_async(conn, :hello, fn -> :world end)
+
+    # the following will block until conn.assigns[:hello] is available
+    iex> await_async( conn, :hello )
+
+    # conn now has awaited value
+    iex> conn.assigns[:hello]
+    :world
+
+  """
+  @spec assign_async(t, atom, function) :: t
+  def assign_async(%Conn{assigns: assigns} = conn, key, f) when is_atom(key) do
+    %{conn | assigns: Map.put(assigns, key, Task.async(f))}
+  end
+  @doc """
+  Awaits the competion of an assign_async, placing the result in the conn at key
+
+  ## Examples
+
+      iex> conn.assigns[:hello]
+      nil
+    
+      # f is some function that returns :world  
+      iex> conn = assign_async(conn, :hello, fn -> :world end)
+
+      # the following will block until conn.assigns[:hello] is available
+      iex> await_async( conn, :hello )
+
+      # conn now has awaited value
+      iex> conn.assigns[:hello]
+      :world
+
+  """
+  @spec await_assign(t, atom, timeout) :: t
+  def await_assign(%Conn{assigns: assigns} = conn, key, timeout \\ 5000) when is_atom(key) do
+    %{conn | assigns: Map.put(assigns, key, Task.await(assigns[key], timeout))}
+  end
+
+  @doc """
   Assigns a new **private** key and value in the connection.
 
   This storage is meant to be used by libraries and frameworks to avoid writing
