@@ -102,6 +102,8 @@ defmodule AppRouter do
     send_resp(conn, 200, "world")
   end
 
+  forward "/users", to: UsersRouter
+
   match _ do
     send_resp(conn, 404, "oops")
   end
