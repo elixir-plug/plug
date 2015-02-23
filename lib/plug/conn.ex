@@ -429,7 +429,7 @@ defmodule Plug.Conn do
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
   def update_resp_header(%Conn{state: state} = conn, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun) and state != :sent do
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) and state != :sent do
     case get_resp_header(conn, key) do
       []          -> put_resp_header(conn, key, initial)
       [current|_] -> put_resp_header(conn, key, fun.(current))
@@ -437,7 +437,7 @@ defmodule Plug.Conn do
   end
 
   def update_resp_header(%Conn{}, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun) do
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
     raise AlreadySentError
   end
 
