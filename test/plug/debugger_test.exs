@@ -21,6 +21,12 @@ defmodule Plug.DebuggerTest do
       send_resp conn, 200, "oops"
       raise "oops"
     end
+
+    get "/send_and_wrapped" do
+      raise Plug.Conn.WrapperError, conn: conn,
+        kind: :error, stack: System.stacktrace,
+        reason: ArgumentError.exception("oops")
+    end
   end
 
   test "call/2 is overridden" do
@@ -39,6 +45,14 @@ defmodule Plug.DebuggerTest do
     assert_received {:plug_conn, :sent}
   end
 
+  test "call/2 is overridden and unwrapps wrapped errors" do
+    assert_raise ArgumentError, "oops", fn ->
+      conn(:get, "/send_and_wrapped") |> Router.call([])
+    end
+
+    assert_received {:plug_conn, :sent}
+  end
+
   defp render(conn, opts, fun) do
     opts =
       opts
@@ -48,7 +62,8 @@ defmodule Plug.DebuggerTest do
     try do
       fun.()
     catch
-      kind, error -> Plug.Debugger.render(conn, kind, error, opts[:stack], opts)
+      kind, reason ->
+        Plug.Debugger.render(conn, kind, reason, opts[:stack], opts)
     else
       _ -> flunk "function should have failed"
     end

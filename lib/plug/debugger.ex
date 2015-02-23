@@ -1,4 +1,4 @@
-# The debug is based on Better Errors, under MIT LICENSE.
+# The debugger is based on Better Errors, under MIT LICENSE.
 #
 # Copyright (c) 2012 Charlie Somerville
 #
@@ -67,24 +67,6 @@ defmodule Plug.Debugger do
 
       txmt://open/?url=file://__FILE__&line=__LINE__
 
-  ## Manual usage
-
-  `Plug.Debugger` can also be used manually by invoking the `wrap/3` function
-  directly. For example:
-
-      defmodule Plt do
-        use Plug.Builder
-        # No `use Plug.Builder` here.
-
-        plug :bomb
-
-        def bomb(conn, _opts) do
-          Plug.Debugger.wrap conn, [otp_app: :my_app], fn ->
-            raise "this exception will be wrapped!"
-          end
-        end
-      end
-
   """
 
   @already_sent {:plug_conn, :sent}
@@ -104,45 +86,35 @@ defmodule Plug.Debugger do
       defoverridable [call: 2]
 
       def call(conn, opts) do
-        Plug.Debugger.wrap(conn, @plug_debugger, fn -> super(conn, opts) end)
+        try do
+          super(conn, opts)
+        catch
+          kind, reason ->
+            Plug.Debugger.__catch__(conn, kind, reason, @plug_debugger)
+        end
       end
     end
   end
 
-  @doc """
-  Wraps a given function `fun` and renders a nice error page in case the
-  function fails. The page is rendered by setting it as the body of `conn`,
-  which is then sent. Because the connection is sent, no further plugs in the
-  plug pipeline can modify it.
+  @doc false
+  def __catch__(_conn, :error, %Plug.Conn.WrapperError{} = wrapper, opts) do
+    %{conn: conn, kind: kind, reason: reason, stack: stack} = wrapper
+    __catch__(conn, kind, reason, stack, opts)
+  end
 
-  ## Options
+  def __catch__(conn, kind, reason, opts) do
+    __catch__(conn, kind, reason, System.stacktrace, opts)
+  end
 
-    * `:otp_app` - the name of the OTP application considered
-      to be the main application
-
-  ## Examples
-
-      dangerous_fun = fn -> raise "told ya!" end
-      Plug.Debugger.wrap(conn, [otp_app: :my_app], dangerous_fun)
-
-  """
-  @spec wrap(Plug.Conn.t, any, (() -> any)) :: any
-  def wrap(conn, opts, fun) do
-    try do
-      fun.()
-    catch
-      kind, reason ->
-        stack = System.stacktrace
-
-        receive do
-          @already_sent ->
-            send self(), @already_sent
-            :erlang.raise kind, reason, stack
-        after
-          0 ->
-            render conn, kind, reason, stack, opts
-            :erlang.raise kind, reason, stack
-        end
+  defp __catch__(conn, kind, reason, stack, opts) do
+    receive do
+      @already_sent ->
+        send self(), @already_sent
+        :erlang.raise kind, reason, stack
+    after
+      0 ->
+        render conn, kind, reason, stack, opts
+        :erlang.raise kind, reason, stack
     end
   end
 

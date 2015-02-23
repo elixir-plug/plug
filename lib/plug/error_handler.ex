@@ -23,9 +23,9 @@ defmodule Plug.ErrorHandler do
   be defined in your plug. This callback should receive a connection and a map
   containing:
 
-  * the exception kind (`:throw`, `:error` or `:exit`),
-  * the reason (an exception for errors or a term for others),
-  * the stacktrace.
+    * the exception kind (`:throw`, `:error` or `:exit`),
+    * the reason (an exception for errors or a term for others)
+    * the stacktrace
 
   After the callback is invoked, the error is re-raised.
 
@@ -63,7 +63,7 @@ defmodule Plug.ErrorHandler do
           super(conn, opts)
         catch
           kind, reason ->
-            Plug.ErrorHandler.__catch__(conn, kind, reason, System.stacktrace, &handle_errors/2)
+            Plug.ErrorHandler.__catch__(conn, kind, reason, &handle_errors/2)
         end
       end
     end
@@ -72,7 +72,16 @@ defmodule Plug.ErrorHandler do
   @already_sent {:plug_conn, :sent}
 
   @doc false
-  def __catch__(conn, kind, reason, stack, handle_errors) do
+  def __catch__(_conn, :error, %Plug.Conn.WrapperError{} = wrapper, handle_errors) do
+    %{conn: conn, kind: kind, reason: reason, stack: stack} = wrapper
+    __catch__(conn, kind, reason, stack, handle_errors)
+  end
+
+  def __catch__(conn, kind, reason, handle_errors) do
+    __catch__(conn, kind, reason, System.stacktrace, handle_errors)
+  end
+
+  defp __catch__(conn, kind, reason, stack, handle_errors) do
     receive do
       @already_sent ->
         send self(), @already_sent
