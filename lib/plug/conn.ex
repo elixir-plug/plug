@@ -19,7 +19,7 @@ defmodule Plug.Conn do
   * `host` - the requested host as a binary, example: `"www.example.com"`
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
-  * `script_name` - the initial portion of the URL's path that corresponds to the application 
+  * `script_name` - the initial portion of the URL's path that corresponds to the application
     routing, as segments, example: ["sub","app"]. It can be used to recover the `full_path/1`
   * `port` - the requested port as an integer, example: `80`
   * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
@@ -417,6 +417,27 @@ defmodule Plug.Conn do
   end
 
   def delete_resp_header(%Conn{}, key) when is_binary(key) do
+    raise AlreadySentError
+  end
+
+  @doc """
+  Updates a response header if present, otherwise it sets it to an initial
+  value.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
+  """
+  @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
+  def update_resp_header(%Conn{state: state} = conn, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun) and state != :sent do
+    case get_resp_header(conn, key) do
+      []          -> put_resp_header(conn, key, initial)
+      [current|_] -> put_resp_header(conn, key, fun.(current))
+    end
+  end
+
+  def update_resp_header(%Conn{}, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun) do
     raise AlreadySentError
   end
 
