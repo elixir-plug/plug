@@ -1,5 +1,14 @@
 ## Changelog
 
+## v0.11.0-dev
+
+* Enhancements
+  * Add `Plug.Conn.WrapperError` to propagate an error with the connection for better debugging by either `Plug.Debugger` or `Plug.ErrorHandler`
+
+* Bug fixes
+  * Skip parsing of files when no filename is sent
+  * Fix how script_name are accumulated with multiple calls to `Plug.Router.forward/2`
+
 ## v0.10.0
 
 * Enhancements
