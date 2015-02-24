@@ -222,7 +222,7 @@ defmodule Plug.Conn do
     iex> conn.assigns[:hello]
     nil
 
-    # f is some function that returns :world
+    # fun is some function that returns :world
     iex> conn = async_assign(conn, :hello, fn -> :world end)
 
     # the following will block until conn.assigns[:hello] is available
@@ -234,8 +234,8 @@ defmodule Plug.Conn do
 
   """
   @spec async_assign(t, atom, function) :: t
-  def async_assign(%Conn{assigns: assigns} = conn, key, f) when is_atom(key) do
-    %{conn | assigns: Map.put(assigns, key, Task.async(f))}
+  def async_assign(%Conn{} = conn, key, fun) when is_atom(key) do
+    assign(conn, key, Task.async(fun))
   end
 
   @doc """
@@ -248,7 +248,7 @@ defmodule Plug.Conn do
       iex> conn.assigns[:hello]
       nil
 
-      # f is some function that returns :world
+      # fun is some function that returns :world
       iex> conn = async_assign(conn, :hello, fn -> :world end)
 
       # the following will block until conn.assigns[:hello] is available
@@ -260,8 +260,9 @@ defmodule Plug.Conn do
 
   """
   @spec await_assign(t, atom, timeout) :: t
-  def await_assign(%Conn{assigns: assigns} = conn, key, timeout \\ 5000) when is_atom(key) do
-    %{conn | assigns: Map.put(assigns, key, Task.await(assigns[key], timeout))}
+  def await_assign(%Conn{} = conn, key, timeout \\ 5000) when is_atom(key) do
+    task = Map.fetch!(conn.assigns, key)
+    assign(conn, key, Task.await(task, timeout))
   end
 
   @doc """
