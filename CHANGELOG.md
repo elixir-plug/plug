@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.11.0-dev
+## v0.11.0
 
 * Enhancements
   * Add `Plug.Conn.async_assign/3` and `Plug.Conn.await_assign/3` to start and await for assigns asynchronously, mimic'ing `Task.async/1` and `Task.await/2` behaviour
