@@ -330,6 +330,29 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "update_resp_header/4" do
+    conn1 = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
+    conn2 = update_resp_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
+    assert get_resp_header(conn2, "x-foo") == ["bar, baz"]
+    assert length(conn1.resp_headers) == length(conn2.resp_headers)
+
+    conn1 = conn(:head, "/foo")
+    conn2 = update_resp_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
+    assert get_resp_header(conn2, "x-foo") == ["bong"]
+
+    conn1 = %{conn(:head, "/foo") | resp_headers:
+      [{"x-foo", "foo"}, {"x-foo", "bar"}]}
+    conn2 = update_resp_header(conn1, "x-foo", "in", &String.upcase/1)
+    assert get_resp_header(conn2, "x-foo") == ["FOO", "bar"]
+  end
+
+  test "update_resp_header/4 raises when the conn was already been sent" do
+    conn = conn(:head, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> update_resp_header("x-foo", "init", &(&1))
+    end
+  end
+
   test "put_resp_content_type/3" do
     conn = conn(:head, "/foo")
 

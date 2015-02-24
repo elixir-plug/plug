@@ -471,6 +471,27 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Updates a response header if present, otherwise it sets it to an initial
+  value.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
+  """
+  @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
+  def update_resp_header(%Conn{state: state} = conn, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) and state != :sent do
+    case get_resp_header(conn, key) do
+      []          -> put_resp_header(conn, key, initial)
+      [current|_] -> put_resp_header(conn, key, fun.(current))
+    end
+  end
+
+  def update_resp_header(%Conn{}, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
+    raise AlreadySentError
+  end
+
+  @doc """
   Sets the value of the `"content-type"` response header taking into account the
   `charset`.
   """
