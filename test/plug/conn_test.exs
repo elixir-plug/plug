@@ -16,7 +16,7 @@ defmodule Plug.ConnTest do
     conn = assign(conn, :hello, :world)
     assert conn.assigns[:hello] == :world
   end
-  
+
   test "async_assign/3 and await_assign/3" do
     conn = conn(:get, "/")
     assert conn.assigns[:hello] == nil

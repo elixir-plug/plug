@@ -261,7 +261,8 @@ defmodule Plug.Conn do
   """
   @spec await_assign(t, atom, timeout) :: t
   def await_assign(%Conn{} = conn, key, timeout \\ 5000) when is_atom(key) do
-    assign(conn, key, Task.await(conn.assigns[key], timeout))
+    task = Map.fetch!(conn.assigns, key)
+    assign(conn, key, Task.await(task, timeout))
   end
 
   @doc """
