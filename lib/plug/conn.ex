@@ -446,13 +446,13 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec put_resp_header(t, binary, binary) :: t
-  def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
-      is_binary(key) and is_binary(value) and state != :sent do
-    %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
+  def put_resp_header(%Conn{state: :sent}, _key, _value) do
+    raise AlreadySentError
   end
 
-  def put_resp_header(%Conn{}, key, value) when is_binary(key) and is_binary(value) do
-    raise AlreadySentError
+  def put_resp_header(%Conn{resp_headers: headers} = conn, key, value) when
+      is_binary(key) and is_binary(value) do
+    %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
   @doc """
@@ -462,13 +462,13 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec delete_resp_header(t, binary) :: t
-  def delete_resp_header(%Conn{resp_headers: headers, state: state} = conn, key) when
-      is_binary(key) and state != :sent do
-    %{conn | resp_headers: List.keydelete(headers, key, 0)}
+  def delete_resp_header(%Conn{state: :sent}, _key) do
+    raise AlreadySentError
   end
 
-  def delete_resp_header(%Conn{}, key) when is_binary(key) do
-    raise AlreadySentError
+  def delete_resp_header(%Conn{resp_headers: headers} = conn, key) when
+      is_binary(key) do
+    %{conn | resp_headers: List.keydelete(headers, key, 0)}
   end
 
   @doc """
@@ -479,17 +479,16 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
-  def update_resp_header(%Conn{state: state} = conn, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun, 1) and state != :sent do
+  def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
+    raise AlreadySentError
+  end
+
+  def update_resp_header(%Conn{} = conn, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
     case get_resp_header(conn, key) do
       []          -> put_resp_header(conn, key, initial)
       [current|_] -> put_resp_header(conn, key, fun.(current))
     end
-  end
-
-  def update_resp_header(%Conn{}, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
-    raise AlreadySentError
   end
 
   @doc """
