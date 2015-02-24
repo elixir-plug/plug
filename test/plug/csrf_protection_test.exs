@@ -18,12 +18,12 @@ defmodule Plug.CSRFProtectionTest do
   @csrf_token "hello123"
 
   def call(conn) do
-    conn
-    |> sign_cookie(@secret)
+    put_in(conn.secret_key_base, @secret)
     |> fetch_params
     |> Plug.Session.call(@default_opts)
     |> fetch_session
     |> CSRFProtection.call([])
+    |> maybe_get_token
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
     |> send_resp(200, "ok")
   end
@@ -34,8 +34,14 @@ defmodule Plug.CSRFProtectionTest do
     |> call()
   end
 
-  defp sign_cookie(conn, secret) do
-    put_in conn.secret_key_base, secret
+  defp maybe_get_token(conn) do
+    case conn.params["token"] do
+      "get"    -> Plug.CSRFProtection.get_csrf_token()
+      "delete" -> Plug.CSRFProtection.delete_csrf_token()
+      _        -> :ok
+    end
+
+    conn
   end
 
   test "raise error for missing authenticity token in session" do
@@ -65,15 +71,25 @@ defmodule Plug.CSRFProtectionTest do
   test "unprotected requests are always valid" do
     conn = conn(:get, "/") |> call()
     assert conn.halted == false
-    assert get_session(conn, "_csrf_token")
+    refute get_session(conn, "_csrf_token")
 
     conn = conn(:head, "/") |> call()
     assert conn.halted == false
+    refute get_session(conn, "_csrf_token")
+  end
+
+  test "tokens are generated and deleted token on demand" do
+    conn = conn(:get, "/?token=get") |> call()
+    assert conn.halted == false
     assert get_session(conn, "_csrf_token")
+
+    conn = conn(:get, "/?token=delete") |> call(conn)
+    assert conn.halted == false
+    refute get_session(conn, "_csrf_token")
   end
 
   test "protected requests with valid token in params are allowed" do
-    old_conn = conn(:get, "/") |> call
+    old_conn = conn(:get, "/?token=get") |> call
     params = %{_csrf_token: get_session(old_conn, "_csrf_token")}
 
     conn = conn(:post, "/", params) |> call(old_conn)
@@ -87,7 +103,7 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "protected requests with valid token in header are allowed" do
-    old_conn = conn(:get, "/") |> call
+    old_conn = conn(:get, "/?token=get") |> call
     csrf_token = get_session(old_conn, "_csrf_token")
 
     conn =
@@ -120,29 +136,27 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "only XHR Javascript GET requests are allowed" do
-    conn =
-      conn(:get, "/")
-      |> assign(:content_type, "text/javascript")
-      |> put_req_header("x-requested-with", "XMLHttpRequest")
-      |> call()
-    assert get_session(conn, "_csrf_token")
+    conn(:get, "/")
+    |> assign(:content_type, "text/javascript")
+    |> put_req_header("x-requested-with", "XMLHttpRequest")
+    |> call()
   end
 
   test "csrf plug is skipped when plug_skip_csrf_protection is true" do
     conn =
-      conn(:get, "/")
+      conn(:get, "/?token=get")
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
     assert get_session(conn, "_csrf_token")
 
     conn =
-      conn(:post, "/", %{})
+      conn(:post, "/?token=get", %{})
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
     assert get_session(conn, "_csrf_token")
 
     conn =
-      conn(:get, "/")
+      conn(:get, "/?token=get")
       |> put_private(:plug_skip_csrf_protection, true)
       |> assign(:content_type, "text/javascript")
       |> call()

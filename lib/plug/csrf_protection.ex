@@ -3,22 +3,37 @@ defmodule Plug.CSRFProtection do
   Plug to protect from cross-site request forgery.
 
   For this plug to work, it expects a session to have been
-  previously fetched. If a CSRF token in the session does
-  not previously exist, a CSRF token will be generated and
-  put into the session.
-
-  When a token is invalid, an `Plug.CSRFProtection.InvalidCSRFTokenError`
+  previously fetched. It will then compare the plug stored
+  in the session with the one sent by the request, when they
+  do not match, an `Plug.CSRFProtection.InvalidCSRFTokenError`
   error is raised.
 
-  The session's CSRF token will be compared with a token in
-  the params with key "_csrf_token" or a token in the request
-  headers with key "x-csrf-token".
+  The token may be sent by the request either via the params
+  with key "_csrf_token" or a header with name "x-csrf-token".
 
-  Only GET and HEAD requests are unprotected.
+  GET requests are not protected, as they should not have any
+  side-effect or change your application state. JavaScript
+  requests are an exception: by using a script tag, external
+  websites can embed server-side generated JavaScript, which
+  can leak information. For this reason, this plug also forbids
+  any GET JavaScript request that is not XHR (or AJAX).
 
-  Javascript GET requests are only allowed if they are XHR
-  requests. Otherwise, an `Plug.CSRFProtection.InvalidCrossOriginRequestError`
-  error will be raised.
+  ## Token generation
+
+  This plug won't generate tokens automatically. Instead,
+  tokens will be generated only when required by calling
+  `Plug.CSRFProtection.get_csrf_token/0`. The token is then
+  stored in the process dictionary to be set in the request.
+
+  One may wonder: why the process dictionary?
+
+  The CSRF token is usually generated inside forms which may
+  be isolated from the connection. Storing them in process
+  dictionary allow them to be generated as a side-effect,
+  becoming one of those rare situations where using the process
+  dictionary is useful.
+
+  ## Disabling
 
   You may disable this plug by doing
   `Plug.Conn.put_private(:plug_skip_csrf_protection, true)`.
@@ -32,7 +47,7 @@ defmodule Plug.CSRFProtection do
   """
 
   import Plug.Conn
-  @unprotected_methods ~w(HEAD GET)
+  @unprotected_methods ~w(HEAD GET OPTIONS)
 
   defmodule InvalidCSRFTokenError do
     @moduledoc "Error raised when CSRF token is invalid."
@@ -52,21 +67,49 @@ defmodule Plug.CSRFProtection do
     defexception message: message, plug_status: 403
   end
 
+  ## API
+
+  @doc """
+  Gets the CSRF token.
+
+  Generates a token and stores it in the process
+  dictionary if one does not exists.
+  """
+  def get_csrf_token do
+    Process.get(:plug_csrf_token) || (
+      token = generate_token()
+      Process.put(:plug_csrf_token, token)
+      token
+    )
+  end
+
+  @doc """
+  Deletes the CSRF token from the process dictionary.
+
+  This will force the token to be deleted once the response is sent.
+  """
+  def delete_csrf_token do
+    Process.delete(:plug_csrf_token)
+  end
+
+  ## Plug
+
   @behaviour Plug
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
     csrf_token = get_session(conn, "_csrf_token")
+    Process.put(:plug_csrf_token, csrf_token)
 
     if not verified_request?(conn, csrf_token) do
       raise InvalidCSRFTokenError
     end
 
-    conn
-    |> mark_for_cross_origin_check
-    |> ensure_csrf_token(csrf_token)
+    register_before_send(conn, &ensure_same_origin_and_csrf_token(&1, csrf_token))
   end
+
+  ## Verification
 
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods
@@ -75,48 +118,45 @@ defmodule Plug.CSRFProtection do
       || plug_skip_csrf_protection?(conn)
   end
 
-  defp plug_skip_csrf_protection?(%{private: %{plug_skip_csrf_protection: true}}), do: true
-  defp plug_skip_csrf_protection?(_), do: false
-
   defp valid_csrf_token?(csrf_token, user_token) do
     csrf_token && user_token &&
       Plug.Crypto.secure_compare(csrf_token, user_token)
   end
 
-  # Cross origin
+  ## Before send
 
-  defp mark_for_cross_origin_check(conn) do
-    if conn.method == "GET" and not xhr?(conn) and not plug_skip_csrf_protection?(conn) do
-      register_before_send conn, &check_for_cross_origin/1
-    else
-      conn
+  def ensure_same_origin_and_csrf_token(conn, csrf_token) do
+    if cross_origin_js?(conn) do
+      raise InvalidCrossOriginRequestError
     end
+
+    ensure_csrf_token(conn, csrf_token)
+  end
+
+  defp cross_origin_js?(conn) do
+    conn.method == "GET" and not xhr?(conn) and not plug_skip_csrf_protection?(conn) and
+      Enum.any?(get_resp_header(conn, "content-type"),
+                &String.starts_with?(&1, ["text/javascript", "application/javascript"]))
   end
 
   defp xhr?(conn) do
     "XMLHttpRequest" in get_req_header(conn, "x-requested-with")
   end
 
-  defp check_for_cross_origin(conn) do
-    js? = Enum.any? get_resp_header(conn, "content-type"),
-                    &String.starts_with?(&1, ["text/javascript", "application/javascript"])
-
-    if js? do
-      raise InvalidCrossOriginRequestError
-    else
-      conn
-    end
-  end
-
-  # Token generation
-
   defp ensure_csrf_token(conn, csrf_token) do
-    if csrf_token do
+    current = Process.delete(:plug_csrf_token)
+
+    if current == csrf_token do
       conn
     else
-      put_session(conn, "_csrf_token", generate_token())
+      put_session(conn, "_csrf_token", current)
     end
   end
+
+  ## Helpers
+
+  defp plug_skip_csrf_protection?(%{private: %{plug_skip_csrf_protection: true}}), do: true
+  defp plug_skip_csrf_protection?(_), do: false
 
   defp generate_token do
     :crypto.strong_rand_bytes(32) |> Base.encode64

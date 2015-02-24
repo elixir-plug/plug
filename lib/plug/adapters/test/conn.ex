@@ -9,8 +9,9 @@ defmodule Plug.Adapters.Test.Conn do
 
     uri    = URI.parse(uri)
     method = method |> to_string |> String.upcase
+    query  = uri.query || ""
 
-    {body, params, headers} = body_or_params(body_or_params, opts[:headers] || [])
+    {body, params, headers} = body_or_params(body_or_params, query, opts[:headers] || [])
     state = %{method: method, params: params, req_body: body, chunks: nil}
 
     %Plug.Conn{
@@ -23,7 +24,7 @@ defmodule Plug.Adapters.Test.Conn do
       peer: {{127, 0, 0, 1}, 111317},
       remote_ip: {127, 0, 0, 1},
       req_headers: headers,
-      query_string: uri.query || "",
+      query_string: query,
       params: params || %Plug.Conn.Unfetched{aspect: :params},
       scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom
    }
@@ -81,24 +82,25 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Private helpers
 
-  defp body_or_params(nil, headers),
+  defp body_or_params(nil, _query, headers),
     do: {"", nil, headers}
 
-  defp body_or_params(body, headers) when is_binary(body) do
+  defp body_or_params(body, _query, headers) when is_binary(body) do
     unless List.keyfind(headers, "content-type", 0) do
       raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
     end
     {body, nil, headers}
   end
 
-  defp body_or_params(params, headers) when is_list(params) do
-    body_or_params(Enum.into(params, %{}), headers)
+  defp body_or_params(params, query, headers) when is_list(params) do
+    body_or_params(Enum.into(params, %{}), query, headers)
   end
 
-  defp body_or_params(params, headers) when is_map(params) do
+  defp body_or_params(params, query, headers) when is_map(params) do
     headers = :lists.keystore("content-type", 1, headers,
                               {"content-type", "multipart/mixed; charset: utf-8"})
-    {"", stringify_params(params), headers}
+    params = Map.merge(Plug.Conn.Query.decode(query), stringify_params(params))
+    {"", params, headers}
   end
 
   defp stringify_params([_|_] = params),

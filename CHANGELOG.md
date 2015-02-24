@@ -9,6 +9,9 @@
   * Skip parsing of files when no filename is sent
   * Fix how script_name are accumulated with multiple calls to `Plug.Router.forward/2`
 
+* Backwards incompatible changes
+  * `Plug.CSRFProtection` now uses a session to store tokens. Tokens are now generated on demand and can be accessed via `Plug.CSRFProtection.get_csrf_token/0`
+
 ## v0.10.0
 
 * Enhancements
