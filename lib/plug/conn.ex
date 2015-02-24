@@ -4,13 +4,11 @@ defmodule Plug.Conn do
   @moduledoc """
   The Plug connection.
 
-  This module defines a `Plug.Conn` struct and the main functions for working
-  with Plug connections.
+  This module defines a `Plug.Conn` struct and the main functions
+  for working with Plug connections.
 
-  All the struct fields are defined below.
-
-  **Note**: both request and response headers are expected to have lower-case
-  keys.
+  Note request headers are normalized to lowercase and response
+  headers are expected to have lower-case keys.
 
   ## Request fields
 
@@ -19,7 +17,7 @@ defmodule Plug.Conn do
   * `host` - the requested host as a binary, example: `"www.example.com"`
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
-  * `script_name` - the initial portion of the URL's path that corresponds to the application 
+  * `script_name` - the initial portion of the URL's path that corresponds to the application
     routing, as segments, example: ["sub","app"]. It can be used to recover the `full_path/1`
   * `port` - the requested port as an integer, example: `80`
   * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
@@ -215,41 +213,46 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Starts a task to assign a value to a key in the connection
+  Starts a task to assign a value to a key in the connection.
+
+  Behind the scenes, it uses `Task.async/1`.
 
   ## Examples
 
     iex> conn.assigns[:hello]
     nil
 
-    # f is some function that returns :world  
-    iex> conn = assign_async(conn, :hello, fn -> :world end)
+    # f is some function that returns :world
+    iex> conn = async_assign(conn, :hello, fn -> :world end)
 
     # the following will block until conn.assigns[:hello] is available
-    iex> await_async( conn, :hello )
+    iex> await_assign(conn, :hello)
 
     # conn now has awaited value
     iex> conn.assigns[:hello]
     :world
 
   """
-  @spec assign_async(t, atom, function) :: t
-  def assign_async(%Conn{assigns: assigns} = conn, key, f) when is_atom(key) do
+  @spec async_assign(t, atom, function) :: t
+  def async_assign(%Conn{assigns: assigns} = conn, key, f) when is_atom(key) do
     %{conn | assigns: Map.put(assigns, key, Task.async(f))}
   end
+
   @doc """
-  Awaits the competion of an assign_async, placing the result in the conn at key
+  Awaits the completion of an async assign, placing the result in the conn at key.
+
+  Behind the scenes, it uses `Task.await/2`.
 
   ## Examples
 
       iex> conn.assigns[:hello]
       nil
-    
-      # f is some function that returns :world  
-      iex> conn = assign_async(conn, :hello, fn -> :world end)
+
+      # f is some function that returns :world
+      iex> conn = async_assign(conn, :hello, fn -> :world end)
 
       # the following will block until conn.assigns[:hello] is available
-      iex> await_async( conn, :hello )
+      iex> await_assign(conn, :hello)
 
       # conn now has awaited value
       iex> conn.assigns[:hello]
