@@ -230,7 +230,7 @@ defmodule Plug.Conn do
 
   """
   @spec async_assign(t, atom, (() -> term)) :: t
-  def async_assign(%Conn{} = conn, key, fun) when is_atom(key) do
+  def async_assign(%Conn{} = conn, key, fun) when is_atom(key) and is_function(fun, 0) do
     assign(conn, key, Task.async(fun))
   end
 
