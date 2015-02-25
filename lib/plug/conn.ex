@@ -292,14 +292,17 @@ defmodule Plug.Conn do
 
   The status code can be `nil`, an integer or an atom. The list of allowed
   atoms is available in `Plug.Conn.Status`.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
   """
   @spec put_status(t, status) :: t
-  def put_status(%Conn{state: state} = conn, nil)
-      when state in @unsent, do: %{conn | status: nil}
-  def put_status(%Conn{state: state} = conn, status)
-      when state in @unsent, do: %{conn | status: Plug.Conn.Status.code(status)}
-  def put_status(%Conn{}, _status), do: raise AlreadySentError
-
+  def put_status(%Conn{state: :sent}, _status),
+    do: raise AlreadySentError
+  def put_status(%Conn{} = conn, nil),
+    do: %{conn | status: nil}
+  def put_status(%Conn{} = conn, status),
+    do: %{conn | status: Plug.Conn.Status.code(status)}
 
   @doc """
   Sends a response to the client.
