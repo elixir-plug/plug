@@ -5,6 +5,7 @@
 * Enhancements
   * Add `Plug.Conn.async_assign/3` and `Plug.Conn.await_assign/3` to start and await for assigns asynchronously, mimic'ing `Task.async/1` and `Task.await/2` behaviour
   * Add `Plug.Conn.WrapperError` to propagate an error with the connection for better debugging by either `Plug.Debugger` or `Plug.ErrorHandler`
+  * Add `Plug.Conn.update_resp_header/4` to update a response header or set its initial value if not present
 
 * Bug fixes
   * Skip parsing of files when no filename is sent
