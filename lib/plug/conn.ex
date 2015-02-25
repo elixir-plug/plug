@@ -215,31 +215,30 @@ defmodule Plug.Conn do
   @doc """
   Starts a task to assign a value to a key in the connection.
 
+  `await_assign/2` can be used to wait for the async task to complete and
+  retrieve the resulting value.
+
   Behind the scenes, it uses `Task.async/1`.
 
   ## Examples
 
-    iex> conn.assigns[:hello]
-    nil
-
-    # fun is some function that returns :world
-    iex> conn = async_assign(conn, :hello, fn -> :world end)
-
-    # the following will block until conn.assigns[:hello] is available
-    iex> await_assign(conn, :hello)
-
-    # conn now has awaited value
-    iex> conn.assigns[:hello]
-    :world
+      iex> conn.assigns[:hello]
+      nil
+      iex> conn = async_assign(conn, :hello, fn -> :world end)
+      iex> conn.assigns[:hello]
+      %Task{...}
 
   """
-  @spec async_assign(t, atom, function) :: t
-  def async_assign(%Conn{} = conn, key, fun) when is_atom(key) do
+  @spec async_assign(t, atom, (() -> term)) :: t
+  def async_assign(%Conn{} = conn, key, fun) when is_atom(key) and is_function(fun, 0) do
     assign(conn, key, Task.async(fun))
   end
 
   @doc """
-  Awaits the completion of an async assign, placing the result in the conn at key.
+  Awaits the completion of an async assign.
+
+  Returns a connection with the value resulting from the async assignment placed
+  under `key` in the `:assigns` field.
 
   Behind the scenes, it uses `Task.await/2`.
 
@@ -247,14 +246,8 @@ defmodule Plug.Conn do
 
       iex> conn.assigns[:hello]
       nil
-
-      # fun is some function that returns :world
       iex> conn = async_assign(conn, :hello, fn -> :world end)
-
-      # the following will block until conn.assigns[:hello] is available
-      iex> await_assign(conn, :hello)
-
-      # conn now has awaited value
+      iex> conn = await_assign(conn, :hello) # blocks until `conn.assings[:hello]` is available
       iex> conn.assigns[:hello]
       :world
 
@@ -292,14 +285,17 @@ defmodule Plug.Conn do
 
   The status code can be `nil`, an integer or an atom. The list of allowed
   atoms is available in `Plug.Conn.Status`.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
   """
   @spec put_status(t, status) :: t
-  def put_status(%Conn{state: state} = conn, nil)
-      when state in @unsent, do: %{conn | status: nil}
-  def put_status(%Conn{state: state} = conn, status)
-      when state in @unsent, do: %{conn | status: Plug.Conn.Status.code(status)}
-  def put_status(%Conn{}, _status), do: raise AlreadySentError
-
+  def put_status(%Conn{state: :sent}, _status),
+    do: raise AlreadySentError
+  def put_status(%Conn{} = conn, nil),
+    do: %{conn | status: nil}
+  def put_status(%Conn{} = conn, status),
+    do: %{conn | status: Plug.Conn.Status.code(status)}
 
   @doc """
   Sends a response to the client.
@@ -354,17 +350,17 @@ defmodule Plug.Conn do
   state to `:chunked` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
-  def send_chunked(%Conn{adapter: {adapter, payload}, state: state, owner: owner} = conn, status)
-      when state in @unsent do
+  def send_chunked(%Conn{state: state}, status)
+      when not state in @unsent do
+    _ = Plug.Conn.Status.code(status)
+    raise AlreadySentError
+  end
+
+  def send_chunked(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status) do
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send owner, @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body}
-  end
-
-  def send_chunked(%Conn{}, status) do
-    _ = Plug.Conn.Status.code(status)
-    raise AlreadySentError
   end
 
   @doc """
@@ -405,14 +401,15 @@ defmodule Plug.Conn do
   and raises `Plug.Conn.AlreadySentError` if it was already `:sent`.
   """
   @spec resp(t, status, body) :: t
-  def resp(%Conn{state: state} = conn, status, body)
-      when state in @unsent and (is_binary(body) or is_list(body)) do
-    %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
-  end
-
-  def resp(%Conn{}, status, body) when is_binary(body) or is_list(body) do
+  def resp(%Conn{state: state}, status, _body)
+      when not state in @unsent do
     _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
+  end
+
+  def resp(%Conn{} = conn, status, body)
+      when is_binary(body) or is_list(body) do
+    %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
   end
 
   @doc """
@@ -446,13 +443,13 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec put_resp_header(t, binary, binary) :: t
-  def put_resp_header(%Conn{resp_headers: headers, state: state} = conn, key, value) when
-      is_binary(key) and is_binary(value) and state != :sent do
-    %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
+  def put_resp_header(%Conn{state: :sent}, _key, _value) do
+    raise AlreadySentError
   end
 
-  def put_resp_header(%Conn{}, key, value) when is_binary(key) and is_binary(value) do
-    raise AlreadySentError
+  def put_resp_header(%Conn{resp_headers: headers} = conn, key, value) when
+      is_binary(key) and is_binary(value) do
+    %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
   @doc """
@@ -462,13 +459,13 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec delete_resp_header(t, binary) :: t
-  def delete_resp_header(%Conn{resp_headers: headers, state: state} = conn, key) when
-      is_binary(key) and state != :sent do
-    %{conn | resp_headers: List.keydelete(headers, key, 0)}
+  def delete_resp_header(%Conn{state: :sent}, _key) do
+    raise AlreadySentError
   end
 
-  def delete_resp_header(%Conn{}, key) when is_binary(key) do
-    raise AlreadySentError
+  def delete_resp_header(%Conn{resp_headers: headers} = conn, key) when
+      is_binary(key) do
+    %{conn | resp_headers: List.keydelete(headers, key, 0)}
   end
 
   @doc """
@@ -479,17 +476,16 @@ defmodule Plug.Conn do
   `:sent`.
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
-  def update_resp_header(%Conn{state: state} = conn, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun, 1) and state != :sent do
+  def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
+    raise AlreadySentError
+  end
+
+  def update_resp_header(%Conn{} = conn, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
     case get_resp_header(conn, key) do
       []          -> put_resp_header(conn, key, initial)
       [current|_] -> put_resp_header(conn, key, fun.(current))
     end
-  end
-
-  def update_resp_header(%Conn{}, key, initial, fun) when
-      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
-    raise AlreadySentError
   end
 
   @doc """
@@ -714,13 +710,14 @@ defmodule Plug.Conn do
   defined first are invoked last).
   """
   @spec register_before_send(t, (t -> t)) :: t
-  def register_before_send(%Conn{before_send: before_send, state: state} = conn, callback)
-      when is_function(callback, 1) and state in @unsent do
-    %{conn | before_send: [callback|before_send]}
+  def register_before_send(%Conn{state: state}, _callback)
+      when not state in @unsent do
+    raise AlreadySentError
   end
 
-  def register_before_send(%Conn{}, callback) when is_function(callback, 1) do
-    raise AlreadySentError
+  def register_before_send(%Conn{before_send: before_send} = conn, callback)
+      when is_function(callback, 1) do
+    %{conn | before_send: [callback|before_send]}
   end
 
   @doc """
@@ -735,17 +732,17 @@ defmodule Plug.Conn do
 
   ## Helpers
 
-  defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when
-      state in @unsent do
+  defp run_before_send(%Conn{state: state}, _new)
+       when not state in @unsent do
+    raise AlreadySentError
+  end
+
+  defp run_before_send(%Conn{before_send: before_send} = conn, new) do
     conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
     if conn.state != new do
       raise ArgumentError, message: "cannot send/change response from run_before_send callback"
     end
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
-  end
-
-  defp run_before_send(_conn, _new) do
-    raise AlreadySentError
   end
 
   defp merge_headers(headers, cookies) do
