@@ -357,17 +357,17 @@ defmodule Plug.Conn do
   state to `:chunked` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
-  def send_chunked(%Conn{adapter: {adapter, payload}, state: state, owner: owner} = conn, status)
-      when state in @unsent do
+  def send_chunked(%Conn{state: state}, status)
+      when not state in @unsent do
+    _ = Plug.Conn.Status.code(status)
+    raise AlreadySentError
+  end
+
+  def send_chunked(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status) do
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send owner, @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body}
-  end
-
-  def send_chunked(%Conn{}, status) do
-    _ = Plug.Conn.Status.code(status)
-    raise AlreadySentError
   end
 
   @doc """
@@ -408,14 +408,15 @@ defmodule Plug.Conn do
   and raises `Plug.Conn.AlreadySentError` if it was already `:sent`.
   """
   @spec resp(t, status, body) :: t
-  def resp(%Conn{state: state} = conn, status, body)
-      when state in @unsent and (is_binary(body) or is_list(body)) do
-    %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
-  end
-
-  def resp(%Conn{}, status, body) when is_binary(body) or is_list(body) do
+  def resp(%Conn{state: state}, status, _body)
+      when not state in @unsent do
     _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
+  end
+
+  def resp(%Conn{} = conn, status, body)
+      when is_binary(body) or is_list(body) do
+    %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
   end
 
   @doc """
@@ -716,13 +717,14 @@ defmodule Plug.Conn do
   defined first are invoked last).
   """
   @spec register_before_send(t, (t -> t)) :: t
-  def register_before_send(%Conn{before_send: before_send, state: state} = conn, callback)
-      when is_function(callback, 1) and state in @unsent do
-    %{conn | before_send: [callback|before_send]}
+  def register_before_send(%Conn{state: state}, _callback)
+      when not state in @unsent do
+    raise AlreadySentError
   end
 
-  def register_before_send(%Conn{}, callback) when is_function(callback, 1) do
-    raise AlreadySentError
+  def register_before_send(%Conn{before_send: before_send} = conn, callback)
+      when is_function(callback, 1) do
+    %{conn | before_send: [callback|before_send]}
   end
 
   @doc """
@@ -737,17 +739,17 @@ defmodule Plug.Conn do
 
   ## Helpers
 
-  defp run_before_send(%Conn{state: state, before_send: before_send} = conn, new) when
-      state in @unsent do
+  defp run_before_send(%Conn{state: state}, _new)
+       when not state in @unsent do
+    raise AlreadySentError
+  end
+
+  defp run_before_send(%Conn{before_send: before_send} = conn, new) do
     conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
     if conn.state != new do
       raise ArgumentError, message: "cannot send/change response from run_before_send callback"
     end
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
-  end
-
-  defp run_before_send(_conn, _new) do
-    raise AlreadySentError
   end
 
   defp merge_headers(headers, cookies) do
