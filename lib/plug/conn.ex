@@ -740,11 +740,6 @@ defmodule Plug.Conn do
 
   ## Helpers
 
-  defp run_before_send(%Conn{state: state}, _new)
-       when not state in @unsent do
-    raise AlreadySentError
-  end
-
   defp run_before_send(%Conn{before_send: before_send} = conn, new) do
     conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
     if conn.state != new do
