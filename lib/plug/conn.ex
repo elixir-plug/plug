@@ -335,7 +335,15 @@ defmodule Plug.Conn do
   state to `:sent` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
   """
   @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
-  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset \\ 0, length \\ :all)
+  def send_file(conn, status, file, offset \\ 0, length  \\ :all)
+
+  def send_file(%Conn{state: state}, status, _file, _offset, _length)
+      when not state in @unsent do
+    _ = Plug.Conn.Status.code(status)
+    raise AlreadySentError
+  end
+
+  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length)
       when is_binary(file) do
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
@@ -731,11 +739,6 @@ defmodule Plug.Conn do
   end
 
   ## Helpers
-
-  defp run_before_send(%Conn{state: state}, _new)
-       when not state in @unsent do
-    raise AlreadySentError
-  end
 
   defp run_before_send(%Conn{before_send: before_send} = conn, new) do
     conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
