@@ -19,10 +19,15 @@ defmodule Plug.ParsersTest do
     assert conn.params["foo"] == "bar"
   end
 
-  test "ignore bodies unless post/put/match" do
+  test "ignore bodies unless post/put/match/delete" do
     headers = [{"content-type", "application/x-www-form-urlencoded"}]
     conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
     assert conn.params["foo"] == "bar"
+
+    headers = [{"content-type", "application/x-www-form-urlencoded"}]
+    conn = parse(conn(:delete, "/?foo=bar", "bar=foo", headers: headers))
+    assert conn.params["foo"] == "bar"
+    assert conn.params["bar"] == "foo"
   end
 
   test "parses url encoded bodies" do

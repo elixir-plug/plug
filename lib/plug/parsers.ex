@@ -126,7 +126,7 @@ defmodule Plug.Parsers do
                     {:next, Conn.t}
 
   @behaviour Plug
-  @methods ~w(POST PUT PATCH)
+  @methods ~w(POST PUT PATCH DELETE)
 
   def init(opts) do
     parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
