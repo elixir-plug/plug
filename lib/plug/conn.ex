@@ -692,8 +692,11 @@ defmodule Plug.Conn do
   @doc """
   Clears the entire session.
 
-  This function removes every key from the session, effectively clearing the
-  session.
+  This function removes every key from the session, clearing the session.
+
+  Note that, even if `clear_session/1` is used, the session is still sent to the
+  client. If the session should be effectively *dropped*, `configure_session/2`
+  should be used with the `:drop` option set to `true`.
   """
   @spec clear_session(t) :: t
   def clear_session(conn) do
