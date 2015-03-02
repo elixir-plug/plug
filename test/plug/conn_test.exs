@@ -607,6 +607,19 @@ defmodule Plug.ConnTest do
     assert get_session(conn, "baz") == nil
   end
 
+  test "clear_session/1" do
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
+
+    conn = conn
+            |> put_session("foo", "bar")
+            |> put_session("baz", "boom")
+            |> clear_session
+
+    assert get_session(conn, "foo") == nil
+    assert get_session(conn, "baz") == nil
+  end
+
   test "halt/1 updates halted to true" do
     conn = %Conn{}
     assert conn.halted == false
