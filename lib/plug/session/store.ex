@@ -2,13 +2,14 @@ defmodule Plug.Session.Store do
   @moduledoc """
   Specification for session stores.
   """
+
   use Behaviour
 
   @type sid :: term | nil
   @type cookie :: binary
   @type session :: map
 
-  @moduledoc """
+  @doc """
   Initializes the store.
 
   The options returned from this function will be given
@@ -16,7 +17,7 @@ defmodule Plug.Session.Store do
   """
   defcallback init(Plug.opts) :: Plug.opts
 
-  @moduledoc """
+  @doc """
   Parses the given cookie.
 
   Returns a session id and the session contents. The session id is any
@@ -27,7 +28,7 @@ defmodule Plug.Session.Store do
   """
   defcallback get(Plug.Conn.t, cookie, Plug.opts) :: {sid, session}
 
-  @moduledoc """
+  @doc """
   Stores the session associated with given session id.
 
   If `nil` is given as id, a new session id should be
@@ -35,7 +36,7 @@ defmodule Plug.Session.Store do
   """
   defcallback put(Plug.Conn.t, sid, any, Plug.opts) :: cookie
 
-  @moduledoc """
+  @doc """
   Removes the session associated with given session id from the store.
   """
   defcallback delete(Plug.Conn.t, sid, Plug.opts) :: :ok
