@@ -2,25 +2,24 @@ defmodule Plug.Session.ETS do
   @moduledoc """
   Stores the session in an in-memory ETS table.
 
-  A created ETS table is required for this store to work.
-
-  This store does not create the ETS table, it is expected
-  that an existing named table is given as argument with
-  public properties.
+  This store does not create the ETS table; it expects that an existing named
+  table with public properties is passed as an argument.
 
   ## Options
 
-  * `:table` - ETS table name (required);
+  * `:table` - ETS table name (required)
+
+  For more information on ETS tables, visit the Erlang documentation at
+  http://www.erlang.org/doc/man/ets.html.
 
   ## Examples
 
-      # Create table during application start
+      # Create an ETS table when the application starts
       :ets.new(:session, [:named_table, :public, read_concurrency: true])
 
       # Use the session plug with the table name
       plug Plug.Session, store: :ets, key: "sid", table: :session
 
-  http://www.erlang.org/doc/man/ets.html
   """
 
   @behaviour Plug.Session.Store
