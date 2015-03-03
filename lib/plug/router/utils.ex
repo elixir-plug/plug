@@ -108,7 +108,7 @@ defmodule Plug.Router.Utils do
   end
 
   # Handle each segment match. They can either be a
-  # :literal ("foo"), an identifier (":bar") or a glob ("*path")
+  # :literal ("foo"), an :identifier (":bar") or a :glob ("*path")
 
   defp handle_segment_match({:literal, literal}, t, context, vars, acc) do
     build_path_match t, context, vars, [literal|acc]
@@ -118,19 +118,19 @@ defmodule Plug.Router.Utils do
     build_path_match t, context, [identifier|vars], [expr|acc]
   end
 
-  defp handle_segment_match({:glob, identifier, expr}, t, context, vars, acc) do
-    if t != [] do
-      raise Plug.Router.InvalidSpecError, message: "cannot have a *glob followed by other segments"
-    end
+  defp handle_segment_match({:glob, _identifier, _expr}, t, _context, _vars, _acc) when t != [] do
+    raise Plug.Router.InvalidSpecError,
+      message: "cannot have a *glob followed by other segments"
+  end
 
-    case acc do
-      [hs|ts] ->
-        acc = [{:|, [], [hs, expr]} | ts]
-        build_path_match([], context, [identifier|vars], acc)
-      _ ->
-        {vars, expr} = build_path_match([], context, [identifier|vars], [expr])
-        {vars, hd(expr)}
-    end
+  defp handle_segment_match({:glob, identifier, expr}, _t, context, vars, [hs|ts]) do
+    acc = [{:|, [], [hs, expr]} | ts]
+    build_path_match([], context, [identifier|vars], acc)
+  end
+
+  defp handle_segment_match({:glob, identifier, expr}, _t, context, vars, _) do
+    {vars, expr} = build_path_match([], context, [identifier|vars], [expr])
+    {vars, hd(expr)}
   end
 
   # In a given segment, checks if there is a match.
