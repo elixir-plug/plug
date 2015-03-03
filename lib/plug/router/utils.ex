@@ -135,8 +135,6 @@ defmodule Plug.Router.Utils do
 
   # In a given segment, checks if there is a match.
 
-  @underscore {:_, [], nil}
-
   defp segment_match(":" <> argument, buffer, context) do
     identifier = binary_to_identifier(":", argument)
     expr = quote_if_buffer identifier, buffer, context, fn var ->
