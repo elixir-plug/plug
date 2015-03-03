@@ -6,7 +6,11 @@ defmodule Plug.Router.Utils do
   @moduledoc false
 
   @doc """
-  Convert a given method to its connection representation.
+  Converts a given method to its connection representation.
+
+  The request method is stored in the `Plug.Conn` struct as an uppercase string
+  (like `"GET"` or `"POST"`). This function converts `method` to that
+  representation.
 
   ## Examples
 
@@ -18,9 +22,12 @@ defmodule Plug.Router.Utils do
     method |> to_string |> String.upcase
   end
 
-  @doc """
-  Build the pattern that will be used to match against the request's host
+  @doc ~S"""
+  Builds the pattern that will be used to match against the request's host
   (provided via the `:host`) option.
+
+  If `host` is `nil`, a wildcard match (`_`) will be returned. If `host` ends
+  with a dot, a match like `"host." <> _` will be returned.
 
   ## Examples
 
@@ -29,6 +36,9 @@ defmodule Plug.Router.Utils do
 
       iex> Plug.Router.Utils.build_host_match("foo.com")
       "foo.com"
+
+      iex> Plug.Router.Utils.build_host_match("api.") |> Macro.to_string
+      "\"api.\" <> _"
 
   """
   def build_host_match(host) do
@@ -73,6 +83,12 @@ defmodule Plug.Router.Utils do
 
       iex> Plug.Router.Utils.split("/foo/bar")
       ["foo", "bar"]
+
+      iex> Plug.Router.Utils.split("/:id/*")
+      [":id", "*"]
+
+      iex> Plug.Router.Utils.split("/foo//*_bar")
+      ["foo", "*_bar"]
 
   """
   def split(bin) do
