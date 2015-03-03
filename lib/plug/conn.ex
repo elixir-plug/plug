@@ -690,6 +690,20 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Clears the entire session.
+
+  This function removes every key from the session, clearing the session.
+
+  Note that, even if `clear_session/1` is used, the session is still sent to the
+  client. If the session should be effectively *dropped*, `configure_session/2`
+  should be used with the `:drop` option set to `true`.
+  """
+  @spec clear_session(t) :: t
+  def clear_session(conn) do
+    put_session(conn, fn(_existing) -> Map.new end)
+  end
+
+  @doc """
   Configures the session.
 
   ## Options
