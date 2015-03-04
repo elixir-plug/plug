@@ -51,18 +51,21 @@ defmodule Plug.CSRFProtection do
 
   defmodule InvalidCSRFTokenError do
     @moduledoc "Error raised when CSRF token is invalid."
-    message = "invalid CSRF (Cross Site Forgery Protection) token. Make sure that all " <>
-              "your non-HEAD and non-GET requests include the '_csrf_token' as part of form " <>
-              "params or as a value in your request's headers with the key 'x-csrf-token'"
+
+    message =
+      "invalid CSRF (Cross Site Forgery Protection) token, make sure all "
+      <> "requests include a '_csrf_token' param or an 'x-csrf-token' header"
 
     defexception message: message, plug_status: 403
   end
 
   defmodule InvalidCrossOriginRequestError do
     @moduledoc "Error raised when non-XHR requests are used for Javascript responses."
-    message = "security warning: an embedded <script> tag on another site requested " <>
-              "protected JavaScript. If you know what you're doing, you may disable " <>
-              "forgery protection for this route"
+
+    message =
+      "security warning: an embedded <script> tag on another site requested "
+      <> "protected JavaScript (if you know what you're doing, disable forgery "
+      <> "protection for this route)"
 
     defexception message: message, plug_status: 403
   end
