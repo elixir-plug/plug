@@ -70,25 +70,25 @@ defmodule Plug.CSRFProtectionTest do
 
   test "unprotected requests are always valid" do
     conn = conn(:get, "/") |> call()
-    assert conn.halted == false
+    refute conn.halted
     refute get_session(conn, "_csrf_token")
 
     conn = conn(:head, "/") |> call()
-    assert conn.halted == false
+    refute conn.halted
     refute get_session(conn, "_csrf_token")
 
     conn = conn(:options, "/") |> call()
-    assert conn.halted == false
+    refute conn.halted
     refute get_session(conn, "_csrf_token")
   end
 
   test "tokens are generated and deleted on demand" do
     conn = conn(:get, "/?token=get") |> call()
-    assert conn.halted == false
+    refute conn.halted
     assert get_session(conn, "_csrf_token")
 
     conn = conn(:get, "/?token=delete") |> call(conn)
-    assert conn.halted == false
+    refute conn.halted
     refute get_session(conn, "_csrf_token")
   end
 
@@ -97,13 +97,13 @@ defmodule Plug.CSRFProtectionTest do
     params = %{_csrf_token: get_session(old_conn, "_csrf_token")}
 
     conn = conn(:post, "/", params) |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
 
     conn = conn(:put, "/", params) |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
 
     conn = conn(:patch, "/", params) |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
   end
 
   test "protected requests with valid token in header are allowed" do
@@ -114,19 +114,19 @@ defmodule Plug.CSRFProtectionTest do
       conn(:post, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
 
     conn =
       conn(:put, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
 
     conn =
       conn(:patch, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call(old_conn)
-    assert conn.halted == false
+    refute conn.halted
   end
 
   test "non-XHR Javascript GET requests are forbidden" do
@@ -146,7 +146,7 @@ defmodule Plug.CSRFProtectionTest do
       |> put_req_header("x-requested-with", "XMLHttpRequest")
       |> call()
 
-    assert conn.halted == false
+    refute conn.halted
   end
 
   test "csrf plug is skipped when plug_skip_csrf_protection is true" do
