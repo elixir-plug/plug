@@ -51,18 +51,21 @@ defmodule Plug.CSRFProtection do
 
   defmodule InvalidCSRFTokenError do
     @moduledoc "Error raised when CSRF token is invalid."
-    message = "invalid CSRF (Cross Site Forgery Protection) token. Make sure that all " <>
-              "your non-HEAD and non-GET requests include the '_csrf_token' as part of form " <>
-              "params or as a value in your request's headers with the key 'x-csrf-token'"
+
+    message =
+      "invalid CSRF (Cross Site Forgery Protection) token, make sure all "
+      <> "requests include a '_csrf_token' param or an 'x-csrf-token' header"
 
     defexception message: message, plug_status: 403
   end
 
   defmodule InvalidCrossOriginRequestError do
     @moduledoc "Error raised when non-XHR requests are used for Javascript responses."
-    message = "security warning: an embedded <script> tag on another site requested " <>
-              "protected JavaScript. If you know what you're doing, you may disable " <>
-              "forgery protection for this route"
+
+    message =
+      "security warning: an embedded <script> tag on another site requested "
+      <> "protected JavaScript (if you know what you're doing, disable forgery "
+      <> "protection for this route)"
 
     defexception message: message, plug_status: 403
   end
@@ -76,11 +79,13 @@ defmodule Plug.CSRFProtection do
   dictionary if one does not exists.
   """
   def get_csrf_token do
-    Process.get(:plug_csrf_token) || (
+    if token = Process.get(:plgu_csrf_token) do
+      token
+    else
       token = generate_token()
       Process.put(:plug_csrf_token, token)
       token
-    )
+    end
   end
 
   @doc """
@@ -106,7 +111,7 @@ defmodule Plug.CSRFProtection do
       raise InvalidCSRFTokenError
     end
 
-    register_before_send(conn, &ensure_same_origin_and_csrf_token(&1, csrf_token))
+    register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
   end
 
   ## Verification
@@ -114,18 +119,19 @@ defmodule Plug.CSRFProtection do
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods
       || valid_csrf_token?(csrf_token, conn.params["_csrf_token"])
-      || valid_csrf_token?(csrf_token, get_req_header(conn, "x-csrf-token") |> Enum.at(0))
-      || plug_skip_csrf_protection?(conn)
+      || valid_csrf_token?(csrf_token, get_req_header(conn, "x-csrf-token") |> List.first)
+      || skip_csrf_protection?(conn)
   end
 
-  defp valid_csrf_token?(csrf_token, user_token) do
-    csrf_token && user_token &&
-      Plug.Crypto.secure_compare(csrf_token, user_token)
-  end
+  defp valid_csrf_token?(csrf_token, user_token)
+    when is_nil(csrf_token) or is_nil(user_token),
+    do: false
+  defp valid_csrf_token?(csrf_token, user_token),
+    do: Plug.Crypto.secure_compare(csrf_token, user_token)
 
   ## Before send
 
-  def ensure_same_origin_and_csrf_token(conn, csrf_token) do
+  defp ensure_same_origin_and_csrf_token!(conn, csrf_token) do
     if cross_origin_js?(conn) do
       raise InvalidCrossOriginRequestError
     end
@@ -133,10 +139,15 @@ defmodule Plug.CSRFProtection do
     ensure_csrf_token(conn, csrf_token)
   end
 
-  defp cross_origin_js?(conn) do
-    conn.method == "GET" and not xhr?(conn) and not plug_skip_csrf_protection?(conn) and
-      Enum.any?(get_resp_header(conn, "content-type"),
-                &String.starts_with?(&1, ["text/javascript", "application/javascript"]))
+  defp cross_origin_js?(%Plug.Conn{method: "GET"} = conn),
+    do: not skip_csrf_protection?(conn) and not xhr?(conn) and js_content_type?(conn)
+  defp cross_origin_js?(%Plug.Conn{}),
+    do: false
+
+  defp js_content_type?(conn) do
+    conn
+    |> get_resp_header("content-type")
+    |> Enum.any?(&String.starts_with?(&1, ~w(text/javascript application/javascript)))
   end
 
   defp xhr?(conn) do
@@ -144,19 +155,16 @@ defmodule Plug.CSRFProtection do
   end
 
   defp ensure_csrf_token(conn, csrf_token) do
-    current = Process.delete(:plug_csrf_token)
-
-    if current == csrf_token do
-      conn
-    else
-      put_session(conn, "_csrf_token", current)
+    case Process.delete(:plug_csrf_token) do
+      ^csrf_token -> conn
+      current     -> put_session(conn, "_csrf_token", current)
     end
   end
 
   ## Helpers
 
-  defp plug_skip_csrf_protection?(%{private: %{plug_skip_csrf_protection: true}}), do: true
-  defp plug_skip_csrf_protection?(_), do: false
+  defp skip_csrf_protection?(%Plug.Conn{private: %{plug_skip_csrf_protection: true}}), do: true
+  defp skip_csrf_protection?(%Plug.Conn{}), do: false
 
   defp generate_token do
     :crypto.strong_rand_bytes(32) |> Base.encode64
