@@ -6,7 +6,11 @@ defmodule Plug.Router.Utils do
   @moduledoc false
 
   @doc """
-  Convert a given method to its connection representation.
+  Converts a given method to its connection representation.
+
+  The request method is stored in the `Plug.Conn` struct as an uppercase string
+  (like `"GET"` or `"POST"`). This function converts `method` to that
+  representation.
 
   ## Examples
 
@@ -18,9 +22,12 @@ defmodule Plug.Router.Utils do
     method |> to_string |> String.upcase
   end
 
-  @doc """
-  Build the pattern that will be used to match against the request's host
+  @doc ~S"""
+  Builds the pattern that will be used to match against the request's host
   (provided via the `:host`) option.
+
+  If `host` is `nil`, a wildcard match (`_`) will be returned. If `host` ends
+  with a dot, a match like `"host." <> _` will be returned.
 
   ## Examples
 
@@ -29,6 +36,9 @@ defmodule Plug.Router.Utils do
 
       iex> Plug.Router.Utils.build_host_match("foo.com")
       "foo.com"
+
+      iex> Plug.Router.Utils.build_host_match("api.") |> Macro.to_string
+      "\"api.\" <> _"
 
   """
   def build_host_match(host) do
@@ -74,6 +84,12 @@ defmodule Plug.Router.Utils do
       iex> Plug.Router.Utils.split("/foo/bar")
       ["foo", "bar"]
 
+      iex> Plug.Router.Utils.split("/:id/*")
+      [":id", "*"]
+
+      iex> Plug.Router.Utils.split("/foo//*_bar")
+      ["foo", "*_bar"]
+
   """
   def split(bin) do
     for segment <- String.split(bin, "/"), segment != "", do: segment
@@ -92,7 +108,7 @@ defmodule Plug.Router.Utils do
   end
 
   # Handle each segment match. They can either be a
-  # :literal ("foo"), an identifier (":bar") or a glob ("*path")
+  # :literal ("foo"), an :identifier (":bar") or a :glob ("*path")
 
   defp handle_segment_match({:literal, literal}, t, context, vars, acc) do
     build_path_match t, context, vars, [literal|acc]
@@ -102,24 +118,22 @@ defmodule Plug.Router.Utils do
     build_path_match t, context, [identifier|vars], [expr|acc]
   end
 
-  defp handle_segment_match({:glob, identifier, expr}, t, context, vars, acc) do
-    if t != [] do
-      raise Plug.Router.InvalidSpecError, message: "cannot have a *glob followed by other segments"
-    end
+  defp handle_segment_match({:glob, _identifier, _expr}, t, _context, _vars, _acc) when t != [] do
+    raise Plug.Router.InvalidSpecError,
+      message: "cannot have a *glob followed by other segments"
+  end
 
-    case acc do
-      [hs|ts] ->
-        acc = [{:|, [], [hs, expr]} | ts]
-        build_path_match([], context, [identifier|vars], acc)
-      _ ->
-        {vars, expr} = build_path_match([], context, [identifier|vars], [expr])
-        {vars, hd(expr)}
-    end
+  defp handle_segment_match({:glob, identifier, expr}, _t, context, vars, [hs|ts]) do
+    acc = [{:|, [], [hs, expr]} | ts]
+    build_path_match([], context, [identifier|vars], acc)
+  end
+
+  defp handle_segment_match({:glob, identifier, expr}, _t, context, vars, _) do
+    {vars, expr} = build_path_match([], context, [identifier|vars], [expr])
+    {vars, hd(expr)}
   end
 
   # In a given segment, checks if there is a match.
-
-  @underscore {:_, [], nil}
 
   defp segment_match(":" <> argument, buffer, context) do
     identifier = binary_to_identifier(":", argument)
