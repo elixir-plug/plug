@@ -84,7 +84,6 @@ defmodule Plug.ConnTest do
     assert conn(:get, "/").query_string == ""
     assert conn(:get, "/foo?barbat").query_string == "barbat"
     assert conn(:get, "/foo/bar?bar=bat").query_string == "bar=bat"
-    assert conn(:post, "/?foo=bar", %{foo: "baz"}).params["foo"] == "baz"
   end
 
   test "status, resp_headers and resp_body" do

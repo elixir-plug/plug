@@ -103,6 +103,8 @@ defmodule Plug.Adapters.Test.Conn do
     {"", params, headers}
   end
 
+  defp stringify_params([{_, _}|_] = params),
+    do: Enum.into(params, %{}, &stringify_kv/1)
   defp stringify_params([_|_] = params),
     do: Enum.map(params, &stringify_params/1)
   defp stringify_params(%{__struct__: mod} = struct) when is_atom(mod),

@@ -17,6 +17,12 @@ defmodule Plug.Adapters.Test.ConnTest do
   test "custom params" do
     conn = conn(:get, "/", a: "b", c: [%{d: "e"}])
     assert conn.params == %{"a" => "b", "c" => [%{"d" => "e"}]}
+
+    conn = conn(:get, "/", a: "b", c: [d: "e"])
+    assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}}
+
+    conn = conn(:post, "/?foo=bar", %{foo: "baz"})
+    assert conn.params == %{"foo" => "baz"}
   end
 
   test "custom struct params" do
