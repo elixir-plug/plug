@@ -76,9 +76,13 @@ defmodule Plug.CSRFProtectionTest do
     conn = conn(:head, "/") |> call()
     assert conn.halted == false
     refute get_session(conn, "_csrf_token")
+
+    conn = conn(:options, "/") |> call()
+    assert conn.halted == false
+    refute get_session(conn, "_csrf_token")
   end
 
-  test "tokens are generated and deleted token on demand" do
+  test "tokens are generated and deleted on demand" do
     conn = conn(:get, "/?token=get") |> call()
     assert conn.halted == false
     assert get_session(conn, "_csrf_token")
@@ -136,10 +140,13 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "only XHR Javascript GET requests are allowed" do
-    conn(:get, "/")
-    |> assign(:content_type, "text/javascript")
-    |> put_req_header("x-requested-with", "XMLHttpRequest")
-    |> call()
+    conn =
+      conn(:get, "/")
+      |> assign(:content_type, "text/javascript")
+      |> put_req_header("x-requested-with", "XMLHttpRequest")
+      |> call()
+
+    assert conn.halted == false
   end
 
   test "csrf plug is skipped when plug_skip_csrf_protection is true" do
