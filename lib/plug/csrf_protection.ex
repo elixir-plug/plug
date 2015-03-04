@@ -109,7 +109,7 @@ defmodule Plug.CSRFProtection do
       raise InvalidCSRFTokenError
     end
 
-    register_before_send(conn, &ensure_same_origin_and_csrf_token(&1, csrf_token))
+    register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
   end
 
   ## Verification
@@ -128,7 +128,7 @@ defmodule Plug.CSRFProtection do
 
   ## Before send
 
-  def ensure_same_origin_and_csrf_token(conn, csrf_token) do
+  defp ensure_same_origin_and_csrf_token!(conn, csrf_token) do
     if cross_origin_js?(conn) do
       raise InvalidCrossOriginRequestError
     end
