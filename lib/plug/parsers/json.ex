@@ -11,12 +11,16 @@ defmodule Plug.Parsers.JSON do
   @behaviour Plug.Parsers
   import Plug.Conn
 
-  def parse(conn, "application", "json", _headers, opts) do
-    decoder = Keyword.get(opts, :json_decoder) ||
-                raise ArgumentError, "JSON parser expects a :json_decoder option"
-    conn
-    |> read_body(opts)
-    |> decode(decoder)
+  def parse(conn, "application", subtype, _headers, opts) do
+    if subtype == "json" || String.ends_with?(subtype, "+json") do
+      decoder = Keyword.get(opts, :json_decoder) ||
+                  raise ArgumentError, "JSON parser expects a :json_decoder option"
+      conn
+      |> read_body(opts)
+      |> decode(decoder)
+    else
+      {:next, conn}
+    end
   end
 
   def parse(conn, _type, _subtype, _headers, _opts) do
