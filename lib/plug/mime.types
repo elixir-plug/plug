@@ -1,4 +1,4 @@
-# This is a comment. I love comments.       -*- indent-tabs-mode: t -*-
+# https://git.fedorahosted.org/cgit/mailcap.git/plain/mime.types
 
 # This file controls what Internet media types are sent to the client for
 # given file extension(s).  Sending the correct media type to the client

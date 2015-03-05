@@ -1,6 +1,19 @@
 defmodule Plug.MIME do
   @moduledoc """
   Maps MIME types to file extensions and vice versa.
+
+  MIME types can be extended in your application configuration
+  as follows:
+
+      config :plug, :mimes, %{
+        "application/vnd.api+json" => ["json-api"]
+      }
+
+  After adding the configuration, Plug needs to be recompiled.
+  If you are using mix, it can be done with:
+
+      $ touch deps/plug/mix.exs
+      $ mix deps.compile plug
   """
 
   @compile :no_native
@@ -19,6 +32,12 @@ defmodule Plug.MIME do
     end
   end)
 
+  app = Application.get_env(:plug, :mimes, %{})
+
+  mapping = Enum.reduce app, mapping, fn {k, v}, acc ->
+    List.keystore(acc, k, 0, {k, v})
+  end
+
   @doc """
   Returns whether a MIME type is registered.
 
@@ -31,7 +50,6 @@ defmodule Plug.MIME do
       false
 
   """
-
   @spec valid?(String.t) :: boolean
   def valid?(type) do
     is_list entry(type)
@@ -52,7 +70,6 @@ defmodule Plug.MIME do
       []
 
   """
-
   @spec extensions(String.t) :: [String.t]
   def extensions(type) do
     entry(type) || []
@@ -71,7 +88,6 @@ defmodule Plug.MIME do
       #{inspect @default_type}
 
   """
-
   @spec type(String.t) :: String.t
   def type(file_extension)
 
@@ -90,7 +106,6 @@ defmodule Plug.MIME do
       "text/html"
 
   """
-
   @spec path(Path.t) :: String.t
   def path(path) do
     case Path.extname(path) do
