@@ -37,7 +37,7 @@ defmodule Plug.Parsers.JSON do
 
   defp decode({:ok, body, conn}, decoder) do
     case decoder.decode!(body) do
-      terms when is_map(terms)->
+      terms when is_map(terms) ->
         {:ok, terms, conn}
       terms ->
         {:ok, %{"_json" => terms}, conn}
