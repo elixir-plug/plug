@@ -12,7 +12,8 @@ defmodule Plug.MIMETest do
 
   test "extensions/1" do
     assert "json" in extensions("application/json")
-    assert extensions("application/vnd.api+json") == []
+    assert "json-api" in extensions("application/vnd.api+json")
+    assert extensions("application/vcard+json") == []
   end
 
   test "type/1" do
