@@ -41,6 +41,12 @@ defmodule Phoenix.Parsers.JSONTest do
     assert conn.params == %{}
   end
 
+  test "parses json-parseable content types" do
+    headers = [{"content-type", "application/vnd.api+json"}]
+    conn = parse(conn(:post, "/", "{id: 1}", headers: headers))
+    assert conn.params["id"] == 1
+  end
+
   test "expects a json encoder" do
     headers = [{"content-type", "application/json"}]
     assert_raise ArgumentError, "JSON parser expects a :json_decoder option", fn ->
