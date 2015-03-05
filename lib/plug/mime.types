@@ -334,7 +334,7 @@ application/vnd.anser-web-certificate-issue-initiation	cii
 application/vnd.anser-web-funds-transfer-initiation	fti
 # atx: audio/ATRAC-X
 application/vnd.antix.game-component
-application/vnd.api+json
+application/vnd.api+json				json-api
 application/vnd.apple.installer+xml		dist distz pkg mpkg
 # m3u: audio/x-mpegurl for now
 application/vnd.apple.mpegurl			m3u8
