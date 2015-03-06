@@ -79,7 +79,7 @@ defmodule Plug.CSRFProtection do
   dictionary if one does not exists.
   """
   def get_csrf_token do
-    if token = Process.get(:plgu_csrf_token) do
+    if token = Process.get(:plug_csrf_token) do
       token
     else
       token = generate_token()

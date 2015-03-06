@@ -44,6 +44,11 @@ defmodule Plug.CSRFProtectionTest do
     conn
   end
 
+  test "token is stored in process dictionary" do
+    assert Plug.CSRFProtection.get_csrf_token() ==
+           Plug.CSRFProtection.get_csrf_token()
+  end
+
   test "raise error for missing authenticity token in session" do
     assert_raise InvalidCSRFTokenError, fn ->
       conn(:post, "/") |> call()
