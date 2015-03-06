@@ -131,6 +131,7 @@ defmodule Plug.Debugger do
 
     reason = Exception.normalize(kind, reason, stack)
     {status, title, message} = info(kind, reason)
+    stack = prune_stack(kind, reason, stack)
 
     conn = put_resp_content_type(conn, "text/html")
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
@@ -159,6 +160,10 @@ defmodule Plug.Debugger do
   defp info(:exit, reason) do
     {500, "unhandled exit", Exception.format_exit(reason)}
   end
+
+  defp prune_stack(:error, %FunctionClauseError{}, [_|t]), do: t
+  defp prune_stack(:error, %UndefinedFunctionError{}, [_|t]), do: t
+  defp prune_stack(_kind, _reason, stack), do: stack
 
   defp frames(stacktrace, opts) do
     app    = opts[:otp_app]
@@ -201,6 +206,10 @@ defmodule Plug.Debugger do
   # From :elixir_compiler_*
   defp get_entry({_module, :__FILE__, 1, location}) do
     {nil, "(file)", location, nil}
+  end
+
+  defp get_entry({module, fun, args, location}) when is_list(args) do
+    get_entry({module, fun, length(args), location})
   end
 
   defp get_entry({module, fun, arity, location}) do
