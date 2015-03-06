@@ -36,8 +36,8 @@ defmodule Plug.CSRFProtectionTest do
 
   defp maybe_get_token(conn) do
     case conn.params["token"] do
-      "get"    -> Plug.CSRFProtection.get_csrf_token()
-      "delete" -> Plug.CSRFProtection.delete_csrf_token()
+      "get"    -> CSRFProtection.get_csrf_token()
+      "delete" -> CSRFProtection.delete_csrf_token()
       _        -> :ok
     end
 
@@ -45,12 +45,12 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "token is stored in process dictionary" do
-    assert Plug.CSRFProtection.get_csrf_token() ==
-           Plug.CSRFProtection.get_csrf_token()
+    assert CSRFProtection.get_csrf_token() ==
+           CSRFProtection.get_csrf_token()
 
-    t1 = Plug.CSRFProtection.get_csrf_token
-    Plug.CSRFProtection.delete_csrf_token
-    assert t1 != Plug.CSRFProtection.get_csrf_token
+    t1 = CSRFProtection.get_csrf_token
+    CSRFProtection.delete_csrf_token
+    assert t1 != CSRFProtection.get_csrf_token
   end
 
   test "raise error for missing authenticity token in session" do
