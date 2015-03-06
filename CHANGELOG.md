@@ -1,5 +1,16 @@
 ## Changelog
 
+## v0.11.1
+
+* Enhancements
+  * Allow Plug mimes to be configured via application environment
+  * Extend JSON parser to be compatible with all json compatible content types. This includes types with suffix `+json`
+  * Add `Plug.Conn.clear_session/1`
+
+* Bug fixes
+  * Do not require cowboy at compile time
+  * Also parse request bodies on DELETE requests
+
 ## v0.11.0
 
 * Enhancements
