@@ -47,6 +47,10 @@ defmodule Plug.CSRFProtectionTest do
   test "token is stored in process dictionary" do
     assert Plug.CSRFProtection.get_csrf_token() ==
            Plug.CSRFProtection.get_csrf_token()
+
+    t1 = Plug.CSRFProtection.get_csrf_token
+    Plug.CSRFProtection.delete_csrf_token
+    assert t1 != Plug.CSRFProtection.get_csrf_token
   end
 
   test "raise error for missing authenticity token in session" do
