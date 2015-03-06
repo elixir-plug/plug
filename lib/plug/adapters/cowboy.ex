@@ -116,7 +116,13 @@ defmodule Plug.Adapters.Cowboy do
   @not_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
 
   defp run(scheme, plug, opts, options) do
-    Application.ensure_all_started(:cowboy)
+    case Application.ensure_all_started(:cowboy) do
+      {:ok, _} ->
+        :ok
+      {:error, {:cowboy, _}} ->
+        raise "could not start the cowboy application. Please ensure it is listed " <>
+              "as a dependency both in deps and application in your mix.exs"
+    end
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
   end
 

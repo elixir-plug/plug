@@ -1,10 +1,3 @@
-# In this file we check if at least one of the adapters are implemented.
-# Since right now we only support cowboy, the check is straight-forward.
-unless Code.ensure_loaded?(:cowboy_req) do
-  raise "cannot compile Plug because the :cowboy application is not available. " <>
-        "Please ensure it is listed as a dependency before the plug one."
-end
-
 defmodule Plug.Conn.Adapter do
   @moduledoc """
   Specification of the connection adapter API implemented by webservers
