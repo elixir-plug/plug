@@ -63,7 +63,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def parse_req_multipart(req, opts, callback) do
-    limit = Keyword.get(opts, :length, 8_000_000)
+    # We need to remove the length from the list
+    # otherwise cowboy will attempt to load the
+    # whole length at once.
+    {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
     {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, opts, [], callback)
 
     params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
@@ -90,12 +93,17 @@ defmodule Plug.Adapters.Cowboy.Conn do
   defp parse_multipart({:ok, headers, req}, limit, opts, acc, callback) when limit >= 0 do
     case callback.(headers) do
       {:binary, name} ->
-        {:ok, limit, body, req} = parse_multipart_body(Request.part_body(req), limit, "")
+        {:ok, limit, body, req} =
+          parse_multipart_body(Request.part_body(req, opts), limit, opts, "")
+
         parse_multipart(Request.part(req), limit, opts, [{name, body}|acc], callback)
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
-        {:ok, limit, req} = parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
+
+        {:ok, limit, req} =
+          parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
+
         _ = File.close(file)
         parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
 
@@ -112,19 +120,19 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:ok, limit, acc, req}
   end
 
-  defp parse_multipart_body({:more, tail, req}, limit, body) when limit >= 0 do
-    parse_multipart_body(Request.part_body(req), limit - byte_size(tail), body <> tail)
+  defp parse_multipart_body({:more, tail, req}, limit, opts, body) when limit >= 0 do
+    parse_multipart_body(Request.part_body(req, opts), limit - byte_size(tail), opts, body <> tail)
   end
 
-  defp parse_multipart_body({:more, _tail, req}, limit, body) do
+  defp parse_multipart_body({:more, _tail, req}, limit, _opts, body) do
     {:ok, limit, body, req}
   end
 
-  defp parse_multipart_body({:ok, tail, req}, limit, body) when limit >= byte_size(tail) do
+  defp parse_multipart_body({:ok, tail, req}, limit, _opts, body) when limit >= byte_size(tail) do
     {:ok, limit, body <> tail, req}
   end
 
-  defp parse_multipart_body({:ok, _tail, req}, limit, body) do
+  defp parse_multipart_body({:ok, _tail, req}, limit, _opts, body) do
     {:ok, limit, body, req}
   end
 
