@@ -94,11 +94,9 @@ defmodule Plug.Adapters.Cowboy.Conn do
         parse_multipart(Request.part(req), limit, opts, [{name, body}|acc], callback)
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->
-        {:ok, limit, req} = File.open!(path, [:write, :binary], fn file ->
-          # When reading the body, we use the regular body
-          # options so we read bigger chunks of code at once.
-          parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
-        end)
+        {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
+        {:ok, limit, req} = parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
+        _ = File.close(file)
         parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
 
       :skip ->
@@ -131,17 +129,16 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   defp parse_multipart_file({:more, tail, req}, limit, opts, file) when limit >= 0 do
-    :file.write(file, tail)
+    IO.binwrite(file, tail)
     parse_multipart_file(Request.part_body(req, opts), limit - byte_size(tail), opts, file)
   end
 
-  defp parse_multipart_file({:more, _tail, req}, limit, _opts, file) do
-    :file.close(file)
+  defp parse_multipart_file({:more, _tail, req}, limit, _opts, _file) do
     {:ok, limit, req}
   end
 
   defp parse_multipart_file({:ok, tail, req}, limit, _opts, file) when limit >= byte_size(tail) do
-    :file.write(file, tail)
+    IO.binwrite(file, tail)
     {:ok, limit, req}
   end
 
