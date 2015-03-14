@@ -99,13 +99,17 @@ defmodule Plug.BuilderTest do
     assert conn.assigns[:entered_stack] == true
   end
 
-  test "halt/1 halts the plug stack" do
-    conn = conn(:get, "/") |> Halter.call([])
-    assert conn.halted
-    assert conn.assigns[:first]
-    assert conn.assigns[:second]
-    assert conn.assigns[:authorize_reached]
-    refute conn.assigns[:end_of_chain_reached]
+  test "halt/2 halts the plug stack and Logger.infos it" do
+    log = capture_log fn ->
+      conn = conn(:get, "/") |> Halter.call([])
+      assert conn.halted
+      assert conn.assigns[:first]
+      assert conn.assigns[:second]
+      assert conn.assigns[:authorize_reached]
+      refute conn.assigns[:end_of_chain_reached]
+    end
+
+    assert log =~ "plug pipeline halted in :authorize/2"
   end
 
   test "an exception is raised if a plug doesn't return a connection" do
@@ -137,5 +141,12 @@ defmodule Plug.BuilderTest do
         plug Bad
       end
     end
+  end
+
+  def capture_log(fun) do
+    ExUnit.CaptureIO.capture_io(:user, fn ->
+      fun.()
+      Logger.flush()
+    end) |> String.strip
   end
 end

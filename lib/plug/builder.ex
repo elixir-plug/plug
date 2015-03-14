@@ -212,11 +212,21 @@ defmodule Plug.Builder do
       :function -> "expected #{inspect plug}/2 to return a Plug.Conn"
     end
 
+    halt_message = case plug_type do
+      :module   -> "plug pipeline halted in #{inspect plug}.call/2"
+      :function -> "plug pipeline halted in #{inspect plug}/2"
+    end
+
     quote do
       case unquote(compile_guards(call, guards)) do
-        %Plug.Conn{halted: true} = conn -> conn
-        %Plug.Conn{} = conn             -> unquote(acc)
-        _                               -> raise unquote(error_message)
+        %Plug.Conn{halted: true} = conn ->
+          require Logger
+          Logger.debug unquote(halt_message)
+          conn
+        %Plug.Conn{} = conn ->
+          unquote(acc)
+        _ ->
+          raise unquote(error_message)
       end
     end
   end
