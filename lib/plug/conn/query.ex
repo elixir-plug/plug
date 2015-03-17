@@ -63,8 +63,19 @@ defmodule Plug.Conn.Query do
   end
 
   def decode(query, initial) do
-    decoder = URI.query_decoder(query)
-    Enum.reduce(Enum.reverse(decoder), initial, &decode_pair(&1, &2))
+    parts = :binary.split(query, "&", [:global])
+    Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
+  end
+
+  defp decode_string_pair(string, acc) do
+    current =
+      case :binary.split(string, "=") do
+        [key, value] ->
+          {URI.decode_www_form(key), URI.decode_www_form(value)}
+        [key] ->
+          {URI.decode_www_form(key), nil}
+      end
+    decode_pair(current, acc)
   end
 
   @doc """
