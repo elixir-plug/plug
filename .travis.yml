@@ -3,6 +3,7 @@ elixir:
   - 1.0.0
   - 1.0.1
   - 1.0.2
+  - 1.0.3
 sudo: false # to use faster container based build environment
 notifications:
   recipients:
