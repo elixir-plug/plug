@@ -161,7 +161,7 @@ defmodule Plug.Upload do
   defp i(integer), do: Integer.to_string(integer)
 
   defp path(prefix, tmp) do
-    {_mega, sec, mili} = :erlang.now
+    {_mega, sec, mili} = :os.timestamp
     tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(mili)
   end
 end

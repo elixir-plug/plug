@@ -237,7 +237,7 @@ defmodule Plug.ConnTest do
 
   test "send_file/5 limits on offset" do
     %File.Stat{type: :regular, size: size} = File.stat!(__ENV__.file)
-    :random.seed(:erlang.now)
+    :random.seed(:os.timestamp)
     offset = round(:random.uniform * size)
     conn = conn(:get, "/foo") |> send_file(206, __ENV__.file, offset)
     assert conn.status == 206
@@ -247,7 +247,7 @@ defmodule Plug.ConnTest do
 
   test "send_file/5 limits on offset and length" do
     %File.Stat{type: :regular, size: size} = File.stat!(__ENV__.file)
-    :random.seed(:erlang.now)
+    :random.seed(:os.timestamp)
     offset = round(:random.uniform * size)
     length = round((size - offset) * 0.25)
     conn = conn(:get, "/foo") |> send_file(206, __ENV__.file, offset, length)
