@@ -161,7 +161,8 @@ defmodule Plug.Upload do
   defp i(integer), do: Integer.to_string(integer)
 
   defp path(prefix, tmp) do
-    {_mega, sec, mili} = :os.timestamp
-    tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(mili)
+    {_mega, sec, micro} = :os.timestamp
+    scheduler_id = :erlang.system_info(:scheduler_id)
+    tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(micro) <> "-" <> i(scheduler_id)
   end
 end
