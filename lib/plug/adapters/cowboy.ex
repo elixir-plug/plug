@@ -30,11 +30,11 @@ defmodule Plug.Adapters.Cowboy do
 
   # Made public with @doc false for testing.
   @doc false
-  def args(scheme, plug, opts, options) do
-    options
+  def args(scheme, plug, opts, cowboy_options) do
+    cowboy_options
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
-    |> Keyword.put_new(:dispatch, options[:dispatch] || dispatch_for(plug, opts))
-    |> normalize_options(scheme)
+    |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
+    |> normalize_cowboy_options(scheme)
     |> to_args()
   end
 
@@ -52,8 +52,8 @@ defmodule Plug.Adapters.Cowboy do
   """
   @spec http(module(), Keyword.t, Keyword.t) ::
         {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
-  def http(plug, opts, options \\ []) do
-    run(:http, plug, opts, options)
+  def http(plug, opts, cowboy_options \\ []) do
+    run(:http, plug, opts, cowboy_options)
   end
 
   @doc """
@@ -85,9 +85,9 @@ defmodule Plug.Adapters.Cowboy do
   """
   @spec https(module(), Keyword.t, Keyword.t) ::
         {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
-  def https(plug, opts, options \\ []) do
+  def https(plug, opts, cowboy_options \\ []) do
     Application.ensure_all_started(:ssl)
-    run(:https, plug, opts, options)
+    run(:https, plug, opts, cowboy_options)
   end
 
   @doc """
@@ -100,8 +100,8 @@ defmodule Plug.Adapters.Cowboy do
   @doc """
   Returns a child spec to be supervised by your application.
   """
-  def child_spec(scheme, plug, opts, options \\ []) do
-    [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, options)
+  def child_spec(scheme, plug, opts, cowboy_options \\ []) do
+    [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
     ranch_module = case scheme do
       :http  -> :ranch_tcp
       :https -> :ranch_ssl
@@ -111,11 +111,11 @@ defmodule Plug.Adapters.Cowboy do
 
   ## Helpers
 
-  @http_options  [port: 4000]
-  @https_options [port: 4040]
-  @not_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
+  @http_cowboy_options  [port: 4000]
+  @https_cowboy_options [port: 4040]
+  @not_cowboy_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
 
-  defp run(scheme, plug, opts, options) do
+  defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
       {:ok, _} ->
         :ok
@@ -123,28 +123,28 @@ defmodule Plug.Adapters.Cowboy do
         raise "could not start the cowboy application. Please ensure it is listed " <>
               "as a dependency both in deps and application in your mix.exs"
     end
-    apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, options))
+    apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, cowboy_options))
   end
 
-  defp normalize_options(options, :http) do
-    Keyword.merge @http_options, options
+  defp normalize_cowboy_options(cowboy_options, :http) do
+    Keyword.merge @http_cowboy_options, cowboy_options
   end
 
-  defp normalize_options(options, :https) do
-    assert_keys(options, [:keyfile, :certfile])
-    options = Keyword.merge @https_options, options
-    options = Enum.reduce [:keyfile, :certfile, :cacertfile], options, &normalize_ssl_file(&1, &2)
-    options = Enum.reduce [:password], options, &to_char_list(&2, &1)
-    options
+  defp normalize_cowboy_options(cowboy_options, :https) do
+    assert_keys(cowboy_options, [:keyfile, :certfile])
+    cowboy_options = Keyword.merge @https_cowboy_options, cowboy_options
+    cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile], cowboy_options, &normalize_ssl_file(&1, &2)
+    cowboy_options = Enum.reduce [:password], cowboy_options, &to_char_list(&2, &1)
+    cowboy_options
   end
 
-  defp to_args(options) do
-    ref       = options[:ref]
-    acceptors = options[:acceptors] || 100
-    dispatch  = :cowboy_router.compile(options[:dispatch])
-    compress  = options[:compress] || false
-    options   = Keyword.drop(options, @not_options)
-    [ref, acceptors, options, [env: [dispatch: dispatch], compress: compress]]
+  defp to_args(cowboy_options) do
+    ref       = cowboy_options[:ref]
+    acceptors = cowboy_options[:acceptors] || 100
+    dispatch  = :cowboy_router.compile(cowboy_options[:dispatch])
+    compress  = cowboy_options[:compress] || false
+    cowboy_options   = Keyword.drop(cowboy_options, @not_cowboy_options)
+    [ref, acceptors, cowboy_options, [env: [dispatch: dispatch], compress: compress]]
   end
 
   defp build_ref(plug, scheme) do
@@ -156,36 +156,36 @@ defmodule Plug.Adapters.Cowboy do
     [{:_, [ {:_, Plug.Adapters.Cowboy.Handler, {plug, opts}} ]}]
   end
 
-  defp normalize_ssl_file(key, options) do
-    value = options[key]
+  defp normalize_ssl_file(key, cowboy_options) do
+    value = cowboy_options[key]
 
     cond do
       is_nil(value) ->
-        options
+        cowboy_options
       Path.type(value) == :absolute ->
-        put_ssl_file options, key, value
+        put_ssl_file cowboy_options, key, value
       true ->
-        put_ssl_file options, key, Path.expand(value, otp_app(options))
+        put_ssl_file cowboy_options, key, Path.expand(value, otp_app(cowboy_options))
     end
   end
 
-  defp assert_keys(options, keys) do
+  defp assert_keys(cowboy_options, keys) do
     for key <- keys,
-        not Keyword.has_key?(options, key) do
+        not Keyword.has_key?(cowboy_options, key) do
       fail "missing option #{inspect key}"
     end
   end
 
-  defp put_ssl_file(options, key, value) do
+  defp put_ssl_file(cowboy_options, key, value) do
     value = to_char_list(value)
     unless File.exists?(value) do
       fail "the file #{value} required by SSL's #{inspect key} does not exist"
     end
-    Keyword.put(options, key, value)
+    Keyword.put(cowboy_options, key, value)
   end
 
-  defp otp_app(options) do
-    if app = options[:otp_app] do
+  defp otp_app(cowboy_options) do
+    if app = cowboy_options[:otp_app] do
       Application.app_dir(app, "priv")
     else
       fail "to use relative certificate with https, the :otp_app " <>
@@ -193,11 +193,11 @@ defmodule Plug.Adapters.Cowboy do
     end
   end
 
-  defp to_char_list(options, key) do
-    if value = options[key] do
-      Keyword.put options, key, to_char_list(value)
+  defp to_char_list(cowboy_options, key) do
+    if value = cowboy_options[key] do
+      Keyword.put cowboy_options, key, to_char_list(value)
     else
-      options
+      cowboy_options
     end
   end
 
