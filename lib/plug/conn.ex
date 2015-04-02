@@ -31,8 +31,11 @@ defmodule Plug.Conn do
 
   ## Fetchable fields
 
-  These fields contain request information that is not populated until they are fetched using using `fetch_params/2`.
-  If you access these fields before retrieving them with `fetch_params/2`, they will be returned as `Plug.Conn.Unfetched` structs.
+  The request information in these fields is not populated until it is fetched using
+  using the associated `fetch_` function. For example, the `params` field uses `fetch_params/2`.
+
+  If you access these fields before fetching them, they will be returned as 
+  `Plug.Conn.Unfetched` structs.
 
   * `cookies`- the request cookies with the response cookies
   * `params` - the request params
