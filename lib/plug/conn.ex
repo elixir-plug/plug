@@ -12,7 +12,7 @@ defmodule Plug.Conn do
 
   ## Request fields
 
-  Those fields contain request information:
+  These fields contain request information:
 
   * `host` - the requested host as a binary, example: `"www.example.com"`
   * `method` - the request method as a binary, example: `"GET"`
@@ -31,8 +31,11 @@ defmodule Plug.Conn do
 
   ## Fetchable fields
 
-  Those fields contain request information and they need to be explicitly fetched.
-  Before fetching those fields return a `Plug.Conn.Unfetched` record.
+  The request information in these fields is not populated until it is fetched using
+  the associated `fetch_` function. For example, the `params` field uses `fetch_params/2`.
+
+  If you access these fields before fetching them, they will be returned as 
+  `Plug.Conn.Unfetched` structs.
 
   * `cookies`- the request cookies with the response cookies
   * `params` - the request params
@@ -40,7 +43,7 @@ defmodule Plug.Conn do
 
   ## Response fields
 
-  Those fields contain response information:
+  These fields contain response information:
 
   * `resp_body` - the response body, by default is an empty string. It is set
     to nil after the response is set, except for test connections.
@@ -73,7 +76,7 @@ defmodule Plug.Conn do
 
   ## Private fields
 
-  Those fields are reserved for libraries/framework usage.
+  These fields are reserved for libraries/framework usage.
 
   * `adapter` - holds the adapter information in a tuple
   * `private` - shared library data as a dict
