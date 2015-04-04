@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/elixir-lang/plug.svg?branch=master)](https://travis-ci.org/elixir-lang/plug)
 [![Inline docs](http://inch-ci.org/github/elixir-lang/plug.svg?branch=master)](http://inch-ci.org/github/elixir-lang/plug)
+[![Hex.pm](https://img.shields.io/hexpm/v/plug.svg)](https://hex.pm/packages/plug)
 
 Plug is:
 
