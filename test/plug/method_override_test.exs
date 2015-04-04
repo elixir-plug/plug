@@ -24,6 +24,14 @@ defmodule Plug.MethodOverrideTest do
     assert conn.method == "DELETE"
   end
 
+  test "non-POST requests are not modified" do
+    conn = call(conn(:get, "/", "_method=delete", headers: [@content_type_header]))
+    assert conn.method == "GET"
+
+    conn = call(conn(:put, "/", "_method=delete", headers: [@content_type_header]))
+    assert conn.method == "PUT"
+  end
+
   @parsers  Plug.Parsers.init(parsers: [Plug.Parsers.URLENCODED])
   @override Plug.MethodOverride.init([])
 

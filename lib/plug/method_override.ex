@@ -25,13 +25,10 @@ defmodule Plug.MethodOverride do
 
   def init([]), do: []
 
-  def call(conn, []) do
-    if conn.method == "POST" do
-      override_method(conn)
-    else
-      conn
-    end
-  end
+  def call(%Plug.Conn{method: "POST"} = conn, []),
+    do: override_method(conn)
+  def call(%Plug.Conn{} = conn, []),
+    do: conn
 
   @spec override_method(Plug.Conn.t) :: Plug.Conn.t
   defp override_method(conn) do
