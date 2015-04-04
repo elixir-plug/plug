@@ -43,6 +43,7 @@ defmodule Plug.Conn.Status do
     unsupported_media_type: 415,
     requested_range_not_satisfiable: 416,
     expectation_failed: 417,
+    i_am_a_teapot: 418,
     unprocessable_entity: 422,
     locked: 423,
     failed_dependency: 424,
