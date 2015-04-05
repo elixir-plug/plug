@@ -44,7 +44,7 @@ defmodule Plug.BuilderTest do
   end
 
   defmodule Halter do
-    use Plug.Builder
+    use Plug.Builder, log_on_halt: :debug
 
     plug :step, :first
     plug :step, :second

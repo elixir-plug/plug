@@ -95,9 +95,10 @@ defmodule Plug.Builder do
   @type plug :: module | atom
 
   @doc false
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote do
       @behaviour Plug
+      @plug_builder_opts unquote(opts)
 
       def init(opts) do
         opts
@@ -119,13 +120,14 @@ defmodule Plug.Builder do
 
   @doc false
   defmacro __before_compile__(env) do
-    plugs = Module.get_attribute(env.module, :plugs)
+    plugs        = Module.get_attribute(env.module, :plugs)
+    builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
 
     if plugs == [] do
       raise "no plugs have been defined in #{inspect env.module}"
     end
 
-    {conn, body} = Plug.Builder.compile(plugs)
+    {conn, body} = Plug.Builder.compile(plugs, builder_opts)
 
     quote do
       defp plug_builder_call(unquote(conn), _), do: unquote(body)
@@ -173,10 +175,10 @@ defmodule Plug.Builder do
       ])
 
   """
-  @spec compile([{plug, Plug.opts, Macro.t}]) :: {Macro.t, Macro.t}
-  def compile(pipeline) do
+  @spec compile([{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
+  def compile(pipeline, builder_opts \\ []) do
     conn = quote do: conn
-    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2))}
+    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2, builder_opts))}
   end
 
   # Initializes the options of a plug at compile time.
@@ -204,7 +206,7 @@ defmodule Plug.Builder do
   # `acc` is a series of nested plug calls in the form of
   # plug3(plug2(plug1(conn))). `quote_plug` wraps a new plug around that series
   # of calls.
-  defp quote_plug({plug_type, plug, opts, guards}, acc) do
+  defp quote_plug({plug_type, plug, opts, guards}, acc, builder_opts) do
     call = quote_plug_call(plug_type, plug, opts)
 
     error_message = case plug_type do
@@ -220,8 +222,11 @@ defmodule Plug.Builder do
     quote do
       case unquote(compile_guards(call, guards)) do
         %Plug.Conn{halted: true} = conn ->
-          require Logger
-          Logger.debug unquote(halt_message)
+          if log_on_halt_level = unquote(builder_opts[:log_on_halt]) do
+            require Logger
+            Logger.log(log_on_halt_level, unquote(halt_message))
+          end
+
           conn
         %Plug.Conn{} = conn ->
           unquote(acc)

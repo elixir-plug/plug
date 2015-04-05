@@ -2,10 +2,6 @@ defmodule Plug.StaticTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  setup do
-    Logger.disable(self)
-  end
-
   defmodule MyPlug do
     use Plug.Builder
 
