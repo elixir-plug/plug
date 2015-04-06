@@ -31,6 +31,13 @@ defmodule Plug.LoggerTest do
     end
   end
 
+  defmodule MyHaltingPlug do
+    use Plug.Builder, log_on_halt: :debug
+
+    plug :halter
+    defp halter(conn, _), do: halt(conn)
+  end
+
   defp capture_log(fun) do
     data = capture_io(:user, fn ->
       Process.put(:capture_log, fun.())
@@ -77,5 +84,13 @@ defmodule Plug.LoggerTest do
        conn(:get, "/hello/world") |> MyChunkedPlug.call([])
     end)
     assert Regex.match?(~r/Chunked 200 in [0-9]+[µm]s/u, second_message)
+  end
+
+  test "logs halted connections if :log_on_halt is true" do
+    {_conn, [output]} = capture_log fn ->
+      conn(:get, "/foo") |> MyHaltingPlug.call([])
+    end
+
+    assert output =~ "Plug.LoggerTest.MyHaltingPlug halted in :halter/2"
   end
 end

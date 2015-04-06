@@ -99,7 +99,7 @@ defmodule Plug.BuilderTest do
     assert conn.assigns[:entered_stack] == true
   end
 
-  test "halt/1 halts the plug stack" do
+  test "halt/2 halts the plug stack" do
     conn = conn(:get, "/") |> Halter.call([])
     assert conn.halted
     assert conn.assigns[:first]
