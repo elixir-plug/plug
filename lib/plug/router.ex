@@ -142,15 +142,21 @@ defmodule Plug.Router do
   After a match is found, the block given as `do/end` is stored
   as a function in the connection. This function is then retrieved
   and invoked in the `dispatch` plug.
+
+  ## Options
+
+  When used, the following options are accepted by `Plug.Router`:
+
+    * `:log_on_halt` - accepts the level to log whenever the request is halted
   """
 
   @doc false
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote location: :keep do
       import Plug.Router
       @before_compile Plug.Router
 
-      use Plug.Builder
+      use Plug.Builder, unquote(opts)
 
       defp match(conn, _opts) do
         Plug.Conn.put_private(conn,

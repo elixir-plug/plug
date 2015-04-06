@@ -31,6 +31,12 @@ defmodule Plug.Builder do
   `Plug.Builder` also imports the `Plug.Conn` module, making functions like
   `send_resp/3` available.
 
+  ## Options
+
+  When used, the following options are accepted by `Plug.Builder`:
+
+    * `:log_on_halt` - accepts the level to log whenever the request is halted
+
   ## Plug behaviour
 
   Internally, `Plug.Builder` implements the `Plug` behaviour, which means both
@@ -89,7 +95,6 @@ defmodule Plug.Builder do
           halt(conn)
         end
       end
-
   """
 
   @type plug :: module | atom
