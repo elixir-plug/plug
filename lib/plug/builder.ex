@@ -71,7 +71,6 @@ defmodule Plug.Builder do
         end
       end
 
-
   ## Halting a plug pipeline
 
   A plug pipeline can be halted with `Plug.Conn.halt/1`. The builder will
@@ -89,6 +88,20 @@ defmodule Plug.Builder do
           halt(conn)
         end
       end
+
+  You can log when a connection is halted through the `:log_on_halt` option; see
+  the "Options" section for more information.
+
+  ## Options
+
+  Here is a list of options supported by `Plug.Builder`:
+
+    * `:log_on_halt` - specifies whether to log when a connection is halted
+      through `Plug.Conn.halt/1`. The value of this option must be an atom
+      representing the log level with which this information should be logged;
+      the supported log levels are the ones used by Elixir's `Logger`, i.e.,
+      `:debug`, `:info`, `:warn`, and `:error`. This option defaults to `nil`,
+      meaning *no logging* happens when a connection is halted.
 
   """
 

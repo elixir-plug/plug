@@ -142,15 +142,24 @@ defmodule Plug.Router do
   After a match is found, the block given as `do/end` is stored
   as a function in the connection. This function is then retrieved
   and invoked in the `dispatch` plug.
+
+  ## Options
+
+  For now, `Plug.Router` only support one option that is actually a
+  `Plug.Builder` option: `:log_on_halt`. See the documentation for
+  `Plug.Builder` to learn more.
+
   """
 
   @doc false
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote location: :keep do
       import Plug.Router
       @before_compile Plug.Router
 
-      use Plug.Builder
+      builder_opts = Keyword.take(unquote(opts), [:log_on_halt])
+
+      use Plug.Builder, builder_opts
 
       defp match(conn, _opts) do
         Plug.Conn.put_private(conn,
