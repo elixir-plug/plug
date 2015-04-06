@@ -127,7 +127,7 @@ defmodule Plug.Builder do
       raise "no plugs have been defined in #{inspect env.module}"
     end
 
-    {conn, body} = Plug.Builder.compile(plugs, builder_opts)
+    {conn, body} = Plug.Builder.compile(plugs, env, builder_opts)
 
     quote do
       defp plug_builder_call(unquote(conn), _), do: unquote(body)
@@ -176,9 +176,9 @@ defmodule Plug.Builder do
 
   """
   @spec compile([{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
-  def compile(pipeline, builder_opts \\ []) do
+  def compile(pipeline, env, builder_opts \\ []) do
     conn = quote do: conn
-    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2, builder_opts))}
+    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2, env, builder_opts))}
   end
 
   # Initializes the options of a plug at compile time.
@@ -206,7 +206,7 @@ defmodule Plug.Builder do
   # `acc` is a series of nested plug calls in the form of
   # plug3(plug2(plug1(conn))). `quote_plug` wraps a new plug around that series
   # of calls.
-  defp quote_plug({plug_type, plug, opts, guards}, acc, builder_opts) do
+  defp quote_plug({plug_type, plug, opts, guards}, acc, env, builder_opts) do
     call = quote_plug_call(plug_type, plug, opts)
 
     error_message = case plug_type do
@@ -214,19 +214,10 @@ defmodule Plug.Builder do
       :function -> "expected #{inspect plug}/2 to return a Plug.Conn"
     end
 
-    halt_message = case plug_type do
-      :module   -> "plug pipeline halted in #{inspect plug}.call/2"
-      :function -> "plug pipeline halted in #{inspect plug}/2"
-    end
-
     quote do
       case unquote(compile_guards(call, guards)) do
         %Plug.Conn{halted: true} = conn ->
-          if log_on_halt_level = unquote(builder_opts[:log_on_halt]) do
-            require Logger
-            Logger.log(log_on_halt_level, unquote(halt_message))
-          end
-
+          unquote(log_halt(plug_type, plug, env, builder_opts))
           conn
         %Plug.Conn{} = conn ->
           unquote(acc)
@@ -254,6 +245,22 @@ defmodule Plug.Builder do
         true when unquote(guards) -> unquote(call)
         true -> conn
       end
+    end
+  end
+
+  defp log_halt(plug_type, plug, env, builder_opts) do
+    if level = builder_opts[:log_on_halt] do
+      message = case plug_type do
+        :module   -> "#{inspect env.module} halted in #{inspect plug}.call/2"
+        :function -> "#{inspect env.module} halted in #{inspect plug}/2"
+      end
+
+      quote do
+        require Logger
+        Logger.unquote(level)(unquote(message))
+      end
+    else
+      nil
     end
   end
 end
