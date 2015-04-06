@@ -1,5 +1,15 @@
 ## Changelog
 
+## v0.11.2-dev
+
+* Enhancements
+  * Add `:log_on_halt` option to `Plug.Builder` and `Plug.Router`
+  * Use raw files and delayed writes on upload
+
+* Bug fixes
+  * Do not read the whole request body at once
+  * Improve performance of url encoded params
+
 ## v0.11.1
 
 * Enhancements
