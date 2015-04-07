@@ -131,12 +131,6 @@ defmodule Plug.Parsers do
   def init(opts) do
     parsers = Keyword.get(opts, :parsers) || raise_missing_parsers
 
-    if accept = opts[:accept] do
-      IO.write :stderr, "warning: :accept in Plug.Parsers is deprecated, please use :pass instead\n" <>
-                        Exception.format_stacktrace()
-      opts = Keyword.put(opts, :pass, accept)
-    end
-
     opts
     |> Keyword.put(:parsers, convert_parsers(parsers))
     |> Keyword.put_new(:length, 8_000_000)
@@ -144,7 +138,7 @@ defmodule Plug.Parsers do
   end
 
   defp raise_missing_parsers do
-    raise ArgumentError, message: "Plug.Parsers expects a set of parsers to be given in :parsers"
+    raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
   end
 
   defp convert_parsers(parsers) do

@@ -54,7 +54,15 @@ defmodule Plug.Test do
   """
   @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
-    Plug.Adapters.Test.Conn.conn(method, path, params_or_body, opts)
+    headers = opts[:headers] || []
+    conn    = %Plug.Conn{req_headers: headers}
+
+    if is_binary(params_or_body) and is_nil(List.keyfind(headers, "content-type", 0)) do
+      raise ArgumentError, "a content-type header is required when setting " <>
+                           "a binary body in a test connection"
+    end
+
+    Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
   end
 
   @doc """
@@ -113,12 +121,5 @@ defmodule Plug.Test do
     Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
       {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
     end
-  end
-
-  @doc false
-  def recyle(new_conn, old_conn) do
-    IO.write :stderr, "recycle/2 is deprecated in favor of recycle_cookies/2\n" <>
-                      Exception.format_stacktrace()
-    recycle_cookies(new_conn, old_conn)
   end
 end

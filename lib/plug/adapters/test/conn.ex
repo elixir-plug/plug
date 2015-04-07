@@ -4,14 +4,14 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Test helpers
 
-  def conn(method, uri, body_or_params, opts) do
+  def conn(conn, method, uri, body_or_params) do
     maybe_flush()
 
     uri    = URI.parse(uri)
     method = method |> to_string |> String.upcase
     query  = uri.query || ""
 
-    {body, params, headers} = body_or_params(body_or_params, query, opts[:headers] || [])
+    {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
     state = %{method: method, params: params, req_body: body, chunks: nil}
 
     %Plug.Conn{
@@ -23,7 +23,7 @@ defmodule Plug.Adapters.Test.Conn do
       port: uri.port || 80,
       peer: {{127, 0, 0, 1}, 111317},
       remote_ip: {127, 0, 0, 1},
-      req_headers: headers,
+      req_headers: req_headers,
       query_string: query,
       params: params || %Plug.Conn.Unfetched{aspect: :params},
       scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom
@@ -86,9 +86,6 @@ defmodule Plug.Adapters.Test.Conn do
     do: {"", nil, headers}
 
   defp body_or_params(body, _query, headers) when is_binary(body) do
-    unless List.keyfind(headers, "content-type", 0) do
-      raise ArgumentError, message: "a content-type header is required when setting the body in a test connection"
-    end
     {body, nil, headers}
   end
 
