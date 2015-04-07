@@ -54,14 +54,16 @@ defmodule Plug.Test do
   """
   @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
   def conn(method, path, params_or_body \\ nil, opts \\ []) do
-    headers = opts[:headers] || []
-    conn    = %Plug.Conn{req_headers: headers}
+    headers =
+      if opts[:headers] do
+        IO.write :stderr, "warning: passing :headers to conn/4 is deprecated, " <>
+                          "please use put_req_header/3 instead\n" <> Exception.format_stacktrace
+        opts[:headers]
+      else
+        []
+      end
 
-    if is_binary(params_or_body) and is_nil(List.keyfind(headers, "content-type", 0)) do
-      raise ArgumentError, "a content-type header is required when setting " <>
-                           "a binary body in a test connection"
-    end
-
+    conn = %Plug.Conn{req_headers: headers}
     Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
   end
 

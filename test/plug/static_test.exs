@@ -41,8 +41,9 @@ defmodule Plug.StaticTest do
     assert [etag] = get_resp_header(conn, "etag")
     assert get_resp_header(conn, "cache-control")  == ["public"]
 
-    conn = conn(:get, "/public/fixtures/static.txt", nil,
-                headers: [{"if-none-match", etag}]) |> call
+    conn = conn(:get, "/public/fixtures/static.txt", nil)
+           |> put_req_header("if-none-match", etag)
+           |> call
     assert conn.status == 304
     assert conn.resp_body == ""
     assert get_resp_header(conn, "cache-control")  == ["public"]
@@ -116,22 +117,25 @@ defmodule Plug.StaticTest do
   end
 
   test "serves gzipped file" do
-    conn = call conn(:get, "/public/fixtures/static.txt", [],
-                     headers: [{"accept-encoding", "gzip"}])
+    conn = conn(:get, "/public/fixtures/static.txt", [])
+           |> put_req_header("accept-encoding", "gzip")
+           |> call
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
 
-    conn = call conn(:get, "/public/fixtures/static.txt", [],
-                     headers: [{"accept-encoding", "*"}])
+    conn = conn(:get, "/public/fixtures/static.txt", [])
+           |> put_req_header("accept-encoding", "gzip")
+           |> call
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
   end
 
   test "only serves gzipped file if available" do
-    conn = call conn(:get, "/public/fixtures/static%20with%20spaces.txt", [],
-                     headers: [{"accept-encoding", "gzip"}])
+    conn = conn(:get, "/public/fixtures/static%20with%20spaces.txt", [])
+           |> put_req_header("accept-encoding", "gzip")
+           |> call
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-encoding") != ["gzip"]

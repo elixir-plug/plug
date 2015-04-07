@@ -376,21 +376,24 @@ defmodule Plug.ConnTest do
   end
 
   test "req_headers/1" do
-    conn = conn(:get, "/foo", [], headers: [{"foo", "bar"}, {"baz", "bat"}])
+    conn =
+      conn(:get, "/foo", [])
+      |> put_req_header("foo", "bar")
+      |> put_req_header("baz", "bat")
     assert get_req_header(conn, "foo") == ["bar"]
     assert get_req_header(conn, "baz") == ["bat"]
   end
 
   test "read_body/1" do
     body = :binary.copy("abcdefghij", 1000)
-    conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
+    conn = conn(:post, "/foo", body) |> put_req_header("content-type", "text/plain")
     assert {:ok, ^body, conn} = read_body(conn)
     assert {:ok, "", _} = read_body(conn)
   end
 
   test "read_body/2 partial retrieval" do
     body = :binary.copy("abcdefghij", 100)
-    conn = conn(:post, "/foo", body, headers: [{"content-type", "text/plain"}])
+    conn = conn(:post, "/foo", body) |> put_req_header("content-type", "text/plain")
     assert {:more, _, _} = read_body(conn, length: 100)
   end
 
@@ -476,7 +479,8 @@ defmodule Plug.ConnTest do
   end
 
   test "recycle_cookies/2" do
-    conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"], headers: [{"content-type", "text/plain"}])
+    conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"])
+           |> put_req_header("content-type", "text/plain")
            |> put_req_cookie("req_cookie", "req_cookie")
            |> put_req_cookie("del_cookie", "del_cookie")
            |> put_req_cookie("over_cookie", "pre_cookie")

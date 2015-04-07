@@ -16,6 +16,10 @@ defmodule Phoenix.Parsers.JSONTest do
     end
   end
 
+  def json_conn(body, content_type \\ "application/json") do
+    conn(:post, "/", body) |> put_req_header("content-type", content_type)
+  end
+
   def parse(conn, opts \\ []) do
     opts = opts
            |> Keyword.put_new(:parsers, [:json])
@@ -24,40 +28,34 @@ defmodule Phoenix.Parsers.JSONTest do
   end
 
   test "parses the request body" do
-    headers = [{"content-type", "application/json"}]
-    conn = parse(conn(:post, "/", "{id: 1}", headers: headers))
+    conn = json_conn("{id: 1}") |> parse()
     assert conn.params["id"] == 1
   end
 
   test "parses the request body when it is an array" do
-    headers = [{"content-type", "application/json"}]
-    conn = parse(conn(:post, "/", "[1, 2, 3]", headers: headers))
+    conn = json_conn("[1, 2, 3]") |> parse()
     assert conn.params["_json"] == [1, 2, 3]
   end
 
   test "handles empty body as blank map" do
-    headers = [{"content-type", "application/json"}]
-    conn = parse(conn(:post, "/", nil, headers: headers))
+    conn = json_conn(nil) |> parse()
     assert conn.params == %{}
   end
 
   test "parses json-parseable content types" do
-    headers = [{"content-type", "application/vnd.api+json"}]
-    conn = parse(conn(:post, "/", "{id: 1}", headers: headers))
+    conn = json_conn("{id: 1}", "application/vnd.api+json") |> parse()
     assert conn.params["id"] == 1
   end
 
   test "expects a json encoder" do
-    headers = [{"content-type", "application/json"}]
     assert_raise ArgumentError, "JSON parser expects a :json_decoder option", fn ->
-      parse(conn(:post, "/", nil, headers: headers), json_decoder: nil)
+      json_conn(nil) |> parse(json_decoder: nil)
     end
   end
 
   test "raises on too large bodies" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError, fn ->
-      headers = [{"content-type", "application/json"}]
-      parse(conn(:post, "/", "foo=baz", headers: headers), length: 5)
+      json_conn("foo=baz") |> parse(length: 5)
     end
     assert Plug.Exception.status(exception) == 413
   end
@@ -65,8 +63,7 @@ defmodule Phoenix.Parsers.JSONTest do
   test "raises ParseError with malformed JSON" do
     exception = assert_raise Plug.Parsers.ParseError,
                              ~r/malformed request, got RuntimeError with message oops/, fn ->
-      headers = [{"content-type", "application/json"}]
-      parse(conn(:post, "/", "invalid json", headers: headers))
+      json_conn("invalid json") |> parse()
     end
     assert Plug.Exception.status(exception) == 400
   end

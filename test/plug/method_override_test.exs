@@ -2,33 +2,36 @@ defmodule Plug.MethodOverrideTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  @content_type_header {"content-type", "application/x-www-form-urlencoded"}
+  def urlencoded_conn(method, body) do
+    conn(method, "/", body)
+    |> put_req_header("content-type", "application/x-www-form-urlencoded")
+  end
 
   test "converts POST to DELETE when _method=DELETE param is specified" do
-    conn = call(conn(:post, "/", "_method=DELETE", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:post, "_method=DELETE")
     assert conn.method == "DELETE"
   end
 
   test "converts POST to PUT when _method=PUT param is specified" do
-    conn = call(conn(:post, "/", "_method=PUT", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:post, "_method=PUT")
     assert conn.method == "PUT"
   end
 
   test "converts POST to PATCH when _method=PATCH param is specified" do
-    conn = call(conn(:post, "/", "_method=PATCH", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:post, "_method=PATCH")
     assert conn.method == "PATCH"
   end
 
   test "the _method parameter works with non-uppercase methods" do
-    conn = call(conn(:post, "/", "_method=delete", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:post, "_method=delete")
     assert conn.method == "DELETE"
   end
 
   test "non-POST requests are not modified" do
-    conn = call(conn(:get, "/", "_method=delete", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:get, "_method=DELETE")
     assert conn.method == "GET"
 
-    conn = call(conn(:put, "/", "_method=delete", headers: [@content_type_header]))
+    conn = call urlencoded_conn(:put, "_method=DELETE")
     assert conn.method == "PUT"
   end
 

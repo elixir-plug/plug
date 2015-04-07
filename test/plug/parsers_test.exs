@@ -20,19 +20,16 @@ defmodule Plug.ParsersTest do
   end
 
   test "ignore bodies unless post/put/match/delete" do
-    headers = [{"content-type", "application/x-www-form-urlencoded"}]
-    conn = parse(conn(:get, "/?foo=bar", "foo=baz", headers: headers))
+    conn = conn(:get, "/?foo=bar", "foo=baz")
+           |> put_req_header("content-type", "application/x-www-form-urlencoded")
+           |> parse()
     assert conn.params["foo"] == "bar"
-
-    headers = [{"content-type", "application/x-www-form-urlencoded"}]
-    conn = parse(conn(:delete, "/?foo=bar", "bar=foo", headers: headers))
-    assert conn.params["foo"] == "bar"
-    assert conn.params["bar"] == "foo"
   end
 
   test "parses url encoded bodies" do
-    headers = [{"content-type", "application/x-www-form-urlencoded"}]
-    conn = parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers))
+    conn = conn(:post, "/?foo=bar", "foo=baz")
+           |> put_req_header("content-type", "application/x-www-form-urlencoded")
+           |> parse()
     assert conn.params["foo"] == "baz"
   end
 
@@ -47,8 +44,9 @@ defmodule Plug.ParsersTest do
   test "raises on too large bodies" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError,
                              ~r/the request is too large/, fn ->
-      headers = [{"content-type", "application/x-www-form-urlencoded"}]
-      parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), length: 5)
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(length: 5)
     end
     assert Plug.Exception.status(exception) == 413
   end
@@ -56,42 +54,48 @@ defmodule Plug.ParsersTest do
   test "raises when request cannot be processed" do
     exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError,
                              "unsupported media type text/plain", fn ->
-      headers = [{"content-type", "text/plain"}]
-      parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers))
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "text/plain")
+      |> parse()
     end
     assert Plug.Exception.status(exception) == 415
   end
 
   test "does not raise when request cannot be processed if accepts all mimes" do
-    headers = [{"content-type", "text/plain"}]
-    conn = parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), pass: ["*/*"])
+    conn =
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "text/plain")
+      |> parse(pass: ["*/*"])
     assert conn.params["foo"] == "bar"
   end
 
   test "does not raise when request cannot be processed if mime accepted" do
-    headers = [{"content-type", "text/plain"}]
-    conn = parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), pass: [
-      "text/plain", "application/json"
-    ])
+    conn =
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "text/plain")
+      |> parse(pass: ["text/plain", "application/json"])
     assert conn.params["foo"] == "bar"
 
-    headers = [{"content-type", "application/json"}]
-    conn = parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), pass: [
-      "text/plain", "application/json"
-    ])
+    conn =
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/json")
+      |> parse(pass: ["text/plain", "application/json"])
     assert conn.params["foo"] == "bar"
   end
 
   test "does not raise when request cannot be processed if accepts mime range" do
-    headers = [{"content-type", "text/plain"}]
-    conn = parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), pass: ["text/*"])
+    conn =
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "text/plain")
+      |> parse(pass: ["text/plain", "text/*"])
     assert conn.params["foo"] == "bar"
   end
 
   test "raises when request cannot be processed if mime range not accepted" do
     exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
-      headers = [{"content-type", "application/json"}]
-      parse(conn(:post, "/?foo=bar", "foo=baz", headers: headers), pass: ["text/*"])
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/json")
+      |> parse(pass: ["text/plain", "text/*"])
     end
     assert Plug.Exception.status(exception) == 415
   end

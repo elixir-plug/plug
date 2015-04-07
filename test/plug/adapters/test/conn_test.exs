@@ -4,7 +4,7 @@ defmodule Plug.Adapters.Test.ConnTest do
   import Plug.Test
 
   test "read_req_body/2" do
-    conn = conn(:get, "/", "abcdefghij", headers: [{"content-type", "text/plain"}])
+    conn = conn(:get, "/", "abcdefghij")
     {adapter, state} = conn.adapter
 
     assert {:more, "abcde", state} = adapter.read_req_body(state, length: 5)
@@ -38,12 +38,6 @@ defmodule Plug.Adapters.Test.ConnTest do
     {adapter, state} = conn.adapter
     assert conn.req_headers == []
     assert {:ok, "", _state} = adapter.read_req_body(state, length: 10)
-  end
-
-  test "custom body requires content-type" do
-    assert_raise ArgumentError, fn ->
-      conn(:get, "/", "abcdefgh")
-    end
   end
 
   test "custom params sets content-type to multipart/mixed" do

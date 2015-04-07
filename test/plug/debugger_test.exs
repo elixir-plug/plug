@@ -120,7 +120,8 @@ defmodule Plug.DebuggerTest do
 
   test "shows headers" do
     conn =
-      conn(:get, "/foo/bar?baz=bat", [], headers: [{"my-header", "my-value"}])
+      conn(:get, "/foo/bar?baz=bat", [])
+      |> put_req_header("my-header", "my-value")
       |> render([], fn -> raise "oops" end)
 
     assert conn.resp_body =~ "<h3>Headers</h3>"
