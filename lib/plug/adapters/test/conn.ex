@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Test.Conn do
     {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
     state = %{method: method, params: params, req_body: body, chunks: nil}
 
-    %Plug.Conn{
+    %Plug.Conn{conn |
       adapter: {__MODULE__, state},
       host: uri.host || "www.example.com",
       method: method,
@@ -26,8 +26,7 @@ defmodule Plug.Adapters.Test.Conn do
       req_headers: req_headers,
       query_string: query,
       params: params || %Plug.Conn.Unfetched{aspect: :params},
-      scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom
-   }
+      scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom}
   end
 
   ## Connection adapter

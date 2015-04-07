@@ -5,6 +5,13 @@ defmodule Plug.ConnTest do
   alias Plug.Conn
   alias Plug.ProcessStore
 
+  test "test adapter builds on connection" do
+    conn = Plug.Adapters.Test.Conn.conn(%Plug.Conn{private: %{hello: :world}}, :post, "/hello", nil)
+    assert conn.method == "POST"
+    assert conn.path_info == ["hello"]
+    assert conn.private.hello == :world
+  end
+
   test "inspect/2" do
     assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
     refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"
@@ -375,13 +382,18 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == "HELLO"
   end
 
-  test "req_headers/1" do
-    conn =
-      conn(:get, "/foo", [])
-      |> put_req_header("foo", "bar")
-      |> put_req_header("baz", "bat")
+  test "get_req_header/2, put_req_header/3 and delete_req_header/2" do
+    conn = conn(:get, "/")
+    assert get_req_header(conn, "foo") == []
+
+    conn = put_req_header(conn, "foo", "bar")
     assert get_req_header(conn, "foo") == ["bar"]
-    assert get_req_header(conn, "baz") == ["bat"]
+
+    conn = put_req_header(conn, "foo", "baz")
+    assert get_req_header(conn, "foo") == ["baz"]
+
+    conn = delete_req_header(conn, "foo")
+    assert get_req_header(conn, "foo") == []
   end
 
   test "read_body/1" do
@@ -480,7 +492,6 @@ defmodule Plug.ConnTest do
 
   test "recycle_cookies/2" do
     conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"])
-           |> put_req_header("content-type", "text/plain")
            |> put_req_cookie("req_cookie", "req_cookie")
            |> put_req_cookie("del_cookie", "del_cookie")
            |> put_req_cookie("over_cookie", "pre_cookie")
@@ -488,11 +499,7 @@ defmodule Plug.ConnTest do
            |> put_resp_cookie("resp_cookie", "resp_cookie")
            |> delete_resp_cookie("del_cookie")
 
-    conn = recycle_cookies(conn(:get, "/"), conn)
-    assert conn.path_info == []
-
-    conn = conn |> fetch_params |> fetch_cookies
-    assert conn.params  == %{}
+    conn = conn(:get, "/") |> recycle_cookies(conn) |> fetch_cookies()
     assert conn.cookies == %{"req_cookie"  => "req_cookie",
                              "over_cookie" => "pos_cookie",
                              "resp_cookie" => "resp_cookie"}

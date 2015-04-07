@@ -1,5 +1,13 @@
 ## Changelog
 
+## v0.11.3
+
+* Bug fixes
+  * Ensure test adapter reuses the given connection
+
+* Deprecations
+  * The `:headers` option in `Plug.Test.conn/4` is deprecated in favor of `put_req_header/3`
+
 ## v0.11.2
 
 * Enhancements
@@ -9,6 +17,9 @@
 * Bug fixes
   * Do not read the whole request body at once
   * Improve performance of url encoded params
+
+* Deprecations
+  * `Plug.Builder.compile/1` and `Plug.Builder.compile/2` are deprecated in favor of explicit `Plug.Builder.compile/3`
 
 ## v0.11.1
 
