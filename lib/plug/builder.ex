@@ -132,7 +132,7 @@ defmodule Plug.Builder do
       raise "no plugs have been defined in #{inspect env.module}"
     end
 
-    {conn, body} = Plug.Builder.compile(plugs, env, builder_opts)
+    {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
 
     quote do
       defp plug_builder_call(unquote(conn), _), do: unquote(body)
@@ -158,6 +158,13 @@ defmodule Plug.Builder do
     end
   end
 
+  @doc false
+  def compile(pipeline, build_opts \\ []) do
+    IO.write :stderr, "warning: Plug.Builder.compile/1 and compile/2 is deprecated, " <>
+                      "please use compile/3 instead\n" <> Exception.format_stacktrace()
+    compile(__ENV__, pipeline, build_opts)
+  end
+
   @doc """
   Compiles a plug pipeline.
 
@@ -174,14 +181,14 @@ defmodule Plug.Builder do
 
   ## Examples
 
-      Plug.Builder.compile([
+      Plug.Builder.compile(env, [
         {Plug.Logger, [], true}, # no guards, as added by the Plug.Builder.plug/2 macro
         {Plug.Head, [], quote(do: a when is_binary(a))}
-      ])
+      ], [])
 
   """
-  @spec compile([{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
-  def compile(pipeline, env, builder_opts \\ []) do
+  @spec compile(Macro.Env.t, [{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
+  def compile(env, pipeline, builder_opts) do
     conn = quote do: conn
     {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2, env, builder_opts))}
   end

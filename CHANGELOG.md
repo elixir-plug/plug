@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.11.2-dev
+## v0.11.2
 
 * Enhancements
   * Add `:log_on_halt` option to `Plug.Builder` and `Plug.Router`
