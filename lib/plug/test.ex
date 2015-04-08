@@ -11,7 +11,6 @@ defmodule Plug.Test do
 
     * import all the functions from this module
     * import all the functions from the `Plug.Conn` module
-
   """
 
   @doc false
@@ -43,7 +42,8 @@ defmodule Plug.Test do
     keys;
 
   The only option supported so far is `:headers`, which expects a
-  list of headers.
+  list of headers. However, this option is now deprecated in favour of using
+  `put_req_header/3` instead.
 
   ## Examples
 
