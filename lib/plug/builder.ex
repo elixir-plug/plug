@@ -50,14 +50,14 @@ defmodule Plug.Builder do
   Both the `init/1` and `call/2` functions defined by `Plug.Builder` can be
   manually overridden. For example, the `init/1` function provided by
   `Plug.Builder` returns the option that it receives as an argument, but its
-  behavior can be customized:
+  behaviour can be customized:
 
       defmodule PlugWithCustomOptions do
         use Plug.Builder
         plug Plug.Logger
 
-        def init(_opts) do
-          "Options are for the weak!"
+        def init(opts) do
+          opts
         end
       end
 
