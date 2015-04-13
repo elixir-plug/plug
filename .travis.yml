@@ -4,13 +4,17 @@ elixir:
   - 1.0.1
   - 1.0.2
   - 1.0.3
+otp_release:
+  - 17.0
+  - 17.3
+matrix:
+  include:
+    - elixir: 1.0.4
+      otp_release: 17.5
 sudo: false # to use faster container based build environment
 notifications:
   recipients:
     - jose.valim@plataformatec.com.br
-otp_release:
-  - 17.0
-  - 17.3
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
