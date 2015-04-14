@@ -1,5 +1,16 @@
 ## Changelog
 
+## v0.12.0-dev
+
+* Enhancements
+  * Add `query_params` and `body_params` to keep query and body parameters apart from `params`
+  * Allow custom encoders when encoding query parameters
+  * Assert valid utf-8 on url encoded and multipart bodies
+
+* Bug fixes
+  * Use only body parameters when detecting method override
+  * Add Vary header when serving gzipped content in Plug.Static
+
 ## v0.11.3
 
 * Bug fixes
