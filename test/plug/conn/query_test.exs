@@ -1,7 +1,7 @@
 defmodule Plug.Conn.QueryTest do
   use ExUnit.Case, async: true
 
-  import Plug.Conn.Query, only: [decode: 1, encode: 1]
+  import Plug.Conn.Query, only: [decode: 1, encode: 1, encode: 2]
   doctest Plug.Conn.Query
 
   test "decode queries" do
@@ -86,7 +86,6 @@ defmodule Plug.Conn.QueryTest do
     Enum.reduce Enum.reverse(pairs), %{}, &Plug.Conn.Query.decode_pair(&1, &2)
   end
 
-
   test "encode" do
     assert encode(%{foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
 
@@ -115,4 +114,12 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{x: %{y: [%{z: [1]}]}}) == "x[y][][z][]=1"
   end
 
+  test "encode with custom encoder" do
+    encoder = &(&1 |> to_string |> String.duplicate(2))
+    assert encode(%{foo: "bar", baz: "bat"}, encoder) ==
+           "baz=batbat&foo=barbar"
+
+    assert encode(%{foo: ["bar", "baz"]}, encoder) ==
+           "foo[]=barbar&foo[]=bazbaz"
+  end
 end
