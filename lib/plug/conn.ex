@@ -545,7 +545,9 @@ defmodule Plug.Conn do
 
   def fetch_query_params(%Conn{query_params: %Unfetched{}, params: params,
                                query_string: query_string} = conn, _opts) do
+    Plug.Conn.Utils.validate_utf8!(query_string, "query string")
     query_params = Plug.Conn.Query.decode(query_string)
+
     case params do
       %Unfetched{} -> %{conn | query_params: query_params, params: query_params}
       %{}          -> %{conn | query_params: query_params, params: Map.merge(query_params, params)}

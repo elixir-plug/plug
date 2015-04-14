@@ -67,14 +67,15 @@ defmodule Plug.Conn.Query do
     Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
   end
 
-  defp decode_string_pair(string, acc) do
+  defp decode_string_pair(binary, acc) do
     current =
-      case :binary.split(string, "=") do
+      case :binary.split(binary, "=") do
         [key, value] ->
           {URI.decode_www_form(key), URI.decode_www_form(value)}
         [key] ->
           {URI.decode_www_form(key), nil}
       end
+
     decode_pair(current, acc)
   end
 

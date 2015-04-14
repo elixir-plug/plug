@@ -437,6 +437,14 @@ defmodule Plug.ConnTest do
     assert conn.params == %{"a" => "z", "c" => "d"}
   end
 
+  test "fetch_query_params/1 with invalid utf-8" do
+    conn = conn(:get, "/foo?a=" <> <<139>>)
+    assert_raise Plug.Parsers.BadEncodingError, 
+                 "invalid UTF-8 on query string, got byte 139", fn ->
+      fetch_query_params(conn)
+    end
+  end
+
   test "req_cookies/1 && fetch_cookies/1" do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
     assert conn.req_cookies == %Plug.Conn.Unfetched{aspect: :cookies}

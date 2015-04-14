@@ -265,6 +265,22 @@ defmodule Plug.Conn.Utils do
       do: stripped
   end
 
+  @doc """
+  Validates the given binary is valid UTF-8.
+  """
+  @spec validate_utf8!(binary, binary) :: :ok | no_return
+  def validate_utf8!(<<_ :: utf8, t :: binary>>, context) do
+    validate_utf8!(t, context)
+  end
+
+  def validate_utf8!(<<h, _ :: binary>>, context) do
+    raise Plug.Parsers.BadEncodingError,
+      message: "invalid UTF-8 on #{context}, got byte #{h}"
+  end
+
+  def validate_utf8!(<<>>, _context) do
+    :ok
+  end
 
   ## Helpers
 

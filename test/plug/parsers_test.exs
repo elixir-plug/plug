@@ -41,6 +41,15 @@ defmodule Plug.ParsersTest do
     assert conn.params == %{"foo" => "baz"}
   end
 
+  test "raises on invalid url encoded" do
+    assert_raise Plug.Parsers.BadEncodingError, 
+                 "invalid UTF-8 on urlencoded body, got byte 139", fn ->
+      conn(:post, "/foo", "a=" <> <<139>>)
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+    end
+  end
+
   test "raises on too large bodies" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError,
                              ~r/the request is too large/, fn ->

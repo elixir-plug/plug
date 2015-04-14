@@ -21,6 +21,14 @@ defmodule Plug.Parsers do
     end
   end
 
+  defmodule BadEncodingError do
+    @moduledoc """
+    Raised when the request body contains bad encoding.
+    """
+
+    defexception message: nil, plug_status: 415
+  end
+
   defmodule ParseError do
     @moduledoc """
     Error raised when the request body is malformed.
