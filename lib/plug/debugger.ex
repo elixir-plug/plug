@@ -127,7 +127,7 @@ defmodule Plug.Debugger do
   @doc false
   def render(conn, kind, reason, stack, opts) do
     session = maybe_fetch_session(conn)
-    params  = maybe_fetch_params(conn)
+    params  = maybe_fetch_query_params(conn)
 
     reason = Exception.normalize(kind, reason, stack)
     {status, title, message} = info(kind, reason)
@@ -145,8 +145,8 @@ defmodule Plug.Debugger do
     end
   end
 
-  defp maybe_fetch_params(conn) do
-    fetch_params(conn).params
+  defp maybe_fetch_query_params(conn) do
+    fetch_query_params(conn).params
   end
 
   defp info(:error, error) do

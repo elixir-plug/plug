@@ -415,17 +415,29 @@ defmodule Plug.ConnTest do
     assert {:more, _, _} = read_body(conn, length: 100)
   end
 
-  test "params/1 and fetch_params/1" do
+  test "query_params/1 and fetch_query_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
-    assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
-    conn = fetch_params(conn)
-    assert conn.params == %{"a" => "b", "c" => "d"}
+    assert conn.query_params == %Plug.Conn.Unfetched{aspect: :query_params}
+    conn = fetch_query_params(conn)
+    assert conn.query_params == %{"a" => "b", "c" => "d"}
 
-    conn = conn(:get, "/foo") |> fetch_params([]) # Pluggable
-    assert conn.params == %{}
+    conn = conn(:get, "/foo") |> fetch_query_params([]) # Pluggable
+    assert conn.query_params == %{}
   end
 
-  test "req_cookies/1 && fetch_params/1" do
+  test "query_params/1, params/1 and fetch_query_params/1" do
+    conn = conn(:get, "/foo?a=b&c=d")
+    assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
+    conn = fetch_query_params(conn)
+    assert conn.params == %{"a" => "b", "c" => "d"}
+
+    conn = conn(:get, "/foo?a=b&c=d")
+    conn = put_in conn.params, %{"a" => "z"}
+    conn = fetch_query_params(conn)
+    assert conn.params == %{"a" => "z", "c" => "d"}
+  end
+
+  test "req_cookies/1 && fetch_cookies/1" do
     conn = conn(:get, "/") |> put_req_header("cookie", "foo=bar; baz=bat")
     assert conn.req_cookies == %Plug.Conn.Unfetched{aspect: :cookies}
     conn = fetch_cookies(conn)

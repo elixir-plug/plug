@@ -25,14 +25,18 @@ defmodule Plug.MethodOverride do
 
   def init([]), do: []
 
-  def call(%Plug.Conn{method: "POST"} = conn, []),
-    do: override_method(conn)
+  def call(%Plug.Conn{method: "POST", body_params: body_params} = conn, []),
+    do: override_method(conn, body_params)
   def call(%Plug.Conn{} = conn, []),
     do: conn
 
-  @spec override_method(Plug.Conn.t) :: Plug.Conn.t
-  defp override_method(conn) do
-    method = (conn.params["_method"] || "") |> String.upcase
+  defp override_method(_conn, %Plug.Conn.Unfetched{}) do
+    raise ArgumentError, "cannot use Plug.MethodOverride without body parsing, " <>
+                         "be sure to parse body parameters with Plug.Parsers"
+  end
+
+  defp override_method(conn, body_params) do
+    method = (body_params["_method"] || "") |> String.upcase
 
     cond do
       method in @allowed_methods -> %{conn | method: method}

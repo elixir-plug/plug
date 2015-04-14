@@ -19,7 +19,7 @@ defmodule Plug.CSRFProtectionTest do
 
   def call(conn) do
     put_in(conn.secret_key_base, @secret)
-    |> fetch_params
+    |> fetch_query_params
     |> Plug.Session.call(@default_opts)
     |> fetch_session
     |> CSRFProtection.call([])

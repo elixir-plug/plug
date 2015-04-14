@@ -151,7 +151,7 @@ defmodule Plug.Parsers do
   end
 
   def call(%Conn{req_headers: req_headers, method: method} = conn, opts) when method in @methods do
-    conn = Plug.Conn.fetch_params(conn)
+    conn = Plug.Conn.fetch_query_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Plug.Conn.Utils.content_type(ct) do
@@ -166,13 +166,14 @@ defmodule Plug.Parsers do
   end
 
   def call(conn, _opts) do
-    Plug.Conn.fetch_params(conn)
+    conn = Plug.Conn.fetch_query_params(conn)
+    %{conn | body_params: %{}}
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      {:ok, post, %Conn{params: get} = conn} ->
-        %{conn | params: Map.merge(get, post)}
+      {:ok, body, %Conn{query_params: query} = conn} ->
+        %{conn | body_params: body, params: Map.merge(query, body)}
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
       {:error, :too_large, _conn} ->
@@ -187,7 +188,7 @@ defmodule Plug.Parsers do
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
   defp ensure_accepted_mimes(conn, type, subtype, pass) do
     if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
-      conn
+      %{conn | body_params: %{}}
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
     end

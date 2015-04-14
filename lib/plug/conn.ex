@@ -34,7 +34,7 @@ defmodule Plug.Conn do
   The request information in these fields is not populated until it is fetched using
   the associated `fetch_` function. For example, the `params` field uses `fetch_params/2`.
 
-  If you access these fields before fetching them, they will be returned as 
+  If you access these fields before fetching them, they will be returned as
   `Plug.Conn.Unfetched` structs.
 
   * `cookies`- the request cookies with the response cookies
@@ -124,6 +124,7 @@ defmodule Plug.Conn do
               adapter:         adapter,
               assigns:         assigns,
               before_send:     before_send,
+              body_params:     params | Unfetched.t,
               cookies:         cookies | Unfetched.t,
               host:            host,
               method:          method,
@@ -132,6 +133,7 @@ defmodule Plug.Conn do
               path_info:       segments,
               port:            :inet.port_number,
               private:         assigns,
+              query_params:    params | Unfetched.t,
               query_string:    query_string,
               peer:            peer,
               remote_ip:       :inet.ip_address,
@@ -149,6 +151,7 @@ defmodule Plug.Conn do
   defstruct adapter:         {Plug.Conn, nil},
             assigns:         %{},
             before_send:     [],
+            body_params:     %Unfetched{aspect: :body_params},
             cookies:         %Unfetched{aspect: :cookies},
             halted:          false,
             host:            "www.example.com",
@@ -158,6 +161,7 @@ defmodule Plug.Conn do
             path_info:       [],
             port:            0,
             private:         %{},
+            query_params:    %Unfetched{aspect: :query_params},
             query_string:    "",
             peer:            nil,
             remote_ip:       nil,
@@ -531,20 +535,32 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Fetches parameters from the query string.
+  Fetches query parameters from the query string.
 
   This function does not fetch parameters from the body. To fetch
   parameters from the body, use the `Plug.Parsers` plug.
   """
-  @spec fetch_params(t, Keyword.t) :: t
-  def fetch_params(conn, opts \\ [])
+  @spec fetch_query_params(t, Keyword.t) :: t
+  def fetch_query_params(conn, opts \\ [])
 
-  def fetch_params(%Conn{params: %Unfetched{}, query_string: query_string} = conn, _opts) do
-    %{conn | params: Plug.Conn.Query.decode(query_string)}
+  def fetch_query_params(%Conn{query_params: %Unfetched{}, params: params,
+                               query_string: query_string} = conn, _opts) do
+    query_params = Plug.Conn.Query.decode(query_string)
+    case params do
+      %Unfetched{} -> %{conn | query_params: query_params, params: query_params}
+      %{}          -> %{conn | query_params: query_params, params: Map.merge(query_params, params)}
+    end
   end
 
-  def fetch_params(%Conn{} = conn, _opts) do
+  def fetch_query_params(%Conn{} = conn, _opts) do
     conn
+  end
+
+  @doc false
+  def fetch_params(conn, opts \\ []) do
+    IO.write :stderr, "warning: fetch_params/2 is deprecated, " <>
+                      "please use fetch_query_params/2 instead\n" <> Exception.format_stacktrace()
+    fetch_query_params(conn, opts)
   end
 
   @doc """

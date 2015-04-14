@@ -3,8 +3,13 @@ defmodule Plug.MethodOverrideTest do
   use Plug.Test
 
   def urlencoded_conn(method, body) do
-    conn(method, "/", body)
+    conn(method, "/?_method=DELETE", body)
     |> put_req_header("content-type", "application/x-www-form-urlencoded")
+  end
+
+  test "ignores query parameters" do
+    conn = call urlencoded_conn(:post, "")
+    assert conn.method == "POST"
   end
 
   test "converts POST to DELETE when _method=DELETE param is specified" do
