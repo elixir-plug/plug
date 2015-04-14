@@ -124,4 +124,19 @@ defmodule Plug.Test do
       {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
     end
   end
+
+  @doc """
+  Returns the Location header from a redirect response.
+
+  Raises if the response is not a redirect.
+  """
+  @spec redirected_to(Conn.t) :: Conn.t
+  def redirected_to(%Conn{status: status} = conn) when status >= 300 and status <=308 do
+    Plug.Conn.get_resp_header(conn, "Location")
+  end
+
+  def redirected_to(_) do
+    raise ArgumentError,
+      message: "response was not a redirect"
+  end
 end
