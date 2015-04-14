@@ -123,13 +123,16 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
 
     conn = conn(:get, "/public/fixtures/static.txt", [])
-           |> put_req_header("accept-encoding", "gzip")
+           |> put_req_header("accept-encoding", "*")
+           |> put_resp_header("vary", "Whatever")
            |> call
     assert conn.status == 200
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding", "Whatever"]
   end
 
   test "only serves gzipped file if available" do
@@ -139,6 +142,7 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-encoding") != ["gzip"]
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
   end
 
   test "raises an exception if :from isn't a binary or an atom" do

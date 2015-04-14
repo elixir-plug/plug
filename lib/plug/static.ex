@@ -122,7 +122,7 @@ defmodule Plug.Static do
         raise InvalidPathError
       true ->
         path = path(from, segments)
-        serve_static(file_encoding(conn, path, gzip), segments, qs_cache, et_cache)
+        serve_static(file_encoding(conn, path, gzip), segments, gzip, qs_cache, et_cache)
     end
   end
 
@@ -134,12 +134,13 @@ defmodule Plug.Static do
   defp allowed?(nil, _list),  do: true
   defp allowed?(only, [h|_]), do: h in only
 
-  defp serve_static({:ok, conn, file_info, path}, segments, qs_cache, et_cache) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip, qs_cache, et_cache) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
         content_type = segments |> List.last |> Plug.MIME.path
 
         conn
+        |> maybe_add_vary(gzip)
         |> put_resp_header("content-type", content_type)
         |> send_file(200, path)
         |> halt
@@ -150,7 +151,18 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _qs_cache, _et_cache) do
+  defp serve_static({:error, conn}, _segments, _gzip, _qs_cache, _et_cache) do
+    conn
+  end
+
+  defp maybe_add_vary(conn, true) do
+    # If we serve gzip at any moment, we need to set the proper vary
+    # header regardless if we are serving gzip content right now.
+    # See: http://www.fastly.com/blog/best-practices-for-using-the-vary-header/
+    update_in conn.resp_headers, &[{"vary", "Accept-Encoding"}|&1]
+  end
+
+  defp maybe_add_vary(conn, false) do
     conn
   end
 
