@@ -273,6 +273,12 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == "HELLO\nWORLD\n"
   end
 
+  test "send_chunked/3 with collectable" do
+    conn = conn(:get, "/foo") |> send_chunked(200)
+    conn = Enum.into(~w(hello world), conn)
+    assert conn.resp_body == "helloworld"
+  end
+
   test "send_chunked/3 sends self a message" do
     refute_received {:plug_conn, :sent}
     conn(:get, "/foo") |> send_chunked(200)

@@ -80,6 +80,21 @@ defmodule Plug.Conn do
 
   * `adapter` - holds the adapter information in a tuple
   * `private` - shared library data as a dict
+
+  ## Protocols
+
+  `Plug.Conn` implements both Collectable and Inspect protocols
+  out of the box. The inspect protocol provides a nice representation
+  of the connection while the collectable protocol allows developers
+  to easily chunk data. For example:
+
+      # Send the chunked response headers
+      conn = send_chunked(conn, 200)
+
+      # Pipe the given list into a connection
+      # Each item is emitted as a chunk
+      Enum.into(~w(each chunk as a word), conn)
+
   """
 
   @type adapter         :: {module, term}
@@ -808,5 +823,17 @@ defimpl Inspect, for: Plug.Conn do
       end
 
     Inspect.Any.inspect(conn, opts)
+  end
+end
+
+defimpl Collectable, for: Plug.Conn do
+  def into(conn) do
+    {conn, fn
+      conn, {:cont, x} ->
+        {:ok, conn} = Plug.Conn.chunk(conn, x)
+        conn
+      conn, _ ->
+        conn
+    end}
   end
 end
