@@ -116,10 +116,14 @@ defmodule Plug.Conn.QueryTest do
 
   test "encode with custom encoder" do
     encoder = &(&1 |> to_string |> String.duplicate(2))
+
     assert encode(%{foo: "bar", baz: "bat"}, encoder) ==
            "baz=batbat&foo=barbar"
 
     assert encode(%{foo: ["bar", "baz"]}, encoder) ==
            "foo[]=barbar&foo[]=bazbaz"
+
+    assert encode(%{foo: URI.parse("/bar")}, encoder) ==
+           "foo=%2Fbar%2Fbar"
   end
 end

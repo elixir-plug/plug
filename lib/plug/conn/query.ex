@@ -159,9 +159,14 @@ defmodule Plug.Conn.Query do
     encode_pair(nil, dict, encoder)
   end
 
+  # covers structs
+  defp encode_pair(field, %{__struct__: struct} = map, encoder) when is_atom(struct) do
+    field <> "=" <> encode_value(map, encoder)
+  end
+
   # covers maps
-  defp encode_pair(parent_field, dict, encoder) when is_map(dict) do
-    encode_dict(dict, parent_field, encoder)
+  defp encode_pair(parent_field, %{} = map, encoder) do
+    encode_dict(map, parent_field, encoder)
   end
 
   # covers keyword lists
@@ -174,6 +179,12 @@ defmodule Plug.Conn.Query do
     Enum.map_join list, "&", &encode_pair("#{parent_field}[]", &1, encoder)
   end
 
+  # covers nil
+  defp encode_pair(field, nil, _encoder) do
+    field <> "="
+  end
+
+  # encoder fallback
   defp encode_pair(field, value, encoder) do
     field <> "=" <> encode_value(value, encoder)
   end
