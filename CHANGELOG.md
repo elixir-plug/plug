@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.12.0-dev
+## v0.12.0
 
 * Enhancements
   * Add `query_params` and `body_params` to keep query and body parameters apart from `params`
@@ -10,6 +10,9 @@
 * Bug fixes
   * Use only body parameters when detecting method override
   * Add Vary header when serving gzipped content in Plug.Static
+
+* Deprecations
+  * `fetch_params/2` is deprecated in favor of `fetch_query_params/2`
 
 ## v0.11.3
 
