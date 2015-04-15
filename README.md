@@ -49,7 +49,7 @@ You can use plug in your projects in two steps:
     ```elixir
     def deps do
       [{:cowboy, "~> 1.0.0"},
-       {:plug, "~> 0.11.0"}]
+       {:plug, "~> 0.12"}]
     end
     ```
 
