@@ -158,24 +158,29 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(%Conn{req_headers: req_headers, method: method} = conn, opts) when method in @methods do
-    conn = Plug.Conn.fetch_query_params(conn)
+  def call(%Conn{req_headers: req_headers, method: method,
+                 body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
+    conn = Conn.fetch_query_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
-        case Plug.Conn.Utils.content_type(ct) do
+        case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, headers} ->
             reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->
-            conn
+            %{conn | body_params: %{}}
         end
       nil ->
-        conn
+        %{conn | body_params: %{}}
     end
   end
 
-  def call(conn, _opts) do
-    conn = Plug.Conn.fetch_query_params(conn)
+  def call(%Conn{body_params: %Plug.Conn.Unfetched{}} = conn, _opts) do
+    conn = Conn.fetch_query_params(conn)
     %{conn | body_params: %{}}
+  end
+
+  def call(%Conn{} = conn, _opts) do
+    Conn.fetch_query_params(conn)
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do

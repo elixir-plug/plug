@@ -17,6 +17,16 @@ defmodule Plug.ParsersTest do
   test "parses query string information" do
     conn = parse(conn(:post, "/?foo=bar"))
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %{}
+    assert conn.query_params["foo"] == "bar"
+  end
+
+  test "keeps existing body params" do
+    conn = conn(:post, "/?foo=bar")
+    conn = parse(%{conn | body_params: %{"foo" => "baz"}, params: %{"foo" => "baz"}})
+    assert conn.params["foo"] == "baz"
+    assert conn.body_params["foo"] == "baz"
+    assert conn.query_params["foo"] == "bar"
   end
 
   test "ignore bodies unless post/put/match/delete" do
@@ -24,6 +34,8 @@ defmodule Plug.ParsersTest do
            |> put_req_header("content-type", "application/x-www-form-urlencoded")
            |> parse()
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %{}
+    assert conn.query_params["foo"] == "bar"
   end
 
   test "parses url encoded bodies" do
@@ -70,6 +82,15 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 415
   end
 
+  test "raises when request cannot be processed and if mime range not accepted" do
+    exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/json")
+      |> parse(pass: ["text/plain", "text/*"])
+    end
+    assert Plug.Exception.status(exception) == 415
+  end
+
   test "does not raise when request cannot be processed if accepts all mimes" do
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
@@ -98,14 +119,5 @@ defmodule Plug.ParsersTest do
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["text/plain", "text/*"])
     assert conn.params["foo"] == "bar"
-  end
-
-  test "raises when request cannot be processed if mime range not accepted" do
-    exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
-      conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/json")
-      |> parse(pass: ["text/plain", "text/*"])
-    end
-    assert Plug.Exception.status(exception) == 415
   end
 end
