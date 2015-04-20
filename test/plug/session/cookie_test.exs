@@ -52,12 +52,6 @@ defmodule Plug.Session.CookieTest do
     end
   end
 
-  test "requires encrypted_salt option to be defined" do
-    assert_raise ArgumentError, ~r/expects :encryption_salt as option/, fn ->
-      Plug.Session.init(Keyword.delete(@default_opts, :encryption_salt))
-    end
-  end
-
   test "requires the secret to be at least 64 bytes" do
     assert_raise ArgumentError, ~r/to be at least 64 bytes/, fn ->
       conn(:get, "/")

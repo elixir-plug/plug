@@ -18,12 +18,8 @@ defmodule Plug.Session.COOKIE do
 
   ## Options
 
-  * `:encrypt` - specify whether to encrypt cookies, defaults to true.
-    When this option is false, the cookie is still signed, meaning it
-    can't be tempered with but its contents can be read;
-
   * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
-    a key for encrypting/decrypting a cookie;
+    a key for encrypting/decrypting a cookie.
 
   * `:signing_salt` - a salt used with `conn.secret_key_base` to generate a
     key for signing/verifying a cookie;
@@ -58,7 +54,7 @@ defmodule Plug.Session.COOKIE do
   alias Plug.Crypto.MessageEncryptor
 
   def init(opts) do
-    encryption_salt = check_encryption_salt(opts)
+    encryption_salt = opts[:encrypted_salt]
     signing_salt = check_signing_salt(opts)
 
     iterations = Keyword.get(opts, :key_iterations, 1000)
@@ -139,15 +135,6 @@ defmodule Plug.Session.COOKIE do
     case opts[:signing_salt] do
       nil  -> raise ArgumentError, "cookie store expects :signing_salt as option"
       salt -> salt
-    end
-  end
-
-  defp check_encryption_salt(opts) do
-    if Keyword.get(opts, :encrypt, true) do
-      case opts[:encryption_salt] do
-        nil  -> raise ArgumentError, "encrypted cookie store expects :encryption_salt as option"
-        salt -> salt
-      end
     end
   end
 
