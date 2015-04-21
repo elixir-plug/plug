@@ -24,30 +24,26 @@ defmodule Plug.SSL do
   alias Plug.Conn
 
   def init(opts) do
-    hsts       = Keyword.get(opts, :hsts, true)
-    expires    = Keyword.get(opts, :expires, 31536000)
-    subdomains = Keyword.get(opts, :subdomains, false)
-    hsts = if hsts, do: [expires: expires, subdomains: subdomains], else: false
-
-    host = Keyword.get(opts, :host)
-
-    %{hsts_header: hsts_header(hsts),
-      host: host}
+    {hsts_header(opts), Keyword.get(opts, :host)}
   end
 
-  def call(conn, config) do
+  def call(conn, {hsts, host}) do
     if conn.scheme == :https do
-      register_before_send(conn, &(put_hsts_header(&1, config[:hsts_header])))
+      put_hsts_header(conn, hsts)
     else
-      redirect_to_https(conn, config[:host])
+      redirect_to_https(conn, host)
     end
   end
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
-  defp hsts_header(false), do: nil
-  defp hsts_header(options) do
-    value = "max-age=#{options[:expires]}"
-    if options[:subdomains], do: "#{value}; includeSubDomains", else: value
+  defp hsts_header(opts) do
+    if Keyword.get(opts, :hsts, true) do
+      expires    = Keyword.get(opts, :expires, 31536000)
+      subdomains = Keyword.get(opts, :subdomains, false)
+
+      "max-age=#{expires}" <>
+        if(subdomains, do: "; includeSubDomains", else: "")
+    end
   end
 
   defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
