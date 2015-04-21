@@ -1,4 +1,23 @@
 defmodule Plug.SSL do
+  @moduledoc """
+  A plug to force SSL
+
+  If the scheme of a request is https, it'll add `strict-transport-security`
+  header to enable HTTP Strict Transport Security.
+
+  Otherwise, the request will be redirected to a corresponding location
+  with `https` scheme by setting the `location` header of the reponse.
+  And the status code will be 301 if method of `conn` is `GET` or `HEAD`,
+  or 307 in other situations.
+
+  ## Options
+
+    * `:hsts` - a boolean on enabling HSTS or not and defaults to true.
+    * `:expires` - seconds to expires for HSTS, defaults to 31536000(a year).
+    * `:subdomains` - a boolean on including subdomains or not in HSTS,
+      defaults to false.
+    * `:host` - a new host to redirect to if the request's scheme is `http`.
+  """
   @behaviour Plug
 
   import Plug.Conn
@@ -26,9 +45,9 @@ defmodule Plug.SSL do
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(false), do: nil
-  defp hsts_header(hsts) do
-    value = "max-age=#{hsts[:expires]}"
-    if hsts[:subdomains], do: "#{value}; includeSubDomains", else: value
+  defp hsts_header(options) do
+    value = "max-age=#{options[:expires]}"
+    if options[:subdomains], do: "#{value}; includeSubDomains", else: value
   end
 
   defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
