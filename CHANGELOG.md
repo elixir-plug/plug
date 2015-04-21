@@ -1,5 +1,14 @@
 ## Changelog
 
+## v0.12.1
+
+* Enhancements
+  * Add `Plug.SSL` with redirection from HTTP and HSTS support
+  * Remove the need for `:encrypt` option from `Plug.Session.COOKIE`. The need for encryption can be fully specified by passing `:encrypted_salt` option. This improvement is backwards compatible.
+
+* Bug fixes
+  * Ensure we don't parse body params if they were already parsed
+
 ## v0.12.0
 
 * Enhancements
