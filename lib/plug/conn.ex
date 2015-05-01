@@ -192,6 +192,14 @@ defmodule Plug.Conn do
     """
   end
 
+  defmodule InvalidHeaderKeyFormatError do
+    defexception message: "given header key is not lowercase"
+
+    @moduledoc """
+    Error raised when trying to send a header that is containing uppercase chars.
+    """
+  end
+
   alias Plug.Conn
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
@@ -479,6 +487,7 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
+    unless valid_header_key?(key), do: raise(InvalidHeaderKeyFormatError, message: "header key is not lowercase: "<>key)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -829,6 +838,17 @@ defmodule Plug.Conn do
 
     %{conn | private: private}
   end
+
+  # Any string containing a UPPERCASE char is not valid.
+  defp valid_header_key?("content-type"), do: true
+  defp valid_header_key?("content-length"), do: true
+  defp valid_header_key?("cache-control"), do: true
+  defp valid_header_key?("connection"), do: true
+  defp valid_header_key?("date"), do: true
+  defp valid_header_key?(<<h, _::binary>>) when h in ?A..?Z, do: false
+  defp valid_header_key?(<<_, t::binary>>), do: valid_header_key?(t)
+  defp valid_header_key?(<<>>), do: true
+  defp valid_header_key?(_), do: false
 end
 
 defimpl Inspect, for: Plug.Conn do
