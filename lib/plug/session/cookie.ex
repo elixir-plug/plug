@@ -18,24 +18,24 @@ defmodule Plug.Session.COOKIE do
 
   ## Options
 
-  * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
-    a key for encrypting/decrypting a cookie.
+    * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
+      a key for encrypting/decrypting a cookie.
 
-  * `:signing_salt` - a salt used with `conn.secret_key_base` to generate a
-    key for signing/verifying a cookie;
+    * `:signing_salt` - a salt used with `conn.secret_key_base` to generate a
+      key for signing/verifying a cookie;
 
-  * `:key_iterations` - option passed to `Plug.Crypto.KeyGenerator`
-    when generating the encryption and signing keys. Defaults to 1000;
+    * `:key_iterations` - option passed to `Plug.Crypto.KeyGenerator`
+      when generating the encryption and signing keys. Defaults to 1000;
 
-  * `:key_length` - option passed to `Plug.Crypto.KeyGenerator`
-    when generating the encryption and signing keys. Defaults to 32;
+    * `:key_length` - option passed to `Plug.Crypto.KeyGenerator`
+      when generating the encryption and signing keys. Defaults to 32;
 
-  * `:key_digest` - option passed to `Plug.Crypto.KeyGenerator`
-    when generating the encryption and signing keys. Defaults to `:sha256';
+    * `:key_digest` - option passed to `Plug.Crypto.KeyGenerator`
+      when generating the encryption and signing keys. Defaults to `:sha256';
 
-  * `:serializer` - cookie serializer module that defines `encode/1` and
-    `decode/1` returning an `{:ok, value}` tuple. Defaults to
-    `:external_term_format`.
+    * `:serializer` - cookie serializer module that defines `encode/1` and
+      `decode/1` returning an `{:ok, value}` tuple. Defaults to
+      `:external_term_format`.
 
   ## Examples
 
@@ -100,23 +100,34 @@ defmodule Plug.Session.COOKIE do
     :ok
   end
 
-  defp encode(term, :external_term_format), do: :erlang.term_to_binary(term)
-  defp encode(term, serializer) do
-    case serializer.encode(term) do
-      {:ok, binary} -> binary
-      _ -> nil
-    end
+  defp encode(term, :external_term_format) do
+    :erlang.term_to_binary(term)
   end
 
-  defp decode({:ok, binary}, :external_term_format), do: {nil, :erlang.binary_to_term(binary)}
+  defp encode(term, serializer) do
+    {:ok, binary} = serializer.encode(term)
+    binary
+  end
+
+  defp decode({:ok, binary}, :external_term_format) do
+    {nil,
+      try do
+        :erlang.binary_to_term(binary)
+      rescue
+        _ -> %{}
+      end}
+  end
+
   defp decode({:ok, binary}, serializer) do
     case serializer.decode(binary) do
       {:ok, term} -> {nil, term}
-      _ -> {nil, %{}}
+      _           -> {nil, %{}}
     end
   end
-  defp decode(:error, _serializer), do:
+
+  defp decode(:error, _serializer) do
     {nil, %{}}
+  end
 
   defp derive(conn, key, key_opts) do
     conn.secret_key_base
