@@ -7,6 +7,11 @@ defmodule Plug.MethodOverrideTest do
     |> put_req_header("content-type", "application/x-www-form-urlencoded")
   end
 
+  test "no-op when body is not parsed" do
+    conn = call conn(:post, "/")
+    assert conn.method == "POST"
+  end
+
   test "ignores query parameters" do
     conn = call urlencoded_conn(:post, "")
     assert conn.method == "POST"

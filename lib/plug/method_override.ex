@@ -3,14 +3,14 @@ defmodule Plug.MethodOverride do
   This plug overrides the request's `POST` method with the method defined in
   the `_method` request parameter.
 
-  The `POST` method can be overridden only with on of these HTTP methods:
+  The `POST` method can be overridden only by these HTTP methods:
 
-  * `PUT`
-  * `PATCH`
-  * `DELETE`
+    * `PUT`
+    * `PATCH`
+    * `DELETE`
 
-  This plug expects the parameters to be already parsed and fetched. Parameters
-  are fetched with `Plug.Conn.fetch_params/1` and parsed with `Plug.Parsers`.
+  This plug expects the body parameters to be already parsed and
+  fetched. Those can be fetched with `Plug.Parsers`.
 
   This plug doesn't accept any options.
 
@@ -30,9 +30,10 @@ defmodule Plug.MethodOverride do
   def call(%Plug.Conn{} = conn, []),
     do: conn
 
-  defp override_method(_conn, %Plug.Conn.Unfetched{}) do
-    raise ArgumentError, "cannot use Plug.MethodOverride without body parsing, " <>
-                         "be sure to parse body parameters with Plug.Parsers"
+  defp override_method(conn, %Plug.Conn.Unfetched{}) do
+    # Just skip it because maybe it is a content-type that
+    # we could not parse as parameters (for example, text/gps)
+    conn
   end
 
   defp override_method(conn, body_params) do
