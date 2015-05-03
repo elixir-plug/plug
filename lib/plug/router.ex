@@ -161,7 +161,7 @@ defmodule Plug.Router do
       defp match(conn, _opts) do
         Plug.Conn.put_private(conn,
           :plug_route,
-          do_match(conn.method, conn.path_info, conn.host))
+          do_match(conn.method, Enum.map(conn.path_info, &URI.decode_www_form/1), conn.host))
       end
 
       defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do

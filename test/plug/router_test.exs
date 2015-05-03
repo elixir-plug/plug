@@ -97,6 +97,10 @@ defmodule Plug.RouterTest do
       some_option: :hello,
       do: conn |> resp(200, inspect(bar))
 
+    get "/8/bar baz/:bat" do
+      conn |> resp(200, bat)
+    end
+
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
@@ -159,6 +163,17 @@ defmodule Plug.RouterTest do
 
     conn = call(Sample, conn(:get, "/7/abcd"))
     assert conn.resp_body == "oops"
+  end
+
+  test "dispatch after decoding guards" do
+    conn = call(Sample, conn(:get, "/8/bar baz/bat"))
+    assert conn.resp_body == "bat"
+
+    conn = call(Sample, conn(:get, "/8/bar+baz/bat bag"))
+    assert conn.resp_body == "bat bag"
+
+    conn = call(Sample, conn(:get, "/8/bar+baz/bat+bag"))
+    assert conn.resp_body == "bat bag"
   end
 
   test "dispatch wrong verb" do
