@@ -1,5 +1,14 @@
 ## Changelog
 
+## v0.12.2
+
+* Enhancements
+  * Add `Plug.HTML`
+
+* Bug fixes
+  * Do not crash on poorly encoded cookies
+  * Decode parameters before matching on the router
+
 ## v0.12.1
 
 * Enhancements
