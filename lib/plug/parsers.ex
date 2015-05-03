@@ -122,10 +122,9 @@ defmodule Plug.Parsers do
   and subtype and the headers. Returns:
 
     * `{:ok, conn}` if the parser is able to handle the given content-type
+    * `{:next, conn}` if the next parser should be invoked
     * `{:error, :too_large, conn}` if the request goes over the given limit
 
-  subtype and headers. Returns `{:ok, conn}` if the parser can
-  handle the given content type, `{:halt, conn}` otherwise.
   """
   defcallback parse(Conn.t, type :: binary, subtype :: binary,
                     headers :: Keyword.t, opts :: Keyword.t) ::
