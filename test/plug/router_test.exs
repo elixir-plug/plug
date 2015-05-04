@@ -169,10 +169,10 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/8/bar baz/bat"))
     assert conn.resp_body == "bat"
 
-    conn = call(Sample, conn(:get, "/8/bar+baz/bat bag"))
+    conn = call(Sample, conn(:get, "/8/bar%20baz/bat bag"))
     assert conn.resp_body == "bat bag"
 
-    conn = call(Sample, conn(:get, "/8/bar+baz/bat+bag"))
+    conn = call(Sample, conn(:get, "/8/bar%20baz/bat%20bag"))
     assert conn.resp_body == "bat bag"
   end
 
