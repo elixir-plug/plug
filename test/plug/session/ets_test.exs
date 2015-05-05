@@ -1,5 +1,5 @@
 defmodule Plug.Session.ETSTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Plug.Session.ETS
 
   @ets_table :plug_session_test
@@ -14,9 +14,17 @@ defmodule Plug.Session.ETSTest do
 
     assert "foo" = ETS.put(%{}, "foo", %{foo: :bar}, opts)
     assert "bar" = ETS.put(%{}, "bar", %{bar: :foo}, opts)
+    assert [{"foo", %{foo: :bar}, put_timestamp}] = :ets.lookup(@ets_table, "foo")
+
+    # Unfortunately we need to wait a single
+    # second to ensure we store access timestamps
+    :timer.sleep(1000)
 
     assert {"foo", %{foo: :bar}} = ETS.get(%{}, "foo", opts)
     assert {"bar", %{bar: :foo}} = ETS.get(%{}, "bar", opts)
+    assert [{"foo", %{foo: :bar}, get_timestamp}] = :ets.lookup(@ets_table, "foo")
+
+    assert get_timestamp > put_timestamp
     assert {nil, %{}} = ETS.get(%{}, "unknown", opts)
   end
 
