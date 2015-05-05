@@ -16,10 +16,6 @@ defmodule Plug.Session.ETSTest do
     assert "bar" = ETS.put(%{}, "bar", %{bar: :foo}, opts)
     assert [{"foo", %{foo: :bar}, put_timestamp}] = :ets.lookup(@ets_table, "foo")
 
-    # Unfortunately we need to wait a single
-    # second to ensure we store access timestamps
-    :timer.sleep(1000)
-
     assert {"foo", %{foo: :bar}} = ETS.get(%{}, "foo", opts)
     assert {"bar", %{bar: :foo}} = ETS.get(%{}, "bar", opts)
     assert [{"foo", %{foo: :bar}, get_timestamp}] = :ets.lookup(@ets_table, "foo")

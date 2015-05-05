@@ -29,7 +29,7 @@ defmodule Plug.Session.ETS do
 
   The data is stored in ETS in the following format:
 
-      {sid :: String.t, data :: map, timestamp :: integer}
+      {sid :: String.t, data :: map, timestamp :: :erlang.timestamp}
 
   The timestamp is updated whenever there is a read or write to the
   table and it may be used to detect if a session is still active.
@@ -88,7 +88,6 @@ defmodule Plug.Session.ETS do
   end
 
   defp now() do
-    {mega, sec, _} = :os.timestamp()
-    mega * 1_000_000 + sec
+    :os.timestamp()
   end
 end
