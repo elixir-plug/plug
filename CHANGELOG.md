@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.12.3
+## v0.12.3-dev
 
 * Enhancements
   * Raise if a header in upcase is given
