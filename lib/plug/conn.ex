@@ -840,11 +840,6 @@ defmodule Plug.Conn do
   end
 
   # Any string containing a UPPERCASE char is not valid.
-  defp valid_header_key?("content-type"), do: true
-  defp valid_header_key?("content-length"), do: true
-  defp valid_header_key?("cache-control"), do: true
-  defp valid_header_key?("connection"), do: true
-  defp valid_header_key?("date"), do: true
   defp valid_header_key?(<<h, _::binary>>) when h in ?A..?Z, do: false
   defp valid_header_key?(<<_, t::binary>>), do: valid_header_key?(t)
   defp valid_header_key?(<<>>), do: true

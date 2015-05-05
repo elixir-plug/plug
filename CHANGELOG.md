@@ -1,5 +1,11 @@
 ## Changelog
 
+## v0.12.3
+
+* Enhancements
+  * Raise if a header in upcase is given
+  * Store timestamps in ETS table and document each entry format
+
 ## v0.12.2
 
 * Enhancements
