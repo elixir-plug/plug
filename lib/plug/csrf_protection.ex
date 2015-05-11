@@ -101,17 +101,42 @@ defmodule Plug.CSRFProtection do
 
   @behaviour Plug
 
-  def init(opts), do: opts
+  
+  def init(opts) do
+    get_opts opts 
+  end
 
-  def call(conn, _opts) do
+  def call(conn, opts) do
+    opts = get_opts opts
     csrf_token = get_session(conn, "_csrf_token")
     Process.put(:plug_csrf_token, csrf_token)
-
     if not verified_request?(conn, csrf_token) do
-      raise InvalidCSRFTokenError
+      if opts[:with] == :exception do
+        raise InvalidCSRFTokenError
+      else 
+        conn = clear_session conn
+      end
     end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
+  end
+
+  @doc """
+    verifies if options passes are valid
+    :with - should be one of :exception or :nil_session, defaults to :exception     
+  """
+  defp verity_opts opts do
+    if not Keyword.has_key? opts, :with do
+      opts = Keyword.put_new opts, :with, :exception
+    end
+
+    with = Keyword.fetch!(opts, :with)
+
+    if not Enum.member? [:exception, :nil_session], with do
+      raise ArgumentError, message: "CSRF plug :rescue_with should be one of :exception or :nil_session"
+    end
+
+    [with: with]
   end
 
   ## Verification
