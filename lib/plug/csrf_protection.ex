@@ -4,9 +4,9 @@ defmodule Plug.CSRFProtection do
 
   For this plug to work, it expects a session to have been
   previously fetched. It will then compare the plug stored
-  in the session with the one sent by the request, when they
-  do not match, an `Plug.CSRFProtection.InvalidCSRFTokenError`
-  error is raised.
+  in the session with the one sent by the request to determine
+  the validity of the request. For an invaid request the action
+  taken is based on the `:with` option.
 
   The token may be sent by the request either via the params
   with key "_csrf_token" or a header with name "x-csrf-token".
@@ -32,6 +32,16 @@ defmodule Plug.CSRFProtection do
   dictionary allow them to be generated as a side-effect,
   becoming one of those rare situations where using the process
   dictionary is useful.
+
+  ## Options
+
+    * `:with` - should be one of `:exception` or `:clear_session`. Defaults to
+    `:exception`.
+      * `:exception` -  for invalid request, this plug will raise
+      `InvalidCSRFTokenError`.
+      * `:clear_session` -  for invalid request, this plug will set an empty
+      session for only this request. Also any changes to the session during this
+      request will be ignored.
 
   ## Disabling
 
@@ -103,15 +113,25 @@ defmodule Plug.CSRFProtection do
 
   def init(opts), do: opts
 
-  def call(conn, _opts) do
+  def call(conn, opts) do
     csrf_token = get_session(conn, "_csrf_token")
     Process.put(:plug_csrf_token, csrf_token)
 
     if not verified_request?(conn, csrf_token) do
-      raise InvalidCSRFTokenError
+      conn = case Keyword.get(opts, :with, :exception) do
+        :exception   -> raise InvalidCSRFTokenError
+        :clear_session -> clear_session_for_conn(conn)
+        other -> raise ArgumentError, message: "Option :with should be one of :exception or :clear_session. got #{inspect other}"
+      end
     end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
+  end
+
+  #do not persist changes to this session
+  defp clear_session_for_conn(conn) do
+    conn = configure_session(conn, ignore: true)
+    clear_session(conn)
   end
 
   ## Verification

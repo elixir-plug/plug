@@ -80,6 +80,17 @@ defmodule Plug.SessionTest do
     refute %{"foobar" => %{value: "sid"}} = conn.resp_cookies
   end
 
+  test "ignore changes to session" do
+    conn = conn(:get, "/") |> fetch_cookies
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path")
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+    conn = configure_session(conn, ignore: true)
+    conn = put_session(conn, "foo", "bar")
+    conn = send_resp(conn, 200, "")
+
+    assert conn.resp_cookies == %{}
+  end
+
   test "reuses sid and as such does not generate new cookie" do
     Process.put({:session, "sid"}, %{"foo" => "bar"})
     conn = conn(:get, "/") |> fetch_cookies

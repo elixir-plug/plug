@@ -17,21 +17,22 @@ defmodule Plug.CSRFProtectionTest do
   @secret String.duplicate("abcdef0123456789", 8)
   @csrf_token "hello123"
 
-  def call(conn) do
+  def call(conn, csrf_plug_opts \\ []) do
     put_in(conn.secret_key_base, @secret)
     |> fetch_query_params
     |> Plug.Session.call(@default_opts)
     |> fetch_session
-    |> CSRFProtection.call([])
+    |> put_session("key", "val")
+    |> CSRFProtection.call(csrf_plug_opts)
     |> maybe_get_token
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
     |> send_resp(200, "ok")
   end
 
-  def call(conn, old_conn) do
+  def call_with_old_conn(conn, old_conn, csrf_plug_opts \\ []) do
     conn
     |> recycle_cookies(old_conn)
-    |> call()
+    |> call(csrf_plug_opts)
   end
 
   defp maybe_get_token(conn) do
@@ -68,13 +69,44 @@ defmodule Plug.CSRFProtectionTest do
 
     assert_raise InvalidCSRFTokenError, fn ->
       conn(:post, "/", %{_csrf_token: "foo"})
-      |> call(old_conn)
+      |> call_with_old_conn(old_conn)
     end
 
     assert_raise InvalidCSRFTokenError, fn ->
       conn(:post, "/", %{})
-      |> call(old_conn)
+      |> call_with_old_conn(old_conn)
     end
+  end
+
+  test "raise error when unrecognized option is sent" do
+    assert_raise ArgumentError, fn ->
+      conn(:post, "/") |> call([with: :unknown_opt])
+    end
+  end
+
+  test "clear session for missing authenticity token in session" do
+    assert conn(:post, "/") |> call([with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call([with: :clear_session]) |> get_session("key") == nil
+  end
+
+  test "clear session for invalid authenticity token in params" do
+    old_conn = call(conn(:get, "/"))
+
+    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/", %{}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
+  end
+
+  test "clear session only for the current running connection" do
+    conn = conn(:get, "/?token=get") |> call
+    csrf_token = get_session(conn, "_csrf_token")
+
+    conn = conn(:post, "/") |> call_with_old_conn(conn, [with: :clear_session])
+    assert conn |> get_session("key") == nil
+
+    assert conn(:post, "/")
+      |> put_req_header("x-csrf-token", csrf_token)
+      |> call_with_old_conn(conn, [with: :clear_session])
+      |> get_session("key") == "val"
   end
 
   test "unprotected requests are always valid" do
@@ -96,7 +128,7 @@ defmodule Plug.CSRFProtectionTest do
     refute conn.halted
     assert get_session(conn, "_csrf_token")
 
-    conn = conn(:get, "/?token=delete") |> call(conn)
+    conn = conn(:get, "/?token=delete") |> call_with_old_conn(conn)
     refute conn.halted
     refute get_session(conn, "_csrf_token")
   end
@@ -105,13 +137,13 @@ defmodule Plug.CSRFProtectionTest do
     old_conn = conn(:get, "/?token=get") |> call
     params = %{_csrf_token: get_session(old_conn, "_csrf_token")}
 
-    conn = conn(:post, "/", params) |> call(old_conn)
+    conn = conn(:post, "/", params) |> call_with_old_conn(old_conn)
     refute conn.halted
 
-    conn = conn(:put, "/", params) |> call(old_conn)
+    conn = conn(:put, "/", params) |> call_with_old_conn(old_conn)
     refute conn.halted
 
-    conn = conn(:patch, "/", params) |> call(old_conn)
+    conn = conn(:patch, "/", params) |> call_with_old_conn(old_conn)
     refute conn.halted
   end
 
@@ -122,19 +154,19 @@ defmodule Plug.CSRFProtectionTest do
     conn =
       conn(:post, "/")
       |> put_req_header("x-csrf-token", csrf_token)
-      |> call(old_conn)
+      |> call_with_old_conn(old_conn)
     refute conn.halted
 
     conn =
       conn(:put, "/")
       |> put_req_header("x-csrf-token", csrf_token)
-      |> call(old_conn)
+      |> call_with_old_conn(old_conn)
     refute conn.halted
 
     conn =
       conn(:patch, "/")
       |> put_req_header("x-csrf-token", csrf_token)
-      |> call(old_conn)
+      |> call_with_old_conn(old_conn)
     refute conn.halted
   end
 
