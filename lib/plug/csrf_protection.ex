@@ -101,13 +101,10 @@ defmodule Plug.CSRFProtection do
 
   @behaviour Plug
 
-  
-  def init(opts) do
-    verity_opts opts 
-  end
+  def init(opts), do: opts
 
   def call(conn, opts) do
-    opts = verity_opts opts
+    opts = verify_opts opts
     csrf_token = get_session(conn, "_csrf_token")
     Process.put(:plug_csrf_token, csrf_token)
     if not verified_request?(conn, csrf_token) do
@@ -122,13 +119,13 @@ defmodule Plug.CSRFProtection do
   end
 
   
-  ## verifies if options passes are valid
+  ## verifies if options passed are valid
   ## :with - should be one of :exception or :nil_session, defaults to :exception     
-  defp verity_opts opts do
+  defp verify_opts opts do
     with = Keyword.get(opts, :with, :exception)
 
     if not with in [:exception, :nil_session] do
-      raise ArgumentError, message: "CSRF plug :with should be one of :exception or :nil_session"
+      raise ArgumentError, message: "Option :with should be one of :exception or :nil_session"
     end
 
     [with: with]
