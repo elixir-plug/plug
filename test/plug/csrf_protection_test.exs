@@ -78,6 +78,12 @@ defmodule Plug.CSRFProtectionTest do
     end
   end
 
+  test "raise error when unrecognized option is sent" do
+    assert_raise ArgumentError, fn ->
+      conn(:post, "/") |> call([with: :unknown_opt])
+    end
+  end
+
   test "clear session for missing authenticity token in session" do
     assert conn(:post, "/") |> call([with: :nil_session]) |> get_session("key") == nil
     assert conn(:post, "/", %{_csrf_token: "foo"}) |> call([with: :nil_session]) |> get_session("key") == nil

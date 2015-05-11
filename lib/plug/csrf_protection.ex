@@ -125,13 +125,9 @@ defmodule Plug.CSRFProtection do
   ## verifies if options passes are valid
   ## :with - should be one of :exception or :nil_session, defaults to :exception     
   defp verity_opts opts do
-    if not Keyword.has_key? opts, :with do
-      opts = Keyword.put_new opts, :with, :exception
-    end
+    with = Keyword.get(opts, :with, :exception)
 
-    with = Keyword.fetch!(opts, :with)
-
-    if not Enum.member? [:exception, :nil_session], with do
+    if not with in [:exception, :nil_session] do
       raise ArgumentError, message: "CSRF plug :with should be one of :exception or :nil_session"
     end
 
