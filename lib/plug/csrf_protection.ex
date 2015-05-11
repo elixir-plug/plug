@@ -121,10 +121,9 @@ defmodule Plug.CSRFProtection do
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
   end
 
-  @doc """
-    verifies if options passes are valid
-    :with - should be one of :exception or :nil_session, defaults to :exception     
-  """
+  
+  ## verifies if options passes are valid
+  ## :with - should be one of :exception or :nil_session, defaults to :exception     
   defp verity_opts opts do
     if not Keyword.has_key? opts, :with do
       opts = Keyword.put_new opts, :with, :exception
@@ -133,7 +132,7 @@ defmodule Plug.CSRFProtection do
     with = Keyword.fetch!(opts, :with)
 
     if not Enum.member? [:exception, :nil_session], with do
-      raise ArgumentError, message: "CSRF plug :rescue_with should be one of :exception or :nil_session"
+      raise ArgumentError, message: "CSRF plug :with should be one of :exception or :nil_session"
     end
 
     [with: with]
