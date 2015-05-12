@@ -248,6 +248,21 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert body =~ "invalid UTF-8 on multipart body, got byte 139"
   end
 
+  test "validates boundary on multipart requests" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    ------w58EW1cEpjzydSCq\r
+    """
+
+    headers =
+      [{"Content-Type", "multipart/form-data"},
+       {"Content-Length", byte_size(multipart)}]
+
+    assert {500, _, body} = request :post, "/multipart", headers, multipart
+    assert body =~ "malformed request, got"
+  end
+
   def https(conn) do
     assert conn.scheme == :https
     send_resp(conn, 200, "OK")
