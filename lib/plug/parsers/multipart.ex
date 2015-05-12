@@ -8,7 +8,11 @@ defmodule Plug.Parsers.MULTIPART do
   def parse(conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
     {adapter, state} = conn.adapter
 
-    case adapter.parse_req_multipart(state, opts, &handle_headers/1) do
+    try do
+      adapter.parse_req_multipart(state, opts, &handle_headers/1)
+    rescue
+      e -> raise Plug.Parsers.ParseError, exception: e
+    else
       {:ok, params, state} ->
         {:ok, params, %{conn | adapter: {adapter, state}}}
       {:more, _params, state} ->
