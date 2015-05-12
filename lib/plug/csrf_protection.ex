@@ -117,7 +117,7 @@ defmodule Plug.CSRFProtection do
       conn = case Keyword.get(opts, :with, :exception) do
         :exception   -> raise InvalidCSRFTokenError
         :nil_session -> clear_session_for_conn(conn)
-        _ -> raise ArgumentError, message: "Option :with should be one of :exception or :nil_session"
+        other -> raise ArgumentError, message: "Option :with should be one of :exception or :nil_session. got #{inspect other}"
       end
     end
 
