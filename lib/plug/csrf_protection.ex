@@ -4,9 +4,9 @@ defmodule Plug.CSRFProtection do
 
   For this plug to work, it expects a session to have been
   previously fetched. It will then compare the plug stored
-  in the session with the one sent by the request, when they
-  do not match, an `Plug.CSRFProtection.InvalidCSRFTokenError`
-  error is raised.
+  in the session with the one sent by the request to determine 
+  the validity of the request. For an invaid request the action
+  taken is based on the `:with` option.
 
   The token may be sent by the request either via the params
   with key "_csrf_token" or a header with name "x-csrf-token".
@@ -32,6 +32,12 @@ defmodule Plug.CSRFProtection do
   dictionary allow them to be generated as a side-effect,
   becoming one of those rare situations where using the process
   dictionary is useful.
+
+  ## Options
+
+    * `:with` - should be one of `:exception` or `:nil_session`. Defaults to `:exception`.
+      * `:exception` -  for invalid request, this plug will raise `InvalidCSRFTokenError`.
+      * `:nil_session` -  for invalid request, this plug will set an empty session for only this request.
 
   ## Disabling
 
@@ -104,31 +110,24 @@ defmodule Plug.CSRFProtection do
   def init(opts), do: opts
 
   def call(conn, opts) do
-    opts = verify_opts opts
     csrf_token = get_session(conn, "_csrf_token")
     Process.put(:plug_csrf_token, csrf_token)
+    
     if not verified_request?(conn, csrf_token) do
-      if opts[:with] == :exception do
-        raise InvalidCSRFTokenError
-      else 
-        conn = clear_session conn
+      conn = case Keyword.get(opts, :with, :exception) do
+        :exception   -> raise InvalidCSRFTokenError
+        :nil_session -> clear_session_for_conn(conn)
+        _ -> raise ArgumentError, message: "Option :with should be one of :exception or :nil_session"
       end
     end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
   end
 
-  
-  ## verifies if options passed are valid
-  ## :with - should be one of :exception or :nil_session, defaults to :exception     
-  defp verify_opts opts do
-    with = Keyword.get(opts, :with, :exception)
-
-    if not with in [:exception, :nil_session] do
-      raise ArgumentError, message: "Option :with should be one of :exception or :nil_session"
-    end
-
-    [with: with]
+  #do not persist changes to this session
+  defp clear_session_for_conn(conn) do
+    conn = configure_session(conn, ignore: true)
+    clear_session(conn)
   end
 
   ## Verification

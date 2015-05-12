@@ -756,6 +756,7 @@ defmodule Plug.Conn do
     * `:renew` - generates a new session id for the cookie
     * `:drop` - drops the session, a session cookie will not be included in the
       response
+    * `:ignore` - ignores all changes made to the session in this request cycle
 
   """
   @spec configure_session(t, Keyword.t) :: t
@@ -766,6 +767,7 @@ defmodule Plug.Conn do
     cond do
       opts[:renew] -> put_private(conn, :plug_session_info, :renew)
       opts[:drop]  -> put_private(conn, :plug_session_info, :drop)
+      opts[:ignore]  -> put_private(conn, :plug_session_info, nil)
       true         -> conn
     end
   end
