@@ -35,13 +35,15 @@ defmodule Plug.Logger do
   alias Plug.Conn
   @behaviour Plug
 
-  def init(opts), do: opts
+  def init(opts) do
+    Keyword.get(opts, :log, :info)
+  end
 
-  def call(conn, _config) do
+  def call(conn, level) do
     request_id = external_request_id(conn) || generate_request_id()
     Logger.metadata(request_id: request_id)
 
-    Logger.info fn ->
+    Logger.log level, fn ->
       [conn.method, ?\s, Conn.full_path(conn)]
     end
 
@@ -50,7 +52,7 @@ defmodule Plug.Logger do
     conn
     |> Conn.put_resp_header("x-request-id", request_id)
     |> Conn.register_before_send(fn conn ->
-         Logger.info fn ->
+         Logger.log level, fn ->
            after_time = :os.timestamp()
            diff = :timer.now_diff(after_time, before_time)
            [connection_type(conn), ?\s, Integer.to_string(conn.status),
