@@ -131,7 +131,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp normalize_cowboy_options(cowboy_options, :https) do
-    assert_keys(cowboy_options, [:keyfile, :certfile])
+    assert_ssl_options(cowboy_options)
     cowboy_options = Keyword.merge @https_cowboy_options, cowboy_options
     cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile], cowboy_options, &normalize_ssl_file(&1, &2)
     cowboy_options = Enum.reduce [:password], cowboy_options, &to_char_list(&2, &1)
@@ -169,10 +169,14 @@ defmodule Plug.Adapters.Cowboy do
     end
   end
 
-  defp assert_keys(cowboy_options, keys) do
-    for key <- keys,
-        not Keyword.has_key?(cowboy_options, key) do
-      fail "missing option #{inspect key}"
+  defp assert_ssl_options(cowboy_options) do
+    unless Keyword.has_key?(cowboy_options, :key) or
+           Keyword.has_key?(cowboy_options, :keyfile) do
+      fail "missing option :key/:keyfile"
+    end
+    unless Keyword.has_key?(cowboy_options, :cert) or
+           Keyword.has_key?(cowboy_options, :certfile) do
+      fail "missing option :cert/:certfile"
     end
   end
 

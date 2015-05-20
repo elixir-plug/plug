@@ -49,7 +49,7 @@ defmodule Plug.Adapters.CowboyTest do
   end
 
   test "errors when trying to run on https" do
-    assert_raise ArgumentError, ~r/missing option :keyfile/, fn ->
+    assert_raise ArgumentError, ~r/missing option :key\/:keyfile/, fn ->
       Plug.Adapters.Cowboy.https MyPlug, [], []
     end
 
