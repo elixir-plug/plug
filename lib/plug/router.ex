@@ -319,7 +319,9 @@ defmodule Plug.Router do
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {_vars, match}   = Plug.Router.Utils.build_path_match(path)
-    {method, match, Plug.Router.Utils.build_host_match(options[:host]), guards}
+    private_options  = extract_private_options(options)
+    host_match = Plug.Router.Utils.build_host_match(options[:host])
+    {method, match, host_match, guards, private_options}
   end
 
   # Entry point for both forward and match that is actually
@@ -334,19 +336,37 @@ defmodule Plug.Router do
         true ->
           raise ArgumentError, message: "expected :do to be given as option"
       end
-
+  
     {path, guards} = extract_path_and_guards(expr)
-
+    
     quote bind_quoted: [method: method,
                         path: path,
                         options: options,
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
-      {method, match, host, guards} = Plug.Router.__route__(method, path, guards, options)
+
+      route = Plug.Router.__route__(method, path, guards, options)
+      {method, match, host, guards, private_options} = route
+      private_options = Macro.escape(private_options, unquote: true)
+
       defp do_match(unquote(method), unquote(match), unquote(host)) when unquote(guards) do
-        fn var!(conn) -> unquote(body) end
+        fn conn ->
+          var!(conn) = %{ conn | private: Map.merge(conn.private, unquote(private_options)) }
+          unquote(body)
+        end
       end
     end
+  end
+
+  # Pops key :private from options and checks if it is a Map. Case it is not, 
+  # raises early so that the developer knows in compilation time. 
+  defp extract_private_options([]), do: %{}
+  defp extract_private_options(options) when is_list(options) do
+    {private_options, _options} = Keyword.pop(options, :private, %{})
+    unless is_map(private_options) do
+      raise ArgumentError, message: "expected :private option to be a map"
+    end
+    private_options
   end
 
   # Convert the verbs given with `:via` into a variable and guard set that can
