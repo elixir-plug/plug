@@ -67,6 +67,14 @@ defmodule Plug.Test do
     Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
   end
 
+  def sent_body() do
+    receive do
+      {:sent_body, body} -> body
+      _ -> ""
+    end
+  end
+
+
   @doc """
   Puts a new request header.
 

@@ -12,6 +12,11 @@ defmodule Plug.ConnTest do
     assert conn.private.hello == :world
   end
 
+  test "test adapter stores body in process before sending" do
+    conn(:get, "/foo") |> send_resp(200, "HELLO")
+    assert sent_body() == "HELLO"
+  end
+
   test "inspect/2" do
     assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
     refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"

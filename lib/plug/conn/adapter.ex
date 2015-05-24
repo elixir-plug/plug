@@ -19,7 +19,7 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  defcallback send_resp(payload, Conn.status, Conn.headers, Conn.body) ::
+  defcallback send_resp(payload, Conn.status, Conn.headers, Conn.body, Conn.owner) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """
