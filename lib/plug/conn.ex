@@ -346,7 +346,7 @@ defmodule Plug.Conn do
 
   def send_resp(%Conn{adapter: {adapter, payload}, state: :set, owner: owner} = conn) do
     conn = run_before_send(conn, :set)
-    {:ok, body, payload} = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body, conn.owner)
+    {:ok, body, payload} = adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
     send owner, @already_sent
     %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
   end

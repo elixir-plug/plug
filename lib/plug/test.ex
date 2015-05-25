@@ -67,9 +67,9 @@ defmodule Plug.Test do
     Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
   end
 
-  def sent_body() do
+  def sent_body(%Conn{owner: owner}) do
     receive do
-      {:sent_body, body} -> body
+      {^owner, body} -> body
       _ -> ""
     end
   end

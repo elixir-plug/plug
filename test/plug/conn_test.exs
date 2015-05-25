@@ -13,8 +13,8 @@ defmodule Plug.ConnTest do
   end
 
   test "test adapter stores body in process before sending" do
-    conn(:get, "/foo") |> send_resp(200, "HELLO")
-    assert sent_body() == "HELLO"
+    conn = conn(:get, "/foo") |> send_resp(200, "HELLO")
+    assert sent_body(conn) == "HELLO"
   end
 
   test "inspect/2" do
@@ -451,7 +451,7 @@ defmodule Plug.ConnTest do
 
   test "fetch_query_params/1 with invalid utf-8" do
     conn = conn(:get, "/foo?a=" <> <<139>>)
-    assert_raise Plug.Parsers.BadEncodingError, 
+    assert_raise Plug.Parsers.BadEncodingError,
                  "invalid UTF-8 on query string, got byte 139", fn ->
       fetch_query_params(conn)
     end

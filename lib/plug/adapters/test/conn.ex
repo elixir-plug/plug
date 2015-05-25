@@ -31,11 +31,13 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Connection adapter
 
-  def send_resp(%{method: "HEAD"} = state, _status, _headers, _body, _owner),
+  def send_resp(%{method: "HEAD"} = state, _status, _headers, _body),
     do: {:ok, "", state}
-  def send_resp(%{} = state, _status, _headers, body, owner) do
+  def send_resp(%{} = state, _status, _headers, body) do
     body = IO.iodata_to_binary(body)
-    send owner, {:sent_body, body}
+    owner = self
+
+    send owner, {owner, body}
     {:ok, body, state}
   end
 
