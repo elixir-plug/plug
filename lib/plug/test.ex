@@ -67,10 +67,20 @@ defmodule Plug.Test do
     Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
   end
 
-  def sent_body(%Conn{owner: owner}) do
+  @doc """
+  Returns the body sent in the response.
+
+  Even when multiple `conn`s are run within the same process, `sent_body/1` will
+  return the correct body for `conn`.
+
+  This relies on processes internally so calling it a second time on the same
+  `conn` will return a blank body.
+  """
+  def sent_body(%Conn{adapter: {_, %{ref: ref}}}) do
     receive do
-      {^owner, body} -> body
-      _ -> ""
+      {^ref, body} -> body
+    after
+      100 -> ""
     end
   end
 
