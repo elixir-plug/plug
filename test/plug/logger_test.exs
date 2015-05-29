@@ -48,35 +48,12 @@ defmodule Plug.LoggerTest do
 
   test "logs proper message to console" do
     {_conn, [first_message, second_message]} = conn(:get, "/") |> call
-    assert Regex.match?(~r/request_id=[^-A-Za-z0-9+\/=]|=[^=]|={3,} [info]  GET \//u, first_message)
+    assert Regex.match?(~r/\[info\]  GET \//u, first_message)
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
 
     {_conn, [first_message, second_message]} = conn(:get, "/hello/world") |> call
-    assert Regex.match?(~r/request_id=[^-A-Za-z0-9+\/=]|=[^=]|={3,} [info]  GET hello\/world/u, first_message)
+    assert Regex.match?(~r/\[info\]  GET \/hello\/world/u, first_message)
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
-  end
-
-  test "adds request id to headers" do
-    {conn, _} = conn(:get, "/hello/work") |> call
-    refute Plug.Conn.get_resp_header(conn, "x-request-id") == nil
-  end
-
-  test "returns request id from request headers" do
-    request_id = "01234567890123456789"
-    {conn, _}  = conn(:get, "/hello/work")
-                 |> put_req_header("x-request-id", request_id)
-                 |> call
-
-    assert Plug.Conn.get_resp_header(conn, "x-request-id") == [request_id]
-  end
-
-  test "generates new request id for invalid request_id" do
-    request_id = "01234567890"
-    {conn, _}  = conn(:get, "/hello/work")
-                 |> put_req_header("x-request-id", request_id)
-                 |> call
-
-    refute Plug.Conn.get_resp_header(conn, "x-request-id") == [request_id]
   end
 
   test "logs chunked if chunked reply" do
