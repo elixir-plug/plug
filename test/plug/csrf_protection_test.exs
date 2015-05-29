@@ -85,27 +85,27 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "clear session for missing authenticity token in session" do
-    assert conn(:post, "/") |> call([with: :nil_session]) |> get_session("key") == nil
-    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call([with: :nil_session]) |> get_session("key") == nil
+    assert conn(:post, "/") |> call([with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call([with: :clear_session]) |> get_session("key") == nil
   end
 
   test "clear session for invalid authenticity token in params" do
     old_conn = call(conn(:get, "/"))
-    
-    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call_with_old_conn(old_conn, [with: :nil_session]) |> get_session("key") == nil
-    assert conn(:post, "/", %{}) |> call_with_old_conn(old_conn, [with: :nil_session]) |> get_session("key") == nil
+
+    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/", %{}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
   end
 
   test "clear session only for the current running connection" do
     conn = conn(:get, "/?token=get") |> call
     csrf_token = get_session(conn, "_csrf_token")
 
-    conn = conn(:post, "/") |> call_with_old_conn(conn, [with: :nil_session])
+    conn = conn(:post, "/") |> call_with_old_conn(conn, [with: :clear_session])
     assert conn |> get_session("key") == nil
 
     assert conn(:post, "/")
       |> put_req_header("x-csrf-token", csrf_token)
-      |> call_with_old_conn(conn, [with: :nil_session])
+      |> call_with_old_conn(conn, [with: :clear_session])
       |> get_session("key") == "val"
   end
 

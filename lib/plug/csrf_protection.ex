@@ -4,7 +4,7 @@ defmodule Plug.CSRFProtection do
 
   For this plug to work, it expects a session to have been
   previously fetched. It will then compare the plug stored
-  in the session with the one sent by the request to determine 
+  in the session with the one sent by the request to determine
   the validity of the request. For an invaid request the action
   taken is based on the `:with` option.
 
@@ -35,9 +35,13 @@ defmodule Plug.CSRFProtection do
 
   ## Options
 
-    * `:with` - should be one of `:exception` or `:nil_session`. Defaults to `:exception`.
-      * `:exception` -  for invalid request, this plug will raise `InvalidCSRFTokenError`.
-      * `:nil_session` -  for invalid request, this plug will set an empty session for only this request.
+    * `:with` - should be one of `:exception` or `:clear_session`. Defaults to
+    `:exception`.
+      * `:exception` -  for invalid request, this plug will raise
+      `InvalidCSRFTokenError`.
+      * `:clear_session` -  for invalid request, this plug will set an empty
+      session for only this request. Also any changes to the session during this
+      request will be ignored.
 
   ## Disabling
 
@@ -112,12 +116,12 @@ defmodule Plug.CSRFProtection do
   def call(conn, opts) do
     csrf_token = get_session(conn, "_csrf_token")
     Process.put(:plug_csrf_token, csrf_token)
-    
+
     if not verified_request?(conn, csrf_token) do
       conn = case Keyword.get(opts, :with, :exception) do
         :exception   -> raise InvalidCSRFTokenError
-        :nil_session -> clear_session_for_conn(conn)
-        other -> raise ArgumentError, message: "Option :with should be one of :exception or :nil_session. got #{inspect other}"
+        :clear_session -> clear_session_for_conn(conn)
+        other -> raise ArgumentError, message: "Option :with should be one of :exception or :clear_session. got #{inspect other}"
       end
     end
 

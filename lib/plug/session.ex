@@ -99,6 +99,8 @@ defmodule Plug.Session do
           if sid, do: delete_session(sid, conn, config)
           value = put_session(nil, conn, config)
           put_cookie(value, conn, config)
+        :ignore ->
+          conn
         nil ->
           conn
       end
