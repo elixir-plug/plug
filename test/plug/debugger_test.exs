@@ -2,6 +2,10 @@ defmodule Plug.DebuggerTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  defmodule Exception do
+    defexception plug_status: 403, message: "oops"
+  end
+
   defmodule Router do
     use Plug.Router
     use Plug.Debugger, otp_app: :plug
@@ -25,32 +29,49 @@ defmodule Plug.DebuggerTest do
     get "/send_and_wrapped" do
       raise Plug.Conn.WrapperError, conn: conn,
         kind: :error, stack: System.stacktrace,
-        reason: ArgumentError.exception("oops")
+        reason: Exception.exception([])
     end
   end
 
   test "call/2 is overridden" do
+    conn = conn(:get, "/boom")
+
     assert_raise RuntimeError, "oops", fn ->
-      conn(:get, "/boom") |> Router.call([])
+      Router.call(conn, [])
     end
 
     assert_received {:plug_conn, :sent}
+    {status, headers, body} = sent_resp(conn)
+    assert status == 500
+    assert List.keyfind(headers, "content-type", 0) ==
+           {"content-type", "text/html; charset=utf-8"}
+    assert body =~ "<title>RuntimeError at GET /boom</title>"
   end
 
   test "call/2 is overridden but is a no-op when response is already sent" do
+    conn = conn(:get, "/send_and_boom")
+
     assert_raise RuntimeError, "oops", fn ->
-      conn(:get, "/send_and_boom") |> Router.call([])
+      Router.call(conn, [])
     end
 
     assert_received {:plug_conn, :sent}
+    assert {200, _headers, "oops"} = sent_resp(conn)
   end
 
   test "call/2 is overridden and unwrapps wrapped errors" do
-    assert_raise ArgumentError, "oops", fn ->
-      conn(:get, "/send_and_wrapped") |> Router.call([])
+    conn = conn(:get, "/send_and_wrapped")
+
+    assert_raise Exception, "oops", fn ->
+      Router.call(conn, [])
     end
 
     assert_received {:plug_conn, :sent}
+    {status, headers, body} = sent_resp(conn)
+    assert status == 403
+    assert List.keyfind(headers, "content-type", 0) ==
+           {"content-type", "text/html; charset=utf-8"}
+    assert body =~ "<title>Plug.DebuggerTest.Exception at GET /send_and_wrapped</title>"
   end
 
   defp render(conn, opts, fun) do
