@@ -10,15 +10,17 @@ defmodule Plug.Adapters.Test.Conn do
     uri    = URI.parse(uri)
     method = method |> to_string |> String.upcase
     query  = uri.query || ""
+    owner  = self()
 
     {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
-    state = %{method: method, params: params, req_body: body, chunks: nil}
+    state = %{method: method, params: params, req_body: body, chunks: nil,
+      ref: make_ref, owner: owner}
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},
       host: uri.host || "www.example.com",
       method: method,
-      owner: self(),
+      owner: owner,
       path_info: split_path(uri.path),
       port: uri.port || 80,
       peer: {{127, 0, 0, 1}, 111317},
@@ -33,8 +35,11 @@ defmodule Plug.Adapters.Test.Conn do
 
   def send_resp(%{method: "HEAD"} = state, _status, _headers, _body),
     do: {:ok, "", state}
-  def send_resp(%{} = state, _status, _headers, body),
-    do: {:ok, IO.iodata_to_binary(body), state}
+  def send_resp(%{owner: owner, ref: ref} = state, _status, _headers, body) do
+    body = IO.iodata_to_binary(body)
+    send owner, {ref, body}
+    {:ok, body, state}
+  end
 
   def send_file(%{method: "HEAD"} = state, _status, _headers, _path, _offset, _length),
     do: {:ok, "", state}

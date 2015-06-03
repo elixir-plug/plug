@@ -68,6 +68,24 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Returns the body sent in the response.
+
+  Even when multiple `conn`s are run within the same process, `sent_body/1` will
+  return the correct body for `conn`.
+
+  This relies on processes internally so calling it a second time on the same
+  `conn` will return a blank body.
+  """
+  def sent_body(%Conn{adapter: {_, %{ref: ref}}}) do
+    receive do
+      {^ref, body} -> body
+    after
+      100 -> ""
+    end
+  end
+
+
+  @doc """
   Puts a new request header.
 
   Previous entries of the same header are overridden.

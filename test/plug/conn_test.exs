@@ -12,6 +12,15 @@ defmodule Plug.ConnTest do
     assert conn.private.hello == :world
   end
 
+  test "test adapter stores body in process before sending" do
+    # The order of the lines below matters since we are testing if sent_body/1
+    # is returning the correct body even if they have the same owner process
+    conn = conn(:get, "/foo") |> send_resp(200, "HELLO")
+    another_conn = conn(:get, "/foo") |> send_resp(200, "TEST")
+    assert sent_body(another_conn) == "TEST"
+    assert sent_body(conn) == "HELLO"
+  end
+
   test "inspect/2" do
     assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
     refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"
@@ -446,7 +455,7 @@ defmodule Plug.ConnTest do
 
   test "fetch_query_params/1 with invalid utf-8" do
     conn = conn(:get, "/foo?a=" <> <<139>>)
-    assert_raise Plug.Parsers.BadEncodingError, 
+    assert_raise Plug.Parsers.BadEncodingError,
                  "invalid UTF-8 on query string, got byte 139", fn ->
       fetch_query_params(conn)
     end
