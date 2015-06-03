@@ -766,10 +766,10 @@ defmodule Plug.Conn do
     _ = get_session(conn)
 
     cond do
-      opts[:renew] -> put_private(conn, :plug_session_info, :renew)
-      opts[:drop]  -> put_private(conn, :plug_session_info, :drop)
-      opts[:ignore]  -> put_private(conn, :plug_session_info, :ignore)
-      true         -> conn
+      opts[:renew]  -> put_private(conn, :plug_session_info, :renew)
+      opts[:drop]   -> put_private(conn, :plug_session_info, :drop)
+      opts[:ignore] -> put_private(conn, :plug_session_info, :ignore)
+      true          -> conn
     end
   end
 

@@ -38,7 +38,7 @@ defmodule Plug.CSRFProtection do
     * `:with` - should be one of `:exception` or `:clear_session`. Defaults to
     `:exception`.
       * `:exception` -  for invalid request, this plug will raise
-      `InvalidCSRFTokenError`.
+      `Plug.CSRFProtection.InvalidCSRFTokenError`.
       * `:clear_session` -  for invalid request, this plug will set an empty
       session for only this request. Also any changes to the session during this
       request will be ignored.
@@ -119,19 +119,16 @@ defmodule Plug.CSRFProtection do
 
     if not verified_request?(conn, csrf_token) do
       conn = case Keyword.get(opts, :with, :exception) do
-        :exception   -> raise InvalidCSRFTokenError
-        :clear_session -> clear_session_for_conn(conn)
-        other -> raise ArgumentError, message: "Option :with should be one of :exception or :clear_session. got #{inspect other}"
+        :exception ->
+          raise InvalidCSRFTokenError
+        :clear_session ->
+          conn |> configure_session(ignore: true) |> clear_session()
+        other ->
+          raise ArgumentError, "option :with should be one of :exception or :clear_session, got #{inspect other}"
       end
     end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
-  end
-
-  #do not persist changes to this session
-  defp clear_session_for_conn(conn) do
-    conn = configure_session(conn, ignore: true)
-    clear_session(conn)
   end
 
   ## Verification
