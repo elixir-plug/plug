@@ -68,22 +68,22 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Returns the body sent in the response.
+  Returns the sent response.
 
-  Even when multiple `conn`s are run within the same process, `sent_body/1` will
-  return the correct body for `conn`.
-
-  This relies on processes internally so calling it a second time on the same
-  `conn` will return a blank body.
+  This function is useful when the code being invoked crashes and
+  there is a need to verify a particular response was sent even with
+  the crash. It returns a tuple with `{stauts, headers, body}`.
   """
-  def sent_body(%Conn{adapter: {_, %{ref: ref}}}) do
+  def sent_resp(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     receive do
-      {^ref, body} -> body
+      {^ref, response} ->
+        send(self, {ref, response})
+        response
     after
-      100 -> ""
+      0 -> raise "no sent response available for the given connection. " <>
+                 "Maybe the application did not send anything?"
     end
   end
-
 
   @doc """
   Puts a new request header.

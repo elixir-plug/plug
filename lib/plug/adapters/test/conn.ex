@@ -13,8 +13,8 @@ defmodule Plug.Adapters.Test.Conn do
     owner  = self()
 
     {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
-    state = %{method: method, params: params, req_body: body, chunks: nil,
-      ref: make_ref, owner: owner}
+    state = %{method: method, params: params, req_body: body,
+              chunks: nil, ref: make_ref, owner: owner}
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},
@@ -33,17 +33,17 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Connection adapter
 
-  def send_resp(%{method: "HEAD"} = state, _status, _headers, _body),
-    do: {:ok, "", state}
-  def send_resp(%{owner: owner, ref: ref} = state, _status, _headers, body) do
-    body = IO.iodata_to_binary(body)
-    send owner, {ref, body}
-    {:ok, body, state}
+  def send_resp(%{method: "HEAD"} = state, status, headers, _body) do
+    do_send state, status, headers, ""
+  end
+  def send_resp(state, status, headers, body) do
+    do_send state, status, headers, IO.iodata_to_binary(body)
   end
 
-  def send_file(%{method: "HEAD"} = state, _status, _headers, _path, _offset, _length),
-    do: {:ok, "", state}
-  def send_file(%{} = state, _status, _headers, path, offset, length) do
+  def send_file(%{method: "HEAD"} = state, status, headers, _path, _offset, _length) do
+    do_send state, status, headers, ""
+  end
+  def send_file(state, status, headers, path, offset, length) do
     %File.Stat{type: :regular, size: size} = File.stat!(path)
 
     length =
@@ -56,7 +56,7 @@ defmodule Plug.Adapters.Test.Conn do
       :file.pread(device, offset, length)
     end)
 
-    {:ok, data, state}
+    do_send state, status, headers, data
   end
 
   def send_chunked(state, _status, _headers),
@@ -66,6 +66,11 @@ defmodule Plug.Adapters.Test.Conn do
   def chunk(%{chunks: chunks} = state, body) do
     body = chunks <> IO.iodata_to_binary(body)
     {:ok, body, %{state | chunks: body}}
+  end
+
+  defp do_send(%{owner: owner, ref: ref} = state, status, headers, body) do
+    send owner, {ref, {status, headers, body}}
+    {:ok, body, state}
   end
 
   def read_req_body(%{req_body: body} = state, opts \\ []) do

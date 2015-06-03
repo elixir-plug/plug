@@ -16,9 +16,15 @@ defmodule Plug.ConnTest do
     # The order of the lines below matters since we are testing if sent_body/1
     # is returning the correct body even if they have the same owner process
     conn = conn(:get, "/foo") |> send_resp(200, "HELLO")
-    another_conn = conn(:get, "/foo") |> send_resp(200, "TEST")
-    assert sent_body(another_conn) == "TEST"
-    assert sent_body(conn) == "HELLO"
+    another_conn = conn(:get, "/foo") |> send_resp(404, "TEST")
+
+    {status, _headers, body} = sent_resp(another_conn)
+    assert status == 404
+    assert body == "TEST"
+
+    {status, _headers, body} = sent_resp(conn)
+    assert status == 200
+    assert body == "HELLO"
   end
 
   test "inspect/2" do
