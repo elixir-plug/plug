@@ -1,10 +1,16 @@
 ## Changelog
 
-## v0.12.3-dev
+## v0.13.0-dev
 
 * Enhancements
   * Raise if a header in upcase is given
-  * Store timestamps in ETS table and document each entry format
+  * Store timestamps in sessions ETS table and document each entry format
+  * Allow private options when specifying routes in `Plug.Router`
+  * Allow the session to be cleared and ignored when an invalid CSRF token is given
+  * Allow log level to be configured in `Plug.Logger`
+
+* Backwards incompatible changes
+  * `Plug.Logger` no longer sets the request id. Use `Plug.RequestId` instead
 
 ## v0.12.2
 
