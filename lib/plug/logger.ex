@@ -1,34 +1,18 @@
 defmodule Plug.Logger do
   @moduledoc """
-  A plug for logging basic request information.
+  A plug for logging basic request information in the format:
 
-  To use it, just plug it into the desired module. Currently it
-  does not expect any option during initialization.
+      GET /index.html
+      Sent 200 in 572ms
 
-  ## Request ID
+  To use it, just plug it into the desired module.
 
-  This plug generates a `:request_id` metadata that can be used
-  to identify requests in production. In order to log the request_id,
-  you need to configure your logger backends to include it as part
-  of the metadata:
+      plug Plug.Logger, log: :debug
 
-      config :logger, :console, metadata: [:request_id]
+  ## Options
 
-  It is recommended to include this metadata in your production
-  configuration file.
-
-  The request id can be received as part of the request in the header
-  field `x-request-id` and it will be included in the response with the
-  same name.
-
-  If you plan on sending your own request ids they must follow the
-  following format:
-
-    1. Be greater than 20 characters
-    2. Be less than 200 characters
-    3. Consist of ASCII letters, digits, or the characters +, /, =, and -
-
-  If we receive an invalid request id we will generate a new one.
+    * `:log` - The log level at which this plug should log its request info.
+      Default is `:info`.
   """
 
   require Logger
@@ -40,8 +24,6 @@ defmodule Plug.Logger do
   end
 
   def call(conn, level) do
-    request_id = external_request_id(conn) || generate_request_id()
-    Logger.metadata(request_id: request_id)
 
     Logger.log level, fn ->
       [conn.method, ?\s, Conn.full_path(conn)]
@@ -50,7 +32,6 @@ defmodule Plug.Logger do
     before_time = :os.timestamp()
 
     conn
-    |> Conn.put_resp_header("x-request-id", request_id)
     |> Conn.register_before_send(fn conn ->
          Logger.log level, fn ->
            after_time = :os.timestamp()
@@ -62,36 +43,9 @@ defmodule Plug.Logger do
        end)
   end
 
-  defp generate_request_id, do: :crypto.rand_bytes(15) |> Base.encode64
-
   defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string, "ms"]
   defp formatted_diff(diff), do: [diff |> Integer.to_string, "µs"]
 
   defp connection_type(%{state: :chunked}), do: "Chunked"
   defp connection_type(_), do: "Sent"
-
-  defp valid_request_id?(s) do
-    byte_size(s) in 20..200 and valid_base64?(s)
-  end
-
-  defp valid_base64?(<<h, t::binary>>)
-      when h in ?a..?z
-      when h in ?A..?Z
-      when h in ?0..?9
-      when h in '+=/-',
-      do: valid_base64?(t)
-
-  defp valid_base64?(<<>>),
-    do: true
-
-  defp valid_base64?(_),
-    do: false
-
-  defp external_request_id(conn) do
-    case Conn.get_req_header(conn, "x-request-id") do
-      []      -> nil
-      [val|_] -> valid_request_id?(val) and val
-    end
-  end
 end
-
