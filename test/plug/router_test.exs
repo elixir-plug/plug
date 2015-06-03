@@ -1,89 +1,60 @@
 defmodule Plug.RouterTest do
+  defmodule Forward do
+    use Plug.Router
+    use Plug.ErrorHandler
+
+    plug :match
+    plug :dispatch
+
+    def call(conn, opts) do
+      super(conn, opts)
+    after
+      Process.put(:plug_forward_call, true)
+    end
+
+    get "/" do
+      conn |> resp(200, "forwarded")
+    end
+
+    get "/script_name" do
+      conn |> resp(200, Enum.join(conn.script_name, ","))
+    end
+
+    match "/throw", via: [:get, :post] do
+      _ = conn
+      throw :oops
+    end
+
+    match "/raise" do
+      _ = conn
+      raise Plug.Parsers.RequestTooLargeError
+    end
+
+    match "/send_and_exit" do
+      send_resp(conn, 200, "ok")
+      exit(:oops)
+    end
+
+    def handle_errors(conn, assigns) do
+      # Custom call is always invoked before
+      true = Process.get(:plug_forward_call)
+
+      Process.put(:plug_handle_errors, Map.put(assigns, :status, conn.status))
+      super(conn, assigns)
+    end
+  end
+
+  defmodule Reforward do
+    use Plug.Router
+    use Plug.ErrorHandler
+
+    plug :match
+    plug :dispatch
+
+    forward "/step2", to: Forward
+  end
+
   defmodule Sample do
-    defmodule Forward do
-      use Plug.Router
-      use Plug.ErrorHandler
-
-      plug :match
-      plug :dispatch
-
-      def call(conn, opts) do
-        super(conn, opts)
-      after
-        Process.put(:plug_forward_call, true)
-      end
-
-      get "/" do
-        conn |> resp(200, "forwarded")
-      end
-
-      get "/script_name" do
-        conn |> resp(200, Enum.join(conn.script_name, ","))
-      end
-
-      match "/throw", via: [:get, :post] do
-        _ = conn
-        throw :oops
-      end
-
-      match "/raise" do
-        _ = conn
-        raise Plug.Parsers.RequestTooLargeError
-      end
-
-      match "/send_and_exit" do
-        send_resp(conn, 200, "ok")
-        exit(:oops)
-      end
-
-      def handle_errors(conn, assigns) do
-        # Custom call is always invoked before
-        true = Process.get(:plug_forward_call)
-
-        Process.put(:plug_handle_errors, Map.put(assigns, :status, conn.status))
-        super(conn, assigns)
-      end
-    end
-
-    defmodule Reforward do
-      use Plug.Router
-      use Plug.ErrorHandler
-
-      plug :match
-      plug :dispatch
-
-      forward "/step2", to: Forward
-    end
-
-    defmodule RouteOptions do
-      defmodule OptionsForward do
-        use Plug.Router
-
-        plug :match
-        plug :dispatch
-
-        get "/no_custom_assigns_from_forward" do
-          conn |> send_resp(200, inspect(conn.private))
-        end
-      end
-
-      use Plug.Router
-
-      plug :match
-      plug :dispatch
-			
-      get "/options/map", private: %{an_option: :a_value} do
-        conn |> resp(200, inspect(conn.private))
-      end
-
-      get "/options/not_in_private", another_option: "wont assign" do
-        conn |> resp(200, inspect(conn.private))
-      end
-
-      forward "/options/forward", to: OptionsForward, private: %{an_option: :a_value}
-			forward "/options/forward2", private: %{an_options: :a_value}, to: OptionsForward
-    end
-		
     use Plug.Router
     use Plug.ErrorHandler
 
@@ -133,6 +104,12 @@ defmodule Plug.RouterTest do
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
+
+    get "/options/map", private: %{an_option: :a_value} do
+      conn |> resp(200, inspect(conn.private))
+    end
+
+    forward "/options/forward", to: Forward, private: %{an_option: :a_value}
 
     match _ do
       conn |> resp(404, "oops")
@@ -319,46 +296,17 @@ defmodule Plug.RouterTest do
   end
 
   test "assigns route options to private conn map" do
-    conn = call(Sample.RouteOptions, conn(:get, "/options/map"))
+    conn = call(Sample, conn(:get, "/options/map"))
     assert conn.private[:an_option] == :a_value
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
 
-  test "does not assign route options if private is not a map" do
-    conn = call(Sample.RouteOptions, conn(:get, "/options/not_in_private"))
-    assert conn.private[:another_option] == nil
-    refute String.contains?(conn.resp_body, ~s(another_option: "wont assign"))
+  test "assigns options on forward" do
+    conn = call(Sample, conn(:get, "/options/forward"))
+    assert conn.private[:an_option] == :a_value
+    assert conn.resp_body == "forwarded"
   end
 
-  test "does not accept route options that are not a map" do
-    assert_raise ArgumentError, fn ->
-      defmodule Wrong do
-        use Plug.Router
-
-        plug :match
-        plug :dispatch
-				
-        get "/", private: [cant_be: :a_list] do
-          conn |> send_resp(200, "wont happen")
-        end
-      end
-    end
-  end
-
-  test "does not assign options on forward" do
-    route = "/options/forward/no_custom_assigns_from_forward"
-    conn = call(Sample.RouteOptions, conn(:get, route))
-
-    assert conn.private[:an_option] == nil
-    refute String.contains?(conn.resp_body, ~s(an_option: :a_value))
-
-    route = "/options/forward2/no_custom_assigns_from_forward"
-    conn = call(Sample.RouteOptions, conn(:get, route))
-
-    assert conn.private[:an_option] == nil
-    refute String.contains?(conn.resp_body, ~s(an_option: :a_value))
-  end
-	
   defp call(mod, conn) do
     mod.call(conn, [])
   end

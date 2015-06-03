@@ -269,9 +269,9 @@ defmodule Plug.Router do
 
   `forward` accepts the following options:
 
-  * `:to` - a Plug where the requests will be forwarded to.
-  * `:host` - a string representing the host or subdomain, exactly like in
-    `match/3`.
+    * `:to` - a Plug where the requests will be forwarded to.
+    * `:host` - a string representing the host or subdomain, exactly like in
+      `match/3`.
 
   All remaining options are passed to the target plug.
 
@@ -291,7 +291,7 @@ defmodule Plug.Router do
   defmacro forward(path, options) when is_binary(path) do
     quote bind_quoted: [path: path, options: options] do
       {target, options}       = Keyword.pop(options, :to)
-      {options, plug_options} = Keyword.split(options, [:host])
+      {options, plug_options} = Keyword.split(options, [:host, :private])
 
       if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
@@ -319,9 +319,9 @@ defmodule Plug.Router do
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {_vars, match}   = Plug.Router.Utils.build_path_match(path)
-    private_options  = extract_private_options(options)
+    private    = extract_private_merger(options)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {method, match, host_match, guards, private_options}
+    {method, match, host_match, guards, private}
   end
 
   # Entry point for both forward and match that is actually
@@ -336,37 +336,32 @@ defmodule Plug.Router do
         true ->
           raise ArgumentError, message: "expected :do to be given as option"
       end
-  
+
     {path, guards} = extract_path_and_guards(expr)
-    
+
     quote bind_quoted: [method: method,
                         path: path,
                         options: options,
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
-
       route = Plug.Router.__route__(method, path, guards, options)
-      {method, match, host, guards, private_options} = route
-      private_options = Macro.escape(private_options, unquote: true)
+      {method, match, host, guards, private} = route
 
       defp do_match(unquote(method), unquote(match), unquote(host)) when unquote(guards) do
-        fn conn ->
-          var!(conn) = %{ conn | private: Map.merge(conn.private, unquote(private_options)) }
+        fn var!(conn) ->
+          unquote(private)
           unquote(body)
         end
       end
     end
   end
 
-  # Pops key :private from options and checks if it is a Map. Case it is not, 
-  # raises early so that the developer knows in compilation time. 
-  defp extract_private_options([]), do: %{}
-  defp extract_private_options(options) when is_list(options) do
-    {private_options, _options} = Keyword.pop(options, :private, %{})
-    unless is_map(private_options) do
-      raise ArgumentError, message: "expected :private option to be a map"
+  defp extract_private_merger(options) when is_list(options) do
+    if private = Keyword.get(options, :private) do
+      quote do
+        var!(conn) = update_in var!(conn).private, &Map.merge(&1, unquote(Macro.escape(private)))
+      end
     end
-    private_options
   end
 
   # Convert the verbs given with `:via` into a variable and guard set that can
