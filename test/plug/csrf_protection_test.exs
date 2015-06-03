@@ -15,7 +15,6 @@ defmodule Plug.CSRFProtectionTest do
   )
 
   @secret String.duplicate("abcdef0123456789", 8)
-  @csrf_token "hello123"
 
   def call(conn, csrf_plug_opts \\ []) do
     put_in(conn.secret_key_base, @secret)
@@ -24,9 +23,8 @@ defmodule Plug.CSRFProtectionTest do
     |> fetch_session
     |> put_session("key", "val")
     |> CSRFProtection.call(csrf_plug_opts)
-    |> maybe_get_token
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
-    |> send_resp(200, "ok")
+    |> handle_token
   end
 
   def call_with_old_conn(conn, old_conn, csrf_plug_opts \\ []) do
@@ -35,14 +33,15 @@ defmodule Plug.CSRFProtectionTest do
     |> call(csrf_plug_opts)
   end
 
-  defp maybe_get_token(conn) do
-    case conn.params["token"] do
-      "get"    -> CSRFProtection.get_csrf_token()
-      "delete" -> CSRFProtection.delete_csrf_token()
-      _        -> :ok
-    end
+  defp handle_token(conn) do
+    body =
+      case conn.params["token"] do
+        "get"    -> CSRFProtection.get_csrf_token()
+        "delete" -> CSRFProtection.delete_csrf_token()
+        _        -> nil
+      end
 
-    conn
+    send_resp(conn, 200, body || "")
   end
 
   test "token is stored in process dictionary" do
@@ -85,28 +84,38 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "clear session for missing authenticity token in session" do
-    assert conn(:post, "/") |> call([with: :clear_session]) |> get_session("key") == nil
-    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call([with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/")
+           |> call(with: :clear_session)
+           |> get_session("key") == nil
+
+    assert conn(:post, "/", %{_csrf_token: "foo"})
+           |> call(with: :clear_session)
+           |> get_session("key") == nil
   end
 
   test "clear session for invalid authenticity token in params" do
     old_conn = call(conn(:get, "/"))
 
-    assert conn(:post, "/", %{_csrf_token: "foo"}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
-    assert conn(:post, "/", %{}) |> call_with_old_conn(old_conn, [with: :clear_session]) |> get_session("key") == nil
+    assert conn(:post, "/", %{_csrf_token: "foo"})
+           |> call_with_old_conn(old_conn, with: :clear_session)
+           |> get_session("key") == nil
+
+    assert conn(:post, "/", %{})
+           |> call_with_old_conn(old_conn, with: :clear_session)
+           |> get_session("key") == nil
   end
 
   test "clear session only for the current running connection" do
     conn = conn(:get, "/?token=get") |> call
-    csrf_token = get_session(conn, "_csrf_token")
+    csrf_token = conn.resp_body
 
-    conn = conn(:post, "/") |> call_with_old_conn(conn, [with: :clear_session])
+    conn = conn(:post, "/") |> call_with_old_conn(conn, with: :clear_session)
     assert conn |> get_session("key") == nil
 
     assert conn(:post, "/")
-      |> put_req_header("x-csrf-token", csrf_token)
-      |> call_with_old_conn(conn, [with: :clear_session])
-      |> get_session("key") == "val"
+           |> put_req_header("x-csrf-token", csrf_token)
+           |> call_with_old_conn(conn, with: :clear_session)
+           |> get_session("key") == "val"
   end
 
   test "unprotected requests are always valid" do
@@ -133,9 +142,19 @@ defmodule Plug.CSRFProtectionTest do
     refute get_session(conn, "_csrf_token")
   end
 
+  test "generated tokens are always masked" do
+    conn1 = conn(:get, "/?token=get") |> call()
+    assert byte_size(conn1.resp_body) == 56
+
+    conn2 = conn(:get, "/?token=get") |> call()
+    assert byte_size(conn2.resp_body) == 56
+
+    assert conn1.resp_body != conn2.resp_body
+  end
+
   test "protected requests with valid token in params are allowed" do
     old_conn = conn(:get, "/?token=get") |> call
-    params = %{_csrf_token: get_session(old_conn, "_csrf_token")}
+    params = %{_csrf_token: old_conn.resp_body}
 
     conn = conn(:post, "/", params) |> call_with_old_conn(old_conn)
     refute conn.halted
@@ -149,7 +168,7 @@ defmodule Plug.CSRFProtectionTest do
 
   test "protected requests with valid token in header are allowed" do
     old_conn = conn(:get, "/?token=get") |> call
-    csrf_token = get_session(old_conn, "_csrf_token")
+    csrf_token = old_conn.resp_body
 
     conn =
       conn(:post, "/")

@@ -57,6 +57,7 @@ defmodule Plug.CSRFProtection do
   """
 
   import Plug.Conn
+  require Bitwise
   @unprotected_methods ~w(HEAD GET OPTIONS)
 
   defmodule InvalidCSRFTokenError do
@@ -89,11 +90,11 @@ defmodule Plug.CSRFProtection do
   dictionary if one does not exists.
   """
   def get_csrf_token do
-    if token = Process.get(:plug_csrf_token) do
+    if token = Process.get(:plug_masked_csrf_token) do
       token
     else
-      token = generate_token()
-      Process.put(:plug_csrf_token, token)
+      token = mask(unmasked_csrf_token())
+      Process.put(:plug_masked_csrf_token, token)
       token
     end
   end
@@ -104,18 +105,22 @@ defmodule Plug.CSRFProtection do
   This will force the token to be deleted once the response is sent.
   """
   def delete_csrf_token do
-    Process.delete(:plug_csrf_token)
+    Process.delete(:plug_unmasked_csrf_token)
+    Process.delete(:plug_masked_csrf_token)
   end
 
   ## Plug
 
   @behaviour Plug
+  @token_size 16
+  @encoded_token_size 24
+  @double_encoded_token_size 32
 
   def init(opts), do: opts
 
   def call(conn, opts) do
     csrf_token = get_session(conn, "_csrf_token")
-    Process.put(:plug_csrf_token, csrf_token)
+    Process.put(:plug_unmasked_csrf_token, csrf_token)
 
     if not verified_request?(conn, csrf_token) do
       conn = case Keyword.get(opts, :with, :exception) do
@@ -140,11 +145,15 @@ defmodule Plug.CSRFProtection do
       || skip_csrf_protection?(conn)
   end
 
-  defp valid_csrf_token?(csrf_token, user_token)
-    when is_nil(csrf_token) or is_nil(user_token),
-    do: false
-  defp valid_csrf_token?(csrf_token, user_token),
-    do: Plug.Crypto.secure_compare(csrf_token, user_token)
+  defp valid_csrf_token?(<<csrf_token::@encoded_token_size-binary>>,
+                         <<user_token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>) do
+    case Base.decode64(user_token) do
+      {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
+      :error -> false
+    end
+  end
+
+  defp valid_csrf_token?(_csrf_token, _user_token), do: false
 
   ## Before send
 
@@ -172,7 +181,8 @@ defmodule Plug.CSRFProtection do
   end
 
   defp ensure_csrf_token(conn, csrf_token) do
-    case Process.delete(:plug_csrf_token) do
+    Process.delete(:plug_masked_csrf_token)
+    case Process.delete(:plug_unmasked_csrf_token) do
       ^csrf_token -> conn
       current     -> put_session(conn, "_csrf_token", current)
     end
@@ -183,7 +193,22 @@ defmodule Plug.CSRFProtection do
   defp skip_csrf_protection?(%Plug.Conn{private: %{plug_skip_csrf_protection: true}}), do: true
   defp skip_csrf_protection?(%Plug.Conn{}), do: false
 
+  defp mask(token) do
+    mask = generate_token()
+    Base.encode64(Plug.Crypto.mask(token, mask)) <> mask
+  end
+
+  defp unmasked_csrf_token do
+    if token = Process.get(:plug_unmasked_csrf_token) do
+      token
+    else
+      token = generate_token()
+      Process.put(:plug_unmasked_csrf_token, token)
+      token
+    end
+  end
+
   defp generate_token do
-    :crypto.strong_rand_bytes(32) |> Base.encode64
+    :crypto.strong_rand_bytes(@token_size) |> Base.encode64
   end
 end
