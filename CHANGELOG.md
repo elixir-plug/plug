@@ -1,6 +1,6 @@
 ## Changelog
 
-## v0.13.0-dev
+## v0.13.0
 
 * Enhancements
   * Raise if a header in upcase is given
@@ -8,6 +8,7 @@
   * Allow private options when specifying routes in `Plug.Router`
   * Allow the session to be cleared and ignored when an invalid CSRF token is given
   * Allow log level to be configured in `Plug.Logger`
+  * Generate masked CSRF tokens to avoid BREACH attacks
 
 * Backwards incompatible changes
   * `Plug.Logger` no longer sets the request id. Use `Plug.RequestId` instead
