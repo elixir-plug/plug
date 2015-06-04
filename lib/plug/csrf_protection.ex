@@ -119,7 +119,7 @@ defmodule Plug.CSRFProtection do
   def init(opts), do: opts
 
   def call(conn, opts) do
-    csrf_token = get_session(conn, "_csrf_token")
+    csrf_token = get_csrf_from_session(conn)
     Process.put(:plug_unmasked_csrf_token, csrf_token)
 
     if not verified_request?(conn, csrf_token) do
@@ -137,6 +137,13 @@ defmodule Plug.CSRFProtection do
   end
 
   ## Verification
+
+  defp get_csrf_from_session(conn) do
+    if (csrf_token = get_session(conn, "_csrf_token")) &&
+       byte_size(csrf_token) == @encoded_token_size do
+      csrf_token
+    end
+  end
 
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods

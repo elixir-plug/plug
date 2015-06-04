@@ -34,14 +34,15 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   defp handle_token(conn) do
-    body =
-      case conn.params["token"] do
-        "get"    -> CSRFProtection.get_csrf_token()
-        "delete" -> CSRFProtection.delete_csrf_token()
-        _        -> nil
-      end
-
-    send_resp(conn, 200, body || "")
+    case conn.params["token"] do
+      "get" ->
+        send_resp(conn, 200, CSRFProtection.get_csrf_token())
+      "delete" ->
+        CSRFProtection.delete_csrf_token()
+        send_resp(conn, 200, "")
+      _ ->
+        send_resp(conn, 200, "")
+    end
   end
 
   test "token is stored in process dictionary" do
@@ -79,7 +80,7 @@ defmodule Plug.CSRFProtectionTest do
 
   test "raise error when unrecognized option is sent" do
     assert_raise ArgumentError, fn ->
-      conn(:post, "/") |> call([with: :unknown_opt])
+      conn(:post, "/") |> call(with: :unknown_opt)
     end
   end
 
@@ -140,6 +141,12 @@ defmodule Plug.CSRFProtectionTest do
     conn = conn(:get, "/?token=delete") |> call_with_old_conn(conn)
     refute conn.halted
     refute get_session(conn, "_csrf_token")
+  end
+
+  test "tokens are ignored when invalid and deleted on demand" do
+    conn = conn(:get, "/?token=get") |> call() |> put_session("_csrf_token", "invalid")
+    conn = conn(:get, "/?token=get") |> call_with_old_conn(conn)
+    assert get_session(conn, "_csrf_token")
   end
 
   test "generated tokens are always masked" do
