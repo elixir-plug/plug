@@ -33,6 +33,16 @@ defmodule Plug.Router do
   This means users can easily hook into the router mechanism and add
   behaviour before match, before dispatch or after both.
 
+  To specify private options on `match` that can be used by plugs 
+  before `dispatch` pass an option with key `:private` containing a map.
+  Example:
+
+      get "/hello", private: %{an_option: :a_value} do
+        send_resp(conn, 200, "world")
+      end
+
+  These options are assigned to `:private` in the call's `Plug.Conn`.
+
   ## Routes
 
       get "/hello" do
