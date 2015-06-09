@@ -169,9 +169,7 @@ defmodule Plug.Router do
       use Plug.Builder, unquote(opts)
 
       defp match(conn, _opts) do
-        Plug.Conn.put_private(conn,
-          :plug_route,
-          do_match(conn.method, Enum.map(conn.path_info, &URI.decode/1), conn.host))
+        do_match(conn, conn.method, Enum.map(conn.path_info, &URI.decode/1), conn.host)
       end
 
       defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
@@ -331,7 +329,7 @@ defmodule Plug.Router do
     {_vars, match}   = Plug.Router.Utils.build_path_match(path)
     private    = extract_private_merger(options)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {method, match, host_match, guards, private}
+    {quote(do: conn), method, match, host_match, guards, private}
   end
 
   # Entry point for both forward and match that is actually
@@ -355,13 +353,11 @@ defmodule Plug.Router do
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {method, match, host, guards, private} = route
+      {conn, method, match, host, guards, private} = route
 
-      defp do_match(unquote(method), unquote(match), unquote(host)) when unquote(guards) do
-        fn var!(conn) ->
-          unquote(private)
-          unquote(body)
-        end
+      defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host)) when unquote(guards) do
+        unquote(private)
+        Plug.Conn.put_private(unquote(conn), :plug_route, fn var!(conn) -> unquote(body) end)
       end
     end
   end
@@ -369,7 +365,7 @@ defmodule Plug.Router do
   defp extract_private_merger(options) when is_list(options) do
     if private = Keyword.get(options, :private) do
       quote do
-        var!(conn) = update_in var!(conn).private, &Map.merge(&1, unquote(Macro.escape(private)))
+        conn = update_in conn.private, &Map.merge(&1, unquote(Macro.escape(private)))
       end
     end
   end

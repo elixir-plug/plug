@@ -59,6 +59,7 @@ defmodule Plug.RouterTest do
     use Plug.ErrorHandler
 
     plug :match
+    plug :verify_router_options
     plug :dispatch
 
     get "/", host: "foo.bar", do: conn |> resp(200, "foo.bar root")
@@ -113,6 +114,13 @@ defmodule Plug.RouterTest do
 
     match _ do
       conn |> resp(404, "oops")
+    end
+
+    defp verify_router_options(conn, _opts) do
+      if conn.path_info == ["options", "map"] and is_nil(conn.private[:an_option]) do
+        raise "should be able to read option after match"
+      end
+      conn
     end
   end
 
