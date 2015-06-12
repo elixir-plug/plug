@@ -54,7 +54,7 @@ defmodule Plug.Session.COOKIE do
   alias Plug.Crypto.MessageEncryptor
 
   def init(opts) do
-    encryption_salt = opts[:encrypted_salt]
+    encryption_salt = opts[:encryption_salt]
     signing_salt = check_signing_salt(opts)
 
     iterations = Keyword.get(opts, :key_iterations, 1000)
