@@ -463,6 +463,60 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Adds a new request header (`key`) if not present, otherwise replaces the
+  previous value of that header with `value`.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
+  """
+  @spec put_req_header(t, binary, binary) :: t
+  def put_req_header(%Conn{state: :sent}, _key, _value) do
+    raise AlreadySentError
+  end
+
+  def put_req_header(%Conn{req_headers: headers} = conn, key, value) when
+      is_binary(key) and is_binary(value) do
+    unless valid_header_key?(key), do: raise(InvalidHeaderKeyFormatError, message: "header key is not lowercase: "<>key)
+    %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
+  end
+
+  @doc """
+  Deletes a request header if present.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
+  """
+  @spec delete_req_header(t, binary) :: t
+  def delete_req_header(%Conn{state: :sent}, _key) do
+    raise AlreadySentError
+  end
+
+  def delete_req_header(%Conn{req_headers: headers} = conn, key) when
+      is_binary(key) do
+    %{conn | req_headers: List.keydelete(headers, key, 0)}
+  end
+
+  @doc """
+  Updates a request header if present, otherwise it sets it to an initial
+  value.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent`.
+  """
+  @spec update_req_header(t, binary, binary, (binary -> binary)) :: t
+  def update_req_header(%Conn{state: :sent}, _key, _initial, _fun) do
+    raise AlreadySentError
+  end
+
+  def update_req_header(%Conn{} = conn, key, initial, fun) when
+      is_binary(key) and is_binary(initial) and is_function(fun, 1) do
+    case get_req_header(conn, key) do
+      []          -> put_req_header(conn, key, initial)
+      [current|_] -> put_req_header(conn, key, fun.(current))
+    end
+  end
+
+  @doc """
   Returns the values of the response header specified by `key`.
 
   ## Examples

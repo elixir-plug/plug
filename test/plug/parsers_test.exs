@@ -1,7 +1,7 @@
 defmodule Plug.ParsersTest do
   use ExUnit.Case, async: true
 
-  import Plug.Test
+  use Plug.Test
 
   def parse(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
@@ -54,7 +54,7 @@ defmodule Plug.ParsersTest do
   end
 
   test "raises on invalid url encoded" do
-    assert_raise Plug.Parsers.BadEncodingError, 
+    assert_raise Plug.Parsers.BadEncodingError,
                  "invalid UTF-8 on urlencoded body, got byte 139", fn ->
       conn(:post, "/foo", "a=" <> <<139>>)
       |> put_req_header("content-type", "application/x-www-form-urlencoded")

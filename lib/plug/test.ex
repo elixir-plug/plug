@@ -16,7 +16,7 @@ defmodule Plug.Test do
   @doc false
   defmacro __using__(_) do
     quote do
-      import Plug.Test
+      import Plug.Test, except: [put_req_header: 3, delete_req_header: 2]
       import Plug.Conn
     end
   end
@@ -85,21 +85,15 @@ defmodule Plug.Test do
     end
   end
 
-  @doc """
-  Puts a new request header.
-
-  Previous entries of the same header are overwritten.
-  """
-  @spec put_req_header(Conn.t, binary, binary) :: Conn.t
+  @doc false
   def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
+    IO.write :stderr, "[warning] Plug.Test.put_req_header/3 is deprecated\n" <> Exception.format_stacktrace
     %{conn | req_headers: :lists.keystore(key, 1, headers, {key, value})}
   end
 
-  @doc """
-  Deletes a request header.
-  """
-  @spec delete_req_header(Conn.t, binary) :: Conn.t
+  @doc false
   def delete_req_header(%Conn{req_headers: headers} = conn, key) when is_binary(key) do
+    IO.write :stderr, "[warning] Plug.Test.delete_req_header/2 is deprecated\n" <> Exception.format_stacktrace
     %{conn | req_headers: :lists.keydelete(key, 1, headers)}
   end
 
