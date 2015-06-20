@@ -191,7 +191,7 @@ defmodule Plug.Conn.Query do
 
   defp encode_dict(dict, parent_field, encoder) do
     dict
-    |> Stream.filter(fn {_field, value} -> value != %{} end)
+    |> Stream.reject(fn {_field, value} -> value == %{} end)
     |> Stream.map(fn {field, value} ->
       field =
         if parent_field do
