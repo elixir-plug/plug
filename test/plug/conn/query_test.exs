@@ -126,4 +126,10 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{foo: URI.parse("/bar")}, encoder) ==
            "foo=%2Fbar%2Fbar"
   end
+
+  test "encode ignores empty dicts" do
+    assert encode(%{filter: %{}, foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
+    assert encode(%{filter: [], foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
+  end
+
 end

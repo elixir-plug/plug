@@ -190,7 +190,9 @@ defmodule Plug.Conn.Query do
   end
 
   defp encode_dict(dict, parent_field, encoder) do
-    Enum.map_join(dict, "&", fn {field, value} ->
+    dict
+    |> Stream.reject(fn {_field, val} -> val == %{} || val == [] end)
+    |> Stream.map(fn {field, value} ->
       field =
         if parent_field do
           "#{parent_field}[#{encode_key(field)}]"
@@ -199,6 +201,7 @@ defmodule Plug.Conn.Query do
         end
       encode_pair(field, value, encoder)
     end)
+    |> Enum.join("&")
   end
 
   defp encode_key(item) do
