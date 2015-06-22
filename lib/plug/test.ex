@@ -49,7 +49,7 @@ defmodule Plug.Test do
 
       conn(:get, "/foo", "bar=10")
       conn(:post, "/")
-      conn("patch", "/", "", headers: [{"content-type", "application/json"}])
+      conn("patch", "/", "") |> put_req_header("content-type", "application/json")
 
   """
   @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
