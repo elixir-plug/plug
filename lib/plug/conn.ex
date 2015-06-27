@@ -706,7 +706,7 @@ defmodule Plug.Conn do
   Puts the specified `value` in the session for the given `key`.
 
   The key can be a string or an atom, where atoms are
-  automatically convert to strings.
+  automatically converted to strings.
   """
   @spec put_session(t, String.t | atom, any) :: t
   def put_session(conn, key, value) do
@@ -717,7 +717,7 @@ defmodule Plug.Conn do
   Returns session value for the given `key`.
 
   The key can be a string or an atom, where atoms are
-  automatically convert to strings.
+  automatically converted to strings.
   """
   @spec get_session(t, String.t | atom) :: any
   def get_session(conn, key) do
@@ -728,7 +728,7 @@ defmodule Plug.Conn do
   Deletes the session for the given `key`.
 
   The key can be a string or an atom, where atoms are
-  automatically convert to strings.
+  automatically converted to strings.
   """
   @spec delete_session(t, String.t | atom) :: t
   def delete_session(conn, key) do
