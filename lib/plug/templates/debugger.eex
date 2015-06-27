@@ -653,7 +653,26 @@
                           <% end %>
                         </div>
                     </header>
+
+                    <div class="sub">
+                        <h3>Frame</h3>
+                        <div class="inset variables">
+                            <table class="var_table">
+                                <tr>
+                                    <td class="name">Function</td>
+                                    <td><%= h(frame.info) %> (<%= h(frame.app) %>)</td>
+                                </tr>
+                                <%= if frame.args != [] do %>
+                                    <tr>
+                                        <td class="name">Args</td>
+                                        <td><%= h(inspect frame.args) %></td>
+                                    </tr>
+                                <% end %>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
             <% end %>
 
             <div class="sub">

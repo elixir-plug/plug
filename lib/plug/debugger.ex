@@ -131,7 +131,6 @@ defmodule Plug.Debugger do
 
     reason = Exception.normalize(kind, reason, stack)
     {status, title, message} = info(kind, reason)
-    stack = prune_stack(kind, reason, stack)
 
     conn = put_resp_content_type(conn, "text/html")
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
@@ -161,10 +160,6 @@ defmodule Plug.Debugger do
     {500, "unhandled exit", Exception.format_exit(reason)}
   end
 
-  defp prune_stack(:error, %FunctionClauseError{}, [_|t]), do: t
-  defp prune_stack(:error, %UndefinedFunctionError{}, [_|t]), do: t
-  defp prune_stack(_kind, _reason, stack), do: stack
-
   defp frames(stacktrace, opts) do
     app    = opts[:otp_app]
     editor = System.get_env("PLUG_EDITOR")
@@ -175,7 +170,7 @@ defmodule Plug.Debugger do
   end
 
   defp each_frame(entry, index, root, editor) do
-    {module, info, location, app} = get_entry(entry)
+    {module, info, location, app, func, args} = get_entry(entry)
     {file, line} = {to_string(location[:file] || "nofile"), location[:line]}
 
     source  = get_source(module, file)
@@ -189,35 +184,37 @@ defmodule Plug.Debugger do
        context: context,
        snippet: snippet,
        index: index,
+       func: func,
+       args: args,
        link: editor && get_editor(source, line, editor)
      }, index + 1}
   end
 
   # From :elixir_compiler_*
   defp get_entry({module, :__MODULE__, 0, location}) do
-    {module, inspect(module) <> " (module)", location, get_app(module)}
+    {module, inspect(module) <> " (module)", location, get_app(module), nil, []}
   end
 
   # From :elixir_compiler_*
   defp get_entry({_module, :__MODULE__, 1, location}) do
-    {nil, "(module)", location, nil}
+    {nil, "(module)", location, nil, nil, []}
   end
 
   # From :elixir_compiler_*
   defp get_entry({_module, :__FILE__, 1, location}) do
-    {nil, "(file)", location, nil}
+    {nil, "(file)", location, nil, nil, []}
   end
 
   defp get_entry({module, fun, args, location}) when is_list(args) do
-    get_entry({module, fun, length(args), location})
+    {module, Exception.format_mfa(module, fun, length(args)), location, get_app(module), fun, args}
   end
 
   defp get_entry({module, fun, arity, location}) do
-    {module, Exception.format_mfa(module, fun, arity), location, get_app(module)}
+    {module, Exception.format_mfa(module, fun, arity), location, get_app(module), fun, []}
   end
 
   defp get_entry({fun, arity, location}) do
-    {nil, Exception.format_fa(fun, arity), location, nil}
+    {nil, Exception.format_fa(fun, arity), location, nil, fun, []}
   end
 
   defp get_app(module) do
