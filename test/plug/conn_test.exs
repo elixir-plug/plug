@@ -626,6 +626,21 @@ defmodule Plug.ConnTest do
     assert get_session(conn, "foo") == :bar
     assert get_session(conn, "key") == 42
     assert get_session(conn, "unknown") == nil
+
+    conn = %{conn|state: :sent}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      put_session(conn, :key, 42)
+    end
+
+    conn = %{conn|state: :file}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      put_session(conn, :key, 42)
+    end
+
+    conn = %{conn|state: :chunked}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      put_session(conn, :key, 42)
+    end
   end
 
   test "configure_session/2" do
