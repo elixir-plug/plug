@@ -17,6 +17,17 @@ defmodule Plug.CSRFProtectionTest do
   @secret String.duplicate("abcdef0123456789", 8)
 
   def call(conn, csrf_plug_opts \\ []) do
+    do_call(conn, csrf_plug_opts)
+    |> handle_token
+  end
+
+  def call_with_invalid_token(conn) do
+    do_call(conn, [])
+    |> put_session("_csrf_token", "invalid")
+    |> handle_token
+  end
+
+  defp do_call(conn, csrf_plug_opts) do
     put_in(conn.secret_key_base, @secret)
     |> fetch_query_params
     |> Plug.Session.call(@default_opts)
@@ -24,7 +35,6 @@ defmodule Plug.CSRFProtectionTest do
     |> put_session("key", "val")
     |> CSRFProtection.call(csrf_plug_opts)
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
-    |> handle_token
   end
 
   def call_with_old_conn(conn, old_conn, csrf_plug_opts \\ []) do
@@ -144,7 +154,7 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "tokens are ignored when invalid and deleted on demand" do
-    conn = conn(:get, "/?token=get") |> call() |> put_session("_csrf_token", "invalid")
+    conn = conn(:get, "/?token=get") |> call_with_invalid_token()
     conn = conn(:get, "/?token=get") |> call_with_old_conn(conn)
     assert get_session(conn, "_csrf_token")
   end
