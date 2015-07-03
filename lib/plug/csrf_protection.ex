@@ -46,7 +46,11 @@ defmodule Plug.CSRFProtection do
   ## Disabling
 
   You may disable this plug by doing
-  `Plug.Conn.put_private(:plug_skip_csrf_protection, true)`.
+  `Plug.Conn.put_private(:plug_skip_csrf_protection, true)`. This was made
+  available for disabling `Plug.CSRFProtection` in tests and not for dynamically
+  skipping `Plug.CSRFProtection` in production code. If you want specific routes to
+  skip `Plug.CSRFProtection`, then use a different stack of plugs for that route that
+  does not include `Plug.CSRFProtection`.
 
   ## Examples
 
