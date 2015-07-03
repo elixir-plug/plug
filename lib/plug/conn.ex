@@ -706,9 +706,12 @@ defmodule Plug.Conn do
   Puts the specified `value` in the session for the given `key`.
 
   The key can be a string or an atom, where atoms are
-  automatically converted to strings.
+  automatically converted to strings. Can only be invoked
+  on unsent `conn`s. Will raise otherwise.
   """
   @spec put_session(t, String.t | atom, any) :: t
+  def put_session(%Conn{state: state}, _key, _value) when not state in @unsent,
+    do: raise AlreadySentError
   def put_session(conn, key, value) do
     put_session(conn, &Map.put(&1, session_key(key), value))
   end
@@ -731,6 +734,8 @@ defmodule Plug.Conn do
   automatically converted to strings.
   """
   @spec delete_session(t, String.t | atom) :: t
+  def delete_session(%Conn{state: state}, _key) when not state in @unsent,
+    do: raise AlreadySentError
   def delete_session(conn, key) do
     put_session(conn, &Map.delete(&1, session_key(key)))
   end
@@ -761,6 +766,8 @@ defmodule Plug.Conn do
 
   """
   @spec configure_session(t, Keyword.t) :: t
+  def configure_session(%Conn{state: state}, _opts) when not state in @unsent,
+    do: raise AlreadySentError
   def configure_session(conn, opts) do
     # Ensure the session is available.
     _ = get_session(conn)
