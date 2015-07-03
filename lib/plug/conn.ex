@@ -734,6 +734,8 @@ defmodule Plug.Conn do
   automatically converted to strings.
   """
   @spec delete_session(t, String.t | atom) :: t
+  def delete_session(%Conn{state: state}, _key) when not state in @unsent,
+    do: raise AlreadySentError
   def delete_session(conn, key) do
     put_session(conn, &Map.delete(&1, session_key(key)))
   end
@@ -764,6 +766,8 @@ defmodule Plug.Conn do
 
   """
   @spec configure_session(t, Keyword.t) :: t
+  def configure_session(%Conn{state: state}, _opts) when not state in @unsent,
+    do: raise AlreadySentError
   def configure_session(conn, opts) do
     # Ensure the session is available.
     _ = get_session(conn)

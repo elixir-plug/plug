@@ -658,6 +658,21 @@ defmodule Plug.ConnTest do
 
     conn = put_session(conn, "foo", "bar")
     assert conn.private[:plug_session_info] == :renew
+
+    conn = %{conn|state: :sent}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      configure_session(conn, renew: true)
+    end
+
+    conn = %{conn|state: :file}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      configure_session(conn, renew: true)
+    end
+
+    conn = %{conn|state: :chunked}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      configure_session(conn, renew: true)
+    end
   end
 
   test "configure_session/2 fails when there is no session" do
@@ -678,6 +693,21 @@ defmodule Plug.ConnTest do
 
     assert get_session(conn, "foo") == "bar"
     assert get_session(conn, "baz") == nil
+
+    conn = %{conn|state: :sent}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      delete_session(conn, "baz")
+    end
+
+    conn = %{conn|state: :file}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      delete_session(conn, "baz")
+    end
+
+    conn = %{conn|state: :chunked}
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      delete_session(conn, "baz")
+    end
   end
 
   test "clear_session/1" do
