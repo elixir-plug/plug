@@ -17,7 +17,7 @@ defmodule Plug.Adapters.Cowboy do
     Defaults to `:infinity`.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
-    If this option is used, the plug given plug won't be initialized
+    If this option is used, the given plug won't be initialized
     nor dispatched to (and doing so becomes the user responsibility).
 
   * `:ref` - the reference name to be used.
