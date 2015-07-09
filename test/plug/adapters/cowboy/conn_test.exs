@@ -118,7 +118,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   test "skips body on head" do
-    assert {200, _, ""} = request :head, "/send_200"
+    assert {200, _, nil} = request :head, "/send_200"
   end
 
   def send_file(conn) do
@@ -138,7 +138,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   test "skips file on head" do
-    assert {200, _, ""} = request :head, "/send_file"
+    assert {200, _, nil} = request :head, "/send_file"
   end
 
   def send_chunked(conn) do
@@ -277,7 +277,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "https" do
     {:ok, _pid} = Plug.Adapters.Cowboy.https __MODULE__, [], @https_options
-    assert {:ok, 200, _headers, client} = :hackney.get("https://127.0.0.1:8002/https", [], "", [])
+    ssl_options = [ssl_options: [cacertfile: @https_options[:certfile]]]
+    assert {:ok, 200, _headers, client} = :hackney.get("https://127.0.0.1:8002/https", [], "", ssl_options)
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
   after
@@ -286,6 +287,11 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   ## Helpers
 
+  defp request(:head = verb, path) do
+    {:ok, status, headers} =
+      :hackney.request(verb, "http://127.0.0.1:8001" <> path, [], "", [])
+    {status, headers, nil}
+  end
   defp request(verb, path, headers \\ [], body \\ "") do
     {:ok, status, headers, client} =
       :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, [])
