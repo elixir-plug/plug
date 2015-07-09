@@ -2,8 +2,9 @@
   "cowlib": {:hex, :cowlib, "1.0.0"},
   "earmark": {:hex, :earmark, "0.1.13"},
   "ex_doc": {:hex, :ex_doc, "0.7.2"},
-  "hackney": {:hex, :hackney, "0.13.1"},
-  "idna": {:hex, :idna, "1.0.1"},
+  "hackney": {:hex, :hackney, "1.2.0"},
+  "idna": {:hex, :idna, "1.0.2"},
   "inch_ex": {:hex, :inch_ex, "0.2.1"},
   "json": {:hex, :json, "0.3.2"},
-  "ranch": {:hex, :ranch, "1.0.0"}}
+  "ranch": {:hex, :ranch, "1.0.0"},
+  "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"}}

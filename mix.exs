@@ -28,7 +28,7 @@ defmodule Plug.Mixfile do
      {:earmark, "~> 0.1", only: :docs},
      {:ex_doc, "~> 0.7", only: :docs},
      {:inch_ex, only: :docs},
-     {:hackney, "~> 0.13", only: :test}]
+     {:hackney, "~> 1.2.0", only: :test}]
   end
 
   defp package do
