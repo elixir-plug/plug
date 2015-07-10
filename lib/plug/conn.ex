@@ -312,26 +312,6 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns private value for the given `key`.
-
-  The key must be an atom.
-  """
-  @spec get_private(t, atom) :: any
-  def get_private(%Conn{private: private}, key) when is_atom(key) do
-    Map.get(private, key)
-  end
-
-  @doc """
-  Deletes the given `key` and its value from private.
-
-  The key must be an atom.
-  """
-  @spec delete_private(t, atom) :: t
-  def delete_private(%Conn{private: private} = conn, key) when is_atom(key) do
-    %{conn | private: Map.delete(private, key)}
-  end
-
-  @doc """
   Stores the given status code in the connection.
 
   The status code can be `nil`, an integer or an atom. The list of allowed

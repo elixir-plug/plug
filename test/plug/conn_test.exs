@@ -73,20 +73,6 @@ defmodule Plug.ConnTest do
     assert conn.private[:hello] == :world
   end
 
-  test "get_private/2" do
-    conn = conn(:get, "/")
-    refute get_private(conn, :hello)
-    conn = put_private(conn, :hello, :world)
-    assert get_private(conn, :hello) == :world
-  end
-
-  test "delete_private/2" do
-    conn = conn(:get, "/")
-    |> put_private(:hello, :world)
-    |> delete_private(:hello)
-    refute get_private(conn, :hello)
-  end
-
   test "scheme, host and port fields" do
     conn = conn(:get, "/")
     assert conn.scheme == :http
