@@ -25,6 +25,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       remote_ip: remote_ip,
       query_string: qs,
       req_headers: hdrs,
+      request_uri: path,
       scheme: scheme(transport)
    }
   end

@@ -108,6 +108,15 @@ defmodule Plug.ConnTest do
     assert conn(:get, "/foo/bar?bar=bat").query_string == "bar=bat"
   end
 
+  test "request_uri" do
+    assert conn(:get, "/").request_uri == "/"
+    assert conn(:get, "/foo?barbat").request_uri == "/foo"
+    assert conn(:get, "/foo/bar?bar=bat").request_uri == "/foo/bar"
+    assert conn(:get, "/foo/bar/?bar=bat").request_uri == "/foo/bar/"
+    assert conn(:get, "/foo//bar").request_uri == "/foo//bar"
+    assert conn(:get, "/foo//bar//").request_uri == "/foo//bar//"
+  end
+
   test "status, resp_headers and resp_body" do
     conn = conn(:get, "/foo")
     assert conn.status == nil
