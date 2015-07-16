@@ -433,6 +433,66 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn, "foo") == []
   end
 
+  test "put_req_header/3" do
+    conn1 = conn(:head, "/foo") |> put_req_header("x-foo", "bar")
+    assert get_req_header(conn1, "x-foo") == ["bar"]
+    conn2 = conn1 |> put_req_header("x-foo", "baz")
+    assert get_req_header(conn2, "x-foo") == ["baz"]
+    assert length(conn1.req_headers) ==
+           length(conn2.req_headers)
+  end
+
+  test "put_req_header/3 raises when the conn was already been sent" do
+    conn = conn(:get, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> put_req_header("x-foo", "bar")
+    end
+  end
+
+  test "put_req_header/3 raises when invalid header key given" do
+    conn = conn(:get, "/foo")
+    assert_raise Plug.Conn.InvalidHeaderKeyFormatError, "header key is not lowercase: X-Foo", fn ->
+      conn |> put_req_header("X-Foo", "bar")
+    end
+  end
+
+  test "delete_req_header/2" do
+    conn = conn(:head, "/foo") |> put_req_header("x-foo", "bar")
+    assert get_req_header(conn, "x-foo") == ["bar"]
+    conn = conn |> delete_req_header("x-foo")
+    assert get_req_header(conn, "x-foo") == []
+  end
+
+  test "delete_req_header/2 raises when the conn was already been sent" do
+    conn = conn(:head, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> delete_req_header("x-foo")
+    end
+  end
+
+  test "update_req_header/4" do
+    conn1 = conn(:head, "/foo") |> put_req_header("x-foo", "bar")
+    conn2 = update_req_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
+    assert get_req_header(conn2, "x-foo") == ["bar, baz"]
+    assert length(conn1.req_headers) == length(conn2.req_headers)
+
+    conn1 = conn(:head, "/foo")
+    conn2 = update_req_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
+    assert get_req_header(conn2, "x-foo") == ["bong"]
+
+    conn1 = %{conn(:head, "/foo") | req_headers:
+      [{"x-foo", "foo"}, {"x-foo", "bar"}]}
+    conn2 = update_req_header(conn1, "x-foo", "in", &String.upcase/1)
+    assert get_req_header(conn2, "x-foo") == ["FOO", "bar"]
+  end
+
+  test "update_req_header/4 raises when the conn was already been sent" do
+    conn = conn(:head, "/foo") |> send_resp(200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      conn |> update_req_header("x-foo", "init", &(&1))
+    end
+  end
+
   test "read_body/1" do
     body = :binary.copy("abcdefghij", 1000)
     conn = conn(:post, "/foo", body) |> put_req_header("content-type", "text/plain")

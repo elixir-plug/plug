@@ -86,24 +86,6 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Puts a new request header.
-
-  Previous entries of the same header are overridden.
-  """
-  @spec put_req_header(Conn.t, binary, binary) :: Conn.t
-  def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
-    %{conn | req_headers: :lists.keystore(key, 1, headers, {key, value})}
-  end
-
-  @doc """
-  Deletes a request header.
-  """
-  @spec delete_req_header(Conn.t, binary) :: Conn.t
-  def delete_req_header(%Conn{req_headers: headers} = conn, key) when is_binary(key) do
-    %{conn | req_headers: :lists.keydelete(key, 1, headers)}
-  end
-
-  @doc """
   Puts a request cookie.
   """
   @spec put_req_cookie(Conn.t, binary, binary) :: Conn.t
