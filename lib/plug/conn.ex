@@ -19,6 +19,7 @@ defmodule Plug.Conn do
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `script_name` - the initial portion of the URL's path that corresponds to the application
     routing, as segments, example: ["sub","app"]. It can be used to recover the `full_path/1`
+  * `request_uri` - the requested URI path, example: `/trailing/and//double//slashes/`
   * `port` - the requested port as an integer, example: `80`
   * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
     is not the actual IP and port of the client, but rather of a load-balancer or request-router.
@@ -140,6 +141,7 @@ defmodule Plug.Conn do
               remote_ip:       :inet.ip_address,
               req_cookies:     cookies | Unfetched.t,
               req_headers:     headers,
+              request_uri:     binary,
               resp_body:       body,
               resp_cookies:    resp_cookies,
               resp_headers:    headers,
@@ -168,6 +170,7 @@ defmodule Plug.Conn do
             remote_ip:       nil,
             req_cookies:     %Unfetched{aspect: :cookies},
             req_headers:     [],
+            request_uri:     "",
             resp_body:       nil,
             resp_cookies:    %{},
             resp_headers:    [{"cache-control", "max-age=0, private, must-revalidate"}],

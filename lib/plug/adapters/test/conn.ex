@@ -26,6 +26,7 @@ defmodule Plug.Adapters.Test.Conn do
       peer: {{127, 0, 0, 1}, 111317},
       remote_ip: {127, 0, 0, 1},
       req_headers: req_headers,
+      request_uri: uri.path,
       query_string: query,
       params: params || %Plug.Conn.Unfetched{aspect: :params},
       scheme: (uri.scheme || "http") |> String.downcase |> String.to_atom}
