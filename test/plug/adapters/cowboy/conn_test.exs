@@ -59,7 +59,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert conn.method == "HEAD"
     assert conn.path_info == []
     assert conn.query_string == "foo=bar&baz=bat"
-    assert conn.request_uri == "/"
+    assert conn.request_path == "/"
     resp(conn, 200, "ok")
   end
 
@@ -82,21 +82,21 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert {200, _, _} = request :get, "//build//foo//bar"
   end
 
-  def return_request_uri(%Conn{} = conn) do
-    resp(conn, 200, conn.request_uri)
+  def return_request_path(%Conn{} = conn) do
+    resp(conn, 200, conn.request_path)
   end
 
-  test "request_uri" do
-    assert {200, _, "/return_request_uri/foo"} =
-      request :get, "/return_request_uri/foo?barbat"
-    assert {200, _, "/return_request_uri/foo/bar"} =
-      request :get, "/return_request_uri/foo/bar?bar=bat"
-    assert {200, _, "/return_request_uri/foo/bar/"} =
-      request :get, "/return_request_uri/foo/bar/?bar=bat"
-    assert {200, _, "/return_request_uri/foo//bar"} =
-      request :get, "/return_request_uri/foo//bar"
-    assert {200, _, "//return_request_uri//foo//bar//"} =
-      request :get, "//return_request_uri//foo//bar//"
+  test "request_path" do
+    assert {200, _, "/return_request_path/foo"} =
+      request :get, "/return_request_path/foo?barbat"
+    assert {200, _, "/return_request_path/foo/bar"} =
+      request :get, "/return_request_path/foo/bar?bar=bat"
+    assert {200, _, "/return_request_path/foo/bar/"} =
+      request :get, "/return_request_path/foo/bar/?bar=bat"
+    assert {200, _, "/return_request_path/foo//bar"} =
+      request :get, "/return_request_path/foo//bar"
+    assert {200, _, "//return_request_path//foo//bar//"} =
+      request :get, "//return_request_path//foo//bar//"
   end
 
   def headers(conn) do
