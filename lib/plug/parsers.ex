@@ -14,10 +14,11 @@ defmodule Plug.Parsers do
     Error raised when the request body cannot be parsed.
     """
 
-    defexception media_type: nil, plug_status: 415
+    defexception media_type: nil, message: nil, plug_status: 415
 
-    def message(exception) do
-      "unsupported media type #{exception.media_type}"
+    def exception(media_type: media_type) do
+      message = "unsupported media type #{media_type}"
+      %__MODULE__{media_type: media_type, message: message}
     end
   end
 
@@ -34,12 +35,12 @@ defmodule Plug.Parsers do
     Error raised when the request body is malformed.
     """
 
-    defexception exception: nil, plug_status: 400
+    defexception exception: nil, message: nil, plug_status: 400
 
-    def message(exception) do
-      exception = exception.exception
-      "malformed request, got #{inspect exception.__struct__} " <>
-        "with message #{Exception.message(exception)}"
+    def exception(exception: exception) do
+      message = "malformed request, got #{inspect exception.__struct__} " <>
+                "with message #{Exception.message(exception)}"
+      %__MODULE__{exception: exception, message: message}
     end
   end
 
