@@ -72,7 +72,7 @@ defmodule Plug.Test do
 
   This function is useful when the code being invoked crashes and
   there is a need to verify a particular response was sent even with
-  the crash. It returns a tuple with `{stauts, headers, body}`.
+  the crash. It returns a tuple with `{status, headers, body}`.
   """
   def sent_resp(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     receive do
@@ -88,7 +88,7 @@ defmodule Plug.Test do
   @doc """
   Puts a new request header.
 
-  Previous entries of the same header are overridden.
+  Previous entries of the same header are overwritten.
   """
   @spec put_req_header(Conn.t, binary, binary) :: Conn.t
   def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do

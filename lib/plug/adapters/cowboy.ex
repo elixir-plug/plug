@@ -18,7 +18,7 @@ defmodule Plug.Adapters.Cowboy do
 
   * `:dispatch` - manually configure Cowboy's dispatch.
     If this option is used, the given plug won't be initialized
-    nor dispatched to (and doing so becomes the user responsibility).
+    nor dispatched to (and doing so becomes the user's responsibility).
 
   * `:ref` - the reference name to be used.
     Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
@@ -192,7 +192,7 @@ defmodule Plug.Adapters.Cowboy do
     if app = cowboy_options[:otp_app] do
       Application.app_dir(app, "priv")
     else
-      fail "to use relative certificate with https, the :otp_app " <>
+      fail "to use a relative certificate with https, the :otp_app " <>
            "option needs to be given to the adapter"
     end
   end

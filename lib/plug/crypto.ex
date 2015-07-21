@@ -1,6 +1,6 @@
 defmodule Plug.Crypto do
   @moduledoc """
-  Namespace and module for cyrpto functionality.
+  Namespace and module for crypto functionality.
   """
 
   use Bitwise

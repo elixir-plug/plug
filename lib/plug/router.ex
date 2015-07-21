@@ -203,7 +203,7 @@ defmodule Plug.Router do
 
   ## Options
 
-  `match/3` and the others route macros accept the following options:
+  `match/3` and the other route macros accept the following options:
 
     * `:host` - the host which the route should match. Defaults to `nil`,
       meaning no host match, but can be a string like "example.com" or a
@@ -277,7 +277,7 @@ defmodule Plug.Router do
 
   `forward` accepts the following options:
 
-    * `:to` - a Plug where the requests will be forwarded to.
+    * `:to` - a Plug the requests will be forwarded to.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
 

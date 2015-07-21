@@ -28,8 +28,8 @@ defmodule Plug.CSRFProtection do
   One may wonder: why the process dictionary?
 
   The CSRF token is usually generated inside forms which may
-  be isolated from the connection. Storing them in process
-  dictionary allow them to be generated as a side-effect,
+  be isolated from the connection. Storing them in the process
+  dictionary allows them to be generated as a side-effect,
   becoming one of those rare situations where using the process
   dictionary is useful.
 
@@ -37,9 +37,9 @@ defmodule Plug.CSRFProtection do
 
     * `:with` - should be one of `:exception` or `:clear_session`. Defaults to
     `:exception`.
-      * `:exception` -  for invalid request, this plug will raise
+      * `:exception` -  for invalid requests, this plug will raise
       `Plug.CSRFProtection.InvalidCSRFTokenError`.
-      * `:clear_session` -  for invalid request, this plug will set an empty
+      * `:clear_session` -  for invalid requests, this plug will set an empty
       session for only this request. Also any changes to the session during this
       request will be ignored.
 

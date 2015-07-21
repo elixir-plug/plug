@@ -80,11 +80,11 @@ defmodule Plug.Conn.Query do
   end
 
   @doc """
-  Decodes the given tuple and store it in the accumulator.
+  Decodes the given tuple and stores it in the accumulator.
   It parses the key and stores the value into the current
   accumulator.
 
-  Parameters lists are added to the accumulator in reverse
+  Parameter lists are added to the accumulator in reverse
   order, so be sure to pass the parameters in reverse order.
   """
   def decode_pair({key, value}, acc) do

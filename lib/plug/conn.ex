@@ -85,7 +85,7 @@ defmodule Plug.Conn do
 
   ## Protocols
 
-  `Plug.Conn` implements both Collectable and Inspect protocols
+  `Plug.Conn` implements both the Collectable and Inspect protocols
   out of the box. The inspect protocol provides a nice representation
   of the connection while the collectable protocol allows developers
   to easily chunk data. For example:
@@ -200,7 +200,7 @@ defmodule Plug.Conn do
     defexception message: "given header key is not lowercase"
 
     @moduledoc """
-    Error raised when trying to send a header that is containing uppercase chars.
+    Error raised when trying to send a header that contains uppercase chars.
     """
   end
 
@@ -281,7 +281,7 @@ defmodule Plug.Conn do
       iex> conn.assigns[:hello]
       nil
       iex> conn = async_assign(conn, :hello, fn -> :world end)
-      iex> conn = await_assign(conn, :hello) # blocks until `conn.assings[:hello]` is available
+      iex> conn = await_assign(conn, :hello) # blocks until `conn.assigns[:hello]` is available
       iex> conn.assigns[:hello]
       :world
 
@@ -427,7 +427,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Sends a response with given status and body.
+  Sends a response with the given status and body.
 
   See `send_resp/1` for more information.
   """
@@ -802,7 +802,7 @@ defmodule Plug.Conn do
 
   @doc """
   Halts the Plug pipeline by preventing further plugs downstream from being
-  invoked. See the docs for `Plug.Builder` for more informations on halting a
+  invoked. See the docs for `Plug.Builder` for more information on halting a
   plug pipeline.
   """
   @spec halt(t) :: t
@@ -852,7 +852,7 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  # Any string containing a UPPERCASE char is not valid.
+  # Any string containing an UPPERCASE char is not valid.
   defp valid_header_key?(<<h, _::binary>>) when h in ?A..?Z, do: false
   defp valid_header_key?(<<_, t::binary>>), do: valid_header_key?(t)
   defp valid_header_key?(<<>>), do: true

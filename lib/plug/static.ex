@@ -29,7 +29,7 @@ defmodule Plug.Static do
   has not changed. The cache-control for etags is specified by the
   `cache_control_for_etags` option and defaults to "public".
 
-  However, `Plug.Static` also support direct cache control by using
+  However, `Plug.Static` also supports direct cache control by using
   versioned query strings. If the request query string starts with
   "?vsn=", `Plug.Static` assumes the application is versioning assets
   and does not set the `ETag` header, meaning the cache behaviour will
@@ -42,20 +42,20 @@ defmodule Plug.Static do
       in the static directory and if the `accept-encoding` header is set
       to allow gzipped content (defaults to `false`).
 
-    * `:cache_control_for_etags` - sets cache header for requests
+    * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
 
-    * `:cache_control_for_vsn_requests` - sets cache header for requests
-      starting with "?vsn=" in the query string. Defaults to
+    * `:cache_control_for_vsn_requests` - sets the cache header for
+      requests starting with "?vsn=" in the query string. Defaults to
       `"public, max-age=31536000"`.
 
-    * `:only` - filters which paths to lookup. This is useful to avoid
+    * `:only` - filters which paths to look up. This is useful to avoid
       file system traversals on every request when this plug is mounted
       at `"/"`. Defaults to `nil` (no filtering).
 
   ## Examples
 
-  This plug can be mounted in a `Plug.Builder` pipeline as follow:
+  This plug can be mounted in a `Plug.Builder` pipeline as follows:
 
       defmodule MyPlug do
         use Plug.Builder
@@ -157,7 +157,7 @@ defmodule Plug.Static do
 
   defp maybe_add_vary(conn, true) do
     # If we serve gzip at any moment, we need to set the proper vary
-    # header regardless if we are serving gzip content right now.
+    # header regardless of whether we are serving gzip content right now.
     # See: http://www.fastly.com/blog/best-practices-for-using-the-vary-header/
     update_in conn.resp_headers, &[{"vary", "Accept-Encoding"}|&1]
   end
