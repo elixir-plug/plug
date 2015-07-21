@@ -2,7 +2,7 @@ defmodule Plug.Builder do
   @moduledoc """
   Conveniences for building plugs.
 
-  This module can be used into a module in order to build
+  This module can be `use`-d into a module in order to build
   a plug pipeline:
 
       defmodule MyApp do
@@ -49,7 +49,7 @@ defmodule Plug.Builder do
 
   Both the `init/1` and `call/2` functions defined by `Plug.Builder` can be
   manually overridden. For example, the `init/1` function provided by
-  `Plug.Builder` returns the option that it receives as an argument, but its
+  `Plug.Builder` returns the options that it receives as an argument, but its
   behaviour can be customized:
 
       defmodule PlugWithCustomOptions do

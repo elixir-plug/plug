@@ -2,18 +2,18 @@ defmodule Plug.SSL do
   @moduledoc """
   A plug to force SSL
 
-  If the scheme of a request is https, it'll add `strict-transport-security`
+  If the scheme of a request is https, it'll add a `strict-transport-security`
   header to enable HTTP Strict Transport Security.
 
   Otherwise, the request will be redirected to a corresponding location
-  with `https` scheme by setting the `location` header of the reponse.
-  And the status code will be 301 if method of `conn` is `GET` or `HEAD`,
+  with the `https` scheme by setting the `location` header of the reponse.
+  And the status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
 
   ## Options
 
-    * `:hsts` - a boolean on enabling HSTS or not and defaults to true.
-    * `:expires` - seconds to expires for HSTS, defaults to 31536000(a year).
+    * `:hsts` - a boolean on enabling HSTS or not, defaults to true.
+    * `:expires` - seconds to expires for HSTS, defaults to 31536000 (a year).
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to false.
     * `:host` - a new host to redirect to if the request's scheme is `http`.

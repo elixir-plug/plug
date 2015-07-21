@@ -49,7 +49,7 @@ defmodule Plug.Debugger do
 
         def boom(conn, _) do
           # Error raised here will be caught and displayed in a debug page
-          # complete with a stacktrace and other helpful infos.
+          # complete with a stacktrace and other helpful info.
           raise "oops"
         end
       end
@@ -60,8 +60,8 @@ defmodule Plug.Debugger do
 
   ## Links to the text editor
 
-  If a `PLUG_EDITOR` environment variable is set, `Plug.Debugger` is going
-  to use it to generate links to your text editor. The variable should be
+  If a `PLUG_EDITOR` environment variable is set, `Plug.Debugger` will
+  use it to generate links to your text editor. The variable should be
   set with `__FILE__` and `__LINE__` placeholders which will be correctly
   replaced. For example (with the [TextMate](http://macromates.com) editor):
 

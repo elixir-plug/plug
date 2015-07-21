@@ -20,7 +20,7 @@ defmodule Plug.ErrorHandler do
       end
 
   Once this module is used, a callback named `handle_errors/2` should
-  be defined in your plug. This callback should receive a connection and a map
+  be defined in your plug. This callback should accept a connection and a map
   containing:
 
     * the exception kind (`:throw`, `:error` or `:exit`),
@@ -33,7 +33,7 @@ defmodule Plug.ErrorHandler do
   and avoid accessing data like parameters and session, as the parsing
   of those is what could have led the error to trigger in the first place.
 
-  Also notice that those pages are going to be shown in production. If
+  Also notice that these pages are going to be shown in production. If
   you are looking for error handling to help during development, consider
   using `Plug.Debugger`.
 

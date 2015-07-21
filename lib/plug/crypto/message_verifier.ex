@@ -4,8 +4,8 @@ defmodule Plug.Crypto.MessageVerifier do
   which are signed to prevent tampering.
 
   For example, the cookie store uses this verifier to send data
-  to the client. Although the data can be read by the client, he
-  cannot tamper it.
+  to the client. The data can be read by the client, but cannot be
+  tampered with.
   """
 
   @doc """

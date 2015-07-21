@@ -9,7 +9,7 @@ defmodule Plug.RequestId do
 
   The request id is added to the Logger metadata as `:request_id` and the response as
   the "x-request-id" HTTP header. To see the request id in your log output,
-  configure your logger backends to include the `:request_id` metadata in:
+  configure your logger backends to include the `:request_id` metadata:
 
       config :logger, :console, metadata: [:request_id]
 

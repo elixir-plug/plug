@@ -2,7 +2,7 @@ defmodule Plug.Adapters.Translator do
   @moduledoc """
   A translator module shared by adapters that ship with Plug.
 
-  We host all translations into a single module which is added
+  We host all translations in a single module which is added
   to Logger when the :plug application starts.
   """
 

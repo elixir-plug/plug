@@ -103,7 +103,7 @@ defmodule Plug.Parsers do
   uploaded file is handled can be found in the documentation for `Plug.Upload`.
 
   When a file is uploaded, the request parameter that identifies that file will
-  be a `Plug.Upload` struct with informations about the uploaded file (e.g.,
+  be a `Plug.Upload` struct with information about the uploaded file (e.g.
   filename and content type) and about where the file is stored.
 
   The temporary directory where files are streamed to can be customized by

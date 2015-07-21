@@ -19,7 +19,7 @@ defmodule Plug.MIME do
   @compile :no_native
   @default_type "application/octet-stream"
 
-  # Read all the MIME types mappings into the `mapping` variable.
+  # Read all the MIME type mappings into the `mapping` variable.
   @external_resource "lib/plug/mime.types"
   stream = File.stream!("lib/plug/mime.types")
 

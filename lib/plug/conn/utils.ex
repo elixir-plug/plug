@@ -16,7 +16,7 @@ defmodule Plug.Conn.Utils do
   Parses media types (with wildcards).
 
   Type and subtype are case insensitive while the
-  sensitiveness of params depends on its key and
+  sensitiveness of params depends on their keys and
   therefore are not handled by this parser.
 
   Returns:
