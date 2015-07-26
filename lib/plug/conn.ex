@@ -208,20 +208,8 @@ defmodule Plug.Conn do
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
 
-  @doc """
-  Receives the connection and returns the full requested path as a string.
-
-  The full path of a request is made by joining its `script_name`
-  with its `path_info`.
-
-  ## Examples
-
-      iex> conn = %{conn | script_name: ["foo"], path_info: ["bar", "baz"]}
-      iex> full_path(conn)
-      "/foo/bar/baz"
-
-  """
-  @spec full_path(t) :: String.t
+  @doc false
+  # THIS IS DEPRECATED
   def full_path(conn)
 
   def full_path(%Conn{script_name: [], path_info: []}), do:
