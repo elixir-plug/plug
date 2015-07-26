@@ -276,7 +276,7 @@ defmodule Plug.Debugger do
     method
 
   defp url(%Plug.Conn{scheme: scheme, host: host, port: port} = conn), do:
-    "#{scheme}://#{host}:#{port}#{full_path(conn)}"
+    "#{scheme}://#{host}:#{port}#{conn.request_path}"
 
   defp peer(%Plug.Conn{peer: {host, port}}), do:
     "#{:inet_parse.ntoa host}:#{port}"

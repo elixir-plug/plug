@@ -158,13 +158,6 @@ defmodule Plug.Builder do
     end
   end
 
-  @doc false
-  def compile(pipeline, build_opts \\ []) do
-    IO.write :stderr, "warning: Plug.Builder.compile/1 and compile/2 is deprecated, " <>
-                      "please use compile/3 instead\n" <> Exception.format_stacktrace()
-    compile(__ENV__, pipeline, build_opts)
-  end
-
   @doc """
   Compiles a plug pipeline.
 

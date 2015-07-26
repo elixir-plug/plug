@@ -55,7 +55,7 @@ defmodule Plug.SSL do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
     uri = %URI{scheme: "https", host: custom_host || host,
-               path: full_path(conn), query: conn.query_string}
+               path: conn.request_path, query: conn.query_string}
 
     conn
     |> put_resp_header("location", to_string(uri))

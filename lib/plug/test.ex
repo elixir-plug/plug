@@ -16,7 +16,7 @@ defmodule Plug.Test do
   @doc false
   defmacro __using__(_) do
     quote do
-      import Plug.Test, except: [put_req_header: 3, delete_req_header: 2]
+      import Plug.Test
       import Plug.Conn
     end
   end
@@ -41,10 +41,6 @@ defmodule Plug.Test do
     other lists or maps and all entries will be normalized to string
     keys;
 
-  The only option supported so far is `:headers`, which expects a
-  list of headers. However, this option is now deprecated in favour of using
-  `put_req_header/3` instead.
-
   ## Examples
 
       conn(:get, "/foo", "bar=10")
@@ -52,19 +48,9 @@ defmodule Plug.Test do
       conn("patch", "/", "") |> put_req_header("content-type", "application/json")
 
   """
-  @spec conn(String.Chars.t, binary, params, [headers: Conn.headers]) :: Conn.t
-  def conn(method, path, params_or_body \\ nil, opts \\ []) do
-    headers =
-      if opts[:headers] do
-        IO.write :stderr, "warning: passing :headers to conn/4 is deprecated, " <>
-                          "please use put_req_header/3 instead\n" <> Exception.format_stacktrace
-        opts[:headers]
-      else
-        []
-      end
-
-    conn = %Plug.Conn{req_headers: headers}
-    Plug.Adapters.Test.Conn.conn(conn, method, path, params_or_body)
+  @spec conn(String.Chars.t, binary, params) :: Conn.t
+  def conn(method, path, params_or_body \\ nil) do
+    Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, method, path, params_or_body)
   end
 
   @doc """
@@ -83,18 +69,6 @@ defmodule Plug.Test do
       0 -> raise "no sent response available for the given connection. " <>
                  "Maybe the application did not send anything?"
     end
-  end
-
-  @doc false
-  def put_req_header(%Conn{req_headers: headers} = conn, key, value) when is_binary(key) and is_binary(value) do
-    IO.write :stderr, "[warning] Plug.Test.put_req_header/3 is deprecated\n" <> Exception.format_stacktrace
-    %{conn | req_headers: :lists.keystore(key, 1, headers, {key, value})}
-  end
-
-  @doc false
-  def delete_req_header(%Conn{req_headers: headers} = conn, key) when is_binary(key) do
-    IO.write :stderr, "[warning] Plug.Test.delete_req_header/2 is deprecated\n" <> Exception.format_stacktrace
-    %{conn | req_headers: :lists.keydelete(key, 1, headers)}
   end
 
   @doc """

@@ -208,15 +208,6 @@ defmodule Plug.Conn do
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
 
-  @doc false
-  # TODO: Deprecate me
-  def full_path(conn)
-
-  def full_path(%Conn{script_name: [], path_info: []}), do:
-    "/"
-  def full_path(%Conn{script_name: script, path_info: path}), do:
-    "/" <> Enum.join(script ++ path, "/")
-
   @doc """
   Assigns a value to a key in the connection
 
@@ -611,13 +602,6 @@ defmodule Plug.Conn do
 
   def fetch_query_params(%Conn{} = conn, _opts) do
     conn
-  end
-
-  @doc false
-  def fetch_params(conn, opts \\ []) do
-    IO.write :stderr, "warning: fetch_params/2 is deprecated, " <>
-                      "please use fetch_query_params/2 instead\n" <> Exception.format_stacktrace()
-    fetch_query_params(conn, opts)
   end
 
   @doc """

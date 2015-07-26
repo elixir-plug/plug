@@ -46,9 +46,9 @@ defmodule Plug.Adapters.Translator do
   end
 
   defp request_info(%Plug.Conn{method: method, query_string: query_string} = conn) do
-    ["Request: ", method, ?\s, path_to_iodata(conn, query_string), ?\n]
+    ["Request: ", method, ?\s, path_to_iodata(conn.request_path, query_string), ?\n]
   end
 
-  defp path_to_iodata(path, ""), do: Plug.Conn.full_path(path)
-  defp path_to_iodata(path, qs), do: [Plug.Conn.full_path(path), ??, qs]
+  defp path_to_iodata(path, ""), do: path
+  defp path_to_iodata(path, qs), do: [path, ??, qs]
 end
