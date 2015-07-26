@@ -18,7 +18,7 @@ defmodule Plug.Conn do
   * `method` - the request method as a binary, example: `"GET"`
   * `path_info` - the path split into segments, example: `["hello", "world"]`
   * `script_name` - the initial portion of the URL's path that corresponds to the application
-    routing, as segments, example: ["sub","app"]. It can be used to recover the `full_path/1`
+    routing, as segments, example: ["sub","app"].
   * `request_path` - the requested path, example: `/trailing/and//double//slashes/`
   * `port` - the requested port as an integer, example: `80`
   * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
@@ -207,27 +207,6 @@ defmodule Plug.Conn do
   alias Plug.Conn
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set]
-
-  @doc """
-  Receives the connection and returns the full requested path as a string.
-
-  The full path of a request is made by joining its `script_name`
-  with its `path_info`.
-
-  ## Examples
-
-      iex> conn = %{conn | script_name: ["foo"], path_info: ["bar", "baz"]}
-      iex> full_path(conn)
-      "/foo/bar/baz"
-
-  """
-  @spec full_path(t) :: String.t
-  def full_path(conn)
-
-  def full_path(%Conn{script_name: [], path_info: []}), do:
-    "/"
-  def full_path(%Conn{script_name: script, path_info: path}), do:
-    "/" <> Enum.join(script ++ path, "/")
 
   @doc """
   Assigns a value to a key in the connection
