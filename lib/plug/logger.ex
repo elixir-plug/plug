@@ -26,7 +26,7 @@ defmodule Plug.Logger do
   def call(conn, level) do
 
     Logger.log level, fn ->
-      [conn.method, ?\s, Conn.full_path(conn)]
+      [conn.method, ?\s, conn.request_path]
     end
 
     before_time = :os.timestamp()
