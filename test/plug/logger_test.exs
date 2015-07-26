@@ -56,6 +56,11 @@ defmodule Plug.LoggerTest do
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
   end
 
+  test "logs paths with double slashes and trailing slash" do
+    {_conn, [first_message, _]} = conn(:get, "/hello//world/") |> call
+    assert Regex.match?(~r/\/hello\/\/world\//u, first_message)
+  end
+
   test "logs chunked if chunked reply" do
     {_, [_, second_message]} = capture_log(fn ->
        conn(:get, "/hello/world") |> MyChunkedPlug.call([])
