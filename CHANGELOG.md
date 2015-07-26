@@ -1,5 +1,18 @@
 ## Changelog
 
+## v0.13.1
+
+* Enhancements
+  * Add `conn.request_path`
+  * Raise if `put_session/3` is invoked when response is sent
+
+* Bug fixes
+  * Fix empty params being encoded into query string as '&'
+
+* Deprecations
+  * `Plug.Conn.full_path/2` is deprecated in favor of `conn.request_path`
+  * `Plug.Test.put_req_header/3` and `Plug.Test.delete_req_header/3` is deprecated in favor of similarly named functions in `Plug.Conn`
+
 ## v0.13.0
 
 * Enhancements

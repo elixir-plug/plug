@@ -209,7 +209,7 @@ defmodule Plug.Conn do
   @unsent [:unset, :set]
 
   @doc false
-  # THIS IS DEPRECATED
+  # TODO: Deprecate me
   def full_path(conn)
 
   def full_path(%Conn{script_name: [], path_info: []}), do:

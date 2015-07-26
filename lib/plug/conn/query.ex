@@ -183,7 +183,7 @@ defmodule Plug.Conn.Query do
 
   # covers nil
   defp encode_pair(field, nil, _encoder) do
-    [field|?=]
+    [field, ?=]
   end
 
   # encoder fallback

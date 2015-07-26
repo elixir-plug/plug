@@ -89,6 +89,7 @@ defmodule Plug.Conn.QueryTest do
   test "encode" do
     assert encode(%{foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
 
+    assert encode(%{foo: nil}) == "foo="
     assert encode(%{foo: "bå®"}) == "foo=b%C3%A5%C2%AE"
     assert encode(%{foo: 1337})  == "foo=1337"
     assert encode(%{foo: ["bar", "baz"]}) == "foo[]=bar&foo[]=baz"
