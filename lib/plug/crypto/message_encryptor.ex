@@ -51,8 +51,18 @@ defmodule Plug.Crypto.MessageEncryptor do
       when is_binary(encrypted) and is_binary(secret) and is_binary(sign_secret) do
     case MessageVerifier.verify(encrypted, sign_secret) do
       {:ok, verified} ->
-        [encrypted, iv] = String.split(verified, "--") |> Enum.map(&Base.decode64!/1)
-        encrypted |> decrypt(cipher, secret, iv) |> unpad_message
+        [encrypted, iv] = String.split(verified, "--")
+        case Base.decode64(encrypted) do
+          {:ok, encrypted} ->
+            case Base.decode64(iv) do
+              {:ok, iv} ->
+                encrypted |> decrypt(cipher, secret, iv) |> unpad_message
+              :error ->
+                :error
+            end
+          :error ->
+            :error
+        end
       :error ->
         :error
     end

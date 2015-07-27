@@ -15,7 +15,7 @@ defmodule Plug.Crypto.MessageVerifier do
     case String.split(binary, "--") do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
-          {:ok, Base.decode64!(content)}
+          Base.decode64(content)
         else
           :error
         end
