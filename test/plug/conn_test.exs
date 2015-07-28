@@ -348,6 +348,17 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "merge_resp_headers/3" do
+    conn1 = conn(:head, "/foo") |> merge_resp_headers(%{"x-foo" => "bar", "x-bar" => "baz"})
+    assert get_resp_header(conn1, "x-foo") == ["bar"]
+    assert get_resp_header(conn1, "x-bar") == ["baz"]
+    conn2 = conn1 |> merge_resp_headers(%{"x-foo" => "new"})
+    assert get_resp_header(conn2, "x-foo") == ["new"]
+    assert get_resp_header(conn2, "x-bar") == ["baz"]
+    assert length(conn1.resp_headers) ==
+           length(conn2.resp_headers)
+  end
+
   test "delete_resp_header/2" do
     conn = conn(:head, "/foo") |> put_resp_header("x-foo", "bar")
     assert get_resp_header(conn, "x-foo") == ["bar"]

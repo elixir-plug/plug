@@ -455,7 +455,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    unless valid_header_key?(key), do: raise(InvalidHeaderKeyFormatError, message: "header key is not lowercase: "<>key)
+    validate_header_key!(key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -524,8 +524,25 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    unless valid_header_key?(key), do: raise(InvalidHeaderKeyFormatError, message: "header key is not lowercase: "<>key)
+    validate_header_key!(key)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
+  end
+
+  @doc """
+  Merges a series of response headers into the connection.
+  """
+  @spec merge_resp_headers(t, Enum.t) :: t
+  def merge_resp_headers(%Conn{state: :sent}, _headers) do
+    raise AlreadySentError
+  end
+
+  def merge_resp_headers(%Conn{resp_headers: current} = conn, headers) do
+    headers =
+      Enum.reduce headers, current, fn
+        {key, value}, acc when is_binary(key) and is_binary(value) ->
+          List.keystore(acc, key, 0, {key, value})
+      end
+    %{conn | resp_headers: headers}
   end
 
   @doc """
@@ -876,6 +893,12 @@ defmodule Plug.Conn do
               |> Map.put_new(:plug_session_info, :write)
 
     %{conn | private: private}
+  end
+
+  defp validate_header_key!(key) do
+    unless valid_header_key?(key) do
+      raise InvalidHeaderKeyFormatError, message: "header key is not lowercase: " <> key
+    end
   end
 
   # Any string containing an UPPERCASE char is not valid.
