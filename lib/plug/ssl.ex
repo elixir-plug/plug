@@ -1,17 +1,36 @@
 defmodule Plug.SSL do
   @moduledoc """
-  A plug to force SSL
+  A plug to force SSL connections.
 
   If the scheme of a request is https, it'll add a `strict-transport-security`
   header to enable HTTP Strict Transport Security.
 
   Otherwise, the request will be redirected to a corresponding location
   with the `https` scheme by setting the `location` header of the reponse.
-  And the status code will be 301 if the method of `conn` is `GET` or `HEAD`,
+  The status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
+
+  ## x-forwaded-proto
+
+  If your Plug application is behind a proxy that handles HTTPS, you will
+  need to tell Plug to parse the proper protocol from the "x-forwarded-proto"
+  header. This can be done using the `:rewrite_on` option:
+
+      use Plug.SSL, rewrite_on: [:x_forwarded_proto]
+
+  The command above will effectively change the value of `conn.scheme` by
+  the one sent in "x-forwarded-proto".
+
+  Since rewriting the scheme based on "x-forwarded-proto" can open up
+  security vulnerabilities, only provide the option above if:
+
+      * Your app is behind a proxy
+      * Your proxy strips "x-forwarded-proto" headers from all incoming requests
+      * Your proxy sets the "x-forwarded-proto" and sends it to Plug
 
   ## Options
 
+    * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to true.
     * `:expires` - seconds to expires for HSTS, defaults to 31536000 (a year).
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
@@ -24,14 +43,28 @@ defmodule Plug.SSL do
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host)}
+    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, [])}
   end
 
-  def call(conn, {hsts, host}) do
+  def call(conn, {hsts, host, rewrites}) do
+    conn = rewrite_on(conn, rewrites)
     if conn.scheme == :https do
       put_hsts_header(conn, hsts)
     else
       redirect_to_https(conn, host)
+    end
+  end
+
+  defp rewrite_on(conn, rewrites) do
+    Enum.reduce rewrites, conn, fn
+      :x_forwarded_proto, acc ->
+        if get_req_header(acc, "x-forwarded-proto") == ["https"] do
+          %{acc | scheme: :https}
+        else
+          acc
+        end
+      other, _acc ->
+        raise "unknown rewrite: #{inspect other}"
     end
   end
 
@@ -55,11 +88,14 @@ defmodule Plug.SSL do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
     uri = %URI{scheme: "https", host: custom_host || host,
-               path: conn.request_path, query: conn.query_string}
+               path: conn.request_path, query: nil_if_empty(conn.query_string)}
 
     conn
     |> put_resp_header("location", to_string(uri))
     |> send_resp(status, "")
     |> halt
   end
+
+  defp nil_if_empty(""), do: nil
+  defp nil_if_empty(other), do: other
 end
