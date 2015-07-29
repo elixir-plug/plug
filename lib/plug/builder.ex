@@ -216,8 +216,8 @@ defmodule Plug.Builder do
 
     error_message = case plug_type do
       :module   -> "expected #{inspect plug}.call/2 to return a Plug.Conn"
-      :function -> "expected #{inspect plug}/2 to return a Plug.Conn"
-    end
+      :function -> "expected #{plug}/2 to return a Plug.Conn"
+    end <> ", all plugs must receive a connection (conn) and return a connection"
 
     quote do
       case unquote(compile_guards(call, guards)) do
