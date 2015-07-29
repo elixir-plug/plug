@@ -1,5 +1,14 @@
 ## Changelog
 
+## v0.14.0
+
+* Enhancements
+  * Support `:rewrite_on` on `Plug.SSL`
+  * Add `Plug.Conn.merge_resp_headers/2`
+
+* Bug fix
+  * Ensure message encryptor and verifier do not error on bad data
+
 ## v0.13.1
 
 * Enhancements
