@@ -55,8 +55,8 @@ defmodule Plug.Adapters.CowboyTest do
 
     assert_raise ArgumentError, ~r/ssl\/key\.pem required by SSL's :keyfile does not exist/, fn ->
       Plug.Adapters.Cowboy.https MyPlug, [],
-        keyfile: "ssl/key.pem",
-        certfile: "ssl/cert.pem",
+        keyfile: "priv/ssl/key.pem",
+        certfile: "priv/ssl/cert.pem",
         otp_app: :plug
     end
   end

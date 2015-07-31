@@ -76,8 +76,8 @@ defmodule Plug.Adapters.Cowboy do
         port: 443,
         password: "SECRET",
         otp_app: :my_app,
-        keyfile: "ssl/key.pem",
-        certfile: "ssl/cert.pem"
+        keyfile: "priv/ssl/key.pem",
+        certfile: "priv/ssl/cert.pem"
 
       # The interface above can be shutdown with
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTPS
@@ -190,7 +190,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp otp_app(cowboy_options) do
     if app = cowboy_options[:otp_app] do
-      Application.app_dir(app, "priv")
+      Application.app_dir(app)
     else
       fail "to use a relative certificate with https, the :otp_app " <>
            "option needs to be given to the adapter"

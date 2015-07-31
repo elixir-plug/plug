@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.0.0-dev
+
+* Bug fix
+  * No longer automatically assume "priv" for cert and key files for Cowboy SSL
+
 ## v0.14.0
 
 * Enhancements
