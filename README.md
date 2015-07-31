@@ -161,7 +161,9 @@ This project aims to ship with different plugs that can be re-used across applic
   * `Plug.Logger` - logs requests;
   * `Plug.MethodOverride` - overrides a request method with one specified in headers;
   * `Plug.Parsers` - responsible for parsing the request body given its content-type;
+  * `Plug.RequestID` - sets up a request ID to be used in logs;
   * `Plug.Session` - handles session management and storage;
+  * `Plug.SSL` - enforce requests through SSL;
   * `Plug.Static` - serves static files;
 
 You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
