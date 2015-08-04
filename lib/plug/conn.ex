@@ -644,6 +644,10 @@ defmodule Plug.Conn do
   * `:read_length` - set the amount of bytes to read at one time, defaults to 1_000_000 bytes;
   * `:read_timeout` - set the timeout for each chunk received, defaults to 15_000 ms;
 
+  The values above are not meant to be exact. For exmaple, setting the
+  length to 8_000_000 may end-up reading some hundred bytes more from
+  the socket until we halt.
+
   ## Examples
 
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: 1_000_000)
