@@ -428,6 +428,10 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
+  def resp(%Conn{}, _status, nil) do
+    raise ArgumentError, "response body cannot be set to nil"
+  end
+
   def resp(%Conn{} = conn, status, body)
       when is_binary(body) or is_list(body) do
     %{conn | status: Plug.Conn.Status.code(status), resp_body: body, state: :set}
