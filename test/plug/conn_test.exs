@@ -145,6 +145,13 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "resp/3 raises when body is nil" do
+    conn = conn(:head, "/foo")
+    assert_raise ArgumentError, fn ->
+      resp(conn, 200, nil)
+    end
+  end
+
   test "send_resp/3" do
     conn = conn(:get, "/foo")
     assert conn.state == :unset
