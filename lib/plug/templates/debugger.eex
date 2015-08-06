@@ -163,16 +163,16 @@
 
     header.exception:hover {
         height: auto;
+        overflow-y: auto;
+        max-height: 60%;
         z-index: 2;
     }
 
     header.exception:hover h2,
     header.exception:hover p {
         padding-right: 20px;
-        overflow-y: auto;
         word-wrap: break-word;
         height: auto;
-        max-height: 7em;
     }
 
     @media screen and (max-width: 1100px) {
@@ -592,8 +592,8 @@
 <body>
     <div class="top">
         <header class="exception">
-            <h2><strong><%= @title %></strong> <span>at <%= method(@conn) %> <%= @conn.request_path %></span></h2>
-            <p><%= @message %></p>
+            <h2><strong><%= h(@title) %></strong> <span>at <%= method(@conn) %> <%= @conn.request_path %></span></h2>
+            <p><%= h(@message) %></p>
         </header>
     </div>
 
@@ -645,7 +645,7 @@
 
                         <div class="code">
                           <%= if snippet = frame.snippet do %>
-                            <%= for { index, line, highlight } <- snippet do %>
+                            <%= for {index, line, highlight} <- snippet do %>
                               <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%=h line %></span></pre>
                             <% end %>
                           <% else %>

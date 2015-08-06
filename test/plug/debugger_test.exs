@@ -15,7 +15,7 @@ defmodule Plug.DebuggerTest do
 
     def call(conn, opts) do
       if conn.path_info == ~w(boom) do
-        raise "oops"
+        raise "<oops>"
       else
         super(conn, opts)
       end
@@ -36,7 +36,7 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden" do
     conn = conn(:get, "/boom")
 
-    assert_raise RuntimeError, "oops", fn ->
+    assert_raise RuntimeError, "<oops>", fn ->
       Router.call(conn, [])
     end
 
@@ -46,6 +46,7 @@ defmodule Plug.DebuggerTest do
     assert List.keyfind(headers, "content-type", 0) ==
            {"content-type", "text/html; charset=utf-8"}
     assert body =~ "<title>RuntimeError at GET /boom</title>"
+    assert body =~ "&lt;oops&gt;"
   end
 
   test "call/2 is overridden but is a no-op when response is already sent" do
