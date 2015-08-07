@@ -540,6 +540,10 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
+  def merge_resp_headers(conn, headers) when headers == %{} do
+    conn
+  end
+
   def merge_resp_headers(%Conn{resp_headers: current} = conn, headers) do
     headers =
       Enum.reduce headers, current, fn

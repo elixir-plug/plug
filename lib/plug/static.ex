@@ -53,6 +53,8 @@ defmodule Plug.Static do
       file system traversals on every request when this plug is mounted
       at `"/"`. Defaults to `nil` (no filtering).
 
+    * `:headers` - other headers to be set when serving static assets.
+
   ## Examples
 
   This plug can be mounted in a `Plug.Builder` pipeline as follows:
@@ -97,6 +99,7 @@ defmodule Plug.Static do
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
+    headers  = Keyword.get(opts, :headers, %{})
 
     from =
       case from do
@@ -106,10 +109,10 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only}
+    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only, headers}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only})
+  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only, headers})
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
@@ -122,7 +125,7 @@ defmodule Plug.Static do
         raise InvalidPathError
       true ->
         path = path(from, segments)
-        serve_static(file_encoding(conn, path, gzip), segments, gzip, qs_cache, et_cache)
+        serve_static(file_encoding(conn, path, gzip), segments, gzip, qs_cache, et_cache, headers)
     end
   end
 
@@ -134,7 +137,7 @@ defmodule Plug.Static do
   defp allowed?(nil, _list),  do: true
   defp allowed?(only, [h|_]), do: h in only
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip, qs_cache, et_cache) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip, qs_cache, et_cache, headers) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
         content_type = segments |> List.last |> Plug.MIME.path
@@ -142,6 +145,7 @@ defmodule Plug.Static do
         conn
         |> maybe_add_vary(gzip)
         |> put_resp_header("content-type", content_type)
+        |> merge_resp_headers(headers)
         |> send_file(200, path)
         |> halt
       {:fresh, conn} ->
@@ -151,7 +155,7 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip, _qs_cache, _et_cache) do
+  defp serve_static({:error, conn}, _segments, _gzip, _qs_cache, _et_cache, _headers) do
     conn
   end
 

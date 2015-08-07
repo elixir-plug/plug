@@ -8,7 +8,8 @@ defmodule Plug.StaticTest do
     plug Plug.Static,
       at: "/public",
       from: Path.expand("..", __DIR__),
-      gzip: true
+      gzip: true,
+      headers: %{"x-custom" => "x-value"}
 
     plug :passthrough
 
@@ -37,6 +38,7 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
+    assert get_resp_header(conn, "x-custom")  == ["x-value"]
 
     assert [etag] = get_resp_header(conn, "etag")
     assert get_resp_header(conn, "cache-control")  == ["public"]
@@ -47,6 +49,7 @@ defmodule Plug.StaticTest do
     assert conn.status == 304
     assert conn.resp_body == ""
     assert get_resp_header(conn, "cache-control")  == ["public"]
+    assert get_resp_header(conn, "x-custom")  == []
 
     assert get_resp_header(conn, "content-type")  == []
     assert get_resp_header(conn, "etag") == [etag]
@@ -59,6 +62,7 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
     assert get_resp_header(conn, "etag") == []
+    assert get_resp_header(conn, "x-custom")  == ["x-value"]
   end
 
   test "doesn't set cache control headers" do
@@ -66,38 +70,44 @@ defmodule Plug.StaticTest do
       [at: "/public",
       from: Path.expand("..", __DIR__),
       cache_control_for_vsn_requests: nil,
-      cache_control_for_etags: nil]
+      cache_control_for_etags: nil,
+      headers: %{"x-custom" => "x-value"}]
 
     conn = conn(:get, "/public/fixtures/static.txt")
            |> Plug.Static.call(Plug.Static.init(opts))
 
     assert conn.status == 200
     assert get_resp_header(conn, "cache-control") == ["max-age=0, private, must-revalidate"]
-    assert get_resp_header(conn, "etag") ==[]
+    assert get_resp_header(conn, "etag") == []
+    assert get_resp_header(conn, "x-custom")  == ["x-value"]
   end
 
   test "passes through on other paths" do
     conn = conn(:get, "/another/fallback.txt") |> call
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes through on non existing files" do
     conn = conn(:get, "/public/fixtures/unknown.txt") |> call
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes through on directories" do
     conn = conn(:get, "/public/fixtures") |> call
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes for non-get/non-head requests" do
     conn = conn(:post, "/public/fixtures/static.txt") |> call
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "returns 400 for unsafe paths" do
@@ -124,6 +134,7 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
     assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
+    assert get_resp_header(conn, "x-custom")  == ["x-value"]
 
     conn = conn(:get, "/public/fixtures/static.txt", [])
            |> put_req_header("accept-encoding", "*")
@@ -133,6 +144,7 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == "GZIPPED HELLO"
     assert get_resp_header(conn, "content-encoding") == ["gzip"]
     assert get_resp_header(conn, "vary") == ["Accept-Encoding", "Whatever"]
+    assert get_resp_header(conn, "x-custom")  == ["x-value"]
   end
 
   test "only serves gzipped file if available" do
@@ -168,8 +180,7 @@ defmodule Plug.StaticTest do
       Plug.Conn.send_resp(conn, 404, "Passthrough")
   end
 
-
-  test "serves only allowed files file" do
+  test "serves only allowed files" do
     conn = conn(:get, "/test_helper.exs") |> FilterPlug.call([])
     assert conn.status == 200
 
