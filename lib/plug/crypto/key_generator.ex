@@ -1,10 +1,13 @@
 defmodule Plug.Crypto.KeyGenerator do
   @moduledoc """
-  `KeyGenerator` is a simple implementation of PBFDF2.
+  `KeyGenerator` implements PBKDF2 (Password-Based Key Derivation Function 2),
+  part of PKCS #5 v2.0 (Password-Based Cryptography Specification).
 
   It can be used to derive a number of keys for various purposes from a given
   secret. This lets applications have a single secure secret, but avoid reusing
   that key in multiple incompatible contexts.
+
+  see http://tools.ietf.org/html/rfc2898#section-5.2
   """
 
   use Bitwise
