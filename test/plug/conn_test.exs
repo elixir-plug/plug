@@ -27,6 +27,16 @@ defmodule Plug.ConnTest do
     assert body == "HELLO"
   end
 
+  test "twice sinding a response" do
+    conn = conn(:get, "/foo")
+    send_resp(conn, 204, "")
+    send_resp(conn, 200, "HELLO")
+
+    assert_raise RuntimeError, ~r/sent more than once/, fn ->
+      sent_resp(conn)
+    end
+  end
+
   test "inspect/2" do
     assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
     refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"

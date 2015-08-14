@@ -61,13 +61,26 @@ defmodule Plug.Test do
   the crash. It returns a tuple with `{status, headers, body}`.
   """
   def sent_resp(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    case receive_resp(ref) do
+      :no_resp ->
+        raise "no sent response available for the given connection. " <>
+              "Maybe the application did not send anything?"
+      response ->
+        case receive_resp(ref) do
+          :no_resp ->
+            send(self, {ref, response})
+            response
+          _otherwise ->
+            raise "a response for the given connection has been sent more than once"
+        end
+    end
+  end
+
+  defp receive_resp(ref) do
     receive do
-      {^ref, response} ->
-        send(self, {ref, response})
-        response
+      {^ref, response} -> response
     after
-      0 -> raise "no sent response available for the given connection. " <>
-                 "Maybe the application did not send anything?"
+      0 -> :no_resp
     end
   end
 
