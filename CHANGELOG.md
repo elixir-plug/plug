@@ -1,9 +1,15 @@
 ## Changelog
 
-## v1.0.0-dev
+## v1.0.0
+
+* Enhancements
+  * Allow custom headers in `Plug.Static`
 
 * Bug fix
   * No longer automatically assume "priv" for cert and key files for Cowboy SSL
+  * Raise if response has been sent more than once in test connection
+  * Raise when body is nil on `Plug.Conn.resp/3`
+  * Show more info and escape messages in `Plug.Debugger`
 
 ## v0.14.0
 

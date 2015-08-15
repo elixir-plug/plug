@@ -1,7 +1,7 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
-  @version "0.14.0"
+  @version "1.0.0"
 
   def project do
     [app: :plug,
