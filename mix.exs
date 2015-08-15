@@ -10,7 +10,7 @@ defmodule Plug.Mixfile do
      deps: deps,
      package: package,
      description: "A specification and conveniences for composable " <>
-                  "modules in between web applications",
+                  "modules between web applications",
      name: "Plug",
      docs: [readme: "README.md", main: "README",
             source_ref: "v#{@version}",

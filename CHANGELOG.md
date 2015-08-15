@@ -234,7 +234,7 @@
 * Enhancements
   * Update to Elixir v0.14.3
   * Cowboy adapter now returns `{:error,:eaddrinuse}` when port is already in use
-  * Add `Plug.Test.recycle/2` that copies relevant data in between connections for future requests
+  * Add `Plug.Test.recycle/2` that copies relevant data between connections for future requests
 
 ## v0.5.1
 
