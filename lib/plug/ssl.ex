@@ -43,15 +43,15 @@ defmodule Plug.SSL do
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, [])}
+    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :port), Keyword.get(opts, :rewrite_on, [])}
   end
 
-  def call(conn, {hsts, host, rewrites}) do
+  def call(conn, {hsts, host, port, rewrites}) do
     conn = rewrite_on(conn, rewrites)
     if conn.scheme == :https do
       put_hsts_header(conn, hsts)
     else
-      redirect_to_https(conn, host)
+      redirect_to_https(conn, host, port)
     end
   end
 
@@ -84,18 +84,22 @@ defmodule Plug.SSL do
   end
   defp put_hsts_header(conn, _), do: conn
 
-  defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
+  defp redirect_to_https(%Conn{host: host} = conn, custom_host, custom_port) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    uri = %URI{scheme: "https", host: custom_host || host,
-               path: conn.request_path, query: nil_if_empty(conn.query_string)}
+    location = "https://" <> (custom_host || host) <> port(custom_port) <>
+                             conn.request_path <> qs(conn.query_string)
 
     conn
-    |> put_resp_header("location", to_string(uri))
+    |> put_resp_header("location", location)
     |> send_resp(status, "")
     |> halt
   end
 
-  defp nil_if_empty(""), do: nil
-  defp nil_if_empty(other), do: other
+  defp port(nil), do: ""
+  defp port(str) when is_binary(str), do: ":" <> str
+  defp port(int) when is_integer(int), do: ":" <> Integer.to_string(int)
+
+  defp qs(""), do: ""
+  defp qs(qs), do: "?" <> qs
 end

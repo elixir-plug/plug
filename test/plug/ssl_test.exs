@@ -40,20 +40,25 @@ defmodule Plug.SSLTest do
     refute conn.halted
   end
 
-  test "redirects to host when insecure" do
-    conn = conn(:get, "http://example.com/") |> call()
-    assert get_resp_header(conn, "location") ==
-           ["https://example.com/"]
-    assert conn.halted
-  end
-
   test "rewrites conn http to https based on x-forwarded-proto" do
-    conn = conn(:get, "http://example.com/path?q=foo&k=bar")
+    conn = conn(:get, "http://example.com/")
            |> put_req_header("x-forwarded-proto", "https")
            |> call(rewrite_on: [:x_forwarded_proto])
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000"]
     refute conn.halted
+  end
+
+  test "redirects to host when insecure" do
+    conn = conn(:get, "http://example.com/") |> call()
+    assert get_resp_header(conn, "location") ==
+           ["https://example.com/"]
+    assert conn.halted
+
+    conn = conn(:get, "http://example.com/foo?bar=baz") |> call()
+    assert get_resp_header(conn, "location") ==
+           ["https://example.com/foo?bar=baz"]
+    assert conn.halted
   end
 
   test "redirects to custom host on get" do
@@ -65,7 +70,23 @@ defmodule Plug.SSLTest do
     assert conn.halted
   end
 
-  test "redirects to custom host on head" do
+  test "redirects to custom port on get" do
+    conn = conn(:get, "http://example.com/")
+           |> call(port: 321)
+    assert get_resp_header(conn, "location") ==
+           ["https://example.com:321/"]
+    assert conn.status == 301
+    assert conn.halted
+
+    conn = conn(:get, "http://example.com/")
+           |> call(port: "321")
+    assert get_resp_header(conn, "location") ==
+           ["https://example.com:321/"]
+    assert conn.status == 301
+    assert conn.halted
+  end
+
+  test "redirects to host on head" do
     conn = conn(:head, "http://example.com/") |> call
     assert conn.status == 301
     assert conn.halted

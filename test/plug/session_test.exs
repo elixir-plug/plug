@@ -76,8 +76,8 @@ defmodule Plug.SessionTest do
     conn = configure_session(conn, renew: true)
     conn = send_resp(conn, 200, "")
 
-    assert %{"foobar" => %{value: _}} = conn.resp_cookies
-    refute %{"foobar" => %{value: "sid"}} = conn.resp_cookies
+    assert match? %{"foobar" => %{value: _}}, conn.resp_cookies
+    refute match? %{"foobar" => %{value: "sid"}}, conn.resp_cookies
   end
 
   test "ignore changes to session" do
