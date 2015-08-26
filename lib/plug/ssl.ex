@@ -36,6 +36,13 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to false.
     * `:host` - a new host to redirect to if the request's scheme is `http`.
+
+  ## Port
+
+  It is not possible to directly configure the port in `Plug.SSL` because
+  HSTS expects the port to be 443 for SSL. If you are not using HSTS and
+  wants to redirect to HTTPS on another port, you can sneak it alongside
+  the host, for example: `host: "example.com:443"`.
   """
   @behaviour Plug
 
@@ -43,15 +50,15 @@ defmodule Plug.SSL do
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :port), Keyword.get(opts, :rewrite_on, [])}
+    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, [])}
   end
 
-  def call(conn, {hsts, host, port, rewrites}) do
+  def call(conn, {hsts, host, rewrites}) do
     conn = rewrite_on(conn, rewrites)
     if conn.scheme == :https do
       put_hsts_header(conn, hsts)
     else
-      redirect_to_https(conn, host, port)
+      redirect_to_https(conn, host)
     end
   end
 
@@ -84,10 +91,10 @@ defmodule Plug.SSL do
   end
   defp put_hsts_header(conn, _), do: conn
 
-  defp redirect_to_https(%Conn{host: host} = conn, custom_host, custom_port) do
+  defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    location = "https://" <> (custom_host || host) <> port(custom_port) <>
+    location = "https://" <> (custom_host || host) <>
                              conn.request_path <> qs(conn.query_string)
 
     conn
@@ -95,10 +102,6 @@ defmodule Plug.SSL do
     |> send_resp(status, "")
     |> halt
   end
-
-  defp port(nil), do: ""
-  defp port(str) when is_binary(str), do: ":" <> str
-  defp port(int) when is_integer(int), do: ":" <> Integer.to_string(int)
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs

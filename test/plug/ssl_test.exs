@@ -70,22 +70,6 @@ defmodule Plug.SSLTest do
     assert conn.halted
   end
 
-  test "redirects to custom port on get" do
-    conn = conn(:get, "http://example.com/")
-           |> call(port: 321)
-    assert get_resp_header(conn, "location") ==
-           ["https://example.com:321/"]
-    assert conn.status == 301
-    assert conn.halted
-
-    conn = conn(:get, "http://example.com/")
-           |> call(port: "321")
-    assert get_resp_header(conn, "location") ==
-           ["https://example.com:321/"]
-    assert conn.status == 301
-    assert conn.halted
-  end
-
   test "redirects to host on head" do
     conn = conn(:head, "http://example.com/") |> call
     assert conn.status == 301
