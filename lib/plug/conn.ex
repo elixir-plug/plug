@@ -40,7 +40,7 @@ defmodule Plug.Conn do
   `Plug.Conn.Unfetched` structs.
 
   * `cookies`- the request cookies with the response cookies
-  * `params` - the request params
+  * `query_params` - the request query params
   * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
