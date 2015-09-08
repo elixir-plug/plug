@@ -145,7 +145,7 @@ defmodule Plug.Adapters.Cowboy do
     acceptors = cowboy_options[:acceptors] || 100
     dispatch  = :cowboy_router.compile(cowboy_options[:dispatch])
     compress  = cowboy_options[:compress] || false
-    timeout_option    = if cowboy_options[:timeout] do [timeout: cowboy_options[:timeout]] else [] end
+    timeout_option    = if timeout = cowboy_options[:timeout], do: [timeout: timeout], else: []
     transport_options = [env: [dispatch: dispatch], compress: compress] ++ timeout_option
     cowboy_options    = Keyword.drop(cowboy_options, @not_cowboy_options)
 
