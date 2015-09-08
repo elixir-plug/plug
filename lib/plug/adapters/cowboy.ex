@@ -26,6 +26,8 @@ defmodule Plug.Adapters.Cowboy do
 
   * `:compress` - Cowboy will attempt to compress the response body.
 
+  * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
+
   """
 
   # Made public with @doc false for testing.
@@ -113,7 +115,7 @@ defmodule Plug.Adapters.Cowboy do
 
   @http_cowboy_options  [port: 4000]
   @https_cowboy_options [port: 4040]
-  @not_cowboy_options [:acceptors, :dispatch, :ref, :otp_app, :compress]
+  @not_cowboy_options [:acceptors, :dispatch, :ref, :otp_app, :compress, :timeout]
 
   defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
@@ -143,8 +145,11 @@ defmodule Plug.Adapters.Cowboy do
     acceptors = cowboy_options[:acceptors] || 100
     dispatch  = :cowboy_router.compile(cowboy_options[:dispatch])
     compress  = cowboy_options[:compress] || false
-    cowboy_options   = Keyword.drop(cowboy_options, @not_cowboy_options)
-    [ref, acceptors, cowboy_options, [env: [dispatch: dispatch], compress: compress]]
+    timeout_option    = if cowboy_options[:timeout] do [timeout: cowboy_options[:timeout]] else [] end
+    transport_options = [env: [dispatch: dispatch], compress: compress] ++ timeout_option
+    cowboy_options    = Keyword.drop(cowboy_options, @not_cowboy_options)
+
+    [ref, acceptors, cowboy_options, transport_options]
   end
 
   defp build_ref(plug, scheme) do

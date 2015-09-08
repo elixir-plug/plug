@@ -27,6 +27,14 @@ defmodule Plug.Adapters.CowboyTest do
             [env: [dispatch: @dispatch], compress: false]]
   end
 
+  test "builds args with timeout option" do
+    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, timeout: 30000]) ==
+           [Plug.Adapters.CowboyTest.HTTP,
+            25,
+            [port: 3000],
+            [env: [dispatch: @dispatch], compress: false, timeout: 30000]]
+  end
+
   test "builds child specs" do
     args = [Plug.Adapters.CowboyTest.HTTP,
             100,
