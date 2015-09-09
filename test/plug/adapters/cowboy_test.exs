@@ -16,23 +16,29 @@ defmodule Plug.Adapters.CowboyTest do
            [Plug.Adapters.CowboyTest.HTTP,
             100,
             [port: 4000],
-            [env: [dispatch: @dispatch], compress: false]]
+            [env: [dispatch: @dispatch]]]
   end
 
   test "builds args with custom options" do
-    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25]) ==
+    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, other: true]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
-            [port: 3000],
-            [env: [dispatch: @dispatch], compress: false]]
+            [port: 3000, other: true],
+            [env: [dispatch: @dispatch]]]
   end
 
-  test "builds args with timeout option" do
-    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, timeout: 30000]) ==
+  test "builds args with protocol option" do
+    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, compress: true, timeout: 30000]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
             [port: 3000],
-            [env: [dispatch: @dispatch], compress: false, timeout: 30000]]
+            [env: [dispatch: @dispatch], compress: true, timeout: 30000]]
+
+    assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, protocol_options: [timeout: 30000]]) ==
+           [Plug.Adapters.CowboyTest.HTTP,
+            25,
+            [port: 3000],
+            [env: [dispatch: @dispatch], timeout: 30000]]
   end
 
   test "builds child specs" do
@@ -41,7 +47,7 @@ defmodule Plug.Adapters.CowboyTest do
             :ranch_tcp,
             [port: 4000],
             :cowboy_protocol,
-            [env: [dispatch: @dispatch], compress: false]]
+            [env: [dispatch: @dispatch]]]
 
     assert child_spec(:http, __MODULE__, [], []) ==
            {{:ranch_listener_sup, Plug.Adapters.CowboyTest.HTTP},
