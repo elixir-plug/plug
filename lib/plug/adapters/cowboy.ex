@@ -25,9 +25,15 @@ defmodule Plug.Adapters.Cowboy do
     This is the value that needs to be given on shutdown.
 
   * `:compress` - Cowboy will attempt to compress the response body.
+    Defaults to false.
 
   * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
+    Defaults to 5000ms.
 
+  * `:protocol_options` - Specifies remaining protocol options,
+    see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
+
+  All other options are given to the underlying transport.
   """
 
   # Made public with @doc false for testing.
@@ -115,7 +121,7 @@ defmodule Plug.Adapters.Cowboy do
 
   @http_cowboy_options  [port: 4000]
   @https_cowboy_options [port: 4040]
-  @not_cowboy_options [:acceptors, :dispatch, :ref, :otp_app, :compress, :timeout]
+  @protocol_options [:timeout, :compress]
 
   defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
@@ -140,16 +146,18 @@ defmodule Plug.Adapters.Cowboy do
     cowboy_options
   end
 
-  defp to_args(cowboy_options) do
-    ref       = cowboy_options[:ref]
-    acceptors = cowboy_options[:acceptors] || 100
-    dispatch  = :cowboy_router.compile(cowboy_options[:dispatch])
-    compress  = cowboy_options[:compress] || false
-    timeout_option    = if timeout = cowboy_options[:timeout], do: [timeout: timeout], else: []
-    transport_options = [env: [dispatch: dispatch], compress: compress] ++ timeout_option
-    cowboy_options    = Keyword.drop(cowboy_options, @not_cowboy_options)
+  defp to_args(opts) do
+    opts = Keyword.delete(opts, :otp_app)
+    {ref, opts} = Keyword.pop(opts, :ref)
+    {dispatch, opts} = Keyword.pop(opts, :dispatch)
+    {acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
+    {protocol_options, opts} = Keyword.pop(opts, :protocol_options, [])
 
-    [ref, acceptors, cowboy_options, transport_options]
+    dispatch = :cowboy_router.compile(dispatch)
+    {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
+    protocol_options = [env: [dispatch: dispatch]] ++ protocol_options ++ extra_options
+
+    [ref, acceptors, transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do
