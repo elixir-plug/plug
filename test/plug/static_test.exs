@@ -193,4 +193,31 @@ defmodule Plug.StaticTest do
     conn = conn(:get, "/plug/conn_test.exs") |> FilterPlug.call([])
     assert conn.status == 404
   end
+
+  defmodule StaticIndexPlug do
+    use Plug.Builder
+
+    plug Plug.Static,
+      at: "/public",
+      from: Path.expand("..", __DIR__),
+      index: "static.txt"
+
+    plug :passthrough
+
+    defp passthrough(conn, _), do:
+      Plug.Conn.send_resp(conn, 404, "Passthrough")
+  end
+
+  test "serves the index when given" do
+    conn = conn(:get, "/public/fixtures") |> StaticIndexPlug.call([])
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type")  == ["text/plain"]
+  end
+
+  test "pass through when no index present" do
+    conn = conn(:get, "/public") |> StaticIndexPlug.call([])
+    assert conn.status == 404
+    assert conn.resp_body == "Passthrough"
+  end
 end
