@@ -100,6 +100,7 @@ defmodule Plug.Static do
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
     headers  = Keyword.get(opts, :headers, %{})
+    index    = Keyword.get(opts, :index, nil)
 
     from =
       case from do
@@ -109,14 +110,15 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only, headers}
+    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only, headers, index}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only, headers, index})
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
     segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
+    segments = add_index(from, segments, index)
 
     cond do
       not allowed?(only, segments) ->
@@ -131,6 +133,15 @@ defmodule Plug.Static do
 
   def call(conn, _opts) do
     conn
+  end
+
+  defp add_index(_from, segments, nil), do: segments
+  defp add_index(from, segments, index) do
+    if path(from, segments) |> File.dir? do
+      segments ++ [index]
+    else
+      segments
+    end
   end
 
   defp allowed?(_only, []),   do: false
