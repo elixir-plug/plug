@@ -146,7 +146,8 @@ defmodule Plug.Adapters.Cowboy do
     cowboy_options
   end
 
-  defp to_args(opts) do
+  defp to_args(all_opts) do
+    {initial_transport_options, opts} = Enum.partition(all_opts, &is_atom/1)
     opts = Keyword.delete(opts, :otp_app)
     {ref, opts} = Keyword.pop(opts, :ref)
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
@@ -157,7 +158,7 @@ defmodule Plug.Adapters.Cowboy do
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
     protocol_options = [env: [dispatch: dispatch]] ++ protocol_options ++ extra_options
 
-    [ref, acceptors, transport_options, protocol_options]
+    [ref, acceptors, initial_transport_options ++ transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do
