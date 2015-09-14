@@ -41,6 +41,14 @@ defmodule Plug.Adapters.CowboyTest do
             [env: [dispatch: @dispatch], timeout: 30000]]
   end
 
+  test "builds args with single-atom protocol option" do
+    assert args(:http, __MODULE__, [], [:inet6, port: 3000, acceptors: 25]) ==
+           [Plug.Adapters.CowboyTest.HTTP,
+            25,
+            [:inet6, port: 3000],
+            [env: [dispatch: @dispatch]]]
+  end
+
   test "builds child specs" do
     args = [Plug.Adapters.CowboyTest.HTTP,
             100,
