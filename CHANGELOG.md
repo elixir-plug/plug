@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.0.1
+
+* Enhancements
+  * Allow configuring all options supported by the underlying transport (i.e. cowboy)
+
 ## v1.0.0
 
 * Enhancements
