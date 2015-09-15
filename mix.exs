@@ -1,7 +1,7 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
-  @version "1.0.0"
+  @version "1.0.1"
 
   def project do
     [app: :plug,
@@ -12,7 +12,7 @@ defmodule Plug.Mixfile do
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
-     docs: [readme: "README.md", main: "README",
+     docs: [extras: ["README.md"], main: "README",
             source_ref: "v#{@version}",
             source_url: "https://github.com/elixir-lang/plug"]]
   end
