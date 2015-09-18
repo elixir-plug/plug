@@ -110,7 +110,7 @@ defmodule Plug.Session.COOKIE do
   end
 
   defp decode({:ok, binary}, :external_term_format) do
-    {nil,
+    {:term,
       try do
         :erlang.binary_to_term(binary)
       rescue
@@ -120,8 +120,8 @@ defmodule Plug.Session.COOKIE do
 
   defp decode({:ok, binary}, serializer) do
     case serializer.decode(binary) do
-      {:ok, term} -> {nil, term}
-      _           -> {nil, %{}}
+      {:ok, term} -> {:custom, term}
+      _           -> {:custom, %{}}
     end
   end
 

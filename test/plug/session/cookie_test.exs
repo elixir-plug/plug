@@ -100,7 +100,7 @@ defmodule Plug.Session.CookieTest do
     cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @signing_opts.store_config)
     assert is_binary(cookie)
     assert CookieStore.get(conn, cookie, @signing_opts.store_config) ==
-           {nil, %{"foo" => "baz"}}
+           {:term, %{"foo" => "baz"}}
   end
 
   test "gets and sets signed session cookie" do
@@ -133,7 +133,7 @@ defmodule Plug.Session.CookieTest do
     cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @encrypted_opts.store_config)
     assert is_binary(cookie)
     assert CookieStore.get(conn, cookie, @encrypted_opts.store_config) ==
-           {nil, %{"foo" => "baz"}}
+           {:term, %{"foo" => "baz"}}
   end
 
   test "gets and sets encrypted session cookie" do
@@ -166,7 +166,7 @@ defmodule Plug.Session.CookieTest do
     cookie = CookieStore.put(conn, nil, %{"foo" => "baz"}, @custom_serializer_opts.store_config)
     assert is_binary(cookie)
     assert CookieStore.get(conn, cookie, @custom_serializer_opts.store_config) ==
-           {nil, %{"foo" => "baz"}}
+           {:custom, %{"foo" => "baz"}}
   end
 
   test "gets and sets custom serialized session cookie" do
