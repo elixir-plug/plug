@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.0.2
+
+* Bug fix
+  * Ensure cookie store returns a Session ID so they can be dropped
+
 ## v1.0.1
 
 * Enhancements
