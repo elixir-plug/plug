@@ -632,10 +632,14 @@ defmodule Plug.Conn do
   @doc """
   Reads the request body.
 
-  This function reads a chunk of the request body. If there is more data to be
-  read, then `{:more, partial_body, conn}` is returned. Otherwise
-  `{:ok, body, conn}` is returned. In case of error reading the socket,
-  `{:error, reason}` is returned as per `:gen_tcp.recv/2`.
+  This function reads a chunk of the request body up to a given `:length`. If
+  there is more data to be read, then `{:more, partial_body, conn}` is
+  returned. Otherwise `{:ok, body, conn}` is returned. In case of an error
+  reading the socket, `{:error, reason}` is returned as per `:gen_tcp.recv/2`.
+
+  In order to, for instance, support slower clients you can tune the
+  `:read_length` and `:read_timeout` options. These specify how much time should
+  be allowed to pass for each read from the underlying socket.
 
   Because the request body can be of any size, reading the body will only
   work once, as Plug will not cache the result of these operations. If you
@@ -648,9 +652,12 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:length` - sets the max body length to read, defaults to 8_000_000 bytes;
-  * `:read_length` - set the amount of bytes to read at one time, defaults to 1_000_000 bytes;
-  * `:read_timeout` - set the timeout for each chunk received, defaults to 15_000 ms;
+  * `:length` - sets the maximum number of bytes to read from the body for each
+    chunk, defaults to 8_000_000 bytes
+  * `:read_length` - sets the amount of bytes to read at one time from the
+    underlying socket to fill the chunk, defaults to 1_000_000 bytes
+  * `:read_timeout` - sets the timeout for each socket read, defaults to
+    15_000 ms
 
   The values above are not meant to be exact. For example, setting the
   length to 8_000_000 may end-up reading some hundred bytes more from
