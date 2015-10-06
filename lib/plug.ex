@@ -54,11 +54,10 @@ defmodule Plug do
 
   @type opts :: tuple | atom | integer | float | [opts]
 
-  use Behaviour
   use Application
 
-  defcallback init(opts) :: opts
-  defcallback call(Plug.Conn.t, opts) :: Plug.Conn.t
+  @callback init(opts) :: opts
+  @callback call(Plug.Conn.t, opts) :: Plug.Conn.t
 
   @doc false
   def start(_type, _args) do
