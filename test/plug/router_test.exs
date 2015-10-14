@@ -13,7 +13,19 @@ defmodule Plug.RouterTest do
     end
 
     get "/" do
-      conn |> resp(200, "forwarded")
+      conn |> resp(200, "forwarded from [" <> Enum.join(conn.script_name, ",") <> "] to [" <> Enum.join(conn.path_info, ",") <> "]")
+    end
+
+    get "/ok" do
+      conn |> resp(200, "forwarded /ok")
+    end
+
+    get "/path_info" do
+      conn |> resp(200, Enum.join(conn.path_info, ","))
+    end
+
+    get "/path_info/*_glob" do
+      conn |> resp(200, Enum.join(conn.path_info, ","))
     end
 
     get "/script_name" do
@@ -195,10 +207,16 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == "oops"
   end
 
-  test "dispatch with forwarding" do
+  test "dispatch with forwarding to index" do
     conn = call(Sample, conn(:get, "/forward"))
-    assert conn.resp_body == "forwarded"
+    assert conn.resp_body == "forwarded from [forward] to []"
     assert conn.path_info == ["forward"]
+  end
+
+  test "dispatch with forwarding to nexted path_info" do
+    conn = call(Sample, conn(:get, "/forward/path_info/nested/1/2"))
+    assert conn.resp_body == "path_info,nested,1,2"
+    assert conn.path_info == ["forward", "path_info", "nested", "1", "2"]
   end
 
   test "dispatch with forwarding with custom call" do
@@ -208,11 +226,14 @@ defmodule Plug.RouterTest do
 
   test "dispatch with forwarding including slashes" do
     conn = call(Sample, conn(:get, "/nested/forward"))
-    assert conn.resp_body == "forwarded"
+    assert conn.resp_body == "forwarded from [nested,forward] to []"
     assert conn.path_info == ["nested", "forward"]
   end
 
   test "dispatch with forwarding modifies script_name" do
+    conn = call(Sample, conn(:get, "/nested/forward/"))
+    assert conn.resp_body == "forwarded from [nested,forward] to []"
+
     conn = call(Sample, conn(:get, "/nested/forward/script_name"))
     assert conn.resp_body == "nested,forward"
 
@@ -312,7 +333,7 @@ defmodule Plug.RouterTest do
   test "assigns options on forward" do
     conn = call(Sample, conn(:get, "/options/forward"))
     assert conn.private[:an_option] == :a_value
-    assert conn.resp_body == "forwarded"
+    assert conn.resp_body == "forwarded from [options,forward] to []"
   end
 
   defp call(mod, conn) do
