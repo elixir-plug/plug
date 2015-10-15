@@ -36,6 +36,7 @@ defmodule Plug.Parsers.JSON do
   end
 
   defp decode({:ok, body, conn}, decoder) do
+    conn = put_private(conn, :req_body, body)
     case decoder.decode!(body) do
       terms when is_map(terms) ->
         {:ok, terms, conn}
