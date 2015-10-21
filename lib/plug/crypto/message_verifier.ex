@@ -15,7 +15,7 @@ defmodule Plug.Crypto.MessageVerifier do
     case String.split(binary, "--") do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
-          Base.decode64(content)
+          Base.url_decode64(content)
         else
           :error
         end
@@ -28,11 +28,11 @@ defmodule Plug.Crypto.MessageVerifier do
   Signs a binary according to the given secret.
   """
   def sign(binary, secret) when is_binary(binary) and is_binary(secret) do
-    encoded = Base.encode64(binary)
+    encoded = Base.url_encode64(binary)
     encoded <> "--" <> digest(secret, encoded)
   end
 
   defp digest(secret, data) do
-    :crypto.hmac(:sha, secret, data) |> Base.encode64
+    :crypto.hmac(:sha, secret, data) |> Base.url_encode64
   end
 end
