@@ -15,7 +15,7 @@ defmodule Plug.Crypto.MessageVerifier do
     case String.split(binary, "--") do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
-          Base.url_decode64(content)
+          decode(content)
         else
           :error
         end
@@ -34,5 +34,12 @@ defmodule Plug.Crypto.MessageVerifier do
 
   defp digest(secret, data) do
     :crypto.hmac(:sha, secret, data) |> Base.url_encode64
+  end
+
+  defp decode(content) do
+    case Base.url_decode64(content) do
+      {:ok, binary} -> {:ok, binary}
+      :error -> Base.decode64(content)
+    end
   end
 end
