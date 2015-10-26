@@ -33,8 +33,10 @@ defmodule Plug.Debugger do
   This module does not perform any logging either, as all logging is done
   by the web server handler.
 
-  **Note:** If this module is used with `Plug.ErrorHandler`, it must be used
-  before `Plug.ErrorHandler`.
+  **Note:** If this module is used with `Plug.ErrorHandler`, only one of
+  them will effectively handle errors. For this reason, it is recommended
+  that `Plug.Debugger` is used before `Plug.ErrorHandler` and only in
+  particular environments, like `:dev`.
 
   ## Examples
 
