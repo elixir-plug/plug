@@ -19,4 +19,14 @@ defmodule Plug.HeadTest do
     assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
     assert conn.resp_body == ""
   end
+
+  test "if the request is different from HEAD, conn must be returned as is" do
+    conn = conn(:get, "/")
+           |> Plug.Head.call(@opts)
+           |> send_resp(200, "Hello world")
+
+    assert conn.status == 200
+    assert conn.method == "GET"
+    assert conn.resp_body == "Hello world"
+  end
 end
