@@ -22,10 +22,10 @@ defmodule Plug.Session do
 
     * `:store` - session store module (required);
     * `:key` - session cookie key (required);
-    * `:domain` - see `Plug.Conn.put_resp_cookies/4`;
-    * `:max_age` - see `Plug.Conn.put_resp_cookies/4`;
-    * `:path` - see `Plug.Conn.put_resp_cookies/4`;
-    * `:secure` - see `Plug.Conn.put_resp_cookies/4`;
+    * `:domain` - see `Plug.Conn.put_resp_cookie/4`;
+    * `:max_age` - see `Plug.Conn.put_resp_cookie/4`;
+    * `:path` - see `Plug.Conn.put_resp_cookie/4`;
+    * `:secure` - see `Plug.Conn.put_resp_cookie/4`;
 
   Additional options can be given to the session store, see the store's
   documentation for the options it accepts.
