@@ -6,7 +6,7 @@ defmodule Plug.SSL do
   header to enable HTTP Strict Transport Security.
 
   Otherwise, the request will be redirected to a corresponding location
-  with the `https` scheme by setting the `location` header of the reponse.
+  with the `https` scheme by setting the `location` header of the response.
   The status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
 
