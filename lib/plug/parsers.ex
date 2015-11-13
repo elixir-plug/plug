@@ -184,8 +184,10 @@ defmodule Plug.Parsers do
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      {:ok, body, %Conn{query_params: query} = conn} ->
-        %{conn | body_params: body, params: Map.merge(query, body)}
+      {:ok, body, %Conn{params: %Plug.Conn.Unfetched{}, query_params: query} = conn} ->
+        %{conn | body_params: body, params: query |> Map.merge(body)}
+      {:ok, body, %Conn{params: params, query_params: query} = conn} ->
+        %{conn | body_params: body, params: params |> Map.merge(query) |> Map.merge(body)}
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
       {:error, :too_large, _conn} ->
