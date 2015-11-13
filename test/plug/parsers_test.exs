@@ -21,6 +21,16 @@ defmodule Plug.ParsersTest do
     assert conn.query_params["foo"] == "bar"
   end
 
+  test "keeps existing params" do
+    conn = %{conn(:post, "/?query=foo", "body=bar") | params: %{"params" => "baz"}}
+    conn = conn
+    |> put_req_header("content-type", "application/x-www-form-urlencoded")
+    |> parse()
+    assert conn.params["query"] == "foo"
+    assert conn.params["body"] == "bar"
+    assert conn.params["params"] == "baz"
+  end
+
   test "keeps existing body params" do
     conn = conn(:post, "/?foo=bar")
     conn = parse(%{conn | body_params: %{"foo" => "baz"}, params: %{"foo" => "baz"}})
