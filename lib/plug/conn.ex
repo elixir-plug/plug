@@ -457,9 +457,9 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def put_req_header(%Conn{req_headers: headers} = conn, key, value) when
+  def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(key)
+    validate_header_key!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -526,9 +526,9 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def put_resp_header(%Conn{resp_headers: headers} = conn, key, value) when
+  def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(key)
+    validate_header_key!(adapter, key)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -914,10 +914,14 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  defp validate_header_key!(key) do
+  defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
     unless valid_header_key?(key) do
       raise InvalidHeaderKeyFormatError, message: "header key is not lowercase: " <> key
     end
+  end
+
+  defp validate_header_key!(_adapter, _key) do
+    :ok
   end
 
   # Any string containing an UPPERCASE char is not valid.
