@@ -41,6 +41,7 @@ defmodule Plug.Conn do
 
   * `cookies`- the request cookies with the response cookies
   * `query_params` - the request query params
+  * `params` - the request params. Usually populated by a plug, like `Plug.Parsers`
   * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
