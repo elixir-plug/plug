@@ -24,23 +24,21 @@ defmodule Plug.Logger do
   end
 
   def call(conn, level) do
-
     Logger.log level, fn ->
       [conn.method, ?\s, conn.request_path]
     end
 
     before_time = :os.timestamp()
 
-    conn
-    |> Conn.register_before_send(fn conn ->
-         Logger.log level, fn ->
-           after_time = :os.timestamp()
-           diff = :timer.now_diff(after_time, before_time)
-           [connection_type(conn), ?\s, Integer.to_string(conn.status),
-            " in ", formatted_diff(diff)]
-         end
-         conn
-       end)
+    Conn.register_before_send(conn, fn conn ->
+      Logger.log level, fn ->
+        after_time = :os.timestamp()
+        diff = :timer.now_diff(after_time, before_time)
+        [connection_type(conn), ?\s, Integer.to_string(conn.status),
+         " in ", formatted_diff(diff)]
+      end
+      conn
+    end)
   end
 
   defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string, "ms"]
