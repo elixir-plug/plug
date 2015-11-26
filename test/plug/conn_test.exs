@@ -360,8 +360,15 @@ defmodule Plug.ConnTest do
 
   test "put_resp_header/3 raises when invalid header key given" do
     conn = conn(:get, "/foo")
-    assert_raise Plug.Conn.InvalidHeaderKeyFormatError, "header key is not lowercase: X-Foo", fn ->
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       conn |> put_resp_header("X-Foo", "bar")
+    end
+  end
+
+  test "put_resp_header/3 raises when invalid header value given" do
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains newline (\n): "value\r\n\r\nBAR"], fn ->
+      conn(:get, "foo")
+      |> put_resp_header("x-sample", "value\r\n\r\nBAR")
     end
   end
 
@@ -468,7 +475,7 @@ defmodule Plug.ConnTest do
 
   test "put_req_header/3 raises when invalid header key given" do
     conn = conn(:get, "/foo")
-    assert_raise Plug.Conn.InvalidHeaderKeyFormatError, "header key is not lowercase: X-Foo", fn ->
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       conn |> put_req_header("X-Foo", "bar")
     end
   end
