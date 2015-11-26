@@ -197,11 +197,14 @@ defmodule Plug.Conn do
     """
   end
 
-  defmodule InvalidHeaderKeyFormatError do
-    defexception message: "given header key is not lowercase"
+  defmodule InvalidHeaderError do
+    defexception message: "header is invalid"
 
-    @moduledoc """
-    Error raised when trying to send a header that contains uppercase chars.
+    @moduledoc ~S"""
+    Error raised when trying to send a header that errors, for example:
+
+      * the header key contains uppercase chars
+      * the header value contains newlines \n
     """
   end
 
@@ -530,6 +533,7 @@ defmodule Plug.Conn do
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
     validate_header_key!(adapter, key)
+    validate_header_value!(value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -917,7 +921,7 @@ defmodule Plug.Conn do
 
   defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
     unless valid_header_key?(key) do
-      raise InvalidHeaderKeyFormatError, message: "header key is not lowercase: " <> key
+      raise InvalidHeaderError, message: "header key is not lowercase: " <> inspect(key)
     end
   end
 
@@ -930,6 +934,13 @@ defmodule Plug.Conn do
   defp valid_header_key?(<<_, t::binary>>), do: valid_header_key?(t)
   defp valid_header_key?(<<>>), do: true
   defp valid_header_key?(_), do: false
+
+  defp validate_header_value!(value) do
+    case :binary.match(value, "\n") do
+      {_, _}   -> raise InvalidHeaderError, message: "header value contains newline (\\n): " <> inspect(value)
+      :nomatch -> :ok
+    end
+  end
 end
 
 defimpl Inspect, for: Plug.Conn do
