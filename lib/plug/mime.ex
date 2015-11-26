@@ -109,10 +109,14 @@ defmodule Plug.MIME do
   @spec path(Path.t) :: String.t
   def path(path) do
     case Path.extname(path) do
-      "." <> ext -> type(String.downcase(ext))
+      "." <> ext -> type(downcase(ext, ""))
       _ -> @default_type
     end
   end
+
+  defp downcase(<<h, t::binary>>, acc) when h in ?A..?Z, do: downcase(t, <<acc::binary, h+32>>)
+  defp downcase(<<h, t::binary>>, acc), do: downcase(t, <<acc::binary, h>>)
+  defp downcase(<<>>, acc), do: acc
 
   # entry/1
   @spec entry(String.t) :: list(String.t)
