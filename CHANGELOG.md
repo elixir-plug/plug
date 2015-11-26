@@ -1,5 +1,15 @@
 ## Changelog
 
+## v1.0.3
+
+* Enhancements
+  * Raise if new lines are used in header values
+
+* Bug fix
+  * Allow mime type lookup of uppercase extensions
+  * Do not validate uppercase headers in production to avoid performance hits
+  * Prevent Plug.Parsers from clobbering existing conn.params when part of it is unfetched
+
 ## v1.0.2
 
 * Bug fix
