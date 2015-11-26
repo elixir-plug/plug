@@ -22,6 +22,7 @@ defmodule Plug.MIMETest do
 
   test "path/1" do
     assert path("index.html") == "text/html"
+    assert path("index.HTML") == "text/html"
     assert path("inexistent.filetype") == "application/octet-stream"
     assert path("without-extension") == "application/octet-stream"
   end
