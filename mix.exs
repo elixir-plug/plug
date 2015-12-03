@@ -12,7 +12,7 @@ defmodule Plug.Mixfile do
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
-     docs: [extras: ["README.md"], main: "extra-readme",
+     docs: [extras: ["README.md"], main: "readme",
             source_ref: "v#{@version}",
             source_url: "https://github.com/elixir-lang/plug"]]
   end
@@ -26,8 +26,8 @@ defmodule Plug.Mixfile do
   def deps do
     [{:cowboy, "~> 1.0", optional: true},
      {:earmark, "~> 0.1", only: :docs},
-     {:ex_doc, "~> 0.10", only: :docs},
-     {:inch_ex, only: :docs},
+     {:ex_doc, "~> 0.11", only: :docs},
+     {:inch_ex, ">= 0.0.0", only: :docs},
      {:hackney, "~> 1.2.0", only: :test}]
   end
 
