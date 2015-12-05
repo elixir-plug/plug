@@ -182,7 +182,7 @@ defmodule Plug.Conn do
             status:          nil
 
   defmodule NotSentError do
-    defexception message: "no response was set nor sent from the connection"
+    defexception message: "a response was neither set nor sent from the connection"
 
     @moduledoc """
     Error raised when no response is sent in a request
@@ -201,7 +201,7 @@ defmodule Plug.Conn do
     defexception message: "header is invalid"
 
     @moduledoc ~S"""
-    Error raised when trying to send a header that errors, for example:
+    Error raised when trying to send a header that has errors, for example:
 
       * the header key contains uppercase chars
       * the header value contains newlines \n
