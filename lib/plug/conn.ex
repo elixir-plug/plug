@@ -650,7 +650,7 @@ defmodule Plug.Conn do
   work once, as Plug will not cache the result of these operations. If you
   need to access the body multiple times, it is your responsibility to store
   it. Finally keep in mind some plugs like `Plug.Parsers` may read the body,
-  so the body may be unavailable after accessing such plugs.
+  so the body may be unavailable after being accessed by such plugs.
 
   This function is able to handle both chunked and identity transfer-encoding
   by default.
@@ -665,7 +665,7 @@ defmodule Plug.Conn do
     15_000 ms
 
   The values above are not meant to be exact. For example, setting the
-  length to 8_000_000 may end-up reading some hundred bytes more from
+  length to 8_000_000 may end up reading some hundred bytes more from
   the socket until we halt.
 
   ## Examples
