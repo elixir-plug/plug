@@ -354,9 +354,8 @@ defmodule Plug.Conn do
   @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
   def send_file(conn, status, file, offset \\ 0, length  \\ :all)
 
-  def send_file(%Conn{state: state}, status, _file, _offset, _length)
+  def send_file(%Conn{state: state}, _status, _file, _offset, _length)
       when not state in @unsent do
-    _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
 
@@ -375,9 +374,8 @@ defmodule Plug.Conn do
   state to `:chunked` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
-  def send_chunked(%Conn{state: state}, status)
+  def send_chunked(%Conn{state: state}, _status)
       when not state in @unsent do
-    _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
 
@@ -426,9 +424,8 @@ defmodule Plug.Conn do
   and raises `Plug.Conn.AlreadySentError` if it was already `:sent`.
   """
   @spec resp(t, status, body) :: t
-  def resp(%Conn{state: state}, status, _body)
+  def resp(%Conn{state: state}, _status, _body)
       when not state in @unsent do
-    _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
 
