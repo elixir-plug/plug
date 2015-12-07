@@ -71,7 +71,7 @@ defmodule Plug.Router.UtilsTest do
 
   test "build invalid match with non word character" do
     assert_raise Plug.Router.InvalidSpecError,
-                 ":identifier in routes must be made of letters, numbers and underscore",
+                 ":identifier in routes must be made of letters, numbers and underscores",
                  fn -> build_path_match("/foo/:bar.baz") end
   end
 

@@ -174,7 +174,7 @@ defmodule Plug.Router.Utils do
       String.to_atom(binary)
     else
       raise Plug.Router.InvalidSpecError,
-        message: "#{prefix}identifier in routes must be made of letters, numbers and underscore"
+        message: "#{prefix}identifier in routes must be made of letters, numbers and underscores"
     end
   end
 
