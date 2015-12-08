@@ -121,9 +121,9 @@ defmodule Plug.Router do
 
   ## Routes compilation
 
-  All routes are compiled to a match function that receives
-  three arguments: the method, the request path split on `/`
-  and the connection. Consider this example:
+  All routes are compiled to a do_match function that receives
+  four arguments: the connection, the method, the request path
+  split on `/` and the host match. Consider this example:
 
       match "/foo/bar", via: :get do
         send_resp(conn, 200, "hello world")
@@ -131,7 +131,7 @@ defmodule Plug.Router do
 
   It is compiled to:
 
-      defp match("GET", ["foo", "bar"], conn) do
+      defp do_match(conn, method, ["foo", "bar"], _) when method in ["GET"] do
         send_resp(conn, 200, "hello world")
       end
 
