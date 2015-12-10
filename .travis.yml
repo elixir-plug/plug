@@ -1,15 +1,14 @@
 language: elixir
 elixir:
-  - 1.0.0
-  - 1.0.1
-  - 1.0.2
-  - 1.0.3
+  - 1.0.5
+  - 1.1.1
 sudo: false # to use faster container based build environment
 notifications:
   recipients:
     - jose.valim@plataformatec.com.br
 otp_release:
   - 17.3
+  - 18.1
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
