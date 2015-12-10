@@ -16,7 +16,7 @@ defmodule Plug.SSL do
   need to tell Plug to parse the proper protocol from the "x-forwarded-proto"
   header. This can be done using the `:rewrite_on` option:
 
-      use Plug.SSL, rewrite_on: [:x_forwarded_proto]
+      plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
 
   The command above will effectively change the value of `conn.scheme` by
   the one sent in "x-forwarded-proto".
