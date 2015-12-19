@@ -13,6 +13,8 @@ defmodule Plug.MIME do
   If you are using mix, it can be done with:
 
       $ touch deps/plug/mix.exs
+      $ mix deps.clean plug
+      $ mix deps.get
       $ mix deps.compile plug
   """
 
