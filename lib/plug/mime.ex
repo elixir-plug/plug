@@ -15,7 +15,6 @@ defmodule Plug.MIME do
       $ touch deps/plug/mix.exs
       $ mix deps.clean plug
       $ mix deps.get
-      $ mix deps.compile plug
   """
 
   @compile :no_native
