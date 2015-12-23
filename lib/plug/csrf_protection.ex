@@ -5,7 +5,7 @@ defmodule Plug.CSRFProtection do
   For this plug to work, it expects a session to have been
   previously fetched. It will then compare the plug stored
   in the session with the one sent by the request to determine
-  the validity of the request. For an invaid request the action
+  the validity of the request. For an invalid request the action
   taken is based on the `:with` option.
 
   The token may be sent by the request either via the params
