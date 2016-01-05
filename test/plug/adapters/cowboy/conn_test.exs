@@ -4,12 +4,6 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   alias  Plug.Conn
   import Plug.Conn
 
-  defmodule Dummy do
-    def init(opts) do
-      opts
-    end
-  end
-
   ## Cowboy setup for testing
   #
   # We use hackney to perform an HTTP request against the cowboy/plug running
