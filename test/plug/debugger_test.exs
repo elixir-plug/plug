@@ -21,6 +21,11 @@ defmodule Plug.DebuggerTest do
       end
     end
 
+    get "/soft_boom" do
+      _ = conn
+      raise Exception
+    end
+
     get "/send_and_boom" do
       send_resp conn, 200, "oops"
       raise "oops"
@@ -47,6 +52,22 @@ defmodule Plug.DebuggerTest do
            {"content-type", "text/html; charset=utf-8"}
     assert body =~ "<title>RuntimeError at GET /boom</title>"
     assert body =~ "&lt;oops&gt;"
+  end
+
+  test "call/2 is overridden and warns on non-500 errors" do
+    conn = conn(:get, "/soft_boom")
+
+    assert_raise Exception, fn ->
+      Router.call(conn, [])
+    end
+
+    assert_received {:plug_conn, :sent}
+    {status, headers, body} = sent_resp(conn)
+    assert status == 403
+    assert List.keyfind(headers, "content-type", 0) ==
+           {"content-type", "text/html; charset=utf-8"}
+    assert body =~ "<title>Plug.DebuggerTest.Exception at GET /soft_boom</title>"
+    assert body =~ "oops"
   end
 
   test "call/2 is overridden but is a no-op when response is already sent" do
@@ -85,7 +106,7 @@ defmodule Plug.DebuggerTest do
       fun.()
     catch
       kind, reason ->
-        Plug.Debugger.render(conn, kind, reason, opts[:stack], opts)
+        Plug.Debugger.render(conn, 500, kind, reason, opts[:stack], opts)
     else
       _ -> flunk "function should have failed"
     end
@@ -101,21 +122,11 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ ":hello"
   end
 
-  test "exception page for error" do
-    conn = render(conn(:get, "/"), [], fn ->
-      :erlang.error(:badarg)
-    end)
-
-    assert conn.status == 500
-    assert conn.resp_body =~ "ArgumentError at GET /"
-  end
-
   test "exception page for exceptions" do
     conn = render(conn(:get, "/"), [], fn ->
       raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
     end)
 
-    assert conn.status == 415
     assert conn.resp_body =~ "<strong>Plug.Parsers.UnsupportedMediaTypeError</strong>"
     assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
@@ -126,7 +137,6 @@ defmodule Plug.DebuggerTest do
       exit {:timedout, {GenServer, :call, [:foo, :bar]}}
     end)
 
-    assert conn.status == 500
     assert conn.resp_body =~ "unhandled exit at GET /"
     assert conn.resp_body =~ "exited in: GenServer.call(:foo, :bar)"
   end

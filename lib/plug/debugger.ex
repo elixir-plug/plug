@@ -73,6 +73,7 @@ defmodule Plug.Debugger do
 
   @already_sent {:plug_conn, :sent}
   import Plug.Conn
+  require Logger
 
   @doc false
   defmacro __using__(opts) do
@@ -109,16 +110,26 @@ defmodule Plug.Debugger do
   end
 
   defp __catch__(conn, kind, reason, stack, opts) do
+    reason = Exception.normalize(kind, reason, stack)
+    status = status(kind, reason)
+
     receive do
       @already_sent ->
         send self(), @already_sent
+        log status, kind, reason, stack
         :erlang.raise kind, reason, stack
     after
       0 ->
-        render conn, kind, reason, stack, opts
+        render conn, status, kind, reason, stack, opts
+        log status, kind, reason, stack
         :erlang.raise kind, reason, stack
     end
   end
+
+  defp log(status, kind, reason, stack) when status < 500,
+    do: Logger.warn(Exception.format(kind, reason, stack))
+  defp log(_status, _kind, _reason, _stack),
+    do: :ok
 
   ## Rendering
 
@@ -127,13 +138,10 @@ defmodule Plug.Debugger do
 
   # Made public with @doc false for testing.
   @doc false
-  def render(conn, kind, reason, stack, opts) do
+  def render(conn, status, kind, reason, stack, opts) do
     session = maybe_fetch_session(conn)
     params  = maybe_fetch_query_params(conn)
-
-    reason = Exception.normalize(kind, reason, stack)
-    {status, title, message} = info(kind, reason)
-
+    {title, message} = info(kind, reason)
     conn = put_resp_content_type(conn, "text/html")
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
                                      title: title, message: message,
@@ -150,17 +158,15 @@ defmodule Plug.Debugger do
     fetch_query_params(conn).params
   end
 
-  defp info(:error, error) do
-    {Plug.Exception.status(error), inspect(error.__struct__), Exception.message(error)}
-  end
+  defp status(:error, error), do: Plug.Exception.status(error)
+  defp status(_, _), do: 500
 
-  defp info(:throw, thrown) do
-    {500, "unhandled throw", inspect(thrown)}
-  end
-
-  defp info(:exit, reason) do
-    {500, "unhandled exit", Exception.format_exit(reason)}
-  end
+  defp info(:error, error),
+    do: {inspect(error.__struct__), Exception.message(error)}
+  defp info(:throw, thrown),
+    do: {"unhandled throw", inspect(thrown)}
+  defp info(:exit, reason),
+    do: {"unhandled exit", Exception.format_exit(reason)}
 
   defp frames(stacktrace, opts) do
     app    = opts[:otp_app]

@@ -13,7 +13,7 @@ defmodule Plug.Adapters.Translator do
   """
   def translate(min_level, :error, :format,
                 {'Ranch listener' ++ _, [ref, protocol, pid, reason]}) do
-    {:ok, translate_ranch(min_level, ref, protocol, pid, reason)}
+    translate_ranch(min_level, ref, protocol, pid, reason)
   end
 
   def translate(_min_level, _level, _kind, _data) do
@@ -24,16 +24,26 @@ defmodule Plug.Adapters.Translator do
 
   defp translate_ranch(min_level, _ref, :cowboy_protocol, pid,
                        {reason, {mod, :call, [%Plug.Conn{} = conn, _opts]}}) do
-    [inspect(pid), " running ", inspect(mod), " terminated\n",
-      conn_info(min_level, conn) |
-      Exception.format(:exit, reason, [])]
+
+    if non_500_exception?(reason) do
+      :skip
+    else
+      {:ok, [inspect(pid), " running ", inspect(mod), " terminated\n",
+             conn_info(min_level, conn) |
+             Exception.format(:exit, reason, [])]}
+    end
   end
 
   defp translate_ranch(_min_level, ref, protocol, pid, reason) do
-    ["Ranch protocol ", inspect(pid), " (", inspect(protocol),
-      ") of listener ", inspect(ref), " terminated\n" |
-      Exception.format(:exit, reason, [])]
+    {:ok, ["Ranch protocol ", inspect(pid), " (", inspect(protocol),
+           ") of listener ", inspect(ref), " terminated\n" |
+           Exception.format(:exit, reason, [])]}
   end
+
+  defp non_500_exception?({%{__exception__: true} = exception, _}),
+    do: Plug.Exception.status(exception) < 500
+  defp non_500_exception?(_),
+    do: false
 
   ## Helpers
 
