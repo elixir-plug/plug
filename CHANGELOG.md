@@ -1,5 +1,23 @@
 ## Changelog
 
+## v1.1.0
+
+* Enhancements
+  * Only log errors if the exception has 5xx status code
+  * Warn when rendering non 5xx status code in Plug.Debugger
+  * Use URL safe variant on crypto (old tokens are still valid but new ones will be generated)
+  * Allow custom content-type when passing a map body in `Plug.Test`
+
+## v1.0.3
+
+* Enhancements
+  * Raise if new lines are used in header values
+
+* Bug fix
+  * Allow mime type lookup of uppercase extensions
+  * Do not validate uppercase headers in production to avoid performance hits
+  * Prevent Plug.Parsers from clobbering existing conn.params when part of it is unfetched
+
 ## v1.0.2
 
 * Bug fix
