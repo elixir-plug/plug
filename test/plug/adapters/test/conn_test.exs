@@ -40,9 +40,17 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, "", _state} = adapter.read_req_body(state, length: 10)
   end
 
-  test "custom params sets content-type to multipart/mixed" do
+  test "custom params sets content-type to multipart/mixed when content-type is not set" do
     conn = conn(:get, "/", foo: "bar")
     assert conn.req_headers == [{"content-type", "multipart/mixed; charset: utf-8"}]
+  end
+
+  test "custom params does not change content-type when set" do
+    conn =
+      conn(:get, "/", foo: "bar")
+      |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
+      |> Plug.Adapters.Test.Conn.conn(:get, "/", foo: "bar")
+    assert conn.req_headers == [{"content-type", "application/vnd.api+json"}]
   end
 
   test "parse_req_multipart/4" do
