@@ -104,8 +104,8 @@ defmodule Plug.Adapters.Test.Conn do
   end
 
   defp body_or_params(params, query, headers) when is_map(params) do
-    headers = :lists.keystore("content-type", 1, headers,
-                              {"content-type", "multipart/mixed; charset: utf-8"})
+    content_type = List.keyfind(headers, "content-type", 0, {"content-type", "multipart/mixed; charset: utf-8"})
+    headers = List.keystore(headers, "content-type", 0, content_type)
     params = Map.merge(Plug.Conn.Query.decode(query), stringify_params(params))
     {"", params, headers}
   end
