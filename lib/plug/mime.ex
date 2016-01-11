@@ -12,7 +12,7 @@ defmodule Plug.MIME do
   After adding the configuration, Plug needs to be recompiled.
   If you are using mix, it can be done with:
 
-      $ mix deps.clean plug
+      $ mix deps.clean plug --build
       $ mix deps.get
   """
 
