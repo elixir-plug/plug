@@ -26,6 +26,7 @@ defmodule Plug.Session do
     * `:max_age` - see `Plug.Conn.put_resp_cookie/4`;
     * `:path` - see `Plug.Conn.put_resp_cookie/4`;
     * `:secure` - see `Plug.Conn.put_resp_cookie/4`;
+    * `:http_only` - see `Plug.Conn.put_resp_cookie/4`;
 
   Additional options can be given to the session store, see the store's
   documentation for the options it accepts.
@@ -38,7 +39,7 @@ defmodule Plug.Session do
   alias Plug.Conn
   @behaviour Plug
 
-  @cookie_opts [:domain, :max_age, :path, :secure]
+  @cookie_opts [:domain, :max_age, :path, :secure, :http_only]
 
   def init(opts) do
     store        = Keyword.fetch!(opts, :store) |> convert_store

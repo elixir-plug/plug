@@ -17,6 +17,14 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
     assert %{"foobar" => %{value: _, secure: true, path: "some/path"}} = conn.resp_cookies
+    refute conn.resp_cookies["foobar"] |> Map.has_key?(:http_only)
+
+    conn = conn(:get, "/") |> fetch_cookies
+    opts = Plug.Session.init(store: ProcessStore, key: "unsafe_foobar", http_only: false, path: "some/path")
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+    conn = put_session(conn, "foo", "bar")
+    conn = send_resp(conn, 200, "")
+    assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} = conn.resp_cookies
   end
 
   test "put session" do
