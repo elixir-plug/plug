@@ -38,7 +38,7 @@ defmodule Plug.Session do
   alias Plug.Conn
   @behaviour Plug
 
-  @cookie_opts [:domain, :max_age, :path, :secure]
+  @cookie_opts [:domain, :max_age, :path, :secure, :http_only]
 
   def init(opts) do
     store        = Keyword.fetch!(opts, :store) |> convert_store
