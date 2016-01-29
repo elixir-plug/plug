@@ -42,6 +42,12 @@ defmodule Plug.Static do
       in the static directory and if the `accept-encoding` header is set
       to allow gzipped content (defaults to `false`).
 
+    * `:brotli` - given a request for `FILE`, serves `FILE.br` if it exists
+      in the static directory and if the `accept-encoding` header is set
+      to allow brotli-compressed content (defaults to `false`).
+      `FILE.br` is checked first and dominates `FILE.gz` due to the better
+      compression ratio.
+
     * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
 
@@ -92,10 +98,11 @@ defmodule Plug.Static do
   end
 
   def init(opts) do
-    at    = Keyword.fetch!(opts, :at)
-    from  = Keyword.fetch!(opts, :from)
-    gzip  = Keyword.get(opts, :gzip, false)
-    only  = Keyword.get(opts, :only, nil)
+    at     = Keyword.fetch!(opts, :at)
+    from   = Keyword.fetch!(opts, :from)
+    gzip   = Keyword.get(opts, :gzip, false)
+    brotli = Keyword.get(opts, :brotli, false)
+    only   = Keyword.get(opts, :only, nil)
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
@@ -109,10 +116,10 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip, qs_cache, et_cache, only, headers}
+    {Plug.Router.Utils.split(at), from, gzip, brotli, qs_cache, et_cache, only, headers}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, qs_cache, et_cache, only, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip, brotli, qs_cache, et_cache, only, headers})
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
@@ -125,7 +132,8 @@ defmodule Plug.Static do
         raise InvalidPathError
       true ->
         path = path(from, segments)
-        serve_static(file_encoding(conn, path, gzip), segments, gzip, qs_cache, et_cache, headers)
+        encoding = file_encoding(conn, path, gzip, brotli)
+        serve_static(encoding, segments, gzip, brotli, qs_cache, et_cache, headers)
     end
   end
 
@@ -137,13 +145,13 @@ defmodule Plug.Static do
   defp allowed?(nil, _list),  do: true
   defp allowed?(only, [h|_]), do: h in only
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip, qs_cache, et_cache, headers) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip, brotli, qs_cache, et_cache, headers) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
         content_type = segments |> List.last |> Plug.MIME.path
 
         conn
-        |> maybe_add_vary(gzip)
+        |> maybe_add_vary(gzip, brotli)
         |> put_resp_header("content-type", content_type)
         |> merge_resp_headers(headers)
         |> send_file(200, path)
@@ -155,19 +163,19 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip, _qs_cache, _et_cache, _headers) do
+  defp serve_static({:error, conn}, _segments, _gzip, _brotli, _qs_cache, _et_cache, _headers) do
     conn
   end
 
-  defp maybe_add_vary(conn, true) do
-    # If we serve gzip at any moment, we need to set the proper vary
+  defp maybe_add_vary(conn, gzip?, brotli?) do
+    # If we serve gzip or brotli at any moment, we need to set the proper vary
     # header regardless of whether we are serving gzip content right now.
     # See: http://www.fastly.com/blog/best-practices-for-using-the-vary-header/
-    update_in conn.resp_headers, &[{"vary", "Accept-Encoding"}|&1]
-  end
-
-  defp maybe_add_vary(conn, false) do
-    conn
+    if gzip? or brotli? do
+      update_in conn.resp_headers, &[{"vary", "Accept-Encoding"}|&1]
+    else
+      conn
+    end
   end
 
   defp put_cache_header(%Conn{query_string: "vsn=" <> _} = conn, qs_cache, _et_cache, _file_info)
@@ -199,11 +207,14 @@ defmodule Plug.Static do
     {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
   end
 
-  defp file_encoding(conn, path, gzip) do
+  defp file_encoding(conn, path, gzip, brotli) do
     path_gz = path <> ".gz"
+    path_br = path <> ".br"
 
     cond do
-      gzip && gzip?(conn) && (file_info = regular_file_info(path_gz)) ->
+      brotli && accept_encoding?(conn, "br") && (file_info = regular_file_info(path_br)) ->
+        {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path_br}
+      gzip && accept_encoding?(conn, "gzip") && (file_info = regular_file_info(path_gz)) ->
         {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path_gz}
       file_info = regular_file_info(path) ->
         {:ok, conn, file_info, path}
@@ -221,10 +232,10 @@ defmodule Plug.Static do
     end
   end
 
-  defp gzip?(conn) do
-    gzip_header? = &String.contains?(&1, ["gzip", "*"])
+  defp accept_encoding?(conn, encoding) do
+    encoding? = &String.contains?(&1, [encoding, "*"])
     Enum.any? get_req_header(conn, "accept-encoding"), fn accept ->
-      accept |> Plug.Conn.Utils.list() |> Enum.any?(gzip_header?)
+      accept |> Plug.Conn.Utils.list() |> Enum.any?(encoding?)
     end
   end
 
