@@ -197,7 +197,7 @@ defmodule Plug.Adapters.Cowboy do
   defp put_ssl_file(cowboy_options, key, value) do
     value = to_char_list(value)
     unless File.exists?(value) do
-      fail "the file #{value} required by SSL's #{inspect key} does not exist"
+      fail "the file #{value} required by SSL's #{inspect key} either does not exist, or the application does not have permission to access it"
     end
     Keyword.put(cowboy_options, key, value)
   end
