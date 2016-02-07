@@ -82,17 +82,19 @@ defmodule Plug.ErrorHandler do
   end
 
   defp __catch__(conn, kind, reason, stack, handle_errors) do
-    receive do
-      @already_sent ->
-        send self(), @already_sent
-    after
-      0 ->
-        reason = Exception.normalize(kind, reason, stack)
-
-        conn
-        |> Plug.Conn.put_status(status(kind, reason))
-        |> handle_errors.(%{kind: kind, reason: reason, stack: stack})
-    end
+    reason =
+      receive do
+        @already_sent ->
+          send self(), @already_sent
+          reason
+      after
+        0 ->
+          reason = Exception.normalize(kind, reason, stack)
+          conn
+          |> Plug.Conn.put_status(status(kind, reason))
+          |> handle_errors.(%{kind: kind, reason: reason, stack: stack})
+          reason
+      end
 
     :erlang.raise(kind, reason, stack)
   end

@@ -62,27 +62,29 @@ defmodule Plug.Conn.Cookies do
   def encode(key, opts \\ %{}) when is_map(opts) do
     value  = Map.get(opts, :value)
     path   = Map.get(opts, :path, "/")
-    header = "#{key}=#{value}; path=#{path}"
 
-    if domain = Map.get(opts, :domain) do
-      header = header <> "; domain=#{domain}"
+    "#{key}=#{value}; path=#{path}"
+    |> concat_if(opts[:domain], &"; domain=#{&1}")
+    |> concat_if(opts[:max_age], &encode_max_age(&1, opts))
+    |> concat_if(Map.get(opts, :secure, false), "; secure")
+    |> concat_if(Map.get(opts, :http_only, true), "; HttpOnly")
+  end
+
+  defp encode_max_age(max_age, opts) do
+    time = Map.get(opts, :universal_time) || :calendar.universal_time
+    time = add_seconds(time, max_age)
+    "; expires=" <> rfc2822(time) <> "; max-age=" <> Integer.to_string(max_age)
+  end
+
+  defp concat_if(acc, value, fun_or_string) do
+    cond do
+      !value ->
+        acc
+      is_function(fun_or_string) ->
+        acc <> fun_or_string.(value)
+      is_binary(fun_or_string) ->
+        acc <> fun_or_string
     end
-
-    if max_age = Map.get(opts, :max_age) do
-      time = Map.get(opts, :universal_time) || :calendar.universal_time
-      time = add_seconds(time, max_age)
-      header = header <> "; expires=" <> rfc2822(time) <> "; max-age=" <> Integer.to_string(max_age)
-    end
-
-    if Map.get(opts, :secure, false) do
-      header = header <> "; secure"
-    end
-
-    if Map.get(opts, :http_only, true) do
-      header = header <> "; HttpOnly"
-    end
-
-    header
   end
 
   defp pad(number) when number in 0..9, do: <<?0, ?0 + number>>

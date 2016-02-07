@@ -239,8 +239,7 @@ defmodule Plug.Debugger do
     cond do
       File.regular?(file) ->
         file
-      Code.ensure_loaded?(module) &&
-        (source = module.module_info(:compile)[:source]) ->
+      source = Code.ensure_loaded?(module) && module.module_info(:compile)[:source] ->
         to_string(source)
       true ->
         file

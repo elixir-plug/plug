@@ -33,7 +33,7 @@ defmodule Plug.CSRFProtectionTest do
     |> Plug.Session.call(@default_opts)
     |> fetch_session
     |> put_session("key", "val")
-    |> CSRFProtection.call(csrf_plug_opts)
+    |> CSRFProtection.call(CSRFProtection.init(csrf_plug_opts))
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
   end
 

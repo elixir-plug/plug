@@ -208,14 +208,11 @@ defmodule Plug.Static do
   end
 
   defp file_encoding(conn, path, gzip, brotli) do
-    path_gz = path <> ".gz"
-    path_br = path <> ".br"
-
     cond do
-      brotli && accept_encoding?(conn, "br") && (file_info = regular_file_info(path_br)) ->
-        {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path_br}
-      gzip && accept_encoding?(conn, "gzip") && (file_info = regular_file_info(path_gz)) ->
-        {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path_gz}
+      file_info = brotli && accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
+        {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path <> ".br"}
+      file_info = gzip && accept_encoding?(conn, "gzip") && regular_file_info(path <> ".gz") ->
+        {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path <> ".gz"}
       file_info = regular_file_info(path) ->
         {:ok, conn, file_info, path}
       true ->

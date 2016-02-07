@@ -120,22 +120,23 @@ defmodule Plug.CSRFProtection do
   @encoded_token_size 24
   @double_encoded_token_size 32
 
-  def init(opts), do: opts
+  def init(opts), do: Keyword.get(opts, :with, :exception)
 
-  def call(conn, opts) do
+  def call(conn, mode) do
     csrf_token = get_csrf_from_session(conn)
     Process.put(:plug_unmasked_csrf_token, csrf_token)
 
-    if not verified_request?(conn, csrf_token) do
-      conn = case Keyword.get(opts, :with, :exception) do
-        :exception ->
-          raise InvalidCSRFTokenError
-        :clear_session ->
+    conn =
+      cond do
+        verified_request?(conn, csrf_token) ->
+          conn
+        mode == :clear_session ->
           conn |> configure_session(ignore: true) |> clear_session()
-        other ->
-          raise ArgumentError, "option :with should be one of :exception or :clear_session, got #{inspect other}"
+        mode == :exception ->
+          raise InvalidCSRFTokenError
+        true ->
+          raise ArgumentError, "option :with should be one of :exception or :clear_session, got #{inspect mode}"
       end
-    end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
   end
