@@ -10,7 +10,7 @@ defmodule Plug.SSL do
   The status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
 
-  ## x-forwaded-proto
+  ## x-forwarded-proto
 
   If your Plug application is behind a proxy that handles HTTPS, you will
   need to tell Plug to parse the proper protocol from the "x-forwarded-proto"
