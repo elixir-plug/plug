@@ -5,25 +5,36 @@ defmodule Plug.SessionTest do
   alias Plug.ProcessStore
 
   test "puts session cookie" do
-    conn = conn(:get, "/") |> fetch_cookies
-    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
-    conn = Plug.Session.call(conn, opts) |> fetch_session
-    conn = send_resp(conn, 200, "")
+    conn =
+      conn(:get, "/")
+      |> fetch_cookies
+      |> run_plug(Plug.Session, store: ProcessStore, key: "foobar")
+      |> fetch_session
+      |> send_resp(200, "")
+
     assert conn.resp_cookies == %{}
 
-    conn = conn(:get, "/") |> fetch_cookies
-    opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path")
-    conn = Plug.Session.call(conn, opts) |> fetch_session
-    conn = put_session(conn, "foo", "bar")
-    conn = send_resp(conn, 200, "")
+    conn =
+      conn(:get, "/")
+      |> fetch_cookies
+      |> run_plug(Plug.Session, store: ProcessStore, key: "foobar", secure: true,
+                  path: "some/path")
+      |> fetch_session
+      |> put_session("foo", "bar")
+      |> send_resp(200, "")
+
     assert %{"foobar" => %{value: _, secure: true, path: "some/path"}} = conn.resp_cookies
     refute conn.resp_cookies["foobar"] |> Map.has_key?(:http_only)
 
-    conn = conn(:get, "/") |> fetch_cookies
-    opts = Plug.Session.init(store: ProcessStore, key: "unsafe_foobar", http_only: false, path: "some/path")
-    conn = Plug.Session.call(conn, opts) |> fetch_session
-    conn = put_session(conn, "foo", "bar")
-    conn = send_resp(conn, 200, "")
+    conn =
+      conn(:get, "/")
+      |> fetch_cookies
+      |> run_plug(Plug.Session, store: ProcessStore, key: "unsafe_foobar",
+                  http_only: false, path: "some/path")
+      |> fetch_session
+      |> put_session("foo", "bar")
+      |> send_resp(200, "")
+
     assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} = conn.resp_cookies
   end
 
