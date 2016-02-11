@@ -8,11 +8,13 @@ defmodule Plug.Crypto.MessageVerifier do
   tampered with.
   """
 
+  @delimiter "++"
+
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
   """
   def verify(binary, secret) when is_binary(binary) and is_binary(secret) do
-    case String.split(binary, "--", parts: 2) do
+    case String.split(binary, @delimiter, parts: 2) do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
           decode(content)
@@ -29,7 +31,7 @@ defmodule Plug.Crypto.MessageVerifier do
   """
   def sign(binary, secret) when is_binary(binary) and is_binary(secret) do
     encoded = Base.url_encode64(binary)
-    encoded <> "--" <> digest(secret, encoded)
+    encoded <> @delimiter <> digest(secret, encoded)
   end
 
   defp digest(secret, data) do
