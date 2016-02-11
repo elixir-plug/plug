@@ -12,7 +12,7 @@ defmodule Plug.Crypto.MessageVerifier do
   Decodes and verifies the encoded binary was not tampared with.
   """
   def verify(binary, secret) when is_binary(binary) and is_binary(secret) do
-    case String.split(binary, "--") do
+    case String.split(binary, "--", parts: 2) do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
           decode(content)
