@@ -123,4 +123,33 @@ defmodule Plug.Test do
       {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
     end
   end
+
+  @doc """
+  Calls the init and call methods on the plug_module.
+
+  This is the same as:
+
+      opts = SamplePlug.init foo: "bar"
+      SamplePlug.call(conn, opts)
+
+  and allows for writing tests like:
+
+      conn
+      |> run_plug(SamplePlug, foo: "bar")
+      |> run_plug(AnotherPlug)
+
+  """
+  def run_plug(conn, plug_module, plug_opts) do
+    opts = apply(plug_module, :init, [plug_opts])
+    apply(plug_module, :call, [conn, opts])
+  end
+
+  @doc """
+  Calls the init and call methods on the plug module, but without passing
+  any arguments to 'init/1'. See 'run_plug/3'.
+  """
+  def run_plug(conn, plug_module) do
+    opts = apply(plug_module, :init, [])
+    apply(plug_module, :call, [conn, opts])
+  end
 end
