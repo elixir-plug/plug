@@ -37,7 +37,8 @@ defmodule Plug.Crypto.MessageEncryptor do
     |> pad_message
     |> encrypt(cipher, secret, iv)
     |> Base.encode64()
-    |> Kernel.<>("--#{Base.encode64(iv)}")
+    |> Kernel.<>("--")
+    |> Kernel.<>(Base.encode64(iv))
     |> MessageVerifier.sign(sign_secret)
   end
 

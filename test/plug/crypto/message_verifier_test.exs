@@ -10,8 +10,9 @@ defmodule Plug.Crypto.MessageVerifierTest do
   end
 
   test "verifies a signed message" do
-    signed = MV.sign("hello world", "secret")
-    assert MV.verify(signed, "secret") == {:ok, "hello world"}
+    [content, encoded] = String.split MV.sign("hello world", "secret"), "##"
+    assert MV.verify(content <> "##" <> encoded, "secret") == {:ok, "hello world"}
+    assert MV.verify(content <> "--" <> encoded, "secret") == {:ok, "hello world"}
   end
 
   test "does not verify a signed message if secret changed" do
@@ -22,6 +23,6 @@ defmodule Plug.Crypto.MessageVerifierTest do
   test "does not verify a tampered message" do
     [_, encoded] = String.split MV.sign("hello world", "secret"), "##"
     content = Base.url_encode64("another world")
-    assert MV.verify(content <> "++" <> encoded, "secret") == :error
+    assert MV.verify(content <> "##" <> encoded, "secret") == :error
   end
 end

@@ -14,7 +14,7 @@ defmodule Plug.Crypto.MessageVerifier do
   Decodes and verifies the encoded binary was not tampared with.
   """
   def verify(binary, secret) when is_binary(binary) and is_binary(secret) do
-    case String.split(binary, @delimiter) do
+    case split(binary) do
       [content, digest] when content != "" and digest != "" ->
         if Plug.Crypto.secure_compare(digest(secret, content), digest) do
           decode(content)
@@ -38,6 +38,15 @@ defmodule Plug.Crypto.MessageVerifier do
     :crypto.hmac(:sha, secret, data) |> Base.url_encode64
   end
 
+  # TODO: Remove after backwards compatibility period
+  defp split(binary) do
+    case String.split(binary, @delimiter) do
+      [_, _] = both -> both
+      _ -> String.split(binary, "--")
+    end
+  end
+
+  # TODO: Remove after backwards compatibility period
   defp decode(content) do
     case Base.url_decode64(content) do
       {:ok, binary} -> {:ok, binary}
