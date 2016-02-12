@@ -4,7 +4,7 @@ defmodule Plug.Crypto.MessageVerifierTest do
   alias Plug.Crypto.MessageVerifier, as: MV
 
   test "generates a signed message" do
-    [content, encoded] = String.split MV.sign("hello world", "secret"), "--"
+    [content, encoded] = String.split MV.sign("hello world", "secret"), "##"
     assert content |> Base.url_decode64 == {:ok, "hello world"}
     assert byte_size(encoded) == 28
   end
@@ -20,8 +20,8 @@ defmodule Plug.Crypto.MessageVerifierTest do
   end
 
   test "does not verify a tampered message" do
-    [_, encoded] = String.split MV.sign("hello world", "secret"), "--"
+    [_, encoded] = String.split MV.sign("hello world", "secret"), "##"
     content = Base.url_encode64("another world")
-    assert MV.verify(content <> "--" <> encoded, "secret") == :error
+    assert MV.verify(content <> "++" <> encoded, "secret") == :error
   end
 end
