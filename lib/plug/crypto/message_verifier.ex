@@ -8,7 +8,7 @@ defmodule Plug.Crypto.MessageVerifier do
   tampered with.
   """
 
-  @delimiter "++"
+  @delimiter "##"
 
   @doc """
   Decodes and verifies the encoded binary was not tampared with.
