@@ -1,5 +1,13 @@
 ## Changelog
 
+## v1.1.1
+
+* Enhancements
+  * Add `:brotli` to `Plug.Static`
+
+* Bug fixes
+  * Fixed session verification when token may have the `--` separator
+
 ## v1.1.0
 
 * Enhancements
