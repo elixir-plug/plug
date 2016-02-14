@@ -47,6 +47,7 @@ defmodule Plug.Session.COOKIE do
                          key_length: 64
   """
 
+  require Logger
   @behaviour Plug.Session.Store
 
   alias Plug.Crypto.KeyGenerator
@@ -74,25 +75,29 @@ defmodule Plug.Session.COOKIE do
   end
 
   def get(conn, cookie, opts) do
-    key_opts = opts.key_opts
-    if key = opts.encryption_salt do
-      MessageEncryptor.verify_and_decrypt(cookie,
-                                          derive(conn, key, key_opts),
-                                          derive(conn, opts.signing_salt, key_opts))
-    else
-      MessageVerifier.verify(cookie, derive(conn, opts.signing_salt, key_opts))
+    %{key_opts: key_opts, signing_salt: signing_salt} = opts
+
+    case opts do
+      %{encryption_salt: nil} ->
+        MessageVerifier.verify(cookie, derive(conn, signing_salt, key_opts))
+      %{encryption_salt: key} ->
+        MessageEncryptor.verify_and_decrypt(cookie,
+                                            derive(conn, key, key_opts),
+                                            derive(conn, signing_salt, key_opts))
     end |> decode(opts.serializer)
   end
 
   def put(conn, _sid, term, opts) do
-    binary = encode(term, opts.serializer)
-    key_opts = opts.key_opts
-    if key = opts.encryption_salt do
-      MessageEncryptor.encrypt_and_sign(binary,
-                                        derive(conn, key, key_opts),
-                                        derive(conn, opts.signing_salt, key_opts))
-    else
-      MessageVerifier.sign(binary, derive(conn, opts.signing_salt, key_opts))
+    %{serializer: serializer, key_opts: key_opts, signing_salt: signing_salt} = opts
+    binary = encode(term, serializer)
+
+    case opts do
+      %{encryption_salt: nil} ->
+        MessageVerifier.sign(binary, derive(conn, signing_salt, key_opts))
+      %{encryption_salt: key} ->
+        MessageEncryptor.encrypt_and_sign(binary,
+                                          derive(conn, key, key_opts),
+                                          derive(conn, signing_salt, key_opts))
     end
   end
 
