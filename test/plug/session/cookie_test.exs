@@ -8,7 +8,8 @@ defmodule Plug.Session.CookieTest do
     store: :cookie,
     key: "foobar",
     encryption_salt: "encrypted cookie salt",
-    signing_salt: "signing salt"
+    signing_salt: "signing salt",
+    log: false
   ]
 
   @secret String.duplicate("abcdef0123456789", 8)
@@ -101,6 +102,8 @@ defmodule Plug.Session.CookieTest do
     assert is_binary(cookie)
     assert CookieStore.get(conn, cookie, @signing_opts.store_config) ==
            {:term, %{"foo" => "baz"}}
+    assert CookieStore.get(conn, "bad", @signing_opts.store_config) ==
+           {nil, %{}}
   end
 
   test "gets and sets signed session cookie" do
@@ -134,6 +137,8 @@ defmodule Plug.Session.CookieTest do
     assert is_binary(cookie)
     assert CookieStore.get(conn, cookie, @encrypted_opts.store_config) ==
            {:term, %{"foo" => "baz"}}
+    assert CookieStore.get(conn, "bad", @encrypted_opts.store_config) ==
+           {nil, %{}}
   end
 
   test "gets and sets encrypted session cookie" do

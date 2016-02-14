@@ -37,6 +37,9 @@ defmodule Plug.Session.COOKIE do
       `decode/1` returning an `{:ok, value}` tuple. Defaults to
       `:external_term_format`.
 
+    * `:log` - Log level to use when the cookie cannot be decoded.
+      Defaults to `:debug`, can be set to false to disable it.
+
   ## Examples
 
       # Use the session plug with the table name
@@ -44,7 +47,8 @@ defmodule Plug.Session.COOKIE do
                          key: "_my_app_session",
                          encryption_salt: "cookie store encryption salt",
                          signing_salt: "cookie store signing salt",
-                         key_length: 64
+                         key_length: 64,
+                         log: :debug
   """
 
   require Logger
@@ -61,6 +65,7 @@ defmodule Plug.Session.COOKIE do
     iterations = Keyword.get(opts, :key_iterations, 1000)
     length = Keyword.get(opts, :key_length, 32)
     digest = Keyword.get(opts, :key_digest, :sha256)
+    log = Keyword.get(opts, :log, :debug)
     key_opts = [iterations: iterations,
                 length: length,
                 digest: digest,
@@ -71,11 +76,12 @@ defmodule Plug.Session.COOKIE do
     %{encryption_salt: encryption_salt,
       signing_salt: signing_salt,
       key_opts: key_opts,
-      serializer: serializer}
+      serializer: serializer,
+      log: log}
   end
 
   def get(conn, cookie, opts) do
-    %{key_opts: key_opts, signing_salt: signing_salt} = opts
+    %{key_opts: key_opts, signing_salt: signing_salt, log: log} = opts
 
     case opts do
       %{encryption_salt: nil} ->
@@ -84,7 +90,7 @@ defmodule Plug.Session.COOKIE do
         MessageEncryptor.verify_and_decrypt(cookie,
                                             derive(conn, key, key_opts),
                                             derive(conn, signing_salt, key_opts))
-    end |> decode(opts.serializer)
+    end |> decode(opts.serializer, log)
   end
 
   def put(conn, _sid, term, opts) do
@@ -114,7 +120,7 @@ defmodule Plug.Session.COOKIE do
     binary
   end
 
-  defp decode({:ok, binary}, :external_term_format) do
+  defp decode({:ok, binary}, :external_term_format, _log) do
     {:term,
       try do
         :erlang.binary_to_term(binary)
@@ -123,14 +129,20 @@ defmodule Plug.Session.COOKIE do
       end}
   end
 
-  defp decode({:ok, binary}, serializer) do
+  defp decode({:ok, binary}, serializer, _log) do
     case serializer.decode(binary) do
       {:ok, term} -> {:custom, term}
       _           -> {:custom, %{}}
     end
   end
 
-  defp decode(:error, _serializer) do
+  defp decode(:error, _serializer, false) do
+    {nil, %{}}
+  end
+
+  defp decode(:error, _serializer, log) do
+    Logger.log log, "Plug.Session could not decode incoming session cookie. " <>
+                    "This may happen when the session settings change or a stale cookie is sent."
     {nil, %{}}
   end
 
