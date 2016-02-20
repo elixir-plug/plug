@@ -59,6 +59,7 @@ defmodule Plug.Conn.Utils do
     end
   end
 
+
   defp mt_first(<<?/, t :: binary>>, acc) when acc != "",
     do: mt_wildcard(t, acc)
   defp mt_first(<<h, t :: binary>>, acc) when h in @upper,
@@ -87,6 +88,75 @@ defmodule Plug.Conn.Utils do
       _        -> :error
     end
   end
+
+
+  @doc ~S"""
+  Parses a list of media types, filters out invalid ones, optionally sort the
+  list according to the rules outlined in
+
+  * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
+
+  Sample usage:
+
+    accept = conn
+      |> Plug.Conn.get_req_header("accept")
+      |> hd
+      |> String.split(",")
+      |> Plug.Conn.Utils.media_type_list(true)
+
+  Returns:
+
+  * `[{:ok, type, subtype, map_of_params}, ...]` if everything goes fine
+  * `[]` if the media type list contains no valid media type
+
+  ## Examples
+
+    iex> ["text/*;q=0.5", "*/*", "text/plain"] |> media_type_list
+    [{:ok, "text", "*", %{"q" => "0.5"}}, {:ok, "*", "*", %{}}, {:ok, "text", "plain", %{}}]
+
+    iex> ["valid/*", "invalid", "valid/again"] |> media_type_list
+    [{:ok, "valid", "*", %{}}, {:ok, "valid", "again", %{}}]
+
+    iex> ["*/*", "valid/*"] |> media_type_list(true)
+    [{:ok, "valid", "*", %{}}, {:ok, "*", "*", %{}}]
+
+    iex> ["text/*", "text/html", "text/html;q=1", "*/*"] |> media_type_list(true)
+    [{:ok, "text", "html", %{"q" => "1"}},
+     {:ok, "text", "html", %{}},
+     {:ok, "text", "*", %{}},
+     {:ok, "*", "*", %{}}]
+
+    iex> ["*/*", "text/*;q=0.5", "text/html"] |> media_type_list(true)
+    [{:ok, "text", "html", %{}},
+     {:ok, "*", "*", %{}},
+     {:ok, "text", "*", %{"q" => "0.5"}}]
+
+  """
+  def media_type_list(list, sort? \\ false) when is_list(list) do
+    list = list
+    |> Enum.map(&media_type/1)
+    |> Enum.filter(fn(mt) -> mt != :error end)
+
+    if (sort?) do
+      list = list |> Enum.sort(&mtl_sort/2)
+    end
+
+    list
+  end
+
+  defp mtl_sort({:ok, atype, asubt, aparams}, {:ok, btype, bsubt, bparams}) do
+    aq = Float.parse(aparams["q"] || "1.0")
+    bq = Float.parse(bparams["q"] || "1.0")
+
+    cond do
+      aq > bq       -> true
+      atype > btype -> true
+      asubt > bsubt -> true
+      true          -> false
+    end
+  end
+
 
   @doc ~S"""
   Parses content type (without wildcards).
