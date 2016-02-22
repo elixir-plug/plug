@@ -243,6 +243,37 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert {200, _, _} = request :post, "/multipart?name=overriden", headers, multipart
   end
 
+  def file_too_big(conn) do
+    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], length: 5)
+
+    assert %Plug.Upload{} = file = conn.params["pic"]
+    assert File.read!(file.path) == "hello\n\n"
+    assert file.content_type == "text/plain"
+    assert file.filename == "foo.txt"
+
+    resp(conn, 200, "ok")
+  end
+
+  test "returns parse error when file pushed the boundaries in multipart requests" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
+    Content-Type: text/plain\r
+    \r
+    hello
+
+    \r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    headers =
+      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+       {"Content-Length", byte_size(multipart)}]
+
+    assert {500, _, body} = request :post, "/file_too_big", headers, multipart
+    assert body =~ "the request is too large"
+  end
+
   test "validates utf-8 on multipart requests" do
     multipart = """
     ------w58EW1cEpjzydSCq\r

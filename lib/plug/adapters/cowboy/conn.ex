@@ -122,37 +122,37 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:ok, limit, acc, req}
   end
 
-  defp parse_multipart_body({:more, tail, req}, limit, opts, body) when limit >= 0 do
+  defp parse_multipart_body({:more, tail, req}, limit, opts, body) when limit >= byte_size(tail) do
     parse_multipart_body(Request.part_body(req, opts), limit - byte_size(tail), opts, body <> tail)
   end
 
-  defp parse_multipart_body({:more, _tail, req}, limit, _opts, body) do
-    {:ok, limit, body, req}
+  defp parse_multipart_body({:more, tail, req}, limit, _opts, body) do
+    {:ok, limit - byte_size(tail), body, req}
   end
 
   defp parse_multipart_body({:ok, tail, req}, limit, _opts, body) when limit >= byte_size(tail) do
-    {:ok, limit, body <> tail, req}
+    {:ok, limit - byte_size(tail), body <> tail, req}
   end
 
-  defp parse_multipart_body({:ok, _tail, req}, limit, _opts, body) do
-    {:ok, limit, body, req}
+  defp parse_multipart_body({:ok, tail, req}, limit, _opts, body) do
+    {:ok, limit - byte_size(tail), body, req}
   end
 
-  defp parse_multipart_file({:more, tail, req}, limit, opts, file) when limit >= 0 do
+  defp parse_multipart_file({:more, tail, req}, limit, opts, file) when limit >= byte_size(tail) do
     IO.binwrite(file, tail)
     parse_multipart_file(Request.part_body(req, opts), limit - byte_size(tail), opts, file)
   end
 
-  defp parse_multipart_file({:more, _tail, req}, limit, _opts, _file) do
-    {:ok, limit, req}
+  defp parse_multipart_file({:more, tail, req}, limit, _opts, _file) do
+    {:ok, limit - byte_size(tail), req}
   end
 
   defp parse_multipart_file({:ok, tail, req}, limit, _opts, file) when limit >= byte_size(tail) do
     IO.binwrite(file, tail)
-    {:ok, limit, req}
+    {:ok, limit - byte_size(tail), req}
   end
 
-  defp parse_multipart_file({:ok, _tail, req}, limit, _opts, _file) do
-    {:ok, limit, req}
+  defp parse_multipart_file({:ok, tail, req}, limit, _opts, _file) do
+    {:ok, limit - byte_size(tail), req}
   end
 end
