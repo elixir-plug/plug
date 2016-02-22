@@ -189,7 +189,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def multipart(conn) do
-    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], limit: 8_000_000)
+    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], length: 8_000_000)
     assert conn.params["name"] == "hello"
     assert conn.params["status"] == ["choice1", "choice2"]
     assert conn.params["empty"] == nil
