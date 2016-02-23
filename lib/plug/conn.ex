@@ -909,7 +909,7 @@ defmodule Plug.Conn do
 
   defp verify_cookie!(cookie, key) when byte_size(cookie) > 4096 do
     raise Plug.Conn.CookieOverflowError,
-      "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
+      message: "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
     cookie
