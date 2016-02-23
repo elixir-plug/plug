@@ -1,5 +1,14 @@
 ## Changelog
 
+## v1.1.2
+
+* Enhancements
+  * Raise on cookie overflow
+  * Log (with :debug level) when session cookie cannot be decoded
+
+* Bug fixes
+  * Ensure Plug.Parsers fail with request too large even when read_length > length
+
 ## v1.1.1
 
 * Enhancements
