@@ -199,6 +199,14 @@ defmodule Plug.Conn do
     """
   end
 
+  defmodule CookieOverflowError do
+    defexception message: "cookie exceeds maximum size of 4096 bytes"
+
+    @moduledoc """
+    Error raised when the cookie exceeds the maximum size of 4096 bytes.
+    """
+  end
+
   defmodule InvalidHeaderError do
     defexception message: "header is invalid"
 
@@ -891,8 +899,20 @@ defmodule Plug.Conn do
 
   defp merge_headers(headers, cookies) do
     Enum.reduce(cookies, headers, fn {key, opts}, acc ->
-      [{"set-cookie", Plug.Conn.Cookies.encode(key, opts)}|acc]
+      value =
+        key
+        |> Plug.Conn.Cookies.encode(opts)
+        |> verify_cookie!(key)
+      [{"set-cookie", value}|acc]
     end)
+  end
+
+  defp verify_cookie!(cookie, key) when byte_size(cookie) > 4096 do
+    raise Plug.Conn.CookieOverflowError,
+      "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
+  end
+  defp verify_cookie!(cookie, _key) do
+    cookie
   end
 
   defp update_cookies(%Conn{state: :sent}, _fun),
