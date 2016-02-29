@@ -127,7 +127,7 @@ defmodule Plug.Debugger do
   end
 
   defp log(status, kind, reason, stack) when status < 500,
-    do: Logger.warn(Exception.format(kind, reason, stack))
+    do: Logger.debug(Exception.format(kind, reason, stack))
   defp log(_status, _kind, _reason, _stack),
     do: :ok
 
