@@ -57,6 +57,24 @@ defmodule Plug.ConnTest do
     assert conn.assigns[:hello] == :world
   end
 
+  test "await_assign/3 with list of keys" do
+    conn = conn(:get, "/")
+    conn = async_assign(conn, :one, fn -> :hello end)
+    conn = async_assign(conn, :two, fn -> :world end)
+    conn = await_assign(conn, [:one, :two])
+    assert conn.assigns[:one] == :hello
+    assert conn.assigns[:two] == :world
+  end
+
+  test "await_assign_all/2" do
+    conn = conn(:get, "/")
+    conn = async_assign(conn, :one, fn -> :hello end)
+    conn = async_assign(conn, :two, fn -> :world end)
+    conn = await_assign_all(conn)
+    assert conn.assigns[:one] == :hello
+    assert conn.assigns[:two] == :world
+  end
+
   test "put_status/2" do
     conn = conn(:get, "/")
     assert put_status(conn, nil).status == nil
