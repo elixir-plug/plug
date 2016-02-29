@@ -26,7 +26,7 @@ defmodule Plug.Conn do
   * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
     be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
     protocol. It defaults to peer's IP.
-  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`. 
+  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`.
     Note all headers will be downcased.
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
@@ -54,7 +54,7 @@ defmodule Plug.Conn do
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_cookies` - the response cookies with their name and options
   * `resp_headers` - the response headers as a dict, by default `cache-control`
-    is set to `"max-age=0, private, must-revalidate"`. Note, response headers 
+    is set to `"max-age=0, private, must-revalidate"`. Note, response headers
     are expected to have lower-case keys.
   * `status` - the response status
 
@@ -267,6 +267,9 @@ defmodule Plug.Conn do
   Returns a connection with the value resulting from the async assignment placed
   under `key` in the `:assigns` field.
 
+  A list of keys can be passed as the key argument. Values for all assync
+  assignments will be placed under respective keys in the ':assigns' field.
+
   Behind the scenes, it uses `Task.await/2`.
 
   ## Examples
@@ -280,9 +283,47 @@ defmodule Plug.Conn do
 
   """
   @spec await_assign(t, atom, timeout) :: t
-  def await_assign(%Conn{} = conn, key, timeout \\ 5000) when is_atom(key) do
+  def await_assign(conn, key, timeout \\ 5000)
+
+  def await_assign(%Conn{} = conn, key, timeout) when is_atom(key) do
     task = Map.fetch!(conn.assigns, key)
     assign(conn, key, Task.await(task, timeout))
+  end
+
+  def await_assign(%Conn{} = conn, [key|tail] = key_list, timeout) when is_list(key_list) do
+    task = Map.fetch!(conn.assigns, key)
+    conn = assign(conn, key, Task.await(task, timeout))
+    conn = await_assign(conn, tail, timeout)
+  end
+  def await_assign(%Conn{} = conn, [], _timeout), do: conn
+
+  @doc """
+  Awaits the completion of all async assigns.
+
+  Returns a connection with the values resulting from all async assignments placed
+  under the respective keys in the `:assigns` field.
+
+  Behind the scenes, it uses `Task.await/2`.
+
+  ## Examples
+
+      iex> conn.assigns[:hello]
+      nil
+      iex> conn = async_assign(conn, :one, fn -> :hello end)
+      iex> conn = async_assign(conn, :two, fn -> :world end)
+      iex> conn = await_assign_all(conn) # blocks until all assigns are available
+      iex> conn.assigns[:one]
+      :hello
+      iex> conn.assigns[:two]
+      :world
+
+  """
+  @spec await_assign_all(t, timeout) :: t
+  def await_assign_all(%Conn{} = conn, timeout \\ 5000) do
+    Map.put(conn, :assigns, Map.new(conn.assigns, fn
+        {key, %Task{} = task} -> {key, Task.await(task, timeout)}
+        field -> field
+      end))
   end
 
   @doc """
