@@ -171,8 +171,8 @@ defmodule Plug.StaticTest do
 
     plug Plug.Static,
       at: "/",
-      from: Path.expand("..", __DIR__),
-      only: ~w(fixtures test_helper.exs)
+      from: Path.expand("../fixtures", __DIR__),
+      only: ~w(ssl static.txt) ++ [prefix: "file"]
 
     plug :passthrough
 
@@ -181,16 +181,19 @@ defmodule Plug.StaticTest do
   end
 
   test "serves only allowed files" do
-    conn = conn(:get, "/test_helper.exs") |> FilterPlug.call([])
+    conn = conn(:get, "/static.txt") |> FilterPlug.call([])
     assert conn.status == 200
 
-    conn = conn(:get, "/fixtures/static.txt") |> FilterPlug.call([])
+    conn = conn(:get, "/ssl/cert.pem") |> FilterPlug.call([])
     assert conn.status == 200
 
     conn = conn(:get, "/") |> FilterPlug.call([])
     assert conn.status == 404
 
-    conn = conn(:get, "/plug/conn_test.exs") |> FilterPlug.call([])
+    conn = conn(:get, "/static/file.txt") |> FilterPlug.call([])
     assert conn.status == 404
+
+    conn = conn(:get, "/file-deadbeef.txt") |> FilterPlug.call([])
+    assert conn.status == 200
   end
 end

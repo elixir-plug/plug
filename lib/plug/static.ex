@@ -57,7 +57,9 @@ defmodule Plug.Static do
 
     * `:only` - filters which paths to look up. This is useful to avoid
       file system traversals on every request when this plug is mounted
-      at `"/"`. Defaults to `nil` (no filtering).
+      at `"/"`. Prefix only matches can be given as `{:prefix, "file"}`,
+      this can be useful when serving digested files at the root.
+      Defaults to `nil` (no filtering).
 
     * `:headers` - other headers to be set when serving static assets.
 
@@ -68,7 +70,10 @@ defmodule Plug.Static do
       defmodule MyPlug do
         use Plug.Builder
 
-        plug Plug.Static, at: "/public", from: :my_app
+        plug Plug.Static,
+          at: "/public",
+          from: :my_app,
+          only: ~w(static) ++ [prefix: "prefix"]
         plug :not_found
 
         def not_found(conn, _) do
@@ -102,7 +107,9 @@ defmodule Plug.Static do
     from   = Keyword.fetch!(opts, :from)
     gzip   = Keyword.get(opts, :gzip, false)
     brotli = Keyword.get(opts, :brotli, false)
-    only   = Keyword.get(opts, :only, nil)
+    only   = Keyword.get(opts, :only, [])
+    {only, prefix} = Enum.partition(only, &is_binary/1)
+    prefix = Enum.map(prefix, fn {:prefix, prefix} -> prefix end)
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
@@ -116,17 +123,17 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip, brotli, qs_cache, et_cache, only, headers}
+    {Plug.Router.Utils.split(at), from, gzip, brotli, qs_cache, et_cache, only, prefix, headers}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, brotli, qs_cache, et_cache, only, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip, brotli, qs_cache, et_cache, only, prefix, headers})
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
     segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
 
     cond do
-      not allowed?(only, segments) ->
+      not (allowed?(only, segments) or prefix_allowed?(prefix, segments)) ->
         conn
       invalid_path?(segments) ->
         raise InvalidPathError
@@ -142,8 +149,17 @@ defmodule Plug.Static do
   end
 
   defp allowed?(_only, []),   do: false
-  defp allowed?(nil, _list),  do: true
+  defp allowed?([], _list),   do: true
   defp allowed?(only, [h|_]), do: h in only
+
+  defp prefix_allowed?(_only, []), do: false
+  defp prefix_allowed?([], _list), do: true
+  defp prefix_allowed?(only, [h|_]) do
+    case :binary.match(h, only) do
+      {0, _} -> true
+      _ -> false
+    end
+  end
 
   defp serve_static({:ok, conn, file_info, path}, segments, gzip, brotli, qs_cache, et_cache, headers) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
