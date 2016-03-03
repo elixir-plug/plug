@@ -133,4 +133,9 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{filter: [], foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
   end
 
+  test "raise plug exception on bad www-form" do
+    assert_raise Plug.Parsers.BadEncodingError, fn ->
+      decode("_utf8=%R2%9P%93")
+    end
+  end
 end
