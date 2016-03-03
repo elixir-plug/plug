@@ -134,7 +134,7 @@ defmodule Plug.Conn.QueryTest do
   end
 
   test "raise plug exception on bad www-form" do
-    assert_raise Plug.Parsers.BadEncodingError, fn ->
+    assert_raise Plug.Conn.InvalidQueryError, fn ->
       decode("_utf8=%R2%9P%93")
     end
   end

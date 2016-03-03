@@ -26,7 +26,7 @@ defmodule Plug.Conn do
   * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
     be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
     protocol. It defaults to peer's IP.
-  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`. 
+  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`.
     Note all headers will be downcased.
   * `scheme` - the request scheme as an atom, example: `:http`
   * `query_string` - the request query string as a binary, example: `"foo=bar"`
@@ -54,7 +54,7 @@ defmodule Plug.Conn do
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_cookies` - the response cookies with their name and options
   * `resp_headers` - the response headers as a dict, by default `cache-control`
-    is set to `"max-age=0, private, must-revalidate"`. Note, response headers 
+    is set to `"max-age=0, private, must-revalidate"`. Note, response headers
     are expected to have lower-case keys.
   * `status` - the response status
 
@@ -216,6 +216,17 @@ defmodule Plug.Conn do
       * the header key contains uppercase chars
       * the header value contains newlines \n
     """
+  end
+
+  defmodule InvalidQueryError do
+    @moduledoc """
+    Raised when the request string is malformed, for example:
+
+      * the query has bad utf-8 encoding
+      * the query fails to www-form decode
+    """
+
+    defexception message: "query string is invalid", plug_status: 400
   end
 
   alias Plug.Conn
@@ -631,7 +642,7 @@ defmodule Plug.Conn do
 
   def fetch_query_params(%Conn{query_params: %Unfetched{}, params: params,
                                query_string: query_string} = conn, _opts) do
-    Plug.Conn.Utils.validate_utf8!(query_string, "query string")
+    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
     query_params = Plug.Conn.Query.decode(query_string)
 
     case params do
