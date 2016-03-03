@@ -97,7 +97,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
         {:ok, limit, body, req} =
           parse_multipart_body(Request.part_body(req, opts), limit, opts, "")
 
-        Plug.Conn.Utils.validate_utf8!(body, "multipart body")
+        Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         parse_multipart(Request.part(req), limit, opts, [{name, body}|acc], callback)
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->

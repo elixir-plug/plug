@@ -64,28 +64,28 @@ defmodule Plug.Conn.Query do
 
   def decode(query, initial) do
     parts = :binary.split(query, "&", [:global])
-    Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2, query))
+    Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
   end
 
-  defp decode_string_pair(binary, acc, context) do
+  defp decode_string_pair(binary, acc) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->
-          {decode_www_form(key, context), decode_www_form(value, context)}
+          {decode_www_form(key), decode_www_form(value)}
         [key] ->
-          {decode_www_form(key, context), nil}
+          {decode_www_form(key), nil}
       end
 
     decode_pair(current, acc)
   end
 
-  defp decode_www_form(value, context) do
+  defp decode_www_form(value) do
     try do
       URI.decode_www_form(value)
     rescue
       ArgumentError ->
-        raise Plug.Parsers.BadEncodingError,
-          message: "invalid www-form encoding on #{context}, got #{value}"
+        raise Plug.Conn.InvalidQueryError,
+          message: "invalid www-form encoding on query-string, got #{value}"
     end
   end
 
