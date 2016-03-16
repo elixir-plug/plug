@@ -262,6 +262,7 @@ defmodule Plug.Builder do
 
       quote do
         require Logger
+        # Matching, to make Dialyzer happy on code executing Plug.Builder.compile/3
         _ = Logger.unquote(level)(unquote(message))
       end
     else
