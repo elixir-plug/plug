@@ -262,7 +262,7 @@ defmodule Plug.Builder do
 
       quote do
         require Logger
-        Logger.unquote(level)(unquote(message))
+        _ = Logger.unquote(level)(unquote(message))
       end
     else
       nil
