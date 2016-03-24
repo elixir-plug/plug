@@ -115,7 +115,6 @@ defmodule Plug.Parsers do
   """
 
   alias Plug.Conn
-  use Behaviour
 
   @doc """
   Attempts to parse the connection's request body given the content-type type
@@ -126,7 +125,7 @@ defmodule Plug.Parsers do
     * `{:error, :too_large, conn}` if the request goes over the given limit
 
   """
-  defcallback parse(Conn.t, type :: binary, subtype :: binary,
+  @callback parse(Conn.t, type :: binary, subtype :: binary,
                     headers :: Keyword.t, opts :: Keyword.t) ::
                     {:ok, Conn.params, Conn.t} |
                     {:error, :too_large, Conn.t} |
