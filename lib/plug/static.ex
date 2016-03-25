@@ -130,7 +130,7 @@ defmodule Plug.Static do
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
-    segments = subset(at, conn.path_info) |> Enum.map(&URI.decode/1)
+    segments = subset(at, conn.path_info) |> Enum.map(&uri_decode/1)
 
     cond do
       not (allowed?(only, segments) or prefix_allowed?(prefix, segments)) ->
@@ -146,6 +146,15 @@ defmodule Plug.Static do
 
   def call(conn, _opts) do
     conn
+  end
+
+  defp uri_decode(path) do
+    try do
+      URI.decode(path)
+    rescue
+      ArgumentError ->
+        raise InvalidPathError
+    end
   end
 
   defp allowed?(_only, []),   do: false
