@@ -126,6 +126,15 @@ defmodule Plug.StaticTest do
     assert Plug.Exception.status(exception) == 400
   end
 
+  test "returns 400 for invalid paths" do
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      conn(:get, "/public/%3C%=%20pkgSlugName%20%") |> call
+    end
+
+    assert Plug.Exception.status(exception) == 400
+  end
+
   test "serves gzipped file" do
     conn = conn(:get, "/public/fixtures/static.txt", [])
            |> put_req_header("accept-encoding", "gzip")
