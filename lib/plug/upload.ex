@@ -115,9 +115,11 @@ defmodule Plug.Upload do
       {:ok, path} ->
         path
       {:too_many_attempts, tmp, attempts} ->
-        raise Plug.UploadError, "tried #{attempts} times to create an uploaded file at #{tmp} but failed. What gives?"
+        raise Plug.UploadError, "tried #{attempts} times to create an uploaded file at #{tmp} but failed. " <>
+                                "Set PLUG_TMPDIR to a directory with write permission"
       {:no_tmp, _tmps} ->
-        raise Plug.UploadError, "could not create a tmp directory to store uploads. Set PLUG_TMPDIR to a directory with write permission"
+        raise Plug.UploadError, "could not create a tmp directory to store uploads. " <>
+                                "Set PLUG_TMPDIR to a directory with write permission"
     end
   end
 
