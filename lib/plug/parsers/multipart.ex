@@ -11,7 +11,10 @@ defmodule Plug.Parsers.MULTIPART do
     try do
       adapter.parse_req_multipart(state, opts, &handle_headers/1)
     rescue
-      e -> raise Plug.Parsers.ParseError, exception: e
+      e in Plug.UploadError -> # Do not ignore upload errors
+        reraise e, System.stacktrace
+      e -> # All others are wrapped
+        raise Plug.Parsers.ParseError, exception: e
     else
       {:ok, params, state} ->
         {:ok, params, %{conn | adapter: {adapter, state}}}

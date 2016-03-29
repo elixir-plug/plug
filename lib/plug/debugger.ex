@@ -126,6 +126,7 @@ defmodule Plug.Debugger do
     end
   end
 
+  # We don't log status >=500 because those are treated as errors and logged later.
   defp log(status, kind, reason, stack) when status < 500,
     do: Logger.debug(Exception.format(kind, reason, stack))
   defp log(_status, _kind, _reason, _stack),
