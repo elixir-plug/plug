@@ -1,5 +1,15 @@
 ## Changelog
 
+## v1.1.3
+
+* Enhancements
+  * Add `:only_matching` option to `Plug.Static`
+
+* Bug fixes
+  * Return 400 from `Plug.Static` on invalid paths
+  * Ensure `Plug.Upload` does not error out on invalid access
+  * Ensure query string errors return 400
+
 ## v1.1.2
 
 * Enhancements

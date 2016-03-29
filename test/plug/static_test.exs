@@ -181,7 +181,8 @@ defmodule Plug.StaticTest do
     plug Plug.Static,
       at: "/",
       from: Path.expand("../fixtures", __DIR__),
-      only: ~w(ssl static.txt) ++ [prefix: "file"]
+      only: ~w(ssl static.txt),
+      only_matching: ~w(file)
 
     plug :passthrough
 

@@ -2,16 +2,16 @@ defmodule Plug.Static do
   @moduledoc """
   A plug for serving static assets.
 
-  It requires two options on initialization:
+  It requires two options:
 
     * `:at` - the request path to reach for static assets.
       It must be a string.
 
     * `:from` - the filesystem path to read static assets from.
-      It must be a string, containing a file system path, an
-      atom representing the application name, where assets will
+      It must be a string, containing a file system path, or an
+      atom representing the application name where assets will
       be served from the priv/static, or a tuple containing the
-      application name and directory to serve them besides
+      application name and the directory to serve assets besides
       priv/static.
 
   The preferred form is to use `:from` with an atom or tuple,
@@ -55,11 +55,20 @@ defmodule Plug.Static do
       requests starting with "?vsn=" in the query string. Defaults to
       `"public, max-age=31536000"`.
 
-    * `:only` - filters which paths to look up. This is useful to avoid
+    * `:only` - filters which requests to serve. This is useful to avoid
       file system traversals on every request when this plug is mounted
-      at `"/"`. Prefix only matches can be given as `{:prefix, "file"}`,
-      this can be useful when serving digested files at the root.
-      Defaults to `nil` (no filtering).
+      at `"/"`. For example, if `only: ["images", "favicon.ico"]` is
+      specified, only files in the "images" directory and the exact
+      "favicon.ico" file will be served by `Plug.Static`. Defaults
+      to `nil` (no filtering).
+
+    * `:only_matching` - a relaxed version of `:only` that will
+      serve any request as long as one the given values matches the
+      given path. For example, `only_matching: ["images", "favicon"]`
+      will match any request that starts at "images" or "favicon",
+      be it "/images/foo.png", "/images-high/foo.png", "/favicon.ico"
+      or "/favicon-high.ico". Such matches are useful when serving
+      digested files at the root. Defaults to `nil` (no filtering).
 
     * `:headers` - other headers to be set when serving static assets.
 
@@ -73,7 +82,7 @@ defmodule Plug.Static do
         plug Plug.Static,
           at: "/public",
           from: :my_app,
-          only: ~w(static) ++ [prefix: "prefix"]
+          only: ~w(images robots.txt)
         plug :not_found
 
         def not_found(conn, _) do
@@ -108,8 +117,7 @@ defmodule Plug.Static do
     gzip   = Keyword.get(opts, :gzip, false)
     brotli = Keyword.get(opts, :brotli, false)
     only   = Keyword.get(opts, :only, [])
-    {only, prefix} = Enum.partition(only, &is_binary/1)
-    prefix = Enum.map(prefix, fn {:prefix, prefix} -> prefix end)
+    prefix = Keyword.get(opts, :only_matching, [])
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
