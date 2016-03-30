@@ -14,7 +14,7 @@ defmodule Plug.Parsers.MULTIPART do
       e in Plug.UploadError -> # Do not ignore upload errors
         reraise e, System.stacktrace
       e -> # All others are wrapped
-        raise Plug.Parsers.ParseError, exception: e
+        reraise Plug.Parsers.ParseError.exception(exception: e), System.stacktrace
     else
       {:ok, params, state} ->
         {:ok, params, %{conn | adapter: {adapter, state}}}
