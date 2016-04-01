@@ -33,7 +33,7 @@ defmodule Plug.Router do
   This means users can easily hook into the router mechanism and add
   behaviour before match, before dispatch or after both.
 
-  To specify private options on `match` that can be used by plugs 
+  To specify private options on `match` that can be used by plugs
   before `dispatch` pass an option with key `:private` containing a map.
   Example:
 
@@ -313,7 +313,7 @@ defmodule Plug.Router do
       match path <> "/*glob", options do
         Plug.Router.Utils.forward(
           var!(conn),
-          var!(glob),
+          Enum.map(var!(glob), &URI.encode_www_form/1),
           @plug_forward_target,
           @plug_forward_opts
         )
