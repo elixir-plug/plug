@@ -371,6 +371,11 @@ defmodule Plug.Conn do
 
   It expects a connection that has not been `:sent` yet and sets its
   state to `:sent` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
+
+  ## Examples
+
+      Plug.Conn.send_file(conn, 200, "README.md")
+
   """
   @spec send_file(t, status, filename :: binary, offset ::integer, length :: integer | :all) :: t | no_return
   def send_file(conn, status, file, offset \\ 0, length  \\ :all)
