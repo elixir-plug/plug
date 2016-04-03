@@ -112,16 +112,16 @@ defmodule Plug.Static do
   end
 
   def init(opts) do
-    at     = Keyword.fetch!(opts, :at)
-    from   = Keyword.fetch!(opts, :from)
-    gzip   = Keyword.get(opts, :gzip, false)
-    brotli = Keyword.get(opts, :brotli, false)
-    only   = Keyword.get(opts, :only, [])
+    at = Keyword.fetch!(opts, :at)
+    from = Keyword.fetch!(opts, :from)
+    gzip? = Keyword.get(opts, :gzip, false)
+    brotli? = Keyword.get(opts, :brotli, false)
+    only = Keyword.get(opts, :only, [])
     prefix = Keyword.get(opts, :only_matching, [])
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
-    headers  = Keyword.get(opts, :headers, %{})
+    headers = Keyword.get(opts, :headers, %{})
 
     from =
       case from do
@@ -131,10 +131,10 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip, brotli, qs_cache, et_cache, only, prefix, headers}
+    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip, brotli, qs_cache, et_cache, only, prefix, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers})
       when meth in @allowed_methods do
     # subset/2 returns the segments in `conn.path_info` without the
     # segments at the beginning that are shared with `at`.
@@ -147,8 +147,8 @@ defmodule Plug.Static do
         raise InvalidPathError
       true ->
         path = path(from, segments)
-        encoding = file_encoding(conn, path, gzip, brotli)
-        serve_static(encoding, segments, gzip, brotli, qs_cache, et_cache, headers)
+        encoding = file_encoding(conn, path, gzip?, brotli?)
+        serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
     end
   end
 
@@ -172,19 +172,16 @@ defmodule Plug.Static do
   defp prefix_allowed?(_only, []), do: false
   defp prefix_allowed?([], _list), do: true
   defp prefix_allowed?(only, [h|_]) do
-    case :binary.match(h, only) do
-      {0, _} -> true
-      _ -> false
-    end
+    match?({0, _}, :binary.match(h, only))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip, brotli, qs_cache, et_cache, headers) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
         content_type = segments |> List.last |> Plug.MIME.path
 
         conn
-        |> maybe_add_vary(gzip, brotli)
+        |> maybe_add_vary(gzip?, brotli?)
         |> put_resp_header("content-type", content_type)
         |> merge_resp_headers(headers)
         |> send_file(200, path)
@@ -196,7 +193,7 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip, _brotli, _qs_cache, _et_cache, _headers) do
+  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _headers) do
     conn
   end
 
@@ -240,11 +237,11 @@ defmodule Plug.Static do
     {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
   end
 
-  defp file_encoding(conn, path, gzip, brotli) do
+  defp file_encoding(conn, path, gzip?, brotli?) do
     cond do
-      file_info = brotli && accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
+      file_info = brotli? and accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
         {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path <> ".br"}
-      file_info = gzip && accept_encoding?(conn, "gzip") && regular_file_info(path <> ".gz") ->
+      file_info = gzip? and accept_encoding?(conn, "gzip") && regular_file_info(path <> ".gz") ->
         {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path <> ".gz"}
       file_info = regular_file_info(path) ->
         {:ok, conn, file_info, path}
