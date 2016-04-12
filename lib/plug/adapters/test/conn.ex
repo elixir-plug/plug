@@ -18,7 +18,7 @@ defmodule Plug.Adapters.Test.Conn do
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},
-      host: uri.host || "www.example.com",
+      host: uri.host || conn.host || "www.example.com",
       method: method,
       owner: owner,
       path_info: split_path(uri.path),
