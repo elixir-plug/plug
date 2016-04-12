@@ -59,4 +59,20 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, params, _} = adapter.parse_req_multipart(state, 1_000_000, fn _ -> :ok end)
     assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
   end
+
+  test "use existing conn.host if exists" do
+    conn_with_host = conn(:get, "http://www.elixir-lang.org/")
+    assert conn_with_host.host == "www.elixir-lang.org"
+
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "/getting-started/", nil)
+    assert child_conn.host == "www.elixir-lang.org"
+  end
+
+  test "full URL overrides existing conn.host" do
+    conn_with_host = conn(:get, "http://www.elixir-lang.org/")
+    assert conn_with_host.host == "www.elixir-lang.org"
+
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
+    assert child_conn.host == "www.example.org"
+  end
 end
