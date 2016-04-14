@@ -65,7 +65,24 @@ You can use plug in your projects in two steps:
 
 In the hello world example, we defined our first plug. What is a plug after all?
 
-A plug takes two shapes. It is a function that receives a connection and a set of options as arguments and returns the connection or it is a module that provides an `init/1` function to initialize options and implement the `call/2` function, receiving the connection and the initialized options, and returning the connection.
+A plug takes two shapes. A function plug receives a connection and a set of options as arguments and returns the connection:
+
+```elixir
+def hello_world_plug(conn, _opts) do
+  conn
+  |> put_resp_content_type("text/plain")
+  |> send_resp(200, "Hello world")
+end
+```
+
+A module plug provides an `init/1` function to initialize options and implement the `call/2` function, receiving the connection and the initialized options, and returning the connection:
+
+```elixir
+defmodule MyPlug do
+  def init([]), do: false
+  def call(conn, _opts), do: conn
+end
+```
 
 As per the specification above, a connection is represented by the `Plug.Conn` struct:
 
