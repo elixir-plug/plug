@@ -141,7 +141,7 @@ defmodule Plug.Adapters.Cowboy do
   defp normalize_cowboy_options(cowboy_options, :https) do
     assert_ssl_options(cowboy_options)
     cowboy_options = Keyword.merge @https_cowboy_options, cowboy_options
-    cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile], cowboy_options, &normalize_ssl_file(&1, &2)
+    cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile, :dhfile], cowboy_options, &normalize_ssl_file(&1, &2)
     cowboy_options = Enum.reduce [:password], cowboy_options, &to_char_list(&2, &1)
     cowboy_options
   end
