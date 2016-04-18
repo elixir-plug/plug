@@ -70,7 +70,7 @@ defmodule Plug.Adapters.Cowboy do
   Besides the options described in the module documentation,
   this module also accepts all options defined in [the `ssl`
   erlang module] (http://www.erlang.org/doc/man/ssl.html),
-  like keyfile, certfile, cacertfile and others.
+  like keyfile, certfile, cacertfile, dhfile and others.
 
   The certificate files can be given as a relative path.
   For such, the `:otp_app` option must also be given and
@@ -85,7 +85,8 @@ defmodule Plug.Adapters.Cowboy do
         password: "SECRET",
         otp_app: :my_app,
         keyfile: "priv/ssl/key.pem",
-        certfile: "priv/ssl/cert.pem"
+        certfile: "priv/ssl/cert.pem",
+        dhfile: "priv/ssl/dhparam.pem"
 
       # The interface above can be shutdown with
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTPS
