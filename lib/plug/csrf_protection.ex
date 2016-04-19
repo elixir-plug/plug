@@ -174,7 +174,22 @@ defmodule Plug.CSRFProtection do
       raise InvalidCrossOriginRequestError
     end
 
-    ensure_csrf_token(conn, csrf_token)
+    ensure_csrf_token(conn, csrf_token) |> add_cache_control
+  end
+
+  # fixes a bug in some browsers; reloading pages after browser quit have expired tokens otherwise
+  defp add_cache_control(conn) do
+    conn
+    |> update_resp_header("cache-control", "no-store, no-cache", &merge_cache_control/1)
+  end
+
+  # make sure we don't clobber or duplicate cache-control values
+  defp merge_cache_control(current) do
+    String.split(current, ",")
+    |> Enum.map(&String.strip/1)
+    |> Enum.concat(["no-store", "no-cache"])
+    |> Enum.uniq
+    |> Enum.join(", ")
   end
 
   defp cross_origin_js?(%Plug.Conn{method: "GET"} = conn),
