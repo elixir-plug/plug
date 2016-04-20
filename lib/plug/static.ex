@@ -136,9 +136,7 @@ defmodule Plug.Static do
 
   def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers})
       when meth in @allowed_methods do
-    # subset/2 returns the segments in `conn.path_info` without the
-    # segments at the beginning that are shared with `at`.
-    segments = subset(at, conn.path_info) |> Enum.map(&uri_decode/1)
+    segments = subset(at, conn.path_info)
 
     cond do
       not (allowed?(only, segments) or prefix_allowed?(prefix, segments)) ->
@@ -146,6 +144,7 @@ defmodule Plug.Static do
       invalid_path?(segments) ->
         raise InvalidPathError
       true ->
+        segments = Enum.map(segments, &uri_decode/1)
         path = path(from, segments)
         encoding = file_encoding(conn, path, gzip?, brotli?)
         serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
