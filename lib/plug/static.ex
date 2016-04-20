@@ -139,7 +139,7 @@ defmodule Plug.Static do
     segments = subset(at, conn.path_info)
 
     cond do
-      not (allowed?(only, segments) or prefix_allowed?(prefix, segments)) ->
+      not allowed?(only, prefix, segments) ->
         conn
       invalid_path?(segments) ->
         raise InvalidPathError
@@ -164,14 +164,10 @@ defmodule Plug.Static do
     end
   end
 
-  defp allowed?(_only, []),   do: false
-  defp allowed?([], _list),   do: true
-  defp allowed?(only, [h|_]), do: h in only
-
-  defp prefix_allowed?(_only, []), do: false
-  defp prefix_allowed?([], _list), do: true
-  defp prefix_allowed?(only, [h|_]) do
-    match?({0, _}, :binary.match(h, only))
+  defp allowed?(_only, _prefix, []), do: false
+  defp allowed?([], [], _list), do: true
+  defp allowed?(only, prefix, [h|_]) do
+    h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
   defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers) do
