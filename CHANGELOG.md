@@ -1,5 +1,15 @@
 ## Changelog
 
+## v1.1.4
+
+* Bug fixes
+  * Fix `:only` and `:only_matching` which were not bypassing requests unless both were enabled
+
+* Enhancements
+  * Support reading of `conn.host` in `Plug.Test`
+  * Add normalization of `:dhfile` for Cowboy's SSL options
+  * Import error reporting and performance of `Plug.Static`
+
 ## v1.1.3
 
 * Enhancements
