@@ -9,7 +9,8 @@ defmodule Plug.StaticTest do
       at: "/public",
       from: Path.expand("..", __DIR__),
       gzip: true,
-      headers: %{"x-custom" => "x-value"}
+      headers: %{"x-custom" => "x-value"},
+      default_file: "static.txt"
 
     plug :passthrough
 
