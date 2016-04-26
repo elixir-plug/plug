@@ -122,6 +122,7 @@ defmodule Plug.Static do
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
     headers = Keyword.get(opts, :headers, %{})
+    default_file = Keyword.get(opts, :default_file, "index.html")
 
     from =
       case from do
@@ -131,10 +132,10 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers}
+    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers, default_file}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers, default_file})
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
@@ -147,7 +148,7 @@ defmodule Plug.Static do
         segments = Enum.map(segments, &uri_decode/1)
         path = path(from, segments)
         encoding = file_encoding(conn, path, gzip?, brotli?)
-        serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
+        serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers, default_file)
     end
   end
 
@@ -170,7 +171,7 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers, default_file) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
         content_type = segments |> List.last |> Plug.MIME.path
@@ -179,7 +180,7 @@ defmodule Plug.Static do
         |> maybe_add_vary(gzip?, brotli?)
         |> put_resp_header("content-type", content_type)
         |> merge_resp_headers(headers)
-        |> send_file(200, path)
+        |> serve_path(path, default_file)
         |> halt
       {:fresh, conn} ->
         conn
@@ -188,8 +189,18 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _headers) do
+  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _headers, _default_file) do
     conn
+  end
+
+  defp serve_path(conn, path, default_file) do
+    if File.exists?(path) and not File.dir?(path) do
+      conn
+      |> send_file(200, path)
+    else
+      conn
+      |> send_file(200, Path.join(path, default_file))
+    end
   end
 
   defp maybe_add_vary(conn, gzip?, brotli?) do
