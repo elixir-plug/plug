@@ -38,7 +38,7 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     iex> {:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
     {:ok, #PID<...>}
 
-Access "http://localhost:4000/" and we are done!
+Access "http://localhost:4000/" and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the "Supervised handlers" section below.
 
 ## Installation
 
@@ -109,7 +109,7 @@ Finally, keep in mind that a connection is a **direct interface to the underlyin
 In practice, developers rarely write their own plugs. For example, Plug ships with a router that allows developers to quickly match on incoming requests and perform some action:
 
 ```elixir
-defmodule AppRouter do
+defmodule MyRouter do
   use Plug.Router
 
   plug :match
@@ -143,7 +143,15 @@ This also means that a catch all `match` is recommended to be defined, as in the
 
 Each route needs to return the connection as per the Plug specification. See `Plug.Router` docs for more information.
 
-On a production system, you likely want to start your router under your application's supervision tree. Plug provides  the `child_spec/3` function to to just that.
+## Supervised handlers
+
+On a production system, you likely want to start your Plug application under your application's supervision tree. Plug provides the `child_spec/3` function to to just that. Start a new Elixir project with the `--sup` flag:
+
+```elixir
+$ mix new my_app --sup
+```
+
+and then update `lib/my_app.ex` as follows:
 
 ```elixir
 defmodule MyApp do
@@ -152,11 +160,11 @@ defmodule MyApp do
 	# See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
+    import Supervisor.Spec
     
     children = [
       # Define workers and child supervisors to be supervised
-			Plug.Adapters.Cowboy.child_spec(:http, MyApp.Router, [foo: :bar], [port: 4001])
+			Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
