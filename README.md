@@ -143,6 +143,30 @@ This also means that a catch all `match` is recommended to be defined, as in the
 
 Each route needs to return the connection as per the Plug specification. See `Plug.Router` docs for more information.
 
+On a production system, you likely want to start your router under your application's supervision tree. Plug provides  the `child_spec/3` function to to just that.
+
+```elixir
+defmodule MyApp do
+	use Application
+
+	# See http://elixir-lang.org/docs/stable/elixir/Application.html
+  # for more information on OTP Applications
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+    
+    children = [
+      # Define workers and child supervisors to be supervised
+			Plug.Adapters.Cowboy.child_spec(:http, MyApp.Router, [foo: :bar], [port: 4001])
+    ]
+
+    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+```
+
 ## Testing plugs
 
 Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is how we can test the router from above (or any other plug):
