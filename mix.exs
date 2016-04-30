@@ -1,7 +1,7 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
-  @version "1.1.4"
+  @version "1.2.0-dev"
 
   def project do
     [app: :plug,
@@ -24,7 +24,8 @@ defmodule Plug.Mixfile do
   end
 
   def deps do
-    [{:cowboy, "~> 1.0", optional: true},
+    [{:mime, github: "elixir-lang/mime"},
+     {:cowboy, "~> 1.0", optional: true},
      {:earmark, "~> 0.1", only: :docs},
      {:ex_doc, "~> 0.11", only: :docs},
      {:inch_ex, ">= 0.0.0", only: :docs},

@@ -1,129 +1,47 @@
 defmodule Plug.MIME do
-  @moduledoc """
-  Maps MIME types to file extensions and vice versa.
+  @moduledoc false
 
-  MIME types can be extended in your application configuration
-  as follows:
+  if Application.get_env(:plug, :mimes) do
+    IO.puts :stderr, """
+    warning: you have set the :mimes configuration for the :plug
+    application but it is no longer supported. Instead of:
 
-      config :plug, :mimes, %{
-        "application/vnd.api+json" => ["json-api"]
-      }
+        config :plug, :mimes, %{...}
 
-  After adding the configuration, Plug needs to be recompiled.
-  If you are using mix, it can be done with:
+    You must write:
 
-      $ mix deps.clean plug --build
-      $ mix deps.get
-  """
+        config :mime, :types, %{...}
 
-  @compile :no_native
-  @default_type "application/octet-stream"
+    After adding the configuration, MIME needs to be recompiled.
+    If you are using mix, it can be done with:
 
-  # Read all the MIME type mappings into the `mapping` variable.
-  @external_resource "lib/plug/mime.types"
-  stream = File.stream!("lib/plug/mime.types")
+        $ mix deps.clean mime --build
+        $ mix deps.get
 
-  mapping = Enum.flat_map(stream, fn (line) ->
-    if String.starts_with?(line, ["#", "\n"]) do
-      []
-    else
-      [type|exts] = line |> String.strip |> String.split
-      [{type, exts}]
-    end
-  end)
-
-  app = Application.get_env(:plug, :mimes, %{})
-
-  mapping = Enum.reduce app, mapping, fn {k, v}, acc ->
-    List.keystore(acc, k, 0, {k, v})
+    """
   end
 
-  @doc """
-  Returns whether a MIME type is registered.
-
-  ## Examples
-
-      iex> Plug.MIME.valid?("text/plain")
-      true
-
-      iex> Plug.MIME.valid?("foo/bar")
-      false
-
-  """
-  @spec valid?(String.t) :: boolean
   def valid?(type) do
-    is_list entry(type)
+    IO.puts(:stderr, "Plug.MIME.valid?/1 is deprecated, please use MIME.valid?/1 instead\n" <>
+                     Exception.format_stacktrace)
+    MIME.valid?(type)
   end
 
-  @doc """
-  Returns the extensions associated with a given MIME type.
-
-  ## Examples
-
-      iex> Plug.MIME.extensions("text/html")
-      ["html", "htm"]
-
-      iex> Plug.MIME.extensions("application/json")
-      ["json"]
-
-      iex> Plug.MIME.extensions("foo/bar")
-      []
-
-  """
-  @spec extensions(String.t) :: [String.t]
   def extensions(type) do
-    entry(type) || []
+    IO.puts(:stderr, "Plug.MIME.extensions/1 is deprecated, please use MIME.extensions/1 instead\n" <>
+                     Exception.format_stacktrace)
+    MIME.extensions(type)
   end
 
-  @doc """
-  Returns the MIME type associated with a file extension. If no MIME type is
-  known for `file_extension`, `#{inspect @default_type}` is returned.
-
-  ## Examples
-
-      iex> Plug.MIME.type("txt")
-      "text/plain"
-
-      iex> Plug.MIME.type("foobarbaz")
-      #{inspect @default_type}
-
-  """
-  @spec type(String.t) :: String.t
-  def type(file_extension)
-
-  for {type, exts} <- mapping, ext <- exts do
-    def type(unquote(ext)), do: unquote(type)
+  def type(file_extension) do
+    IO.puts(:stderr, "Plug.MIME.type/1 is deprecated, please use MIME.type/1 instead\n" <>
+                     Exception.format_stacktrace)
+    MIME.type(file_extension)
   end
 
-  def type(_ext), do: @default_type
-
-  @doc """
-  Guesses the MIME type based on the path's extension. See `type/1`.
-
-  ## Examples
-
-      iex> Plug.MIME.path("index.html")
-      "text/html"
-
-  """
-  @spec path(Path.t) :: String.t
   def path(path) do
-    case Path.extname(path) do
-      "." <> ext -> type(downcase(ext, ""))
-      _ -> @default_type
-    end
+    IO.puts(:stderr, "Plug.MIME.path/1 is deprecated, please use MIME.path/1 instead\n" <>
+                     Exception.format_stacktrace)
+    MIME.path(path)
   end
-
-  defp downcase(<<h, t::binary>>, acc) when h in ?A..?Z, do: downcase(t, <<acc::binary, h+32>>)
-  defp downcase(<<h, t::binary>>, acc), do: downcase(t, <<acc::binary, h>>)
-  defp downcase(<<>>, acc), do: acc
-
-  # entry/1
-  @spec entry(String.t) :: list(String.t)
-
-  for {type, exts} <- mapping do
-    defp entry(unquote(type)), do: unquote(exts)
-  end
-
-  defp entry(_type), do: nil
 end

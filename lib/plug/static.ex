@@ -173,7 +173,7 @@ defmodule Plug.Static do
   defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers) do
     case put_cache_header(conn, qs_cache, et_cache, file_info) do
       {:stale, conn} ->
-        content_type = segments |> List.last |> Plug.MIME.path
+        content_type = segments |> List.last |> MIME.path
 
         conn
         |> maybe_add_vary(gzip?, brotli?)
