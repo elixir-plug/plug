@@ -19,7 +19,7 @@ defmodule Plug.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    [applications: [:crypto, :logger],
+    [applications: [:crypto, :logger, :mime],
      mod: {Plug, []}]
   end
 
