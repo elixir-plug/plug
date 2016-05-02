@@ -40,8 +40,8 @@ defmodule Plug.MIME do
   end
 
   def path(path) do
-    IO.puts(:stderr, "Plug.MIME.path/1 is deprecated, please use MIME.path/1 instead\n" <>
+    IO.puts(:stderr, "Plug.MIME.path/1 is deprecated, please use MIME.from_path/1 instead\n" <>
                      Exception.format_stacktrace)
-    MIME.path(path)
+    MIME.from_path(path)
   end
 end
