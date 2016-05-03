@@ -24,7 +24,7 @@ defmodule Plug.Mixfile do
   end
 
   def deps do
-    [{:mime, github: "elixir-lang/mime"},
+    [{:mime, "~> 1.0"},
      {:cowboy, "~> 1.0", optional: true},
      {:earmark, "~> 0.1", only: :docs},
      {:ex_doc, "~> 0.11", only: :docs},

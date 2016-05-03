@@ -6,6 +6,6 @@
   "idna": {:hex, :idna, "1.0.2"},
   "inch_ex": {:hex, :inch_ex, "0.2.1"},
   "json": {:hex, :json, "0.3.2"},
-  "mime": {:git, "https://github.com/elixir-lang/mime.git", "a7f23ce406a10d65b317cf5e228deadbf883e193", []},
+  "mime": {:hex, :mime, "1.0.0"},
   "ranch": {:hex, :ranch, "1.0.0"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"}}
