@@ -36,7 +36,7 @@ defmodule Plug.RouterTest do
     end
 
     match "/fancy_id/:id" do
-      send_resp(conn, 200, id)
+      send_resp(conn, 200, id <> "--" <> List.last(conn.path_info))
     end
 
     def handle_errors(conn, assigns) do
@@ -218,12 +218,12 @@ defmodule Plug.RouterTest do
 
   test "dispatch with forwarding handles urlencoded path segments" do
     conn = call(Sample, conn(:get, "/nested/forward/fancy_id/%2BANcgj1jZc%2F9O%2B"))
-    assert conn.resp_body == "+ANcgj1jZc/9O+"
+    assert conn.resp_body == "+ANcgj1jZc/9O+--%2BANcgj1jZc%2F9O%2B"
   end
 
   test "dispatch with forwarding handles un-urlencoded path segments" do
     conn = call(Sample, conn(:get, "/nested/forward/fancy_id/+ANcgj1jZc9O+"))
-    assert conn.resp_body == "+ANcgj1jZc9O+"
+    assert conn.resp_body == "+ANcgj1jZc9O+--+ANcgj1jZc9O+"
   end
 
   test "dispatch with forwarding modifies script_name" do

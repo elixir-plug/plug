@@ -313,7 +313,7 @@ defmodule Plug.Router do
       match path <> "/*glob", options do
         Plug.Router.Utils.forward(
           var!(conn),
-          Enum.map(var!(glob), &URI.encode_www_form/1),
+          var!(glob),
           @plug_forward_target,
           @plug_forward_opts
         )
