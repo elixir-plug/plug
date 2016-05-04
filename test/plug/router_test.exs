@@ -221,6 +221,11 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == "+ANcgj1jZc/9O+"
   end
 
+  test "dispatch with forwarding handles un-urlencoded path segments" do
+    conn = call(Sample, conn(:get, "/nested/forward/fancy_id/+ANcgj1jZc9O+"))
+    assert conn.resp_body == "+ANcgj1jZc9O+"
+  end
+
   test "dispatch with forwarding modifies script_name" do
     conn = call(Sample, conn(:get, "/nested/forward/script_name"))
     assert conn.resp_body == "nested,forward"
