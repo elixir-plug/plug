@@ -56,7 +56,7 @@ defmodule Plug.RequestId do
   end
 
   defp generate_request_id do
-    :crypto.rand_bytes(20) |> Base.hex_encode32(case: :lower)
+    :crypto.strong_rand_bytes(20) |> Base.hex_encode32(case: :lower)
   end
 
   defp valid_request_id?(s), do: byte_size(s) in 20..200
