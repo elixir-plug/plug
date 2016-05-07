@@ -75,4 +75,13 @@ defmodule Plug.Adapters.Test.ConnTest do
     child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
     assert child_conn.host == "www.example.org"
   end
+
+  test "chunked req_body stops appending req_body after an empty chunk" do
+    with %Plug.Conn{} = conn <- conn(:get, "/"),
+         %Plug.Conn{state: :chunked, status: 200} = conn <- Plug.Conn.send_chunked(conn, 200),
+         {:ok, conn} <- Plug.Conn.chunk(conn, "Hello"),
+         {:ok, conn} <- Plug.Conn.chunk(conn, ""),
+         {:ok, conn} <- Plug.Conn.chunk(conn, "World"),
+    do: assert conn.resp_body == "Hello"
+  end
 end

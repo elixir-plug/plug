@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Test.Conn do
 
     {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
     state = %{method: method, params: params, req_body: body,
-              chunks: nil, ref: make_ref, owner: owner}
+              chunks: nil, chunking: nil, ref: make_ref, owner: owner}
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},
@@ -61,10 +61,14 @@ defmodule Plug.Adapters.Test.Conn do
   end
 
   def send_chunked(state, _status, _headers),
-    do: {:ok, "", %{state | chunks: ""}}
+    do: {:ok, "", %{state | chunks: "", chunking: true}}
+  def chunk(%{chunks: chunks} = state, ""),
+    do: {:ok, chunks, %{state | chunking: false}}
   def chunk(%{method: "HEAD"} = state, _body),
     do: {:ok, "", state}
-  def chunk(%{chunks: chunks} = state, body) do
+  def chunk(%{chunking: false, chunks: chunks} = state, _body),
+    do: {:ok, chunks, state}
+  def chunk(%{chunking: true, chunks: chunks} = state, body) do
     body = chunks <> IO.iodata_to_binary(body)
     {:ok, body, %{state | chunks: body}}
   end
