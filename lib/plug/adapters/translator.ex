@@ -12,7 +12,7 @@ defmodule Plug.Adapters.Translator do
   The `translate/4` function expected by custom Logger translators.
   """
   def translate(min_level, :error, :format,
-                {'Ranch listener' ++ _, [ref, protocol, pid, reason]}) do
+                {~c"Ranch listener" ++ _, [ref, protocol, pid, reason]}) do
     translate_ranch(min_level, ref, protocol, pid, reason)
   end
 

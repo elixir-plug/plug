@@ -189,8 +189,8 @@ defmodule Plug.Builder do
   # Initializes the options of a plug at compile time.
   defp init_plug({plug, opts, guards}) do
     case Atom.to_char_list(plug) do
-      'Elixir.' ++ _ -> init_module_plug(plug, opts, guards)
-      _              -> init_fun_plug(plug, opts, guards)
+      ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards)
+      _                -> init_fun_plug(plug, opts, guards)
     end
   end
 
