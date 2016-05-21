@@ -27,7 +27,7 @@ defmodule Plug.ConnTest do
     assert body == "HELLO"
   end
 
-  test "twice sinding a response" do
+  test "twice sending a response" do
     conn = conn(:get, "/foo")
     send_resp(conn, 204, "")
     send_resp(conn, 200, "HELLO")
