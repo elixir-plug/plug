@@ -157,14 +157,14 @@ and then update `lib/my_app.ex` as follows:
 defmodule MyApp do
 	use Application
 
-	# See http://elixir-lang.org/docs/stable/elixir/Application.html
+  # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     import Supervisor.Spec
     
     children = [
       # Define workers and child supervisors to be supervised
-			Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
+      Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
