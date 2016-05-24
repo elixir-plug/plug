@@ -1,7 +1,5 @@
 language: elixir
 elixir:
-  - 1.0.5
-  - 1.1.1
   - 1.2.0
 sudo: false
 notifications:
@@ -9,12 +7,7 @@ notifications:
     - jose.valim@plataformatec.com.br
     - eric.meadows.jonsson@gmail.com
 otp_release:
-  - 17.5
   - 18.1
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
-matrix:
-  exclude:
-    - otp_release: 17.5
-      elixir: 1.2.0
