@@ -15,7 +15,7 @@ defmodule Plug.Adapters.CowboyTest do
     assert args(:http, __MODULE__, [], []) ==
            [Plug.Adapters.CowboyTest.HTTP,
             100,
-            [port: 4000],
+            [port: 4000, max_connections: 16384],
             [env: [dispatch: @dispatch]]]
   end
 
@@ -23,7 +23,7 @@ defmodule Plug.Adapters.CowboyTest do
     assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, other: true]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
-            [port: 3000, other: true],
+            [max_connections: 16384, port: 3000, other: true],
             [env: [dispatch: @dispatch]]]
   end
 
@@ -31,13 +31,13 @@ defmodule Plug.Adapters.CowboyTest do
     assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, compress: true, timeout: 30000]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
-            [port: 3000],
+            [max_connections: 16384, port: 3000],
             [env: [dispatch: @dispatch], compress: true, timeout: 30000]]
 
     assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, protocol_options: [timeout: 30000]]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
-            [port: 3000],
+            [max_connections: 16384, port: 3000],
             [env: [dispatch: @dispatch], timeout: 30000]]
   end
 
@@ -45,7 +45,7 @@ defmodule Plug.Adapters.CowboyTest do
     assert args(:http, __MODULE__, [], [:inet6, port: 3000, acceptors: 25]) ==
            [Plug.Adapters.CowboyTest.HTTP,
             25,
-            [:inet6, port: 3000],
+            [:inet6, max_connections: 16384, port: 3000],
             [env: [dispatch: @dispatch]]]
   end
 
@@ -53,7 +53,7 @@ defmodule Plug.Adapters.CowboyTest do
     args = [Plug.Adapters.CowboyTest.HTTP,
             100,
             :ranch_tcp,
-            [port: 4000],
+            [port: 4000, max_connections: 16384],
             :cowboy_protocol,
             [env: [dispatch: @dispatch]]]
 

@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Cowboy do
     Defaults to 100.
 
   * `:max_connections` - max number of connections supported.
-    Defaults to `:infinity`.
+    Defaults to `16384`.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
     If this option is used, the given plug won't be initialized
@@ -40,6 +40,7 @@ defmodule Plug.Adapters.Cowboy do
   @doc false
   def args(scheme, plug, opts, cowboy_options) do
     cowboy_options
+    |> Keyword.put_new(:max_connections, 16384)
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
     |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
     |> normalize_cowboy_options(scheme)
