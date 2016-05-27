@@ -109,6 +109,26 @@ defmodule Plug.Adapters.Cowboy do
 
   @doc """
   Returns a child spec to be supervised by your application.
+
+  ## Example
+
+  Presuming your Plug module is named `MyRouter` you can add it to your
+  supervision tree like so using this function:
+
+      defmodule MyApp do
+        use Application
+
+        def start(_type, _args) do
+          import Supervisor.Spec
+
+          children = [
+            Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
+          ]
+
+          opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+          Supervisor.start_link(children, opts)
+        end
+      end
   """
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
