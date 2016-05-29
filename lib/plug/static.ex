@@ -138,16 +138,18 @@ defmodule Plug.Static do
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
-    cond do
-      not allowed?(only, prefix, segments) ->
-        conn
-      invalid_path?(segments) ->
+    if allowed?(only, prefix, segments) do
+      segments = Enum.map(segments, &uri_decode/1)
+
+      if invalid_path?(segments) do
         raise InvalidPathError
-      true ->
-        segments = Enum.map(segments, &uri_decode/1)
-        path = path(from, segments)
-        encoding = file_encoding(conn, path, gzip?, brotli?)
-        serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
+      end
+
+      path = path(from, segments)
+      encoding = file_encoding(conn, path, gzip?, brotli?)
+      serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
+    else
+      conn
     end
   end
 
