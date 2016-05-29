@@ -1,5 +1,11 @@
 ## Changelog
 
+## v1.1.5
+
+* Bug fixes
+  * Do not check paths on `Plug.Static` pass-through
+  * Set default amount of connections to 16k (previous default was 1k although documentation said `:infinity`)
+
 ## v1.1.4
 
 * Bug fixes
