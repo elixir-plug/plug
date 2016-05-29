@@ -110,19 +110,30 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "x-custom")  == []
   end
 
+  test "passes through does not check path validity" do
+    conn = conn(:get, "/another/fallback%2Ftxt") |> call
+    assert conn.status == 404
+    assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
+  end
+
   test "returns 400 for unsafe paths" do
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
       conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
     end
+    assert Plug.Exception.status(exception) == 400
 
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      conn(:get, "/public/fixtures/%2E%2E/fixtures/static/file.txt") |> call
+    end
     assert Plug.Exception.status(exception) == 400
 
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
       conn(:get, "/public/c:\\foo.txt") |> call
     end
-
     assert Plug.Exception.status(exception) == 400
   end
 
