@@ -12,6 +12,7 @@ defmodule Plug.Mixfile do
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
+     xref: [exclude: [:ranch, :cowboy, :cowboy_req, :cowboy_router]],
      docs: [extras: ["README.md"], main: "readme",
             source_ref: "v#{@version}",
             source_url: "https://github.com/elixir-lang/plug"]]
