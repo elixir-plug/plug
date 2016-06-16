@@ -848,7 +848,7 @@ defmodule Plug.ConnTest do
 
     conn = %Conn{
       adapter: {RaisesOnEmptyChunkAdapter, %{chunks: ""}},
-      owner: self,
+      owner: self(),
       state: :unset
     }
     conn = Plug.Conn.send_chunked(conn, 200)
