@@ -1,5 +1,9 @@
 ## Changelog
 
+## v1.1.6
+
+* Fix warnings on Elixir v1.3 and v1.4-dev
+
 ## v1.1.5
 
 * Bug fixes
