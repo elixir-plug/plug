@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Test.Conn do
 
     {body, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
     state = %{method: method, params: params, req_body: body,
-              chunks: nil, ref: make_ref, owner: owner}
+              chunks: nil, ref: make_ref(), owner: owner}
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},

@@ -68,7 +68,7 @@ defmodule Plug.Test do
       response ->
         case receive_resp(ref) do
           :no_resp ->
-            send(self, {ref, response})
+            send(self(), {ref, response})
             response
           _otherwise ->
             raise "a response for the given connection has been sent more than once"
