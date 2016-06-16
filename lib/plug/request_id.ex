@@ -45,8 +45,8 @@ defmodule Plug.RequestId do
 
   defp get_request_id(conn, header) do
     case Conn.get_req_header(conn, header) do
-      []      -> {conn, generate_request_id}
-      [val|_] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id}
+      []      -> {conn, generate_request_id()}
+      [val|_] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
     end
   end
 

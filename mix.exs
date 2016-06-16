@@ -7,8 +7,8 @@ defmodule Plug.Mixfile do
     [app: :plug,
      version: @version,
      elixir: "~> 1.0",
-     deps: deps,
-     package: package,
+     deps: deps(),
+     package: package(),
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
