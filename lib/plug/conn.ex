@@ -53,7 +53,7 @@ defmodule Plug.Conn do
     to nil after the response is set, except for test connections.
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_cookies` - the response cookies with their name and options
-  * `resp_headers` - the response headers as a dict, by default `cache-control`
+  * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
     is set to `"max-age=0, private, must-revalidate"`. Note, response headers
     are expected to have lower-case keys.
   * `status` - the response status
@@ -65,7 +65,7 @@ defmodule Plug.Conn do
 
   ## Connection fields
 
-  * `assigns` - shared user data as a dict
+  * `assigns` - shared user data as a map
   * `owner` - the Elixir process that owns the connection
   * `halted` - the boolean status on whether the pipeline was halted
   * `secret_key_base` - a secret key used to verify and encrypt cookies.
@@ -84,7 +84,7 @@ defmodule Plug.Conn do
   These fields are reserved for libraries/framework usage.
 
   * `adapter` - holds the adapter information in a tuple
-  * `private` - shared library data as a dict
+  * `private` - shared library data as a map
 
   ## Protocols
 

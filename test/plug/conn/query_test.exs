@@ -128,7 +128,7 @@ defmodule Plug.Conn.QueryTest do
            "foo=%2Fbar%2Fbar"
   end
 
-  test "encode ignores empty dicts" do
+  test "encode ignores empty maps or lists" do
     assert encode(%{filter: %{}, foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
     assert encode(%{filter: [], foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
   end
