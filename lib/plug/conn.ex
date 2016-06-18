@@ -53,7 +53,7 @@ defmodule Plug.Conn do
     to nil after the response is set, except for test connections.
   * `resp_charset` - the response charset, defaults to "utf-8"
   * `resp_cookies` - the response cookies with their name and options
-  * `resp_headers` - the response headers as a map, by default `cache-control`
+  * `resp_headers` - the response headers as a map or a list of tuples, by default `cache-control`
     is set to `"max-age=0, private, must-revalidate"`. Note, response headers
     are expected to have lower-case keys.
   * `status` - the response status

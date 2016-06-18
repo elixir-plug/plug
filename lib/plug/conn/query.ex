@@ -163,10 +163,10 @@ defmodule Plug.Conn.Query do
   defp assign_list(t, value),  do: assign_parts(t, value, %{})
 
   @doc """
-  Encodes the given map.
+  Encodes the given map or list of tuples.
   """
-  def encode(map, encoder \\ &to_string/1) do
-    IO.iodata_to_binary encode_pair("", map, encoder)
+  def encode(kv, encoder \\ &to_string/1) do
+    IO.iodata_to_binary encode_pair("", kv, encoder)
   end
 
   # covers structs
@@ -176,12 +176,12 @@ defmodule Plug.Conn.Query do
 
   # covers maps
   defp encode_pair(parent_field, %{} = map, encoder) do
-    encode_map(map, parent_field, encoder)
+    encode_kv(map, parent_field, encoder)
   end
 
   # covers keyword lists
   defp encode_pair(parent_field, list, encoder) when is_list(list) and is_tuple(hd(list)) do
-    encode_map(Enum.uniq(list, &elem(&1, 0)), parent_field, encoder)
+    encode_kv(Enum.uniq(list, &elem(&1, 0)), parent_field, encoder)
   end
 
   # covers non-keyword lists
@@ -201,8 +201,8 @@ defmodule Plug.Conn.Query do
     [field, ?=|encode_value(value, encoder)]
   end
 
-  defp encode_map(map, parent_field, encoder) do
-    prune Enum.flat_map map, fn
+  defp encode_kv(kv, parent_field, encoder) do
+    prune Enum.flat_map kv, fn
       {_, value} when value in [%{}, []] ->
         []
       {field, value} ->
