@@ -366,9 +366,14 @@ defmodule Plug.ConnTest do
   end
 
   test "put_resp_header/3 raises when invalid header value given" do
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains newline (\n): "value\r\n\r\nBAR"], fn ->
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
       conn(:get, "foo")
-      |> put_resp_header("x-sample", "value\r\n\r\nBAR")
+      |> put_resp_header("x-sample", "value\rBAR")
+    end
+
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
+      conn(:get, "foo")
+      |> put_resp_header("x-sample", "value\n\nBAR")
     end
   end
 

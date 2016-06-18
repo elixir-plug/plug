@@ -975,8 +975,8 @@ defmodule Plug.Conn do
   defp valid_header_key?(_), do: false
 
   defp validate_header_value!(value) do
-    case :binary.match(value, "\n") do
-      {_, _}   -> raise InvalidHeaderError, message: "header value contains newline (\\n): " <> inspect(value)
+    case :binary.match(value, ["\n", "\r"]) do
+      {_, _}   -> raise InvalidHeaderError, message: "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
       :nomatch -> :ok
     end
   end
