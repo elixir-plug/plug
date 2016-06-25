@@ -51,7 +51,7 @@ defmodule Plug.Parsers do
 
   ## Options
 
-    * `:parsers` - a set of modules to be invoked for parsing.
+    * `:parsers` - a list of modules to be invoked for parsing.
       These modules need to implement the behaviour outlined in
       this module.
 
@@ -64,7 +64,35 @@ defmodule Plug.Parsers do
         * `[]` - always raises (default)
 
   All options supported by `Plug.Conn.read_body/2` are also supported here (for
-  example the `:length` option which specifies the max body length to read).
+  example the `:length` option which specifies the max body length to read) and
+  are passed to the underlying call to `Plug.Conn.read_body/1`.
+
+  This plug also fetches query params in the connection through
+  `Plug.Conn.fetch_query_params/2`.
+
+  Once a connection goes through this plug, it will have `:body_params` set to
+  the map of params parsed by one of the parsers listed in `:parsers` and
+  `:params` set to the result of merging the `:body_params` and `:query_params`.
+
+  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
+  the request cannot be parsed by any of the given types and the MIME type has
+  not been explicity accepted with the `:pass` option.
+
+  `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
+  the given limit.
+
+  Parsers may raise a `Plug.Parsers.ParseError` if the request has a malformed
+  body.
+
+  This plug only parses the body if the request method is one of the following:
+
+    * `POST`
+    * `PUT`
+    * `PATCH`
+    * `DELETE`
+
+  For requests with a different request method, this plug will only fetch the
+  query params.
 
   ## Examples
 
@@ -78,21 +106,12 @@ defmodule Plug.Parsers do
   Plug ships with the following parsers:
 
   * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
-    requests
+    requests (can be used as `:urlencoded` as well in the `:parsers` option)
   * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
-    `multipart/mixed` requests
+    `multipart/mixed` requests (can be used as `:multipart` as well in the
+    `:parsers` option)
   * `Plug.Parsers.JSON` - parses `application/json` requests with the given
-    `:json_decoder`
-
-  This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
-  the request cannot be parsed by any of the given types and the MIME type has
-  not been explicity accepted with the `:pass` option.
-
-  `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
-  the given limit.
-
-  Parsers may raise a `Plug.Parsers.ParseError` if the request has a malformed
-  body.
+    `:json_decoder` (can be used as `:json` as well in the `:parsers` option)
 
   ## File handling
 
@@ -117,19 +136,31 @@ defmodule Plug.Parsers do
   alias Plug.Conn
 
   @doc """
-  Attempts to parse the connection's request body given the content-type type
-  and subtype and the headers. Returns:
+  Attempts to parse the connection's request body given the content-type type and
+  subtype and the headers.
 
-    * `{:ok, conn}` if the parser is able to handle the given content-type
+  The arguments are:
+
+    * the `Plug.Conn` connection
+    * `type`, the content-type type (e.g., `"x-sample"` for the
+      `"x-sample/json"` content-type)
+    * `subtype`, the content-type subtype (e.g., `"json"` for the
+      `"x-sample/json"` content-type)
+    * `opts`, the list of options passed to the `Plug.Parsers` plug
+
+  This function should return:
+
+    * `{:ok, body_params, conn}` if the parser is able to handle the given
+      content-type; `body_params` should be a map
     * `{:next, conn}` if the next parser should be invoked
     * `{:error, :too_large, conn}` if the request goes over the given limit
 
   """
-  @callback parse(Conn.t, type :: binary, subtype :: binary,
-                    headers :: Keyword.t, opts :: Keyword.t) ::
-                    {:ok, Conn.params, Conn.t} |
-                    {:error, :too_large, Conn.t} |
-                    {:next, Conn.t}
+  @callback parse(conn :: Conn.t, type :: binary, subtype :: binary,
+                  headers :: Keyword.t, opts :: Keyword.t) ::
+                  {:ok, Conn.params, Conn.t} |
+                  {:error, :too_large, Conn.t} |
+                  {:next, Conn.t}
 
   @behaviour Plug
   @methods ~w(POST PUT PATCH DELETE)
