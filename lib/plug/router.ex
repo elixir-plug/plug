@@ -168,11 +168,13 @@ defmodule Plug.Router do
 
       use Plug.Builder, unquote(opts)
 
-      defp match(conn, _opts) do
+      @doc false
+      def match(conn, _opts) do
         do_match(conn, conn.method, Enum.map(conn.path_info, &URI.decode/1), conn.host)
       end
 
-      defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
+      @doc false
+      def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
         Map.get(conn.private, :plug_route).(conn)
       end
 
