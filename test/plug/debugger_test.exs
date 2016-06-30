@@ -2,6 +2,8 @@ defmodule Plug.DebuggerTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  import ExUnit.CaptureIO
+
   defmodule Exception do
     defexception plug_status: 403, message: "oops"
   end
@@ -38,6 +40,13 @@ defmodule Plug.DebuggerTest do
     end
   end
 
+  defp capture_log(fun) do
+    capture_io(:user, fn ->
+      fun.()
+      Logger.flush()
+    end)
+  end
+
   test "call/2 is overridden" do
     conn = conn(:get, "/boom")
 
@@ -57,8 +66,10 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden and warns on non-500 errors" do
     conn = conn(:get, "/soft_boom")
 
-    assert_raise Exception, fn ->
-      Router.call(conn, [])
+    capture_log fn ->
+      assert_raise Exception, fn ->
+        Router.call(conn, [])
+      end
     end
 
     assert_received {:plug_conn, :sent}
@@ -73,8 +84,10 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden but is a no-op when response is already sent" do
     conn = conn(:get, "/send_and_boom")
 
-    assert_raise RuntimeError, "oops", fn ->
-      Router.call(conn, [])
+    capture_log fn ->
+      assert_raise RuntimeError, "oops", fn ->
+        Router.call(conn, [])
+      end
     end
 
     assert_received {:plug_conn, :sent}
@@ -84,8 +97,10 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden and unwrapps wrapped errors" do
     conn = conn(:get, "/send_and_wrapped")
 
-    assert_raise Exception, "oops", fn ->
-      Router.call(conn, [])
+    capture_log fn ->
+      assert_raise Exception, "oops", fn ->
+        Router.call(conn, [])
+      end
     end
 
     assert_received {:plug_conn, :sent}
@@ -237,8 +252,7 @@ defmodule Plug.DebuggerTest do
     refute conn.resp_body =~ "<span class=\"app\">(plug)</span>"
   end
 
-  # This should always be the last test as we are checing for end of line.
-
+  # This should always be the last test as we are checking for end of line.
   test "stacktrace at the end of file" do
     conn = stack [{__MODULE__, :unknown, 1,
                    file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
