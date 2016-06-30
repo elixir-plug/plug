@@ -2,7 +2,7 @@ defmodule Plug.DebuggerTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  import ExUnit.CaptureIO
+  import ExUnit.CaptureLog
 
   defmodule Exception do
     defexception plug_status: 403, message: "oops"
@@ -38,13 +38,6 @@ defmodule Plug.DebuggerTest do
         kind: :error, stack: System.stacktrace,
         reason: Exception.exception([])
     end
-  end
-
-  defp capture_log(fun) do
-    capture_io(:user, fn ->
-      fun.()
-      Logger.flush()
-    end)
   end
 
   test "call/2 is overridden" do

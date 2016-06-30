@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.2.0-dev
+
+* Backwards incompatible changes
+  * Depend on Elixir ~> 1.2
+
 ## v1.1.4
 
 * Bug fixes

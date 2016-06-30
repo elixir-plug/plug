@@ -1,6 +1,8 @@
 defmodule Plug.Adapters.TranslatorTest do
   use ExUnit.Case
 
+  import ExUnit.CaptureLog
+
   def init(opts) do
     opts
   end
@@ -12,8 +14,6 @@ defmodule Plug.Adapters.TranslatorTest do
   def call(%{path_info: ["error"]}, _opts) do
     raise "oops"
   end
-
-  import ExUnit.CaptureIO
 
   test "ranch/cowboy 500 logs" do
     {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 9001
@@ -42,12 +42,5 @@ defmodule Plug.Adapters.TranslatorTest do
     refute output =~ "Server: 127.0.0.1:9001 (http)"
     refute output =~ "Request: GET /"
     refute output =~ "** (exit) an exception was raised:"
-  end
-
-  defp capture_log(fun) do
-    capture_io(:user, fn ->
-      fun.()
-      Logger.flush()
-    end)
   end
 end

@@ -2,7 +2,8 @@ defmodule Plug.LoggerTest do
   use ExUnit.Case
   use Plug.Test
 
-  import ExUnit.CaptureIO
+  import ExUnit.CaptureLog
+
   require Logger
 
   defmodule MyPlug do
@@ -17,7 +18,7 @@ defmodule Plug.LoggerTest do
   end
 
   defp call(conn) do
-    capture_log fn -> MyPlug.call(conn, []) end
+    MyPlug.call(conn, [])
   end
 
   defmodule MyChunkedPlug do
@@ -38,41 +39,44 @@ defmodule Plug.LoggerTest do
     defp halter(conn, _), do: halt(conn)
   end
 
-  defp capture_log(fun) do
-    data = capture_io(:user, fn ->
-      Process.put(:capture_log, fun.())
-      Logger.flush()
-    end) |> String.split("\n", trim: true)
-    {Process.get(:capture_log), data}
-  end
-
   test "logs proper message to console" do
-    {_conn, [first_message, second_message]} = conn(:get, "/") |> call
+    [first_message, second_message] = capture_log_lines fn ->
+      conn(:get, "/") |> call()
+    end
     assert Regex.match?(~r/\[info\]  GET \//u, first_message)
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
 
-    {_conn, [first_message, second_message]} = conn(:get, "/hello/world") |> call
+    [first_message, second_message] = capture_log_lines fn ->
+      conn(:get, "/hello/world") |> call()
+    end
     assert Regex.match?(~r/\[info\]  GET \/hello\/world/u, first_message)
     assert Regex.match?(~r/Sent 200 in [0-9]+[µm]s/u, second_message)
   end
 
   test "logs paths with double slashes and trailing slash" do
-    {_conn, [first_message, _]} = conn(:get, "/hello//world/") |> call
+    [first_message, _] = capture_log_lines fn ->
+      conn(:get, "/hello//world/") |> call()
+    end
     assert Regex.match?(~r/\/hello\/\/world\//u, first_message)
   end
 
   test "logs chunked if chunked reply" do
-    {_, [_, second_message]} = capture_log(fn ->
-       conn(:get, "/hello/world") |> MyChunkedPlug.call([])
-    end)
+    [_, second_message] = capture_log_lines fn ->
+      conn(:get, "/hello/world") |> MyChunkedPlug.call([])
+    end
     assert Regex.match?(~r/Chunked 200 in [0-9]+[µm]s/u, second_message)
   end
 
   test "logs halted connections if :log_on_halt is true" do
-    {_conn, [output]} = capture_log fn ->
+    [output] = capture_log_lines fn ->
       conn(:get, "/foo") |> MyHaltingPlug.call([])
     end
-
     assert output =~ "Plug.LoggerTest.MyHaltingPlug halted in :halter/2"
+  end
+
+  defp capture_log_lines(fun) do
+    fun
+    |> capture_log()
+    |> String.split("\n", trim: true)
   end
 end
