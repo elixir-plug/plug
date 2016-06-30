@@ -61,8 +61,8 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   test "raises ParseError with malformed JSON" do
-    exception = assert_raise Plug.Parsers.ParseError,
-                             ~r/malformed request, got RuntimeError with message oops/, fn ->
+    message = ~s(malformed request, a RuntimeError exception was raised with message: "oops")
+    exception = assert_raise Plug.Parsers.ParseError, message, fn ->
       json_conn("invalid json") |> parse()
     end
     assert Plug.Exception.status(exception) == 400

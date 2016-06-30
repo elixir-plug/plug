@@ -36,10 +36,9 @@ defmodule Plug.Parsers do
 
     defexception exception: nil, plug_status: 400
 
-    def message(exception) do
-      exception = exception.exception
-      "malformed request, got #{inspect exception.__struct__} " <>
-        "with message #{Exception.message(exception)}"
+    def message(%{exception: exception}) do
+      "malformed request, a #{inspect exception.__struct__} exception was raised " <>
+        "with message: #{inspect(Exception.message(exception))}"
     end
   end
 
