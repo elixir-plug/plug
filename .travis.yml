@@ -1,13 +1,19 @@
 language: elixir
-elixir:
-  - 1.2.0
+
+matrix:
+  include:
+    - otp_release: 18.3
+      elixir: 1.2.6
+    - otp_release: 18.3
+      elixir: 1.3.1
+    - otp_release: 19.0
+      elixir: 1.3.1
+
 sudo: false
 notifications:
   recipients:
     - jose.valim@plataformatec.com.br
     - eric.meadows.jonsson@gmail.com
-otp_release:
-  - 18.1
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
