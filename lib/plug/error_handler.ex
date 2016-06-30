@@ -45,7 +45,8 @@ defmodule Plug.ErrorHandler do
     quote location: :keep do
       @before_compile Plug.ErrorHandler
 
-      defp handle_errors(conn, assigns) do
+      @doc false
+      def handle_errors(conn, assigns) do
         Plug.Conn.send_resp(conn, conn.status, "Something went wrong")
       end
 
