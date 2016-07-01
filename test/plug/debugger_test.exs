@@ -203,6 +203,19 @@ defmodule Plug.DebuggerTest do
     end)
   end
 
+  test "sanitizes output" do
+    conn =
+      conn(:get, "/foo/bar?x=<script>alert(document.domain)</script>")
+      |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
+      |> put_req_header("<script>xss-header</script>", "<script>xss-val</script>")
+      |> render([], fn -> raise "<script>oops</script>" end)
+
+    assert conn.resp_body =~ "x=&lt;script&gt;alert(document.domain)&lt;/script&gt;"
+    assert conn.resp_body =~ "&lt;script&gt;xss-header&lt;/script&gt;"
+    assert conn.resp_body =~ "&lt;script&gt;xss-val&lt;/script&gt;"
+    assert conn.resp_body =~ "&lt;script&gt;oops&lt;/script&gt;"
+  end
+
   test "uses PLUG_EDITOR" do
     System.put_env("PLUG_EDITOR", "hello://open?file=__FILE__&line=__LINE__")
 
