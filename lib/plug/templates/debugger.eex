@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title><%= @title %> at <%= method(@conn) %> <%= @conn.request_path %></title>
+    <title><%= h(@title) %> at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></title>
     <style>
     /* Basic reset */
     * {
@@ -592,7 +592,7 @@
 <body>
     <div class="top">
         <header class="exception">
-            <h2><strong><%= h(@title) %></strong> <span>at <%= method(@conn) %> <%= @conn.request_path %></span></h2>
+            <h2><strong><%= h(@title) %></strong> <span>at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></span></h2>
             <p><%= h(@message) %></p>
         </header>
     </div>
@@ -606,14 +606,14 @@
             <ul class="frames">
                 <%= for frame <- @frames do %>
                     <li class="<%= frame.context %>" style="display: none" data-context="<%= frame.context %>" data-index="<%= frame.index %>">
-                        <span class='stroke'></span>
+                        <span class="stroke"></span>
                         <i class="icon <%= frame.context %>"></i>
                         <div class="info">
                             <div class="name">
                                 <strong><%= h(frame.info) %></strong>
 
                                 <%= if app = frame.app do %>
-                                    <span class="app">(<%= app %>)</span>
+                                    <span class="app">(<%= h(app) %>)</span>
                                 <% end %>
                             </div>
                             <div class="location">
@@ -634,10 +634,10 @@
                     <header class="trace_info">
                         <div class="title">
                             <h2 class="name">
-                              <%= frame.info %>
+                              <%= h(frame.info) %>
 
                               <%= if app = frame.app do %>
-                                  <span class="app">(<%= app %>)</span>
+                                  <span class="app">(<%= h(app) %>)</span>
                               <% end %>
                             </h2>
                             <div class="location"><span class="filename"><a href="<%= frame.link %>"><%= frame.file %></a></span></div>
@@ -646,7 +646,7 @@
                         <div class="code">
                           <%= if snippet = frame.snippet do %>
                             <%= for {index, line, highlight} <- snippet do %>
-                              <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%=h line %></span></pre>
+                              <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%= line %></span></pre>
                             <% end %>
                           <% else %>
                             <p class="no_snippet">No code snippets available.</p>
@@ -681,15 +681,15 @@
                     <table class="var_table">
                         <tr>
                             <td class="name">URI</td>
-                            <td><%= url(@conn) %></td>
+                            <td><%= h(url(@conn)) %></td>
                         </tr>
                         <tr>
                             <td class="name">Query String</td>
-                            <td><%= @conn.query_string %></td>
+                            <td><%= h(@conn.query_string) %></td>
                         </tr>
                         <tr>
                             <td class="name">Peer</td>
-                            <td><%= peer(@conn) %></td>
+                            <td><%= h(peer(@conn)) %></td>
                         </tr>
                     </table>
                 </div>
@@ -701,8 +701,8 @@
                     <table class="var_table">
                         <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
                             <tr>
-                                <td class="name"><%= key %></td>
-                                <td><%= value %></td>
+                                <td class="name"><%= h(key) %></td>
+                                <td><%= h(inspect value) %></td>
                             </tr>
                         <% end %>
                     </table>
@@ -716,8 +716,8 @@
                     <table class="var_table">
                         <%= for {key, value} <- @params do %>
                             <tr>
-                                <td class="name"><%= key %></td>
-                                <td><pre><%= inspect value %></pre></td>
+                                <td class="name"><%= h(key) %></td>
+                                <td><pre><%= h(inspect value) %></pre></td>
                             </tr>
                         <% end %>
                     </table>
@@ -732,8 +732,8 @@
                     <table class="var_table">
                         <%= for {key, value} <- @session do %>
                             <tr>
-                                <td class="name"><%= key %></td>
-                                <td><pre><%= inspect value %></pre></td>
+                                <td class="name"><%= h(key) %></td>
+                                <td><pre><%= h(inspect value) %></pre></td>
                             </tr>
                         <% end %>
                     </table>
