@@ -303,7 +303,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
        {"Content-Length", byte_size(multipart)}]
 
     assert {500, _, body} = request :post, "/multipart", headers, multipart
-    assert body =~ "malformed request, a MatchError exception was raised with message: " <>
+    assert body =~ "malformed request, a MatchError exception was raised with message " <>
       ~s("no match of right hand side value: false")
   end
 

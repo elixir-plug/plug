@@ -38,7 +38,7 @@ defmodule Plug.Parsers do
 
     def message(%{exception: exception}) do
       "malformed request, a #{inspect exception.__struct__} exception was raised " <>
-        "with message: #{inspect(Exception.message(exception))}"
+        "with message #{inspect(Exception.message(exception))}"
     end
   end
 
