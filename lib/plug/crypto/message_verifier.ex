@@ -101,6 +101,7 @@ defmodule Plug.Crypto.MessageVerifier do
     case String.split(token, ".", parts: 3) do
       [protected, payload, signature] ->
         plain_text = protected <> "." <> payload
+        # TODO: Use with/else once we depend on Elixir v1.3+ only
         with {:ok, protected} <- Base.url_decode64(protected, padding: false),
              {:ok, payload}   <- Base.url_decode64(payload, padding: false),
              {:ok, signature} <- Base.url_decode64(signature, padding: false) do
@@ -136,6 +137,7 @@ defmodule Plug.Crypto.MessageVerifier do
     end
     |> case do
       [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 ->
+        # TODO: Use with/else once we depend on Elixir v1.3+ only
         with {:ok, payload}   <- decode_legacy_base64(plain_text),
              {:ok, signature} <- decode_legacy_base64(signature) do
           {true, "HS1", payload, plain_text, signature}

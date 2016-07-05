@@ -303,6 +303,7 @@ defmodule Plug.Crypto.MessageEncryptor do
   defp decode_token(token) do
     case String.split(token, ".", parts: 5) do
       [protected, encrypted_key, iv, cipher_text, cipher_tag] ->
+        # TODO: Use with/else once we depend on Elixir v1.3+ only
         with {:ok, protected}     <- Base.url_decode64(protected, padding: false),
              {:ok, encrypted_key} <- Base.url_decode64(encrypted_key, padding: false),
              {:ok, iv}            <- Base.url_decode64(iv, padding: false),
@@ -340,6 +341,7 @@ defmodule Plug.Crypto.MessageEncryptor do
     |> case do
       [cipher_text, cipher_tag]
           when byte_size(cipher_text) > 0 and byte_size(cipher_tag) > 0 ->
+        # TODO: Use with/else once we depend on Elixir v1.3+ only
         with {:ok, cipher_tag}  <- Base.url_decode64(cipher_tag),
              challenge           = :crypto.hmac(:sha, sign_secret, cipher_text),
              true               <- Plug.Crypto.secure_compare(challenge, cipher_tag),
