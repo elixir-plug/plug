@@ -87,6 +87,7 @@ defmodule Plug.Session.COOKIE do
       %{encryption_salt: nil} ->
         MessageVerifier.verify(cookie, derive(conn, signing_salt, key_opts))
       %{encryption_salt: key} ->
+        # TODO: Change to verify/3 after backwards compatibility period.
         MessageEncryptor.verify_and_decrypt(cookie,
                                             derive(conn, key, key_opts),
                                             derive(conn, signing_salt, key_opts))
