@@ -7,20 +7,6 @@ defmodule Plug.Crypto.MessageEncryptorTest do
   @wrong String.duplicate("12345678", 4)
   @large String.duplicate(@right, 2)
 
-  def loop_until_fail(0, t) do
-    t
-  end
-  def loop_until_fail(n, t) do
-    encrypted = ME.encrypt_and_sign(<<0, "hełłoworld", 0>>, @right, @right, :aes_cbc256)
-    decrypted = ME.verify_and_decrypt(encrypted, @wrong, @right)
-    if decrypted === :error do
-      loop_until_fail(n, t + 1)
-    else
-      # IO.puts "encrypted = #{inspect encrypted}"
-      loop_until_fail(n - 1, t + 1)
-    end
-  end
-
   test "it encrypts/decrypts a message" do
     data = <<0, "hełłoworld", 0>>
     encrypted = ME.encrypt(<<0, "hełłoworld", 0>>, @right, @right)
@@ -48,15 +34,7 @@ defmodule Plug.Crypto.MessageEncryptorTest do
 
     # This can fail depending on the initialization vector
     # decrypted = ME.verify_and_decrypt(encrypted, @wrong, @right)
-    # if decrypted !== :error do
-    #   IO.puts "encrypted = #{inspect encrypted}"
-    #   # IO.puts "wrong: #{inspect @wrong}"
-    #   # IO.puts "right: #{inspect @right}"
-    # end
     # assert decrypted == :error
-    n = 100
-    t = loop_until_fail(n, 0)
-    IO.puts("After #{t} loops, got #{n} failures: #{(n / t) * 100}%")
 
     decrypted = ME.verify_and_decrypt(encrypted, @right, @right)
     assert decrypted == {:ok, data}
