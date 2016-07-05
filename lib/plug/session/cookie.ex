@@ -101,9 +101,9 @@ defmodule Plug.Session.COOKIE do
       %{encryption_salt: nil} ->
         MessageVerifier.sign(binary, derive(conn, signing_salt, key_opts))
       %{encryption_salt: key} ->
-        MessageEncryptor.encrypt_and_sign(binary,
-                                          derive(conn, key, key_opts),
-                                          derive(conn, signing_salt, key_opts))
+        MessageEncryptor.encrypt(binary,
+                                 derive(conn, key, key_opts),
+                                 derive(conn, signing_salt, key_opts))
     end
   end
 
