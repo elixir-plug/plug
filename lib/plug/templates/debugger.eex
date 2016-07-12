@@ -540,7 +540,6 @@
             font-size: <%= :math.pow(1.1, -1) %>em;
         }
     }
-
     </style>
 </head>
 <body>
@@ -627,7 +626,7 @@
     </div>
 
     <div class="conn-info">
-        <%= if @params do %>
+        <%= if @params && @params != %{} do %>
         <details class="conn-details" open>
             <summary>Params</summary>
             <%= for {key, value} <- @params do %>
