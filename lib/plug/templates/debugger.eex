@@ -685,7 +685,7 @@
             <% end %>
         </details>
 
-        <%= if @session do %>
+        <%= if @session && @session != %{} do %>
         <details class="conn-details">
             <summary>Session</summary>
             <%= for {key, value} <- @session do %>
