@@ -150,6 +150,17 @@
         font-weight: 400;
     }
 
+    /* Hide path until hover */
+    .exception-info > .struct > .path {
+        opacity: 0;
+        -webkit-transition: opacity 100ms linear;
+        transition: opacity 100ms linear;
+    }
+
+    .exception-info:hover > .struct > .path {
+        opacity: 1;
+    }
+
     .exception-info > .title {
         font-size: <%= :math.pow(1.2, 4) %>em;
         line-height: 1.4;
@@ -568,7 +579,8 @@
             <% [headline | details] = String.split(@message, "\n\n") %>
             <h5 class="struct">
                 <%= h @title %>
-                <small>at <%= h method(@conn) %> <%= h @conn.request_path %></small>
+                <small>at <%= h method(@conn) %></small>
+                <small class="path"><%= h @conn.request_path %></small>
             </h5>
             <h1 class="title"><%= h headline %></h1>
             <%= for detail <- details do %>
