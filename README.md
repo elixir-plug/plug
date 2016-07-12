@@ -145,7 +145,7 @@ Each route needs to return the connection as per the Plug specification. See `Pl
 
 ## Supervised handlers
 
-On a production system, you likely want to start your Plug application under your application's supervision tree. Plug provides the `child_spec/3` function to to just that. Start a new Elixir project with the `--sup` flag:
+On a production system, you likely want to start your Plug application under your application's supervision tree. Plug provides the `child_spec/3` function to do just that. Start a new Elixir project with the `--sup` flag:
 
 ```elixir
 $ mix new my_app --sup
