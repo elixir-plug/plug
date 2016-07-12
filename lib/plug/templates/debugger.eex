@@ -173,7 +173,8 @@
         padding-left: 32px;
     }
 
-    @media (max-width: 768px) {
+    /* Collapse to single-column */
+    @media (max-width: 960px) {
         .code-explorer > .code-snippets {
             float: none;
             width: auto;
@@ -352,7 +353,7 @@
     }
 
     .stack-trace-list {
-        max-height: 260px;
+        max-height: 170px;
         overflow-x: hidden;
         overflow-y: auto;
     }
@@ -430,7 +431,7 @@
         text-overflow: ellipsis;
     }
 
-    .stack-trace-item > .filename > .line {
+    .stack-trace-item > .left > .filename > .line {
         color: <%= light_accent %>;
     }
 
