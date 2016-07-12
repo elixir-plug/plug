@@ -527,6 +527,8 @@
         margin: 0;
         overflow: auto;
         max-width: 100%;
+        word-wrap: break-word;
+        white-space: normal;
     }
 
     .code-quote.-padded {
@@ -576,6 +578,8 @@
         float: left;
         font-size: <%= :math.pow(1.2, -1) %>em;
         color: <%= gray %>;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Definition */
