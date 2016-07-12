@@ -256,6 +256,7 @@
     @media (max-width: 480px) {
         .frame-info > .meta,
         .frame-info > .file {
+            padding: 6px 16px;
             font-size: <%= :math.pow(1.1, -1) %>em;
         }
     }
