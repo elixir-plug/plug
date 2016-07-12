@@ -1,5 +1,6 @@
 <% accent = "#4e2a8e" %>
 <% highlight = "#f0f4fa" %>
+<% red_highlight = "#ffe5e5" %>
 <% light_accent = "#a0b0c0" %>
 <% gray = "#607080" %>
 <% line_color = "#eee" %>
@@ -320,11 +321,27 @@
         white-space: pre;
         display: block;
         padding: 0 16px;
-        overflow: hidden;
     }
 
+    /* Line highlight */
     .code-block > .line.-highlight {
-        background: <%= highlight %>;
+        background-color: <%= highlight %>;
+        -webkit-animation: line-highlight 750ms linear;
+        animation: line-highlight 750ms linear;
+    }
+
+    @-webkit-keyframes line-highlight {
+        0% { background-color: <%= highlight %>; }
+        25% { background-color: <%= red_highlight %>; }
+        50% { background-color: <%= highlight %>; }
+        75% { background-color: <%= red_highlight %>; }
+    }
+
+    @keyframes line-highlight {
+        0% { background-color: <%= highlight %>; }
+        25% { background-color: <%= red_highlight %>; }
+        50% { background-color: <%= highlight %>; }
+        75% { background-color: <%= red_highlight %>; }
     }
 
     .code-block > .line > .ln {
