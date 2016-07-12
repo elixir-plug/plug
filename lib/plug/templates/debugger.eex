@@ -9,6 +9,7 @@
 <head>
     <meta charset="utf-8">
     <title><%= h @title %> at <%= h method(@conn) %> <%= h @conn.request_path %></title>
+    <meta name="viewport" content="width=device-width">
     <style>/*! normalize.css v4.2.0 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;line-height:1.15;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block}audio:not([controls]){display:none;height:0}progress{vertical-align:baseline}template,[hidden]{display:none}a{background-color:transparent;-webkit-text-decoration-skip:objects}a:active,a:hover{outline-width:0}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:inherit}b,strong{font-weight:bolder}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background-color:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-0.25em}sup{top:-0.5em}img{border-style:none}svg:not(:root){overflow:hidden}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}figure{margin:1em 40px}hr{box-sizing:content-box;height:0;overflow:visible}button,input,optgroup,select,textarea{font:inherit;margin:0}optgroup{font-weight:bold}button,input{overflow:visible}button,select{text-transform:none}button,html [type="button"],[type="reset"],[type="submit"]{-webkit-appearance:button}button::-moz-focus-inner,[type="button"]::-moz-focus-inner,[type="reset"]::-moz-focus-inner,[type="submit"]::-moz-focus-inner{border-style:none;padding:0}button:-moz-focusring,[type="button"]:-moz-focusring,[type="reset"]:-moz-focusring,[type="submit"]:-moz-focusring{outline:1px dotted ButtonText}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}textarea{overflow:auto}[type="checkbox"],[type="radio"]{box-sizing:border-box;padding:0}[type="number"]::-webkit-inner-spin-button,[type="number"]::-webkit-outer-spin-button{height:auto}[type="search"]{-webkit-appearance:textfield;outline-offset:-2px}[type="search"]::-webkit-search-cancel-button,[type="search"]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:0.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}</style>
     <style>
     html, body, td, input {
@@ -39,8 +40,18 @@
     }
 
     button:focus,
-    details:focus {
+    summary:focus {
         outline: 0;
+    }
+
+    summary {
+        cursor: pointer;
+    }
+
+    pre {
+        font-family: menlo, monospace;
+        overflow: auto;
+        max-width: 100%;
     }
 
     .top-details {
@@ -48,8 +59,22 @@
         background: #f9f9fa;
     }
 
+    .top-details,
+    .conn-info {
+        padding: 48px;
+    }
+
+
+    @media (max-width: 768px) {
+        .top-details,
+        .conn-info {
+            padding: 32px;
+        }
+    }
+
     @media (max-width: 480px) {
-        .top-details {
+        .top-details,
+        .conn-info {
             padding: 16px;
         }
     }
@@ -71,7 +96,6 @@
     .exception-info > .detail {
         margin: 0;
         padding: 0;
-        white-space: pre;
     }
 
     .exception-info > .struct {
@@ -82,6 +106,7 @@
 
     .exception-info > .title {
         font-size: <%= :math.pow(1.2, 4) %>em;
+        line-height: 1.4;
         font-weight: 300;
         color: <%= accent %>;
     }
@@ -93,7 +118,8 @@
     }
 
     .exception-info > .detail {
-        margin-top: 1.5em;
+        margin-top: 1.3em;
+        white-space: pre;
     }
 
     /*
@@ -101,7 +127,13 @@
      */
 
     .code-explorer {
-      margin: 32px 0;
+      margin: 32px 0 0 0;
+    }
+
+    @media (max-width: 768px) {
+        .code-explorer {
+            margin-top: 16px;
+        }
     }
 
     .code-explorer:after {
@@ -120,6 +152,20 @@
         float: right;
         width: 55%;
         padding-left: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .code-explorer > .code-snippets {
+            float: none;
+            width: auto;
+            margin-bottom: 16px;
+        }
+
+        .code-explorer > .stack-trace {
+            float: none;
+            width: auto;
+            padding-left: 0;
+        }
     }
 
     /*
@@ -255,9 +301,15 @@
         display: inline-block;
         width: 10px;
         height: 10px;
-        background: <%= accent %>;
+        background: <%= gray %>;
+        opacity: .5;
         border-radius: 50%;
         margin-right: 8px;
+    }
+
+    .stack-trace-item.-app:before {
+        background: <%= accent %>;
+        opacity: 1;
     }
 
     .stack-trace-item > .info {
@@ -275,12 +327,20 @@
         font-weight: 700;
     }
 
+    .code-quote {
+        font-family: menlo, monospace;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        margin: 0;
+        overflow: auto;
+        max-width: 100%;
+    }
+
     /*
      * Conn info
      */
 
     .conn-info {
-        display: none;
+        border-top: solid 1px #eee;
     }
     </style>
 </head>
@@ -295,14 +355,14 @@
             <h5 class="struct"><%= h @title %></h5>
             <h1 class="title"><%= h headline %></h1>
             <%= for detail <- details do %>
-            <pre class="detail"><%= h detail %></pre>
+            <p class="detail"><%= h detail %></p>
             <% end %>
         </header>
 
         <div class="code-explorer">
             <div class="code-snippets">
                 <%= for frame <- @frames do %>
-                  <div class="frame-info" id="frame_info_<%= h frame.index %>" data-index="<%= frame.index %>" role="stack-trace-details">
+                  <div class="frame-info" data-index="<%= frame.index %>" role="stack-trace-details">
                     <div class="file">
                         <a href="<%= h frame.link %>"><%= h frame.file %></a>
                     </div>
@@ -323,7 +383,7 @@
                                     <span class="app">(<%= h app %>)</span>
                                 <% end %>
                             </summary>
-                            <%= h inspect(frame.args) %>
+                            <blockquote class="code-quote"><%= h inspect(frame.args) %></blockquote>
                         </details>
                         <% else %>
                             <%= h frame.info %>
@@ -339,16 +399,13 @@
             <ul class="stack-trace">
                 <%= for frame <- @frames do %>
                 <li>
-                    <button class="stack-trace-item" role="stack-trace-item" data-index="<%= frame.index %>" class="-<%= frame.context %>">
+                    <button class="stack-trace-item -<%= frame.context %>" role="stack-trace-item" data-index="<%= frame.index %>">
                         <%= if app = frame.app do %>
                         <span class="app">(<%= h app %>)</span>
                         <% end %>
 
                         <span class="filename">
-                            <%= h frame.file %>
-                            <%= if frame.line do %>
-                            <span class="line">ln <%= h frame.line %></span>
-                            <% end %>
+                            <%= h frame.file %><%= if frame.line do %><span class="line">:<%= h frame.line %></span><% end %>
                         </span>
 
                         <span class="info"><%= h frame.info %></span>
@@ -360,46 +417,55 @@
     </div>
 
     <div class="conn-info">
-        <h3>Request info</h3>
+        <details>
+            <summary>Request info</summary>
 
-        URI:
-        <%= h url(@conn) %>
-        <br>
+            <dl>
+                <dt>URI:</dt>
+                <dd class="code-quote"><%= h url(@conn) %></dd>
+            </dl>
 
-        Query string:
-        <%= h @conn.query_string %>
-        <br>
+            <dl>
+                <dt>Query string:</dt>
+                <dd class="code-quote"><%= h @conn.query_string %></dd>
+            </dl>
 
-        Peer:
-        <%= h peer(@conn) %>
-        <br>
-
-        <h3>Headers</h3>
-        <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-        <dl>
-            <dt><%= h key %></dt>
-            <dd><%= h value %></dd>
-        </dl>
-        <% end %>
-
+            <dl>
+                <dt>Peer:</dt>
+                <dd class="code-quote"><%= h peer(@conn) %></dd>
+            </dl>
+        </details>
+        <details>
+            <summary>Headers</summary>
+            <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd class="code-quote"><%= h value %></dd>
+            </dl>
+            <% end %>
+        </details>
         <%= if @params do %>
-        <h3>Params</h3>
-        <%= for {key, value} <- @params do %>
-        <dl>
-            <dt><%= h key %></dt>
-            <dd><pre><%= h inspect(value) %></pre></dd>
-        </edtr>
-        <% end %>
+        <details>
+            <summary>Params</summary>
+            <%= for {key, value} <- @params do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd><pre><%= h inspect(value) %></pre></dd>
+            </dl>
+            <% end %>
+        </details>
         <% end %>
 
         <%= if @session do %>
-        <h3>Session</h3>
-        <%= for {key, value} <- @session do %>
-        <dl>
-            <dt><%= h key %></dt>
-            <dd><pre><%= h inspect(value) %></pre></dd>
-        </dl>
-        <% end %>
+        <details>
+            <summary>Session</summary>
+            <%= for {key, value} <- @session do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd><pre><%= h inspect(value) %></pre></dd>
+            </dl>
+            <% end %>
+        </details>
         <% end %>
     </div>
 
