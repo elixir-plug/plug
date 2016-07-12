@@ -564,7 +564,7 @@
                 <%= for frame <- @frames do %>
                   <div class="frame-info" data-index="<%= frame.index %>" role="stack-trace-details">
                     <div class="file">
-                        <a href="<%= h frame.link %>"><%= h frame.file %></a>
+                        <a href="<%= frame.link %>"><%= h frame.file %></a>
                     </div>
 
                     <%= if snippet = frame.snippet do %>
