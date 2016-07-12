@@ -593,7 +593,7 @@
     <div class="top">
         <header class="exception">
             <h2><strong><%= h(@title) %></strong> <span>at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></span></h2>
-            <p><%= h(@message) %></p>
+            <p title="<%= h(@message) %>"><%= h(@message) %></p>
         </header>
     </div>
 
