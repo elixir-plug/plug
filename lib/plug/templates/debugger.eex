@@ -26,6 +26,7 @@
         line-height: 1.6;
         background: #fff;
         color: <%= text_color %>;
+        border-top: solid 2px <%= accent %>;
     }
 
     @media (max-width: 768px) {
@@ -81,33 +82,52 @@
     }
 
     /*
-     * Exception meta
+     * Exception logo
      */
 
-    .exception-meta {
-        float: right;
+    .exception-logo {
+        position: absolute;
+        right: 48px;
+        top: 48px;
+        pointer-events: none;
+        width: 100%;
+    }
+
+    .exception-logo:before {
+        content: '';
+        display: block;
+        height: 64px;
+        width: 100%;
+        background-size: auto 100%;
+        background-image: url("<%= logo_uri %>");
+        background-position: right 0;
+        background-repeat: no-repeat;
+        margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .exception-logo {
+            position: static;
+        }
+
+        .exception-logo:before {
+            height: 32px;
+            background-position: left 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .exception-logo {
+            display: none;
+        }
     }
 
     /*
      * Exception info
      */
 
-    .exception-info:before {
-        content: '';
-        display: block;
-        height: 48px;
-        background-size: auto 100%;
-        background-image: url("<%= logo_uri %>");
-        background-position: 0 0;
-        background-repeat: no-repeat;
-        margin-bottom: 16px;
-    }
-
-    @media (max-width: 768px) {
-        .exception-info:before {
-            margin-bottom: 8px;
-            height: 32px;
-        }
+    .exception-info {
+        max-width: 90%;
     }
 
     .exception-info > .struct,
@@ -121,6 +141,12 @@
         font-size: 1em;
         font-weight: 700;
         color: <%= accent %>;
+    }
+
+    .exception-info > .struct > small {
+        font-size: 1em;
+        color: <%= light_accent %>;
+        font-weight: 400;
     }
 
     .exception-info > .title {
@@ -464,13 +490,14 @@
 </head>
 <body>
     <div class="top-details">
-        <aside class="exception-meta">
-            <span>at <%= h method(@conn) %> <%= h @conn.request_path %></span>
-        </aside>
+        <aside class="exception-logo"></aside>
 
         <header class="exception-info">
             <% [headline | details] = String.split(@message, "\n\n") %>
-            <h5 class="struct"><%= h @title %></h5>
+            <h5 class="struct">
+                <%= h @title %>
+                <small>at <%= h method(@conn) %> <%= h @conn.request_path %></small>
+            </h5>
             <h1 class="title"><%= h headline %></h1>
             <%= for detail <- details do %>
             <p class="detail"><%= h detail %></p>
