@@ -266,13 +266,21 @@
         display: block;
     }
 
-    .frame-info > .meta {
-        color: <%= light_accent %>;
+    .frame-info > details.meta {
+        padding: 0;
+    }
+
+    .frame-info > details.meta > summary {
+        padding: 12px 16px;
     }
 
     /*
      * Frame details
      */
+
+    .frame-summary.-short {
+        color: <%= light_accent %>;
+    }
 
     .frame-summary > .app {
         color: <%= accent %>;
@@ -283,7 +291,6 @@
         content: '·';
         margin: 0 .2em;
     }
-
 
     /*
      * Code block:
@@ -476,12 +483,21 @@
         margin: 0 .2em;
     }
 
+    /*
+     * Code as a blockquote:
+     * Like `pre` but with wrapping
+     */
+
     .code-quote {
         font-family: <%= monospace_font %>;
         font-size: <%= :math.pow(1.2, -1) %>em;
         margin: 0;
         overflow: auto;
         max-width: 100%;
+    }
+
+    .code-quote.-padded {
+        padding: 0 16px 16px 16px;
     }
 
     /*
@@ -573,26 +589,26 @@
                     <div class="code code-block-empty">No code available.</div>
                     <% end %>
 
+                    <%= if frame.args != [] do %>
+                    <details class="meta">
+                        <summary class="frame-summary">
+                            <%= if app = frame.app do %>
+                            <span class="app"><%= h app %></span>
+                            <% end %>
+                            <%= h frame.info %>
+                        </summary>
+                        <blockquote class="code-quote -padded"><%= h inspect(frame.args) %></blockquote>
+                    </details>
+                    <% else %>
                     <div class="meta">
-                        <%= if frame.args != [] do %>
-                        <details>
-                            <summary class="frame-summary">
-                                <%= if app = frame.app do %>
-                                <span class="app"><%= h app %></span>
-                                <% end %>
-                                <%= h frame.info %>
-                            </summary>
-                            <blockquote class="code-quote"><%= h inspect(frame.args) %></blockquote>
-                        </details>
-                        <% else %>
-                        <div class="frame-summary">
+                        <div class="frame-summary -short">
                             <%= if app = frame.app do %>
                             <span class="app"><%= h app %></span>
                             <% end %>
                             <%= h frame.info %>
                         </div>
-                        <% end %>
                     </div>
+                    <% end %>
                 </div>
                 <% end %>
             </div>
