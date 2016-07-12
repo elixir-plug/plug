@@ -1,810 +1,465 @@
+<% accent = "#4e2a8e" %>
+<% highlight = "#f0f4fa" %>
+<% gray = "#607080" %>
+<% black = "#222" %>
+<% textcolor = "#304050" %>
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title><%= h(@title) %> at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></title>
+    <meta charset="utf-8">
+    <title><%= h @title %> at <%= h method(@conn) %> <%= h @conn.request_path %></title>
+    <style>/*! normalize.css v4.2.0 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;line-height:1.15;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block}audio:not([controls]){display:none;height:0}progress{vertical-align:baseline}template,[hidden]{display:none}a{background-color:transparent;-webkit-text-decoration-skip:objects}a:active,a:hover{outline-width:0}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:inherit}b,strong{font-weight:bolder}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background-color:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-0.25em}sup{top:-0.5em}img{border-style:none}svg:not(:root){overflow:hidden}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}figure{margin:1em 40px}hr{box-sizing:content-box;height:0;overflow:visible}button,input,optgroup,select,textarea{font:inherit;margin:0}optgroup{font-weight:bold}button,input{overflow:visible}button,select{text-transform:none}button,html [type="button"],[type="reset"],[type="submit"]{-webkit-appearance:button}button::-moz-focus-inner,[type="button"]::-moz-focus-inner,[type="reset"]::-moz-focus-inner,[type="submit"]::-moz-focus-inner{border-style:none;padding:0}button:-moz-focusring,[type="button"]:-moz-focusring,[type="reset"]:-moz-focusring,[type="submit"]:-moz-focusring{outline:1px dotted ButtonText}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}textarea{overflow:auto}[type="checkbox"],[type="radio"]{box-sizing:border-box;padding:0}[type="number"]::-webkit-inner-spin-button,[type="number"]::-webkit-outer-spin-button{height:auto}[type="search"]{-webkit-appearance:textfield;outline-offset:-2px}[type="search"]::-webkit-search-cancel-button,[type="search"]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:0.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}</style>
     <style>
-    /* Basic reset */
+    html, body, td, input {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    }
+
     * {
-        margin: 0;
-        padding: 0;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th, td {
-        vertical-align: top;
-        text-align: left;
-    }
-
-    textarea {
-        resize: none;
-    }
-
-    body {
-        font-size: 10pt;
-    }
-
-    body, td, input, textarea {
-        font-family: helvetica neue, lucida grande, sans-serif;
-        line-height: 1.5;
-        color: #333;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+        box-sizing: border-box;
     }
 
     html {
-        background: #f0f0f5;
+        font-size: 15px;
+        line-height: 1.6;
+        background: #fff;
+        color: <%= textcolor %>;
     }
 
-    /* ---------------------------------------------------------------------
-     * Basic layout
-     * --------------------------------------------------------------------- */
-
-    /* Small */
-    @media screen and (max-width: 1100px) {
+    @media (max-width: 768px) {
         html {
-            overflow-y: scroll;
-        }
-
-        body {
-            margin: 0 20px;
-        }
-
-        header.exception {
-            margin: 0 -20px;
-        }
-
-        nav.sidebar {
-            padding: 0;
-            margin: 20px 0;
-        }
-
-        ul.frames {
-            max-height: 200px;
-            overflow: auto;
+             font-size: 14px;
         }
     }
 
-    /* Wide */
-    @media screen and (min-width: 1100px) {
-        header.exception {
-           position: fixed;
-           top: 0;
-           left: 0;
-           right: 0;
-        }
-
-        nav.sidebar,
-        .conn_info {
-            position: fixed;
-            top: 95px;
-            bottom: 0;
-
-            box-sizing: border-box;
-
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        nav.sidebar {
-            width: 40%;
-            left: 20px;
-            top: 115px;
-            bottom: 20px;
-        }
-
-        .conn_info {
-            right: 0;
-            left: 40%;
-
-            padding: 20px;
-            padding-left: 10px;
-            margin-left: 30px;
+    @media (max-width: 480px) {
+        html {
+             font-size: 13px;
         }
     }
 
-    nav.sidebar {
-        background: #d3d3da;
-        border-top: solid 3px #4E2A8E;
-        border-bottom: solid 3px #4E2A8E;
-        border-radius: 4px;
-        box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    button:focus,
+    details:focus {
+        outline: 0;
     }
 
-    /* ---------------------------------------------------------------------
-     * Header
-     * --------------------------------------------------------------------- */
-
-    header.exception {
-        padding: 18px 20px;
-
-        height: 59px;
-        min-height: 59px;
-
-        overflow: hidden;
-
-        background-color: #20202a;
-        color: #aaa;
-        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
-        font-weight: 200;
-        box-shadow: inset 0 -5px 3px -3px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
-
-        -webkit-text-smoothing: antialiased;
+    .top-details {
+        padding: 48px;
+        background: #f9f9fa;
     }
 
-    /* Heading */
-    header.exception h2 {
-        font-weight: 200;
-        font-size: 11pt;
-        padding-bottom: 2pt;
-    }
-
-    header.exception h2,
-    header.exception p {
-        line-height: 1.4em;
-        height: 1.4em;
-        overflow: hidden;
-        white-space: pre;
-        text-overflow: ellipsis;
-    }
-
-    header.exception h2 strong {
-        font-weight: 700;
-        color: #7E5ABE;
-    }
-
-    header.exception p {
-        font-weight: 200;
-        font-size: 18pt;
-        color: white;
-    }
-
-    header.exception:hover {
-        height: auto;
-        overflow-y: auto;
-        max-height: 60%;
-        z-index: 2;
-    }
-
-    header.exception:hover h2,
-    header.exception:hover p {
-        padding-right: 20px;
-        word-wrap: break-word;
-        height: auto;
-    }
-
-    @media screen and (max-width: 1100px) {
-        header.exception {
-            height: auto;
-        }
-
-        header.exception h2,
-        header.exception p {
-            padding-right: 20px;
-            overflow-y: auto;
-            word-wrap: break-word;
-            height: auto;
-            max-height: 7em;
+    @media (max-width: 480px) {
+        .top-details {
+            padding: 16px;
         }
     }
 
-    /* ---------------------------------------------------------------------
-     * Navigation
-     * --------------------------------------------------------------------- */
+    /*
+     * Exception meta
+     */
 
-    nav.tabs {
-        border-bottom: solid 1px #ddd;
-
-        background-color: #eee;
-        text-align: center;
-
-        padding: 6px;
-
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-
-    nav.tabs a {
-        display: inline-block;
-
-        height: 22px;
-        line-height: 22px;
-        padding: 0 10px;
-
-        text-decoration: none;
-        font-size: 8pt;
-        font-weight: bold;
-
-        color: #999;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-
-    nav.tabs a.selected {
-        color: white;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 16px;
-        box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.1);
-        text-shadow: 0 0 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(0, 0, 0, 0.4);
-    }
-
-    /* ---------------------------------------------------------------------
-     * Sidebar
-     * --------------------------------------------------------------------- */
-
-    ul.frames {
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Each item */
-    ul.frames li {
-        background-color: #f8f8f8;
-        background: -webkit-linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        background: -moz-linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        background: linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        box-shadow: inset 0 -1px 0 #e2e2e2;
-        padding: 7px 20px;
-
-        cursor: pointer;
-        overflow: hidden;
-    }
-
-    ul.frames .name,
-    ul.frames .location {
-        overflow: hidden;
-        height: 1.5em;
-
-        white-space: nowrap;
-        word-wrap: none;
-        text-overflow: ellipsis;
-    }
-
-    ul.frames .app {
-        color: #4E2A8E;
-    }
-
-    ul.frames .location {
-        font-size: 0.85em;
-        font-weight: 400;
-        color: #999;
-    }
-
-    ul.frames .line {
-        font-weight: bold;
-    }
-
-    /* Selected frame */
-    ul.frames li.selected {
-        background: #88A;
-        box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.01), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-    }
-
-    ul.frames li.selected .name,
-    ul.frames li.selected .function,
-    ul.frames li.selected .location {
-        color: white;
-        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-    }
-
-    ul.frames li.selected .location {
-        opacity: 0.6;
-    }
-
-    /* Iconography */
-    ul.frames li {
-        padding-left: 60px;
-        position: relative;
-    }
-
-    ul.frames li .icon {
-        display: block;
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        border-radius: 15px;
-
-        text-align: center;
-
-        background: white;
-        border: solid 2px #ccc;
-
-        font-size: 9pt;
-        font-weight: 200;
-        font-style: normal;
-
-        position: absolute;
-        top: 14px;
-        left: 20px;
-    }
-
-    ul.frames .icon.app {
-        background: #808090;
-        border-color: #555;
-    }
-
-    ul.frames .icon.app:before {
-        content: 'A';
-        color: white;
-        text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Responsiveness -- flow to single-line mode */
-    @media screen and (max-width: 1100px) {
-        ul.frames li {
-            padding-top: 6px;
-            padding-bottom: 6px;
-            padding-left: 36px;
-            line-height: 1.3;
-        }
-
-        ul.frames li .icon {
-            width: 11px;
-            height: 11px;
-            line-height: 11px;
-
-            top: 7px;
-            left: 10px;
-            font-size: 5pt;
-        }
-
-        ul.frames .name,
-        ul.frames .location {
-            display: inline-block;
-            line-height: 1.3;
-            height: 1.3em;
-        }
-
-        ul.frames .name {
-            margin-right: 10px;
-        }
-    }
-
-    /* ---------------------------------------------------------------------
-     * Monospace
-     * --------------------------------------------------------------------- */
-
-    pre, code, textarea {
-        font-family: menlo, lucida console, monospace;
-        font-size: 8pt;
-    }
-
-    /* ---------------------------------------------------------------------
-     * Display area
-     * --------------------------------------------------------------------- */
-
-    .trace_info {
-        background: #fff;
-        padding: 6px;
-        border-radius: 3px;
-        margin-bottom: 2px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.03), 1px 1px 0 rgba(0, 0, 0, 0.05), -1px 1px 0 rgba(0, 0, 0, 0.05), 0 0 0 4px rgba(0, 0, 0, 0.04);
-    }
-
-    /* Titlebar */
-    .trace_info .title {
-        background: #f1f1f1;
-
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        overflow: hidden;
-        padding: 6px 10px;
-
-        border: solid 1px #ccc;
-        border-bottom: 0;
-
-        border-top-left-radius: 2px;
-        border-top-right-radius: 2px;
-    }
-
-    .trace_info .title .name,
-    .trace_info .title .location {
-        font-size: 9pt;
-        line-height: 26px;
-        height: 26px;
-        overflow: hidden;
-    }
-
-    .trace_info .title .location {
-        float: left;
-        font-weight: bold;
-        font-size: 10pt;
-    }
-
-    .trace_info .title .location a {
-        color:inherit;
-        text-decoration:none;
-        border-bottom:1px solid #aaaaaa;
-    }
-
-    .trace_info .title .location a:hover {
-        border-color:#666666;
-    }
-
-    .trace_info .title .name {
+    .exception-meta {
         float: right;
-        font-weight: 200;
     }
 
-    .code, .unavailable {
-        background: #fff;
-        padding: 5px;
+    /*
+     * Exception info
+     */
 
-        box-shadow: inset 3px 3px 3px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    .exception-info > .struct,
+    .exception-info > .title,
+    .exception-info > .detail {
+        margin: 0;
+        padding: 0;
+        white-space: pre;
     }
 
-    .code {
-        margin-bottom: -1px;
-        padding: 10px 0;
-        overflow: auto;
+    .exception-info > .struct {
+        font-size: 1em;
+        font-weight: 700;
+        color: <%= accent %>;
     }
 
-    .code .ln {
-        width: 35px;
-        margin-right: 15px;
-        text-align: right;
-        display: inline-block;
+    .exception-info > .title {
+        font-size: <%= :math.pow(1.2, 4) %>em;
+        font-weight: 300;
+        color: <%= accent %>;
     }
 
-    .code .no_snippet {
-        padding: 5px 15px 2px;
-        font-size: 9pt;
+    @media (max-width: 480px) {
+        .exception-info > .title {
+            font-size: <%= :math.pow(1.1, 4) %>em;
+        }
     }
 
-    /* Source unavailable */
-    p.unavailable {
-        padding: 20px 0 40px 0;
-        text-align: center;
-        color: #b99;
-        font-weight: bold;
+    .exception-info > .detail {
+        margin-top: 1.5em;
     }
 
-    p.unavailable:before {
-        content: '\00d7';
-        display: block;
-        color: #daa;
-        text-align: center;
-        font-size: 40pt;
-        font-weight: normal;
-        margin-bottom: -10px;
+    /*
+     * Code explorer
+     */
+
+    .code-explorer {
+      margin: 32px 0;
     }
 
-    @-webkit-keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
-    }
-    @-moz-keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
-    }
-    @keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
-    }
-
-    .code .highlight {
-        background: rgba(220, 30, 30, 0.1);
-        -webkit-animation: highlight 400ms linear 1;
-        -moz-animation: highlight 400ms linear 1;
-        animation: highlight 400ms linear 1;
-    }
-
-    /* ---------------------------------------------------------------------
-     * Variable infos
-     * --------------------------------------------------------------------- */
-
-    .sub {
-        padding: 10px 0;
-        margin: 10px 0;
-    }
-
-    .sub:before {
+    .code-explorer:after {
         content: '';
+        display: table;
+        clear: both;
+        zoom: 1;
+    }
+
+    .code-explorer > .code-snippets {
+        float: left;
+        width: 45%;
+    }
+
+    .code-explorer > .stack-trace {
+        float: right;
+        width: 55%;
+        padding-left: 32px;
+    }
+
+    /*
+     * Snippets
+     */
+
+    .code-snippets {
+    }
+
+    /*
+     * Frame info:
+     * Holds the code (code-block) and more
+     */
+
+    .frame-info {
+        background: white;
+        box-shadow: 0 2px 3px rgba(0, 0, 0, .2);
+    }
+
+    .frame-info > .meta,
+    .frame-info > .file {
+        padding: 12px 16px;
+        white-space: no-wrap;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+    }
+
+    @media (max-width: 480px) {
+        .frame-info > .meta,
+        .frame-info > .file {
+            font-size: <%= :math.pow(1.1, -1) %>em;
+        }
+    }
+
+    .frame-info > .file > a {
+        text-decoration: none;
+        color: <%= black %>;
+        font-weight: 700;
+    }
+
+    .frame-info > .code {
+        border-top: solid 1px #eee;
+        border-bottom: solid 1px #eee;
+    }
+
+    /* Hiding */
+    .frame-info {
+        display: none;
+    }
+
+    .frame-info.-active {
         display: block;
-        width: 100%;
-        height: 4px;
-
-        border-radius: 2px;
-        background: rgba(0, 150, 200, 0.05);
-        box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(0, 0, 0, 0.04), inset 2px 2px 2px rgba(0, 0, 0, 0.07);
     }
 
-    .sub h3 {
-        color: #4E2A8E;
-        font-size: 1.1em;
-        margin: 10px 0;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    /*
+     * Code block:
+     * The `pre` that holds the code
+     */
 
-        -webkit-font-smoothing: antialiased;
-    }
-
-    .sub .inset {
-        overflow-y: auto;
-    }
-
-    .sub table {
-        table-layout: fixed;
-    }
-
-    .sub table td {
-        border-top: dotted 1px #ddd;
-        padding: 7px 1px;
-    }
-
-    .sub table td.name {
-        width: 150px;
-
-        font-weight: bold;
-        font-size: 0.8em;
-        padding-right: 20px;
-
-        word-wrap: break-word;
-    }
-
-    .sub table td pre {
-        max-height: 15em;
-        overflow-y: auto;
-    }
-
-    .sub table td pre {
-        width: 100%;
-
-        word-wrap: break-word;
+    .code-block {
+        margin: 0;
+        padding: 12px 0;
+        font-size: .8em;
+        line-height: 1.4;
         white-space: normal;
     }
 
-    /* "(object doesn't support inspect)" */
-    .sub .unsupported {
-      font-family: sans-serif;
-      color: #777;
+    .code-block > .line {
+        white-space: pre;
+        display: block;
+        padding: 0 16px;
+        overflow: hidden;
     }
 
-    /* ---------------------------------------------------------------------
-     * Scrollbar
-     * --------------------------------------------------------------------- */
+    .code-block > .line.-highlight {
+        background: <%= highlight %>;
+    }
 
-    nav.sidebar::-webkit-scrollbar,
-    .inset pre::-webkit-scrollbar,
-    .code::-webkit-scrollbar {
+    .code-block > .line > .ln {
+        color: <%= gray %>;
+        opacity: .5;
+        margin-right: 1.5em;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .code-block > .line > .code {
+        font-family: menlo, monospace;
+    }
+
+    /*
+     * Stack trace
+     */
+
+    .stack-trace,
+    .stack-trace > li {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+    }
+
+    .stack-trace {
+        max-height: 300px;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .stack-trace-item {
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        display: block;
+        width: 100%;
+        border: 0;
+        margin: 0;
+        padding: 4px 8px;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .stack-trace-item:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .stack-trace-item.-active {
+        background-color: white;
+    }
+
+    .stack-trace-item:before {
+        content: '';
+        display: inline-block;
         width: 10px;
         height: 10px;
+        background: <%= accent %>;
+        border-radius: 50%;
+        margin-right: 8px;
     }
 
-    .inset pre::-webkit-scrollbar-thumb,
-    .code::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 5px;
+    .stack-trace-item > .info {
+        color: <%= gray %>;
+        float: right;
     }
 
-    nav.sidebar::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.0);
-        border-radius: 5px;
+    .stack-trace-item > .filename > .line {
+        color: <%= gray %>;
     }
 
-    nav.sidebar:hover::-webkit-scrollbar-thumb {
-        background-color: #999;
-        background: -webkit-linear-gradient(left, #aaa, #999);
+    .stack-trace-item > .app {
+        color: <%= accent %>;
+        margin-right: .2em;
+        font-weight: 700;
     }
 
-    .code:hover::-webkit-scrollbar-thumb {
-        background: #888;
+    /*
+     * Conn info
+     */
+
+    .conn-info {
+        display: none;
     }
     </style>
 </head>
 <body>
-    <div class="top">
-        <header class="exception">
-            <h2><strong><%= h(@title) %></strong> <span>at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></span></h2>
-            <p><%= h(@message) %></p>
+    <div class="top-details">
+        <aside class="exception-meta">
+            <span>at <%= h method(@conn) %> <%= h @conn.request_path %></span>
+        </aside>
+
+        <header class="exception-info">
+            <% [headline | details] = String.split(@message, "\n\n") %>
+            <h5 class="struct"><%= h @title %></h5>
+            <h1 class="title"><%= h headline %></h1>
+            <%= for detail <- details do %>
+            <pre class="detail"><%= h detail %></pre>
+            <% end %>
         </header>
-    </div>
 
-    <section class="backtrace">
-        <nav class="sidebar">
-            <nav class="tabs">
-                <a href="#" id="app_frames">App frames</a>
-                <a href="#" id="all_frames">All frames</a>
-            </nav>
-            <ul class="frames">
+        <div class="code-explorer">
+            <div class="code-snippets">
                 <%= for frame <- @frames do %>
-                    <li class="<%= frame.context %>" style="display: none" data-context="<%= frame.context %>" data-index="<%= frame.index %>">
-                        <span class="stroke"></span>
-                        <i class="icon <%= frame.context %>"></i>
-                        <div class="info">
-                            <div class="name">
-                                <strong><%= h(frame.info) %></strong>
+                  <div class="frame-info" id="frame_info_<%= h frame.index %>" data-index="<%= frame.index %>" role="stack-trace-details">
+                    <div class="file">
+                        <a href="<%= h frame.link %>"><%= h frame.file %></a>
+                    </div>
 
+                    <%= if snippet = frame.snippet do %>
+<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.rstrip(line) %></span></span>
+<% end %></pre>
+                    <% else %>
+                    <div class="code -empty"></div>
+                    <% end %>
+
+                    <div class="meta">
+                        <%= if frame.args != [] do %>
+                        <details>
+                            <summary>
+                                <%= h frame.info %>
                                 <%= if app = frame.app do %>
-                                    <span class="app">(<%= h(app) %>)</span>
+                                    <span class="app">(<%= h app %>)</span>
                                 <% end %>
-                            </div>
-                            <div class="location">
-                                <span class="filename"><%= frame.file %></span>
-                                <%= if frame.line do %>
-                                  (line <span class="line"><%= frame.line %></span>)
-                                <% end %>
-                            </div>
-                        </div>
-                    </li>
-                <% end %>
-            </ul>
-        </nav>
-
-        <div class="conn_info">
-            <%= for frame <- @frames do %>
-                <div class="frame_info" id="frame_info_<%= frame.index %>" style="display: none;">
-                    <header class="trace_info">
-                        <div class="title">
-                            <h2 class="name">
-                              <%= h(frame.info) %>
-
-                              <%= if app = frame.app do %>
-                                  <span class="app">(<%= h(app) %>)</span>
-                              <% end %>
-                            </h2>
-                            <div class="location"><span class="filename"><a href="<%= frame.link %>"><%= frame.file %></a></span></div>
-                        </div>
-
-                        <div class="code">
-                          <%= if snippet = frame.snippet do %>
-                            <%= for {index, line, highlight} <- snippet do %>
-                              <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%= line %></span></pre>
+                            </summary>
+                            <%= h inspect(frame.args) %>
+                        </details>
+                        <% else %>
+                            <%= h frame.info %>
+                            <%= if app = frame.app do %>
+                                <span class="app">(<%= h app %>)</span>
                             <% end %>
-                          <% else %>
-                            <p class="no_snippet">No code snippets available.</p>
-                          <% end %>
-                        </div>
-                    </header>
-
-                    <div class="sub">
-                        <h3>Frame</h3>
-                        <div class="inset variables">
-                            <table class="var_table">
-                                <tr>
-                                    <td class="name">Function</td>
-                                    <td><%= h(frame.info) %> (<%= h(frame.app) %>)</td>
-                                </tr>
-                                <%= if frame.args != [] do %>
-                                    <tr>
-                                        <td class="name">Args</td>
-                                        <td><%= h(inspect frame.args) %></td>
-                                    </tr>
-                                <% end %>
-                            </table>
-                        </div>
+                        <% end %>
                     </div>
                 </div>
-
-            <% end %>
-
-            <div class="sub">
-                <h3>Request info</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <tr>
-                            <td class="name">URI</td>
-                            <td><%= h(url(@conn)) %></td>
-                        </tr>
-                        <tr>
-                            <td class="name">Query String</td>
-                            <td><%= h(@conn.query_string) %></td>
-                        </tr>
-                        <tr>
-                            <td class="name">Peer</td>
-                            <td><%= h(peer(@conn)) %></td>
-                        </tr>
-                    </table>
-                </div>
+                <% end %>
             </div>
 
-            <div class="sub">
-                <h3>Headers</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><%= h(inspect value) %></td>
-                            </tr>
+            <ul class="stack-trace">
+                <%= for frame <- @frames do %>
+                <li>
+                    <button class="stack-trace-item" role="stack-trace-item" data-index="<%= frame.index %>" class="-<%= frame.context %>">
+                        <%= if app = frame.app do %>
+                        <span class="app">(<%= h app %>)</span>
                         <% end %>
-                    </table>
-                </div>
-            </div>
 
-            <%= if @params do %>
-            <div class="sub">
-                <h3>Params</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- @params do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><pre><%= h(inspect value) %></pre></td>
-                            </tr>
-                        <% end %>
-                    </table>
-                </div>
-            </div>
-            <% end %>
+                        <span class="filename">
+                            <%= h frame.file %>
+                            <%= if frame.line do %>
+                            <span class="line">ln <%= h frame.line %></span>
+                            <% end %>
+                        </span>
 
-            <%= if @session do %>
-            <div class="sub">
-                <h3>Session</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- @session do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><pre><%= h(inspect value) %></pre></td>
-                            </tr>
-                        <% end %>
-                    </table>
-                </div>
-            </div>
-            <% end %>
+                        <span class="info"><%= h frame.info %></span>
+                    </button>
+                </li>
+                <% end %>
+            </ul>
         </div>
-    </section>
+    </div>
+
+    <div class="conn-info">
+        <h3>Request info</h3>
+
+        URI:
+        <%= h url(@conn) %>
+        <br>
+
+        Query string:
+        <%= h @conn.query_string %>
+        <br>
+
+        Peer:
+        <%= h peer(@conn) %>
+        <br>
+
+        <h3>Headers</h3>
+        <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+        <dl>
+            <dt><%= h key %></dt>
+            <dd><%= h value %></dd>
+        </dl>
+        <% end %>
+
+        <%= if @params do %>
+        <h3>Params</h3>
+        <%= for {key, value} <- @params do %>
+        <dl>
+            <dt><%= h key %></dt>
+            <dd><pre><%= h inspect(value) %></pre></dd>
+        </edtr>
+        <% end %>
+        <% end %>
+
+        <%= if @session do %>
+        <h3>Session</h3>
+        <%= for {key, value} <- @session do %>
+        <dl>
+            <dt><%= h key %></dt>
+            <dd><pre><%= h inspect(value) %></pre></dd>
+        </dl>
+        <% end %>
+        <% end %>
+    </div>
+
+    <script>(function () {
+        var $items = document.querySelectorAll('[role~="stack-trace-item"]')
+
+        for (var i = 0, len = $items.length; i < len; i++) {
+            var $item = $items[i]
+            on($item, 'click', itemOnclick)
+        }
+
+        function itemOnclick() {
+            var idx = this.getAttribute('data-index')
+            console.log(idx)
+
+            var $detail = document.querySelector('[role~="stack-trace-details"].-active')
+            if ($detail) removeClass($detail, '-active')
+
+            $detail = document.querySelector('[role~="stack-trace-details"][data-index="' + idx + '"]')
+            if ($detail) addClass($detail, '-active')
+
+            var $item = document.querySelector('[role~="stack-trace-item"].-active')
+            if ($item) removeClass($item, '-active')
+
+            $item = document.querySelector('[role~="stack-trace-item"][data-index="' + idx + '"]')
+            if ($item) addClass($item, '-active')
+        }
+
+        var $first =
+          document.querySelector('[role~="stack-trace-item"].-app:first-of-type') ||
+          document.querySelector('[role~="stack-trace-item"]:first-of-type')
+
+        if ($first) itemOnclick.call($first)
+
+        function addClass (el, className) {
+            if (el.classList) {
+                el.classList.add(className)
+            } else {
+                el.className += ' ' + className
+            }
+        }
+
+        function removeClass (el, className) {
+            if (el.classList) {
+                el.classList.remove(className)
+            } else {
+                var expr = new RegExp('(^|\\b)' + className.split(' ').join('|') + '(\\b|$)', 'gi')
+                el.className = el.className.replace(expr, ' ')
+            }
+        }
+
+        function on (el, event, handler) {
+            if (el.addEventListener) {
+                el.addEventListener(event, handler)
+            } else {
+                el.attachEvent('on' + event, function () {
+                    handler.call(el)
+                })
+            }
+        }
+    }())</script>
 </body>
-<script>
-
-var previousFrame = null;
-var previousFrameInfo = null;
-var allFrames = document.querySelectorAll("ul.frames li");
-var allFrameInfos = document.querySelectorAll(".frame_info");
-
-for(var i = 0; i < allFrames.length; i++) {
-    (function(i, el) {
-        var el = allFrames[i];
-        el.onclick = function() {
-            if(previousFrame) previousFrame.className = "";
-            el.className = "selected";
-            previousFrame = el;
-            selectFrameInfo(el.attributes["data-index"].value);
-        };
-    })(i);
-};
-
-function selectFrameInfo(index) {
-    var el = allFrameInfos[index];
-     if(previousFrameInfo) previousFrameInfo.style.display = "none";
-     previousFrameInfo = el;
-     el.style.display = "block";
-};
-
-(
-  document.querySelector(".frames li.app") ||
-  document.querySelector(".frames li")
-).onclick();
-
-var appFramesButton = document.getElementById("app_frames");
-var allFramesButton = document.getElementById("all_frames");
-
-appFramesButton.onclick = function() {
-    allFramesButton.className = "";
-    appFramesButton.className = "selected";
-    for(var i = 0; i < allFrames.length; i++) {
-        if(allFrames[i].attributes["data-context"].value == "app") {
-            allFrames[i].style.display = "block";
-            allFrames[i].setAttribute("data-display", "block");
-        } else {
-            allFrames[i].style.display = "none";
-            allFrames[i].setAttribute("data-display", "none");
-        };
-    };
-    return false;
-};
-
-allFramesButton.onclick = function() {
-    appFramesButton.className = "";
-    allFramesButton.className = "selected";
-    for(var i = 0; i < allFrames.length; i++) {
-        allFrames[i].style.display = "block";
-        allFrames[i].setAttribute("data-display", "block");
-    };
-    return false;
-};
-
-appFramesButton.onclick();
-if(document.querySelectorAll("ul.frames li[data-display=\"block\"]").length == 0) {
-    allFramesButton.onclick();
-}
-</script>
 </html>
