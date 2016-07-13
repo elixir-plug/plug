@@ -28,7 +28,6 @@
         line-height: 1.6;
         background: #fff;
         color: <%= text_color %>;
-        border-top: solid 2px <%= accent %>;
     }
 
     @media (max-width: 768px) {
@@ -128,8 +127,11 @@
      * Exception info
      */
 
-    .exception-info {
-        max-width: 90%;
+    /* Compensate for logo placement */
+    @media (min-width: 769px) {
+        .exception-info {
+            max-width: 90%;
+        }
     }
 
     .exception-info > .struct,
@@ -167,6 +169,12 @@
         line-height: 1.4;
         font-weight: 300;
         color: <%= accent %>;
+    }
+
+    @media (max-width: 768px) {
+        .exception-info > .title {
+            font-size: <%= :math.pow(1.15, 4) %>em;
+        }
     }
 
     @media (max-width: 480px) {
@@ -580,6 +588,8 @@
         color: <%= gray %>;
         overflow: hidden;
         text-overflow: ellipsis;
+        position: relative;
+        top: -1px; /* Compensate for font metrics */
     }
 
     /* Definition */
