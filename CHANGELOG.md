@@ -2,6 +2,17 @@
 
 ## v1.2.0-dev
 
+* Enhancements
+  * Introduce new error page
+  * Set default max connections to 16k instead of 1k
+
+* Bug fixes
+  * ensure that `Plug.Conn`'s public API is consistent about not sending empty chunks
+
+* Deprecations
+  * Use the new `MIME` project instead of `Plug.MIME`
+  * Introduce new algorithms in `Plug.MessageEncryptor` and `Plug.MessageVerifier`
+
 * Backwards incompatible changes
   * Depend on Elixir ~> 1.2
 
