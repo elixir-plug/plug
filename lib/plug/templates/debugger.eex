@@ -430,14 +430,6 @@ monospace_font = "menlo, consolas, monospace"
         list-style-type: none;
     }
 
-    @media (min-width: 981px) {
-        .stack-trace-list {
-            max-height: 170px;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-    }
-
     .stack-trace-list > li > .stack-trace-item.-all {
         display: none;
     }
