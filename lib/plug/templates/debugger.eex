@@ -407,6 +407,10 @@ monospace_font = "menlo, consolas, monospace"
         padding-left: 8px;
         line-height: 1.9;
         font-size: <%= :math.pow(1.2, -1) %>em;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     .stack-trace-heading > label > input {
