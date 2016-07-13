@@ -40,6 +40,19 @@ defmodule Plug.DebuggerTest do
     end
   end
 
+  defmodule StyledRouter do
+    use Plug.Router
+    use Plug.Debugger, style: [primary: "#c0ffee", logo: nil]
+
+    plug :match
+    plug :dispatch
+
+    get "/boom" do
+      _ = conn
+      raise "oops"
+    end
+  end
+
   test "call/2 is overridden" do
     conn = conn(:get, "/boom")
 
@@ -226,6 +239,16 @@ defmodule Plug.DebuggerTest do
     conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
     file = Path.expand(GenServer.__info__(:compile)[:source])
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=10000"
+  end
+
+  test "styles can be overridden" do
+    conn = conn(:get, "/boom")
+    assert_raise RuntimeError, fn ->
+      StyledRouter.call(conn, [])
+    end
+    {_status, _headers, body} = sent_resp(conn)
+    assert body =~ "color: #c0ffee"
+    refute body =~ ~r(\.exception-logo {\s*position: absolute)
   end
 
   test "stacktrace from otp_app" do
