@@ -173,17 +173,11 @@ defmodule Plug.Debugger do
     params  = maybe_fetch_query_params(conn)
     {title, message} = info(kind, reason)
     conn = put_resp_content_type(conn, "text/html")
+    style = Enum.into(opts[:style] || [], @default_style)
     send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
                                      title: title, message: message,
                                      session: session, params: params,
-                                     style: style_options(opts))
-  end
-
-  defp style_options(opts) do
-    case opts[:style] do
-      nil -> @default_style
-      style -> Enum.into(style, @default_style)
-    end
+                                     style: style)
   end
 
   defp maybe_fetch_session(conn) do
