@@ -97,7 +97,6 @@
         background-repeat: no-repeat;
         margin-bottom: 16px;
     }
-    <% end %>
 
     @media (max-width: 768px) {
         .exception-logo {
@@ -115,6 +114,7 @@
             display: none;
         }
     }
+    <% end %>
 
     /*
      * Exception info
@@ -606,7 +606,9 @@
 </head>
 <body>
     <div class="top-details">
+        <%= if @style.logo do %>
         <aside class="exception-logo"></aside>
+        <% end %>
 
         <header class="exception-info">
             <% [headline | details] = String.split(@message, "\n\n") %>
