@@ -461,8 +461,18 @@ monospace_font = "menlo, consolas, monospace"
         white-space: nowrap;
     }
 
-    .stack-trace-item:hover {
-        background-color: rgba(255, 255, 255, 0.5);
+    .stack-trace-item:hover,
+    .stack-trace-item:focus {
+        background-color: rgba(80, 100, 140, 0.05);
+    }
+
+    .stack-trace-item,
+    .stack-trace-item:active {
+        color: <%= text_color %>;
+    }
+
+    .stack-trace-item:active {
+        background-color: rgba(80, 100, 140, 0.1);
     }
 
     .stack-trace-item.-active {
