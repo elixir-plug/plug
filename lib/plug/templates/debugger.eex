@@ -1,810 +1,841 @@
-<!DOCTYPE html>
+<%
+accent = "#4e2a8e"
+highlight = "#f0f4fa"
+red_highlight = "#ffe5e5"
+light_accent = "#a0b0c0"
+gray = "#607080"
+line_color = "#eee"
+text_color = "#304050"
+logo_uri = "data:image/png;base64,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"
+monospace_font = "menlo, consolas, monospace"
+%><!DOCTYPE html>
 <html>
 <head>
-    <title><%= h(@title) %> at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></title>
+    <meta charset="utf-8">
+    <title><%= h @title %> at <%= h method(@conn) %> <%= h @conn.request_path %></title>
+    <meta name="viewport" content="width=device-width">
+    <style>/*! normalize.css v4.2.0 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;line-height:1.15;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block}audio:not([controls]){display:none;height:0}progress{vertical-align:baseline}template,[hidden]{display:none}a{background-color:transparent;-webkit-text-decoration-skip:objects}a:active,a:hover{outline-width:0}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:inherit}b,strong{font-weight:bolder}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background-color:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-0.25em}sup{top:-0.5em}img{border-style:none}svg:not(:root){overflow:hidden}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}figure{margin:1em 40px}hr{box-sizing:content-box;height:0;overflow:visible}button,input,optgroup,select,textarea{font:inherit;margin:0}optgroup{font-weight:bold}button,input{overflow:visible}button,select{text-transform:none}button,html [type="button"],[type="reset"],[type="submit"]{-webkit-appearance:button}button::-moz-focus-inner,[type="button"]::-moz-focus-inner,[type="reset"]::-moz-focus-inner,[type="submit"]::-moz-focus-inner{border-style:none;padding:0}button:-moz-focusring,[type="button"]:-moz-focusring,[type="reset"]:-moz-focusring,[type="submit"]:-moz-focusring{outline:1px dotted ButtonText}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}textarea{overflow:auto}[type="checkbox"],[type="radio"]{box-sizing:border-box;padding:0}[type="number"]::-webkit-inner-spin-button,[type="number"]::-webkit-outer-spin-button{height:auto}[type="search"]{-webkit-appearance:textfield;outline-offset:-2px}[type="search"]::-webkit-search-cancel-button,[type="search"]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:0.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}</style>
     <style>
-    /* Basic reset */
+    html, body, td, input {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    }
+
     * {
+        box-sizing: border-box;
+    }
+
+    html {
+        font-size: 15px;
+        line-height: 1.6;
+        background: #fff;
+        color: <%= text_color %>;
+    }
+
+    @media (max-width: 768px) {
+        html {
+             font-size: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        html {
+             font-size: 13px;
+        }
+    }
+
+    button:focus,
+    summary:focus {
+        outline: 0;
+    }
+
+    summary {
+        cursor: pointer;
+    }
+
+    pre {
+        font-family: <%= monospace_font %>;
+        overflow: auto;
+        max-width: 100%;
+    }
+
+    .top-details {
+        padding: 48px;
+        background: #f9f9fa;
+    }
+
+    .top-details,
+    .conn-info {
+        padding: 48px;
+    }
+
+
+    @media (max-width: 768px) {
+        .top-details,
+        .conn-info {
+            padding: 32px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .top-details,
+        .conn-info {
+            padding: 16px;
+        }
+    }
+
+    /*
+     * Exception logo
+     */
+
+    .exception-logo {
+        position: absolute;
+        right: 48px;
+        top: 48px;
+        pointer-events: none;
+        width: 100%;
+    }
+
+    .exception-logo:before {
+        content: '';
+        display: block;
+        height: 64px;
+        width: 100%;
+        background-size: auto 100%;
+        background-image: url("<%= logo_uri %>");
+        background-position: right 0;
+        background-repeat: no-repeat;
+        margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .exception-logo {
+            position: static;
+        }
+
+        .exception-logo:before {
+            height: 32px;
+            background-position: left 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .exception-logo {
+            display: none;
+        }
+    }
+
+    /*
+     * Exception info
+     */
+
+    /* Compensate for logo placement */
+    @media (min-width: 769px) {
+        .exception-info {
+            max-width: 90%;
+        }
+    }
+
+    .exception-info > .struct,
+    .exception-info > .title,
+    .exception-info > .detail {
         margin: 0;
         padding: 0;
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th, td {
-        vertical-align: top;
-        text-align: left;
-    }
-
-    textarea {
-        resize: none;
-    }
-
-    body {
-        font-size: 10pt;
-    }
-
-    body, td, input, textarea {
-        font-family: helvetica neue, lucida grande, sans-serif;
-        line-height: 1.5;
-        color: #333;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-
-    html {
-        background: #f0f0f5;
-    }
-
-    /* ---------------------------------------------------------------------
-     * Basic layout
-     * --------------------------------------------------------------------- */
-
-    /* Small */
-    @media screen and (max-width: 1100px) {
-        html {
-            overflow-y: scroll;
-        }
-
-        body {
-            margin: 0 20px;
-        }
-
-        header.exception {
-            margin: 0 -20px;
-        }
-
-        nav.sidebar {
-            padding: 0;
-            margin: 20px 0;
-        }
-
-        ul.frames {
-            max-height: 200px;
-            overflow: auto;
-        }
-    }
-
-    /* Wide */
-    @media screen and (min-width: 1100px) {
-        header.exception {
-           position: fixed;
-           top: 0;
-           left: 0;
-           right: 0;
-        }
-
-        nav.sidebar,
-        .conn_info {
-            position: fixed;
-            top: 95px;
-            bottom: 0;
-
-            box-sizing: border-box;
-
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        nav.sidebar {
-            width: 40%;
-            left: 20px;
-            top: 115px;
-            bottom: 20px;
-        }
-
-        .conn_info {
-            right: 0;
-            left: 40%;
-
-            padding: 20px;
-            padding-left: 10px;
-            margin-left: 30px;
-        }
-    }
-
-    nav.sidebar {
-        background: #d3d3da;
-        border-top: solid 3px #4E2A8E;
-        border-bottom: solid 3px #4E2A8E;
-        border-radius: 4px;
-        box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-    }
-
-    /* ---------------------------------------------------------------------
-     * Header
-     * --------------------------------------------------------------------- */
-
-    header.exception {
-        padding: 18px 20px;
-
-        height: 59px;
-        min-height: 59px;
-
-        overflow: hidden;
-
-        background-color: #20202a;
-        color: #aaa;
-        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
-        font-weight: 200;
-        box-shadow: inset 0 -5px 3px -3px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
-
-        -webkit-text-smoothing: antialiased;
-    }
-
-    /* Heading */
-    header.exception h2 {
-        font-weight: 200;
-        font-size: 11pt;
-        padding-bottom: 2pt;
-    }
-
-    header.exception h2,
-    header.exception p {
-        line-height: 1.4em;
-        height: 1.4em;
-        overflow: hidden;
-        white-space: pre;
-        text-overflow: ellipsis;
-    }
-
-    header.exception h2 strong {
+    .exception-info > .struct {
+        font-size: 1em;
         font-weight: 700;
-        color: #7E5ABE;
+        color: <%= accent %>;
     }
 
-    header.exception p {
-        font-weight: 200;
-        font-size: 18pt;
-        color: white;
-    }
-
-    header.exception:hover {
-        height: auto;
-        overflow-y: auto;
-        max-height: 60%;
-        z-index: 2;
-    }
-
-    header.exception:hover h2,
-    header.exception:hover p {
-        padding-right: 20px;
-        word-wrap: break-word;
-        height: auto;
-    }
-
-    @media screen and (max-width: 1100px) {
-        header.exception {
-            height: auto;
-        }
-
-        header.exception h2,
-        header.exception p {
-            padding-right: 20px;
-            overflow-y: auto;
-            word-wrap: break-word;
-            height: auto;
-            max-height: 7em;
-        }
-    }
-
-    /* ---------------------------------------------------------------------
-     * Navigation
-     * --------------------------------------------------------------------- */
-
-    nav.tabs {
-        border-bottom: solid 1px #ddd;
-
-        background-color: #eee;
-        text-align: center;
-
-        padding: 6px;
-
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-
-    nav.tabs a {
-        display: inline-block;
-
-        height: 22px;
-        line-height: 22px;
-        padding: 0 10px;
-
-        text-decoration: none;
-        font-size: 8pt;
-        font-weight: bold;
-
-        color: #999;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-
-    nav.tabs a.selected {
-        color: white;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 16px;
-        box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.1);
-        text-shadow: 0 0 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(0, 0, 0, 0.4);
-    }
-
-    /* ---------------------------------------------------------------------
-     * Sidebar
-     * --------------------------------------------------------------------- */
-
-    ul.frames {
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Each item */
-    ul.frames li {
-        background-color: #f8f8f8;
-        background: -webkit-linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        background: -moz-linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        background: linear-gradient(top, #f8f8f8 80%, #f0f0f0);
-        box-shadow: inset 0 -1px 0 #e2e2e2;
-        padding: 7px 20px;
-
-        cursor: pointer;
-        overflow: hidden;
-    }
-
-    ul.frames .name,
-    ul.frames .location {
-        overflow: hidden;
-        height: 1.5em;
-
-        white-space: nowrap;
-        word-wrap: none;
-        text-overflow: ellipsis;
-    }
-
-    ul.frames .app {
-        color: #4E2A8E;
-    }
-
-    ul.frames .location {
-        font-size: 0.85em;
+    .exception-info > .struct > small {
+        font-size: 1em;
+        color: <%= light_accent %>;
         font-weight: 400;
-        color: #999;
     }
 
-    ul.frames .line {
-        font-weight: bold;
+    /* Hide path until hover */
+    .exception-info > .struct > .path {
+        opacity: 0;
+        -webkit-transition: opacity 100ms linear;
+        transition: opacity 100ms linear;
     }
 
-    /* Selected frame */
-    ul.frames li.selected {
-        background: #88A;
-        box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.01), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    .exception-info:hover > .struct > .path {
+        opacity: 1;
     }
 
-    ul.frames li.selected .name,
-    ul.frames li.selected .function,
-    ul.frames li.selected .location {
-        color: white;
-        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    .exception-info > .title {
+        font-size: <%= :math.pow(1.2, 4) %>em;
+        line-height: 1.4;
+        font-weight: 300;
+        color: <%= accent %>;
     }
 
-    ul.frames li.selected .location {
-        opacity: 0.6;
-    }
-
-    /* Iconography */
-    ul.frames li {
-        padding-left: 60px;
-        position: relative;
-    }
-
-    ul.frames li .icon {
-        display: block;
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        border-radius: 15px;
-
-        text-align: center;
-
-        background: white;
-        border: solid 2px #ccc;
-
-        font-size: 9pt;
-        font-weight: 200;
-        font-style: normal;
-
-        position: absolute;
-        top: 14px;
-        left: 20px;
-    }
-
-    ul.frames .icon.app {
-        background: #808090;
-        border-color: #555;
-    }
-
-    ul.frames .icon.app:before {
-        content: 'A';
-        color: white;
-        text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Responsiveness -- flow to single-line mode */
-    @media screen and (max-width: 1100px) {
-        ul.frames li {
-            padding-top: 6px;
-            padding-bottom: 6px;
-            padding-left: 36px;
-            line-height: 1.3;
-        }
-
-        ul.frames li .icon {
-            width: 11px;
-            height: 11px;
-            line-height: 11px;
-
-            top: 7px;
-            left: 10px;
-            font-size: 5pt;
-        }
-
-        ul.frames .name,
-        ul.frames .location {
-            display: inline-block;
-            line-height: 1.3;
-            height: 1.3em;
-        }
-
-        ul.frames .name {
-            margin-right: 10px;
+    @media (max-width: 768px) {
+        .exception-info > .title {
+            font-size: <%= :math.pow(1.15, 4) %>em;
         }
     }
 
-    /* ---------------------------------------------------------------------
-     * Monospace
-     * --------------------------------------------------------------------- */
-
-    pre, code, textarea {
-        font-family: menlo, lucida console, monospace;
-        font-size: 8pt;
+    @media (max-width: 480px) {
+        .exception-info > .title {
+            font-size: <%= :math.pow(1.1, 4) %>em;
+        }
     }
 
-    /* ---------------------------------------------------------------------
-     * Display area
-     * --------------------------------------------------------------------- */
-
-    .trace_info {
-        background: #fff;
-        padding: 6px;
-        border-radius: 3px;
-        margin-bottom: 2px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.03), 1px 1px 0 rgba(0, 0, 0, 0.05), -1px 1px 0 rgba(0, 0, 0, 0.05), 0 0 0 4px rgba(0, 0, 0, 0.04);
+    .exception-info > .detail {
+        margin-top: 1.3em;
+        white-space: pre;
     }
 
-    /* Titlebar */
-    .trace_info .title {
-        background: #f1f1f1;
+    /*
+     * Code explorer
+     */
 
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        overflow: hidden;
-        padding: 6px 10px;
-
-        border: solid 1px #ccc;
-        border-bottom: 0;
-
-        border-top-left-radius: 2px;
-        border-top-right-radius: 2px;
+    .code-explorer {
+      margin: 32px 0 0 0;
     }
 
-    .trace_info .title .name,
-    .trace_info .title .location {
-        font-size: 9pt;
-        line-height: 26px;
-        height: 26px;
-        overflow: hidden;
+    @media (max-width: 768px) {
+        .code-explorer {
+            margin-top: 16px;
+        }
     }
 
-    .trace_info .title .location {
+    .code-explorer:after {
+        content: '';
+        display: table;
+        clear: both;
+        zoom: 1;
+    }
+
+    .code-explorer > .code-snippets {
         float: left;
-        font-weight: bold;
-        font-size: 10pt;
+        width: 45%;
     }
 
-    .trace_info .title .location a {
-        color:inherit;
-        text-decoration:none;
-        border-bottom:1px solid #aaaaaa;
-    }
-
-    .trace_info .title .location a:hover {
-        border-color:#666666;
-    }
-
-    .trace_info .title .name {
+    .code-explorer > .stack-trace {
         float: right;
-        font-weight: 200;
+        width: 55%;
+        padding-left: 32px;
     }
 
-    .code, .unavailable {
-        background: #fff;
-        padding: 5px;
+    /* Collapse to single-column */
+    @media (max-width: 960px) {
+        .code-explorer > .code-snippets {
+            float: none;
+            width: auto;
+            margin-bottom: 16px;
+        }
 
-        box-shadow: inset 3px 3px 3px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+        .code-explorer > .stack-trace {
+            float: none;
+            width: auto;
+            padding-left: 0;
+        }
     }
 
-    .code {
-        margin-bottom: -1px;
-        padding: 10px 0;
-        overflow: auto;
+    /*
+     * Snippets
+     */
+
+    .code-snippets {
     }
 
-    .code .ln {
-        width: 35px;
-        margin-right: 15px;
-        text-align: right;
-        display: inline-block;
+    /*
+     * Frame info:
+     * Holds the code (code-block) and more
+     */
+
+    .frame-info {
+        background: white;
+        box-shadow:
+            0 1px 3px rgba(80, 100, 140, .1),
+            0 8px 15px rgba(80, 100, 140, .05);
     }
 
-    .code .no_snippet {
-        padding: 5px 15px 2px;
-        font-size: 9pt;
+    .frame-info > .meta,
+    .frame-info > .file {
+        padding: 12px 16px;
+        white-space: no-wrap;
+        font-size: <%= :math.pow(1.2, -1) %>em;
     }
 
-    /* Source unavailable */
-    p.unavailable {
-        padding: 20px 0 40px 0;
-        text-align: center;
-        color: #b99;
-        font-weight: bold;
+    @media (max-width: 480px) {
+        .frame-info > .meta,
+        .frame-info > .file {
+            padding: 6px 16px;
+            font-size: <%= :math.pow(1.1, -1) %>em;
+        }
     }
 
-    p.unavailable:before {
-        content: '\00d7';
+    .frame-info > .file > a {
+        text-decoration: none;
+        color: <%= text_color %>;
+        font-weight: 700;
+    }
+
+    .frame-info > .code {
+        border-top: solid 1px <%= line_color %>;
+        border-bottom: solid 1px <%= line_color %>;
+    }
+
+    /* Hiding */
+    .frame-info {
+        display: none;
+    }
+
+    .frame-info.-active {
         display: block;
-        color: #daa;
+    }
+
+    .frame-info > details.meta {
+        padding: 0;
+    }
+
+    .frame-info > details.meta > summary {
+        padding: 12px 16px;
+    }
+
+    /*
+     * Frame details
+     */
+
+    .frame-summary.-short {
+        color: <%= light_accent %>;
+    }
+
+    .frame-summary > .app {
+        color: <%= accent %>;
+        font-weight: 700;
+    }
+
+    .frame-summary > .app:after {
+        content: '·';
+        margin: 0 .2em;
+    }
+
+    /*
+     * Code block:
+     * The `pre` that holds the code
+     */
+
+    .code-block {
+        margin: 0;
+        padding: 12px 0;
+        font-size: .8em;
+        line-height: 1.4;
+        white-space: normal;
+    }
+
+    .code-block > .line {
+        white-space: pre;
+        display: block;
+        padding: 0 16px;
+    }
+
+    /* Line highlight */
+    .code-block > .line.-highlight {
+        background-color: <%= highlight %>;
+        -webkit-animation: line-highlight 750ms linear;
+        animation: line-highlight 750ms linear;
+    }
+
+    @-webkit-keyframes line-highlight {
+        0% { background-color: <%= highlight %>; }
+        25% { background-color: <%= red_highlight %>; }
+        50% { background-color: <%= highlight %>; }
+        75% { background-color: <%= red_highlight %>; }
+    }
+
+    @keyframes line-highlight {
+        0% { background-color: <%= highlight %>; }
+        25% { background-color: <%= red_highlight %>; }
+        50% { background-color: <%= highlight %>; }
+        75% { background-color: <%= red_highlight %>; }
+    }
+
+    .code-block > .line > .ln {
+        color: <%= light_accent %>;
+        margin-right: 1.5em;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .code-block > .line > .code {
+        font-family: <%= monospace_font %>;
+    }
+
+    /*
+     * Empty code
+     */
+
+    .code-block-empty {
         text-align: center;
-        font-size: 40pt;
-        font-weight: normal;
-        margin-bottom: -10px;
+        color: <%= light_accent %>;
+        padding-top: 48px;
+        padding-bottom: 48px;
     }
 
-    @-webkit-keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
-    }
-    @-moz-keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
-    }
-    @keyframes highlight {
-        0%   { background: rgba(220, 30, 30, 0.3); }
-        100% { background: rgba(220, 30, 30, 0.1); }
+    /*
+     * Stack trace heading
+     */
+
+    .stack-trace-heading {
+        padding-top: 8px;
     }
 
-    .code .highlight {
-        background: rgba(220, 30, 30, 0.1);
-        -webkit-animation: highlight 400ms linear 1;
-        -moz-animation: highlight 400ms linear 1;
-        animation: highlight 400ms linear 1;
-    }
-
-    /* ---------------------------------------------------------------------
-     * Variable infos
-     * --------------------------------------------------------------------- */
-
-    .sub {
-        padding: 10px 0;
-        margin: 10px 0;
-    }
-
-    .sub:before {
+    .stack-trace-heading:after {
         content: '';
         display: block;
+        clear: both;
+        zoom: 1;
+        border-bottom: solid 1px <%= line_color %>;
+        padding-top: 12px;
+        margin-bottom: 16px;
+    }
+
+    .stack-trace-heading > h3 {
+        display: none;
+    }
+
+    .stack-trace-heading > label {
+        display: block;
+        padding-left: 8px;
+        line-height: 1.9;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .stack-trace-heading > label > input {
+        margin-right: .3em;
+    }
+
+    @media (max-width: 480px) {
+        .stack-trace-heading > label {
+            font-size: <%= :math.pow(1.1, -1) %>em;
+        }
+    }
+
+    /*
+     * Stack trace
+     */
+
+    .stack-trace-list,
+    .stack-trace-list > li {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+    }
+
+    .stack-trace-list > li > .stack-trace-item.-all {
+        display: none;
+    }
+
+    .stack-trace-list.-show-all > li > .stack-trace-item.-all {
+        display: block;
+    }
+
+    /*
+     * Stack trace item:
+     * The clickable line to inspect a stack trace
+     */
+
+    .stack-trace-item {
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        display: block;
         width: 100%;
-        height: 4px;
-
-        border-radius: 2px;
-        background: rgba(0, 150, 200, 0.05);
-        box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(0, 0, 0, 0.04), inset 2px 2px 2px rgba(0, 0, 0, 0.07);
+        border: 0;
+        margin: 0;
+        padding: 4px 8px;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
     }
 
-    .sub h3 {
-        color: #4E2A8E;
-        font-size: 1.1em;
-        margin: 10px 0;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-
-        -webkit-font-smoothing: antialiased;
+    .stack-trace-item:hover,
+    .stack-trace-item:focus {
+        background-color: rgba(80, 100, 140, 0.05);
     }
 
-    .sub .inset {
-        overflow-y: auto;
+    .stack-trace-item,
+    .stack-trace-item:active {
+        color: <%= text_color %>;
     }
 
-    .sub table {
-        table-layout: fixed;
+    .stack-trace-item:active {
+        background-color: rgba(80, 100, 140, 0.1);
     }
 
-    .sub table td {
-        border-top: dotted 1px #ddd;
-        padding: 7px 1px;
+    .stack-trace-item.-active {
+        background-color: white;
     }
 
-    .sub table td.name {
-        width: 150px;
-
-        font-weight: bold;
-        font-size: 0.8em;
-        padding-right: 20px;
-
-        word-wrap: break-word;
+    /* Circle */
+    .stack-trace-item > .left:before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: <%= light_accent %>;
+        border-radius: 50%;
+        margin-right: 8px;
     }
 
-    .sub table td pre {
-        max-height: 15em;
-        overflow-y: auto;
+    .stack-trace-item.-app > .left:before {
+        background: <%= accent %>;
+        opacity: 1;
     }
 
-    .sub table td pre {
-        width: 100%;
+    .stack-trace-item.-app > .left > .app {
+        display: none;
+    }
 
+    .stack-trace-item > .left {
+        float: left;
+        max-width: 55%;
+    }
+
+    .stack-trace-item > .info {
+        color: <%= gray %>;
+        float: right;
+        max-width: 45%;
+    }
+
+    .stack-trace-item > .left,
+    .stack-trace-item > .info {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stack-trace-item > .left > .filename > .line {
+        color: <%= light_accent %>;
+    }
+
+    /* App name */
+    .stack-trace-item > .left > .app {
+        color: <%= light_accent %>;
+    }
+
+    .stack-trace-item > .left > .app:after {
+        content: '·';
+        margin: 0 .2em;
+    }
+
+    /*
+     * Code as a blockquote:
+     * Like `pre` but with wrapping
+     */
+
+    .code-quote {
+        font-family: <%= monospace_font %>;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        margin: 0;
+        overflow: auto;
+        max-width: 100%;
         word-wrap: break-word;
         white-space: normal;
     }
 
-    /* "(object doesn't support inspect)" */
-    .sub .unsupported {
-      font-family: sans-serif;
-      color: #777;
+    .code-quote.-padded {
+        padding: 0 16px 16px 16px;
     }
 
-    /* ---------------------------------------------------------------------
-     * Scrollbar
-     * --------------------------------------------------------------------- */
+    /*
+     * Conn info
+     */
 
-    nav.sidebar::-webkit-scrollbar,
-    .inset pre::-webkit-scrollbar,
-    .code::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
+    .conn-info {
+        border-top: solid 1px <%= line_color %>;
     }
 
-    .inset pre::-webkit-scrollbar-thumb,
-    .code::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 5px;
+    /*
+     * Conn details
+     */
+
+    .conn-details {
     }
 
-    nav.sidebar::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.0);
-        border-radius: 5px;
+    .conn-details + .conn-details {
+        margin-top: 16px;
     }
 
-    nav.sidebar:hover::-webkit-scrollbar-thumb {
-        background-color: #999;
-        background: -webkit-linear-gradient(left, #aaa, #999);
+    .conn-details > summary {
     }
 
-    .code:hover::-webkit-scrollbar-thumb {
-        background: #888;
+    .conn-details > dl {
+        display: block;
+        overflow: hidden;
+        margin: 0;
+        padding: 4px 0;
+        border-bottom: solid 1px <%= line_color %>;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .conn-details > dl:first-of-type {
+        margin-top: 16px;
+        border-top: solid 1px <%= line_color %>;
+    }
+
+    /* Term */
+    .conn-details > dl > dt {
+        width: 20%;
+        float: left;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        color: <%= gray %>;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        position: relative;
+        top: -1px; /* Compensate for font metrics */
+    }
+
+    /* Definition */
+    .conn-details > dl > dd {
+        width: 80%;
+        float: left;
+    }
+
+    @media (max-width: 480px) {
+        .conn-details > dl > dt {
+            font-size: <%= :math.pow(1.1, -1) %>em;
+        }
     }
     </style>
 </head>
 <body>
-    <div class="top">
-        <header class="exception">
-            <h2><strong><%= h(@title) %></strong> <span>at <%= h(method(@conn)) %> <%= h(@conn.request_path) %></span></h2>
-            <p><%= h(@message) %></p>
+    <div class="top-details">
+        <aside class="exception-logo"></aside>
+
+        <header class="exception-info">
+            <% [headline | details] = String.split(@message, "\n\n") %>
+            <h5 class="struct">
+                <%= h @title %>
+                <small>at <%= h method(@conn) %></small>
+                <small class="path"><%= h @conn.request_path %></small>
+            </h5>
+            <h1 class="title"><%= h headline %></h1>
+            <%= for detail <- details do %>
+            <p class="detail"><%= h detail %></p>
+            <% end %>
         </header>
-    </div>
 
-    <section class="backtrace">
-        <nav class="sidebar">
-            <nav class="tabs">
-                <a href="#" id="app_frames">App frames</a>
-                <a href="#" id="all_frames">All frames</a>
-            </nav>
-            <ul class="frames">
+        <div class="code-explorer">
+            <div class="code-snippets">
                 <%= for frame <- @frames do %>
-                    <li class="<%= frame.context %>" style="display: none" data-context="<%= frame.context %>" data-index="<%= frame.index %>">
-                        <span class="stroke"></span>
-                        <i class="icon <%= frame.context %>"></i>
-                        <div class="info">
-                            <div class="name">
-                                <strong><%= h(frame.info) %></strong>
+                  <div class="frame-info" data-index="<%= frame.index %>" role="stack-trace-details">
+                    <div class="file">
+                        <a href="<%= frame.link %>"><%= h frame.file %></a>
+                    </div>
 
-                                <%= if app = frame.app do %>
-                                    <span class="app">(<%= h(app) %>)</span>
-                                <% end %>
-                            </div>
-                            <div class="location">
-                                <span class="filename"><%= frame.file %></span>
-                                <%= if frame.line do %>
-                                  (line <span class="line"><%= frame.line %></span>)
-                                <% end %>
-                            </div>
-                        </div>
-                    </li>
-                <% end %>
-            </ul>
-        </nav>
+                    <%= if (snippet = frame.snippet) && snippet != [] do %>
+<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.rstrip(line) %></span></span>
+<% end %></pre>
+                    <% else %>
+                    <div class="code code-block-empty">No code available.</div>
+                    <% end %>
 
-        <div class="conn_info">
-            <%= for frame <- @frames do %>
-                <div class="frame_info" id="frame_info_<%= frame.index %>" style="display: none;">
-                    <header class="trace_info">
-                        <div class="title">
-                            <h2 class="name">
-                              <%= h(frame.info) %>
-
-                              <%= if app = frame.app do %>
-                                  <span class="app">(<%= h(app) %>)</span>
-                              <% end %>
-                            </h2>
-                            <div class="location"><span class="filename"><a href="<%= frame.link %>"><%= frame.file %></a></span></div>
-                        </div>
-
-                        <div class="code">
-                          <%= if snippet = frame.snippet do %>
-                            <%= for {index, line, highlight} <- snippet do %>
-                              <pre class="<%= if highlight, do: "highlight" %>"><span class="ln"><%= index %></span><span><%= line %></span></pre>
+                    <%= if frame.args != [] do %>
+                    <details class="meta">
+                        <summary class="frame-summary">
+                            <%= if app = frame.app do %>
+                            <span class="app"><%= h app %></span>
                             <% end %>
-                          <% else %>
-                            <p class="no_snippet">No code snippets available.</p>
-                          <% end %>
-                        </div>
-                    </header>
-
-                    <div class="sub">
-                        <h3>Frame</h3>
-                        <div class="inset variables">
-                            <table class="var_table">
-                                <tr>
-                                    <td class="name">Function</td>
-                                    <td><%= h(frame.info) %> (<%= h(frame.app) %>)</td>
-                                </tr>
-                                <%= if frame.args != [] do %>
-                                    <tr>
-                                        <td class="name">Args</td>
-                                        <td><%= h(inspect frame.args) %></td>
-                                    </tr>
-                                <% end %>
-                            </table>
+                            <%= h frame.info %>
+                        </summary>
+                        <blockquote class="code-quote -padded"><%= h inspect(frame.args) %></blockquote>
+                    </details>
+                    <% else %>
+                    <div class="meta">
+                        <div class="frame-summary -short">
+                            <%= if app = frame.app do %>
+                            <span class="app"><%= h app %></span>
+                            <% end %>
+                            <%= h frame.info %>
                         </div>
                     </div>
+                    <% end %>
                 </div>
-
-            <% end %>
-
-            <div class="sub">
-                <h3>Request info</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <tr>
-                            <td class="name">URI</td>
-                            <td><%= h(url(@conn)) %></td>
-                        </tr>
-                        <tr>
-                            <td class="name">Query String</td>
-                            <td><%= h(@conn.query_string) %></td>
-                        </tr>
-                        <tr>
-                            <td class="name">Peer</td>
-                            <td><%= h(peer(@conn)) %></td>
-                        </tr>
-                    </table>
-                </div>
+                <% end %>
             </div>
 
-            <div class="sub">
-                <h3>Headers</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><%= h(inspect value) %></td>
-                            </tr>
-                        <% end %>
-                    </table>
+            <div class="stack-trace">
+                <div class="stack-trace-heading">
+                    <label><input type="checkbox" role="show-all-toggle"> Show all frames</label>
                 </div>
-            </div>
 
-            <%= if @params do %>
-            <div class="sub">
-                <h3>Params</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- @params do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><pre><%= h(inspect value) %></pre></td>
-                            </tr>
-                        <% end %>
-                    </table>
-                </div>
-            </div>
-            <% end %>
+                <ul class="stack-trace-list" role="stack-trace-list">
+                    <%= for frame <- @frames do %>
+                    <li>
+                        <button class="stack-trace-item -<%= frame.context %>" role="stack-trace-item" data-index="<%= frame.index %>">
+                            <span class="left">
+                                <%= if app = frame.app do %>
+                                <span class="app"><%= h app %></span>
+                                <% end %>
 
-            <%= if @session do %>
-            <div class="sub">
-                <h3>Session</h3>
-                <div class="inset variables">
-                    <table class="var_table">
-                        <%= for {key, value} <- @session do %>
-                            <tr>
-                                <td class="name"><%= h(key) %></td>
-                                <td><pre><%= h(inspect value) %></pre></td>
-                            </tr>
-                        <% end %>
-                    </table>
-                </div>
+                                <span class="filename">
+                                    <%= h frame.file %><%= if frame.line do %><span class="line">:<%= h frame.line %></span><% end %>
+                                </span>
+                            </span>
+
+                            <span class="info"><%= h frame.info %></span>
+                        </button>
+                    </li>
+                    <% end %>
+                </ul>
             </div>
-            <% end %>
         </div>
-    </section>
+    </div>
+
+    <div class="conn-info">
+        <%= if @params && @params != %{} do %>
+        <details class="conn-details" open>
+            <summary>Params</summary>
+            <%= for {key, value} <- @params do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd><pre><%= h inspect(value) %></pre></dd>
+            </dl>
+            <% end %>
+        </details>
+        <% end %>
+
+        <details class="conn-details">
+            <summary>Request info</summary>
+
+            <dl>
+                <dt>URI:</dt>
+                <dd class="code-quote"><%= h url(@conn) %></dd>
+            </dl>
+
+            <dl>
+                <dt>Query string:</dt>
+                <dd class="code-quote"><%= h @conn.query_string %></dd>
+            </dl>
+
+            <dl>
+                <dt>Peer:</dt>
+                <dd class="code-quote"><%= h peer(@conn) %></dd>
+            </dl>
+        </details>
+
+        <details class="conn-details">
+            <summary>Headers</summary>
+            <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd class="code-quote"><%= h value %></dd>
+            </dl>
+            <% end %>
+        </details>
+
+        <%= if @session && @session != %{} do %>
+        <details class="conn-details">
+            <summary>Session</summary>
+            <%= for {key, value} <- @session do %>
+            <dl>
+                <dt><%= h key %></dt>
+                <dd><pre><%= h inspect(value) %></pre></dd>
+            </dl>
+            <% end %>
+        </details>
+        <% end %>
+    </div>
+
+    <script>(function () {
+        var $items = document.querySelectorAll('[role~="stack-trace-item"]')
+        var $toggle = document.querySelector('[role~="show-all-toggle"]')
+        var $list = document.querySelector('[role~="stack-trace-list"]')
+
+        each($items, function ($item) {
+            on($item, 'click', itemOnclick)
+        })
+
+        on($toggle, 'click', toggleOnclick)
+
+        // Auto-check "show all" if there are no app frames.
+        if (document.querySelectorAll('[role~="stack-trace-list"] .-app').length === 0) {
+            $toggle.checked = true
+            toggleOnclick.call($toggle)
+        }
+
+        function toggleOnclick () {
+            if (this.checked) {
+                addClass($list, '-show-all')
+            } else {
+                removeClass($list, '-show-all')
+            }
+        }
+
+        function itemOnclick () {
+            var idx = this.getAttribute('data-index')
+            console.log(idx)
+
+            var $detail = document.querySelector('[role~="stack-trace-details"].-active')
+            if ($detail) removeClass($detail, '-active')
+
+            $detail = document.querySelector('[role~="stack-trace-details"][data-index="' + idx + '"]')
+            if ($detail) addClass($detail, '-active')
+
+            var $item = document.querySelector('[role~="stack-trace-item"].-active')
+            if ($item) removeClass($item, '-active')
+
+            $item = document.querySelector('[role~="stack-trace-item"][data-index="' + idx + '"]')
+            if ($item) addClass($item, '-active')
+        }
+
+        var $first =
+          document.querySelector('[role~="stack-trace-item"].-app:first-of-type') ||
+          document.querySelector('[role~="stack-trace-item"]:first-of-type')
+
+        if ($first) itemOnclick.call($first)
+
+        /*
+         * Helpers
+         */
+
+        function each (list, fn) {
+            for (var i = 0, len = list.length; i < len; i++) {
+                var item = list[i]
+                fn(item)
+            }
+        }
+
+        function addClass (el, className) {
+            if (el.classList) {
+                el.classList.add(className)
+            } else {
+                el.className += ' ' + className
+            }
+        }
+
+        function removeClass (el, className) {
+            if (el.classList) {
+                el.classList.remove(className)
+            } else {
+                var expr = new RegExp('(^|\\b)' + className.split(' ').join('|') + '(\\b|$)', 'gi')
+                el.className = el.className.replace(expr, ' ')
+            }
+        }
+
+        function on (el, event, handler) {
+            if (el.addEventListener) {
+                el.addEventListener(event, handler)
+            } else {
+                el.attachEvent('on' + event, function () {
+                    handler.call(el)
+                })
+            }
+        }
+    }())</script>
 </body>
-<script>
-
-var previousFrame = null;
-var previousFrameInfo = null;
-var allFrames = document.querySelectorAll("ul.frames li");
-var allFrameInfos = document.querySelectorAll(".frame_info");
-
-for(var i = 0; i < allFrames.length; i++) {
-    (function(i, el) {
-        var el = allFrames[i];
-        el.onclick = function() {
-            if(previousFrame) previousFrame.className = "";
-            el.className = "selected";
-            previousFrame = el;
-            selectFrameInfo(el.attributes["data-index"].value);
-        };
-    })(i);
-};
-
-function selectFrameInfo(index) {
-    var el = allFrameInfos[index];
-     if(previousFrameInfo) previousFrameInfo.style.display = "none";
-     previousFrameInfo = el;
-     el.style.display = "block";
-};
-
-(
-  document.querySelector(".frames li.app") ||
-  document.querySelector(".frames li")
-).onclick();
-
-var appFramesButton = document.getElementById("app_frames");
-var allFramesButton = document.getElementById("all_frames");
-
-appFramesButton.onclick = function() {
-    allFramesButton.className = "";
-    appFramesButton.className = "selected";
-    for(var i = 0; i < allFrames.length; i++) {
-        if(allFrames[i].attributes["data-context"].value == "app") {
-            allFrames[i].style.display = "block";
-            allFrames[i].setAttribute("data-display", "block");
-        } else {
-            allFrames[i].style.display = "none";
-            allFrames[i].setAttribute("data-display", "none");
-        };
-    };
-    return false;
-};
-
-allFramesButton.onclick = function() {
-    appFramesButton.className = "";
-    allFramesButton.className = "selected";
-    for(var i = 0; i < allFrames.length; i++) {
-        allFrames[i].style.display = "block";
-        allFrames[i].setAttribute("data-display", "block");
-    };
-    return false;
-};
-
-appFramesButton.onclick();
-if(document.querySelectorAll("ul.frames li[data-display=\"block\"]").length == 0) {
-    allFramesButton.onclick();
-}
-</script>
 </html>

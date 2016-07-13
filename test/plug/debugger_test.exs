@@ -135,8 +135,8 @@ defmodule Plug.DebuggerTest do
       raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
     end)
 
-    assert conn.resp_body =~ "<strong>Plug.Parsers.UnsupportedMediaTypeError</strong>"
-    assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError at GET /"
+    assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError"
+    assert conn.resp_body =~ "at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
   end
 
@@ -152,7 +152,7 @@ defmodule Plug.DebuggerTest do
   test "shows request info" do
     conn = render(conn(:get, "/foo/bar?baz=bat"), [], fn -> raise "oops" end)
 
-    assert conn.resp_body =~ "<h3>Request info</h3>"
+    assert conn.resp_body =~ "<summary>Request info</summary>"
     assert conn.resp_body =~ "http://www.example.com:80/foo/bar"
     assert conn.resp_body =~ "baz=bat"
     assert conn.resp_body =~ "127.0.0.1:111317"
@@ -164,7 +164,7 @@ defmodule Plug.DebuggerTest do
       |> put_req_header("my-header", "my-value")
       |> render([], fn -> raise "oops" end)
 
-    assert conn.resp_body =~ "<h3>Headers</h3>"
+    assert conn.resp_body =~ "<summary>Headers</summary>"
     assert conn.resp_body =~ "my-header"
     assert conn.resp_body =~ "my-value"
   end
@@ -175,7 +175,7 @@ defmodule Plug.DebuggerTest do
       |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
       |> render([], fn -> raise "oops" end)
 
-    assert conn.resp_body =~ "<h3>Params</h3>"
+    assert conn.resp_body =~ "<summary>Params</summary>"
     assert conn.resp_body =~ "from-qs-key"
     assert conn.resp_body =~ "from-qs-value"
     assert conn.resp_body =~ "from-body-key"
@@ -192,7 +192,7 @@ defmodule Plug.DebuggerTest do
       |> Plug.Session.call(Plug.Session.init(store: Plug.ProcessStore, key: "foobar"))
       |> render([], fn -> raise "oops" end)
 
-    assert conn.resp_body =~ "<h3>Session</h3>"
+    assert conn.resp_body =~ "<summary>Session</summary>"
     assert conn.resp_body =~ "session_key"
     assert conn.resp_body =~ "session_value"
   end
@@ -230,38 +230,35 @@ defmodule Plug.DebuggerTest do
 
   test "stacktrace from otp_app" do
     conn = stack [{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}]
-    assert conn.resp_body =~ "data-context=\"app\""
-    assert conn.resp_body =~ "<strong>Plug.Conn.unknown/1</strong>"
-    assert conn.resp_body =~ "<span class=\"filename\">lib/plug/conn.ex</span>"
-    assert conn.resp_body =~ "(line <span class=\"line\">1</span>)"
-    assert conn.resp_body =~ "<span class=\"app\">(plug)</span>"
+    assert conn.resp_body =~ "Plug.Conn.unknown/1"
+    assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
+    assert conn.resp_body =~ "<span class=\"line\">:1</span>"
+    assert conn.resp_body =~ "<span class=\"app\">plug</span>"
     assert conn.resp_body =~ "<span class=\"ln\">1</span>"
-    assert conn.resp_body =~ "<span>defmodule Plug.Conn do\n</span>"
+    assert conn.resp_body =~ "<span class=\"code\">defmodule Plug.Conn do</span>"
   end
 
   test "stacktrace from elixir" do
     conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
-    assert conn.resp_body =~ "data-context=\"all\""
-    assert conn.resp_body =~ "<strong>GenServer.call/2</strong>"
-    assert conn.resp_body =~ "(line <span class=\"line\">10000</span>)"
-    assert conn.resp_body =~ "<span class=\"filename\">lib/gen_server.ex</span>"
+    assert conn.resp_body =~ "<span class=\"info\">GenServer.call/2</span>"
+    assert conn.resp_body =~ "<span class=\"line\">:10000</span>"
+    assert conn.resp_body =~ "lib/gen_server.ex"
   end
 
   test "stacktrace from test" do
     conn = stack [{__MODULE__, :unknown, 1,
                    file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
 
-    assert conn.resp_body =~ "data-context=\"all\""
-    assert conn.resp_body =~ "<strong>Plug.DebuggerTest.unknown/1</strong>"
-    assert conn.resp_body =~ "<span class=\"filename\">test/plug/debugger_test.exs</span>"
+    assert conn.resp_body =~ "<span class=\"info\">Plug.DebuggerTest.unknown/1</span>"
+    assert conn.resp_body =~ ~r(<span class=\"filename\">\s*test/plug/debugger_test.exs)
     assert conn.resp_body =~ "Path.relative_to_cwd(__ENV__.file)"
-    refute conn.resp_body =~ "<span class=\"app\">(plug)</span>"
+    refute conn.resp_body =~ "<span class=\"app\">plug</span>"
   end
 
   # This should always be the last test as we are checking for end of line.
   test "stacktrace at the end of file" do
     conn = stack [{__MODULE__, :unknown, 1,
                    file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
-    assert conn.resp_body =~ "<span>end\n</span>"
+    assert conn.resp_body =~ "<span class=\"code\">  end</span>"
   end
 end
