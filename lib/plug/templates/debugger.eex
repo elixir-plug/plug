@@ -623,7 +623,7 @@ monospace_font = "menlo, consolas, monospace"
                         <a href="<%= frame.link %>"><%= h frame.file %></a>
                     </div>
 
-                    <%= if snippet = frame.snippet do %>
+                    <%= if (snippet = frame.snippet) && snippet != [] do %>
 <pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.rstrip(line) %></span></span>
 <% end %></pre>
                     <% else %>
