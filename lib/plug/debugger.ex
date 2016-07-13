@@ -59,6 +59,23 @@ defmodule Plug.Debugger do
   ## Options
 
     * `:otp_app` - same as in `wrap/3`
+    * `:style` - custom styles (see below)
+
+  ## Custom styles
+
+  You may pass a `:style` option to customize the look of the HTML page.
+
+      use Plug.Debugger, style:
+        [primary: "#c0392b", logo: "data:image/png;base64,..."]
+
+  The following keys are available:
+
+    * `:primary` - primary color
+    * `:accent` - accent color
+    * `:logo` - logo URI, or `nil` to disable
+
+  The `:logo` is preferred to be a base64-encoded data URI so not to make any
+  external requests, though external URLs (eg, `https://...`) are supported.
 
   ## Links to the text editor
 
