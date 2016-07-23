@@ -181,7 +181,7 @@ defmodule Plug.Conn.Query do
 
   # covers keyword lists
   defp encode_pair(parent_field, list, encoder) when is_list(list) and is_tuple(hd(list)) do
-    encode_kv(Enum.uniq(list, &elem(&1, 0)), parent_field, encoder)
+    encode_kv(Enum.uniq_by(list, &elem(&1, 0)), parent_field, encoder)
   end
 
   # covers non-keyword lists
