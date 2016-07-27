@@ -71,7 +71,7 @@ defmodule Plug.Builder do
         plug Plug.Logger
         plug Plug.Head
 
-        def call(conn, _opts) do
+        def call(conn, opts) do
           super(conn, opts) # calls Plug.Logger and Plug.Head
           assign(conn, :called_all_plugs, true)
         end
