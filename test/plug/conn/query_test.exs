@@ -133,6 +133,18 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{filter: [], foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
   end
 
+  test "encode raises when there's a map with 0 or >1 elems in a list" do
+    message = ~r/cannot encode maps inside lists/
+
+    assert_raise ArgumentError, message, fn ->
+      encode(%{foo: [%{a: 1, b: 2}]})
+    end
+
+    assert_raise ArgumentError, message, fn ->
+      encode(%{foo: [%{valid: :map}, %{}]})
+    end
+  end
+
   test "raise plug exception on bad www-form" do
     assert_raise Plug.Conn.InvalidQueryError, fn ->
       decode("_utf8=%R2%9P%93")
