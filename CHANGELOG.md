@@ -1,6 +1,6 @@
 ## Changelog
 
-## v1.2.0-rc.0
+## v1.2.0
 
 * Enhancements
   * Introduce new error page
