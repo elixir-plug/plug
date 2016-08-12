@@ -58,7 +58,8 @@ defmodule Plug.Debugger do
 
   ## Options
 
-    * `:otp_app` - same as in `wrap/3`
+    * `:otp_app` - the OTP application that is using Plug. This option is used
+      to filter stacktraces that belong only to the given application.
     * `:style` - custom styles (see below)
 
   ## Custom styles
