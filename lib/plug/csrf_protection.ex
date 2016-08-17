@@ -91,7 +91,7 @@ defmodule Plug.CSRFProtection do
   Gets the CSRF token.
 
   Generates a token and stores it in the process
-  dictionary if one does not exists.
+  dictionary if one does not exist.
   """
   def get_csrf_token do
     if token = Process.get(:plug_masked_csrf_token) do
