@@ -24,7 +24,7 @@ defmodule Plug.Crypto.MessageVerifier do
   end
 
   @doc """
-  Decodes and verifies the encoded binary was not tampared with.
+  Decodes and verifies the encoded binary was not tampered with.
   """
   def verify(signed, secret)
       when is_binary(signed) and is_binary(secret) do
