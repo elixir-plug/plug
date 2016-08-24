@@ -35,7 +35,8 @@ defmodule Plug.SSL do
     * `:expires` - seconds to expires for HSTS, defaults to 31536000 (a year).
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to false.
-    * `:host` - a new host to redirect to if the request's scheme is `http`.
+    * `:host` - a new host to redirect to if the request's scheme is `http`,
+      defaults to `conn.host`.
 
   ## Port
 
