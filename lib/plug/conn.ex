@@ -482,6 +482,9 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent`.
+
+  When using `Plug.Adapters.Test.Conn`, raises a `Plug.Conn.InvalidHeaderError`
+  if the header key is not lowercase.
   """
   @spec put_req_header(t, binary, binary) :: t
   def put_req_header(%Conn{state: :sent}, _key, _value) do
@@ -551,6 +554,12 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent`.
+
+  When using `Plug.Adapters.Test.Conn`, raises a `Plug.Conn.InvalidHeaderError`
+  if the header key is not lowercase.
+
+  Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
+  feed (\r) or newline (\n) characters.
   """
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{state: :sent}, _key, _value) do
