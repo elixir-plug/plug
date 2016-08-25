@@ -14,22 +14,22 @@ defmodule Plug.Conn do
 
   These fields contain request information:
 
-  * `host` - the requested host as a binary, example: `"www.example.com"`
-  * `method` - the request method as a binary, example: `"GET"`
-  * `path_info` - the path split into segments, example: `["hello", "world"]`
-  * `script_name` - the initial portion of the URL's path that corresponds to the application
-    routing, as segments, example: ["sub","app"].
-  * `request_path` - the requested path, example: `/trailing/and//double//slashes/`
-  * `port` - the requested port as an integer, example: `80`
-  * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
-    is not the actual IP and port of the client, but rather of a load-balancer or request-router.
-  * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
-    be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
-    protocol. It defaults to peer's IP.
-  * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`.
-    Note all headers will be downcased.
-  * `scheme` - the request scheme as an atom, example: `:http`
-  * `query_string` - the request query string as a binary, example: `"foo=bar"`
+    * `host` - the requested host as a binary, example: `"www.example.com"`
+    * `method` - the request method as a binary, example: `"GET"`
+    * `path_info` - the path split into segments, example: `["hello", "world"]`
+    * `script_name` - the initial portion of the URL's path that corresponds to the application
+      routing, as segments, example: ["sub","app"].
+    * `request_path` - the requested path, example: `/trailing/and//double//slashes/`
+    * `port` - the requested port as an integer, example: `80`
+    * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
+      is not the actual IP and port of the client, but rather of a load-balancer or request-router.
+    * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
+      be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
+      protocol. It defaults to peer's IP.
+    * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`.
+      Note all headers will be downcased.
+    * `scheme` - the request scheme as an atom, example: `:http`
+    * `query_string` - the request query string as a binary, example: `"foo=bar"`
 
   ## Fetchable fields
 
@@ -40,23 +40,23 @@ defmodule Plug.Conn do
   If you access these fields before fetching them, they will be returned as
   `Plug.Conn.Unfetched` structs.
 
-  * `cookies`- the request cookies with the response cookies
-  * `query_params` - the request query params
-  * `params` - the request params. Usually populated by a plug, like `Plug.Parsers`
-  * `req_cookies` - the request cookies (without the response ones)
+    * `cookies`- the request cookies with the response cookies
+    * `query_params` - the request query params
+    * `params` - the request params. Usually populated by a plug, like `Plug.Parsers`
+    * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
 
   These fields contain response information:
 
-  * `resp_body` - the response body, by default is an empty string. It is set
-    to nil after the response is set, except for test connections.
-  * `resp_charset` - the response charset, defaults to "utf-8"
-  * `resp_cookies` - the response cookies with their name and options
-  * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
-    is set to `"max-age=0, private, must-revalidate"`. Note, response headers
-    are expected to have lower-case keys.
-  * `status` - the response status
+    * `resp_body` - the response body, by default is an empty string. It is set
+      to nil after the response is set, except for test connections.
+    * `resp_charset` - the response charset, defaults to "utf-8"
+    * `resp_cookies` - the response cookies with their name and options
+    * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
+      is set to `"max-age=0, private, must-revalidate"`. Note, response headers
+      are expected to have lower-case keys.
+    * `status` - the response status
 
   Furthermore, the `before_send` field stores callbacks that are invoked
   before the connection is sent. Callbacks are invoked in the reverse order
@@ -65,14 +65,14 @@ defmodule Plug.Conn do
 
   ## Connection fields
 
-  * `assigns` - shared user data as a map
-  * `owner` - the Elixir process that owns the connection
-  * `halted` - the boolean status on whether the pipeline was halted
-  * `secret_key_base` - a secret key used to verify and encrypt cookies.
-    the field must be set manually whenever one of those features are used.
-    This data must be kept in the connection and never used directly, always
-    use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it
-  * `state` - the connection state
+    * `assigns` - shared user data as a map
+    * `owner` - the Elixir process that owns the connection
+    * `halted` - the boolean status on whether the pipeline was halted
+    * `secret_key_base` - a secret key used to verify and encrypt cookies.
+      the field must be set manually whenever one of those features are used.
+      This data must be kept in the connection and never used directly, always
+      use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it
+    * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts
   as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
@@ -83,8 +83,8 @@ defmodule Plug.Conn do
 
   These fields are reserved for libraries/framework usage.
 
-  * `adapter` - holds the adapter information in a tuple
-  * `private` - shared library data as a map
+    * `adapter` - holds the adapter information in a tuple
+    * `private` - shared library data as a map
 
   ## Protocols
 
@@ -348,7 +348,7 @@ defmodule Plug.Conn do
   def send_resp(conn)
 
   def send_resp(%Conn{state: :unset}) do
-    raise ArgumentError, message: "cannot send a response that was not set"
+    raise ArgumentError, "cannot send a response that was not set"
   end
 
   def send_resp(%Conn{adapter: {adapter, payload}, state: :set, owner: owner} = conn) do
@@ -432,8 +432,8 @@ defmodule Plug.Conn do
   end
 
   def chunk(%Conn{}, chunk) when is_binary(chunk) or is_list(chunk) do
-    raise ArgumentError, message: "chunk/2 expects a chunked response. Please ensure " <>
-                                  "you have called send_chunked/2 before you send a chunk"
+    raise ArgumentError, "chunk/2 expects a chunked response. Please ensure " <>
+                         "you have called send_chunked/2 before you send a chunk"
   end
 
   @doc """
@@ -480,11 +480,13 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
+  It is recommended for header keys to be in lower-case, to avoid sending
+  duplicate keys in a request. As a convenience, this is validated during
+  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
+  is not lowercase.
+
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent`.
-
-  When using `Plug.Adapters.Test.Conn`, raises a `Plug.Conn.InvalidHeaderError`
-  if the header key is not lowercase.
   """
   @spec put_req_header(t, binary, binary) :: t
   def put_req_header(%Conn{state: :sent}, _key, _value) do
@@ -548,15 +550,17 @@ defmodule Plug.Conn do
     for {k, v} <- headers, k == key, do: v
   end
 
-  @doc """
+  @doc ~S"""
   Adds a new response header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
+  It is recommended for header keys to be in lower-case, to avoid sending
+  duplicate keys in a request. As a convenience, this is validated during
+  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
+  is not lowercase.
+
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent`.
-
-  When using `Plug.Adapters.Test.Conn`, raises a `Plug.Conn.InvalidHeaderError`
-  if the header key is not lowercase.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (\r) or newline (\n) characters.
@@ -918,7 +922,7 @@ defmodule Plug.Conn do
   defp run_before_send(%Conn{before_send: before_send} = conn, new) do
     conn = Enum.reduce before_send, %{conn | state: new}, &(&1.(&2))
     if conn.state != new do
-      raise ArgumentError, message: "cannot send/change response from run_before_send callback"
+      raise ArgumentError, "cannot send/change response from run_before_send callback"
     end
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
   end
@@ -935,7 +939,7 @@ defmodule Plug.Conn do
 
   defp verify_cookie!(cookie, key) when byte_size(cookie) > 4096 do
     raise Plug.Conn.CookieOverflowError,
-      message: "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
+          "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
     cookie
@@ -955,7 +959,7 @@ defmodule Plug.Conn do
     if session = Map.get(private, :plug_session) do
       session
     else
-      raise ArgumentError, message: "session not fetched, call fetch_session/2"
+      raise ArgumentError, "session not fetched, call fetch_session/2"
     end
   end
 
@@ -969,7 +973,7 @@ defmodule Plug.Conn do
 
   defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
     unless valid_header_key?(key) do
-      raise InvalidHeaderError, message: "header key is not lowercase: " <> inspect(key)
+      raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
@@ -985,7 +989,7 @@ defmodule Plug.Conn do
 
   defp validate_header_value!(value) do
     case :binary.match(value, ["\n", "\r"]) do
-      {_, _}   -> raise InvalidHeaderError, message: "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
+      {_, _}   -> raise InvalidHeaderError, "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
       :nomatch -> :ok
     end
   end
