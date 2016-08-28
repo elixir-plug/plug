@@ -14,7 +14,7 @@ defmodule Plug.ErrorHandler do
           send_resp(conn, 200, "world")
         end
 
-        defp handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
+        def handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
           send_resp(conn, conn.status, "Something went wrong")
         end
       end
