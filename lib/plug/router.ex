@@ -138,14 +138,14 @@ defmodule Plug.Router do
   This opens up a few possibilities. First, guards can be given
   to `match`:
 
-      match "/foo/:bar" when size(bar) <= 3, via: :get do
+      match "/foo/bar/:baz" when size(baz) <= 3, via: :get do
         send_resp(conn, 200, "hello world")
       end
 
   Second, a list of split paths (which is the compiled result) is
   also allowed:
 
-      match ["foo", bar], via: :get do
+      match ["foo", "bar", baz], via: :get do
         send_resp(conn, 200, "hello world")
       end
 
