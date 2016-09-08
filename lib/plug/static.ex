@@ -7,12 +7,12 @@ defmodule Plug.Static do
     * `:at` - the request path to reach for static assets.
       It must be a string.
 
-    * `:from` - the filesystem path to read static assets from.
-      It must be a string, containing a file system path, or an
-      atom representing the application name where assets will
-      be served from the priv/static, or a tuple containing the
-      application name and the directory to serve assets besides
-      priv/static.
+    * `:from` - the file system path to read static assets from.
+      It can be either: a string containing a file system path, an
+      atom representing the application name (where assets will
+      be served from `priv/static`), or a tuple containing the
+      application name and the directory to serve assets from (besides
+      `priv/static`).
 
   The preferred form is to use `:from` with an atom or tuple,
   since it will make your application independent from the
@@ -27,14 +27,14 @@ defmodule Plug.Static do
   should cache assets on the first request and validate the cache on
   following requests, not downloading the static asset once again if it
   has not changed. The cache-control for etags is specified by the
-  `cache_control_for_etags` option and defaults to "public".
+  `cache_control_for_etags` option and defaults to `"public"`.
 
   However, `Plug.Static` also supports direct cache control by using
   versioned query strings. If the request query string starts with
   "?vsn=", `Plug.Static` assumes the application is versioning assets
   and does not set the `ETag` header, meaning the cache behaviour will
   be specified solely by the `cache_control_for_vsn_requests` config,
-  which defaults to "public, max-age=31536000".
+  which defaults to `"public, max-age=31536000"`.
 
   ## Options
 
