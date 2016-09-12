@@ -2,7 +2,7 @@ defmodule Plug.SSL do
   @moduledoc """
   A plug to force SSL connections.
 
-  If the scheme of a request is https, it'll add a `strict-transport-security`
+  If the scheme of a request is `https`, it'll add a `strict-transport-security`
   header to enable HTTP Strict Transport Security.
 
   Otherwise, the request will be redirected to a corresponding location
@@ -13,20 +13,20 @@ defmodule Plug.SSL do
   ## x-forwarded-proto
 
   If your Plug application is behind a proxy that handles HTTPS, you will
-  need to tell Plug to parse the proper protocol from the "x-forwarded-proto"
+  need to tell Plug to parse the proper protocol from the `x-forwarded-proto`
   header. This can be done using the `:rewrite_on` option:
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
 
   The command above will effectively change the value of `conn.scheme` by
-  the one sent in "x-forwarded-proto".
+  the one sent in `x-forwarded-proto`.
 
-  Since rewriting the scheme based on "x-forwarded-proto" can open up
+  Since rewriting the scheme based on `x-forwarded-proto` can open up
   security vulnerabilities, only provide the option above if:
 
-      * Your app is behind a proxy
-      * Your proxy strips "x-forwarded-proto" headers from all incoming requests
-      * Your proxy sets the "x-forwarded-proto" and sends it to Plug
+    * your app is behind a proxy
+    * your proxy strips `x-forwarded-proto` headers from all incoming requests
+    * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
   ## Options
 
