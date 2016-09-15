@@ -128,10 +128,6 @@ defmodule Plug.Builder do
     plugs        = Module.get_attribute(env.module, :plugs)
     builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
 
-    if plugs == [] do
-      raise "no plugs have been defined in #{inspect env.module}"
-    end
-
     {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
 
     quote do

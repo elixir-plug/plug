@@ -118,13 +118,6 @@ defmodule Plug.BuilderTest do
     end
   end
 
-  test "an exception is raised at compile time if a Plug.Builder plug " <>
-      "doesn't call plug/2" do
-    assert_raise RuntimeError, fn ->
-      defmodule BadPlug, do: use Plug.Builder
-    end
-  end
-
   test "an exception is raised at compile time if a plug with no call/2 " <>
       "function is plugged" do
     assert_raise ArgumentError, fn ->
