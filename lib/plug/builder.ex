@@ -215,17 +215,25 @@ defmodule Plug.Builder do
       :function -> "expected #{plug}/2 to return a Plug.Conn"
     end <> ", all plugs must receive a connection (conn) and return a connection"
 
-    quote do
-      case unquote(compile_guards(call, guards)) do
-        %Plug.Conn{halted: true} = conn ->
-          unquote(log_halt(plug_type, plug, env, builder_opts))
-          conn
-        %Plug.Conn{} = conn ->
-          unquote(acc)
-        _ ->
-          raise unquote(error_message)
+    {fun, meta, [arg, [do: clauses]]} =
+      quote do
+        case unquote(compile_guards(call, guards)) do
+          %Plug.Conn{halted: true} = conn ->
+            unquote(log_halt(plug_type, plug, env, builder_opts))
+            conn
+          %Plug.Conn{} = conn ->
+            unquote(acc)
+          _ ->
+            raise unquote(error_message)
+        end
       end
-    end
+
+    clauses =
+      Enum.map(clauses, fn {:->, meta, args} ->
+        {:->, [generated: true] ++ Keyword.put(meta, :line, -1), args}
+      end)
+
+    {fun, meta, [arg, [do: clauses]]}
   end
 
   defp quote_plug_call(:function, plug, opts) do
