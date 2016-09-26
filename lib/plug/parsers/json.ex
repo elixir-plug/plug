@@ -31,6 +31,14 @@ defmodule Plug.Parsers.JSON do
     {:error, :too_large, conn}
   end
 
+  defp decode({:error, :timeout}, _decoder) do
+    raise Plug.TimeoutError
+  end
+
+  defp decode({:error, _}, _decoder) do
+    raise Plug.BadRequestError
+  end
+
   defp decode({:ok, "", conn}, _decoder) do
     {:ok, %{}, conn}
   end

@@ -13,6 +13,10 @@ defmodule Plug.Parsers.URLENCODED do
         {:ok, Plug.Conn.Query.decode(body), conn}
       {:more, _data, conn} ->
         {:error, :too_large, conn}
+      {:error, :timeout} ->
+        raise Plug.TimeoutError
+      {:error, _} ->
+        raise Plug.BadRequestError
     end
   end
 
