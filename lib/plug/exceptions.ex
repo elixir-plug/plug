@@ -23,3 +23,19 @@ defimpl Plug.Exception, for: Any do
   def status(%{plug_status: status}) when is_integer(status), do: status
   def status(_), do: 500
 end
+
+defmodule Plug.BadRequestError do
+  @moduledoc """
+  The request will not be processed due to a client error.
+  """
+
+  defexception message: nil, plug_status: 400
+end
+
+defmodule Plug.TimeoutError do
+  @moduledoc """
+  Timeout while waiting for the request.
+  """
+
+  defexception message: nil, plug_status: 408
+end

@@ -20,6 +20,10 @@ defmodule Plug.Parsers.MULTIPART do
         {:ok, params, %{conn | adapter: {adapter, state}}}
       {:more, _params, state} ->
         {:error, :too_large, %{conn | adapter: {adapter, state}}}
+      {:error, :timeout} ->
+        raise Plug.TimeoutError
+      {:error, _} ->
+        raise Plug.BadRequestError
     end
   end
 
