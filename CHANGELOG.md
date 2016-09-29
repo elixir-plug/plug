@@ -1,5 +1,12 @@
 ## Changelog
 
+## v1.2.1
+
+* Enhancements
+  * Raise proper bad request and timeout exceptions on parse errors
+  * Support environment hosts on Plug.SSL
+  * Do not raise when nothing is plugged in a Plug.Builder
+
 ## v1.2.0
 
 * Enhancements
