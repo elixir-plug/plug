@@ -95,7 +95,7 @@ defmodule Plug.SSL do
   defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    location = "https://" <> (custom_host || host) <>
+    location = "https://" <> host(custom_host, host) <>
                              conn.request_path <> qs(conn.query_string)
 
     conn
@@ -103,6 +103,10 @@ defmodule Plug.SSL do
     |> send_resp(status, "")
     |> halt
   end
+
+  defp host(nil, host), do: host
+  defp host({:system, env}, host), do: host(System.get_env(env), host)
+  defp host(host, _) when is_binary(host), do: host
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs
