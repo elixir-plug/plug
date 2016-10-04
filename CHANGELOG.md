@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.2.2
+
+* Bug fix
+  * Do not generate AST with line -1 on OTP >= 19
+
 ## v1.2.1
 
 * Enhancements
