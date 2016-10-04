@@ -228,9 +228,15 @@ defmodule Plug.Builder do
         end
       end
 
+    generated? = :erlang.system_info(:otp_release) >= '19'
+
     clauses =
       Enum.map(clauses, fn {:->, meta, args} ->
-        {:->, [generated: true] ++ Keyword.put(meta, :line, -1), args}
+        if generated? do
+          {:->, [generated: true] ++ meta, args}
+        else
+          {:->, Keyword.put(meta, :line, -1), args}
+        end
       end)
 
     {fun, meta, [arg, [do: clauses]]}
