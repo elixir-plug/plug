@@ -195,6 +195,16 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "from-body-value"
   end
 
+  test "shows no query params on bad query string" do
+    conn =
+      conn(:get, "/foo/bar?q=%{")
+      |> render([], fn -> raise "oops" end)
+    assert conn.resp_body =~ "RuntimeError"
+    assert conn.resp_body =~ "at GET /foo/bar"
+    assert conn.resp_body =~ "oops"
+    refute conn.resp_body =~ "<summary>Params</summary>"
+  end
+
   test "shows session" do
     Process.put({:session, "sid"}, %{session_key: "session_value"})
 

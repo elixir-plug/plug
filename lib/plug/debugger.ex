@@ -189,6 +189,12 @@ defmodule Plug.Debugger do
 
   defp maybe_fetch_query_params(conn) do
     fetch_query_params(conn).params
+  rescue
+    Plug.Conn.InvalidQueryError ->
+      case conn.params do
+        %Plug.Conn.Unfetched{} -> %{}
+        params -> params
+      end
   end
 
   defp status(:error, error), do: Plug.Exception.status(error)
