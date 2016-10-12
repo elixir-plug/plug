@@ -41,8 +41,9 @@ defmodule Plug.Conn do
   `Plug.Conn.Unfetched` structs.
 
     * `cookies`- the request cookies with the response cookies
-    * `query_params` - the request query params
-    * `params` - the request params. Usually populated by a plug, like `Plug.Parsers`
+    * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
+    * `query_params` - the request query params, populated through `fetch_query_params/2`
+    * `params` - the request params, the result of merging the `:body_params` and `:query_params`
     * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
