@@ -211,6 +211,8 @@ defmodule Plug.Router do
       meaning no host match, but can be a string like "example.com" or a
       string ending with ".", like "subdomain." for a subdomain match.
 
+    * `:private` - assigns values to `conn.private` for use in the match
+
     * `:via` - matches the route against some specific HTTP method (specified as
       an atom, like `:get` or `:put`.
 
@@ -282,6 +284,7 @@ defmodule Plug.Router do
     * `:to` - a Plug the requests will be forwarded to.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
+    * `:private` - values for `conn.private`, exactly like in `match/3`.
 
   All remaining options are passed to the target plug.
 
