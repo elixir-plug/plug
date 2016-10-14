@@ -58,6 +58,22 @@ defmodule Plug.RouterTest do
     forward "/step2", to: Forward
   end
 
+  defmodule SamplePlug do
+    import Plug.Conn
+
+    def init(options) do
+      options
+    end
+
+    def call(conn, []) do
+      send_resp(conn, 200, "ok")
+    end
+
+    def call(conn, options) do
+      send_resp(conn, 200, "#{inspect options}")
+    end
+  end
+
   defmodule Sample do
     use Plug.Router
     use Plug.ErrorHandler
@@ -115,6 +131,9 @@ defmodule Plug.RouterTest do
     end
 
     forward "/options/forward", to: Forward, private: %{an_option: :a_value}
+
+    forward "plug/forward", to: SamplePlug
+    forward "plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
 
     match _ do
       conn |> resp(404, "oops")
@@ -327,6 +346,17 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/options/forward"))
     assert conn.private[:an_option] == :a_value
     assert conn.resp_body == "forwarded"
+  end
+
+  test "forwards to a plug" do
+    conn = call(Sample, conn(:get, "/plug/forward"))
+    assert conn.resp_body == "ok"
+  end
+
+  test "forwards to a plug with options" do
+    conn = call(Sample, conn(:get, "/plug/options"))
+    assert conn.private[:baz] == :qux
+    assert conn.resp_body == "[foo: :bar]"
   end
 
   defp call(mod, conn) do
