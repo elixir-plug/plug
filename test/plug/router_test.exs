@@ -134,6 +134,7 @@ defmodule Plug.RouterTest do
 
     forward "plug/forward", to: SamplePlug
     forward "plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
+    forward "plug/init_opts", to: SamplePlug, init_opts: [foo: :bar], private: %{baz: :qux}
 
     match _ do
       conn |> resp(404, "oops")
@@ -355,6 +356,12 @@ defmodule Plug.RouterTest do
 
   test "forwards to a plug with options" do
     conn = call(Sample, conn(:get, "/plug/options"))
+    assert conn.private[:baz] == :qux
+    assert conn.resp_body == "[foo: :bar]"
+  end
+
+  test "forwards to a plug with plug options" do
+    conn = call(Sample, conn(:get, "/plug/init_opts"))
     assert conn.private[:baz] == :qux
     assert conn.resp_body == "[foo: :bar]"
   end

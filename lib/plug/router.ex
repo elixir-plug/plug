@@ -282,11 +282,13 @@ defmodule Plug.Router do
   `forward` accepts the following options:
 
     * `:to` - a Plug the requests will be forwarded to.
+    * `:init_opts` - the options for the target Plug.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
     * `:private` - values for `conn.private`, exactly like in `match/3`.
 
-  All remaining options are passed to the target plug.
+  If `:init_opts` is undefined, then all remaining options are passed
+  to the target plug.
 
   ## Examples
 
@@ -300,11 +302,14 @@ defmodule Plug.Router do
 
       forward "/foo/bar", to: :foo_bar_plug, host: "foobar."
       forward "/api", to: ApiRouter, plug_specific_option: true
+      forward "/baz", to: BazPlug, init_opts: [plug_specific_option: true]
   """
   defmacro forward(path, options) when is_binary(path) do
     quote bind_quoted: [path: path, options: options] do
+      # TODO: Require use of `:init_opts` for passing Plug options in 2.0
       {target, options}       = Keyword.pop(options, :to)
       {options, plug_options} = Keyword.split(options, [:host, :private])
+      plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
       if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"

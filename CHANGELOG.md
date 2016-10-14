@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.3.0-dev
+
+* Enhancements
+  * Add `:init_opts` option to forward macro for plug options
+
 ## v1.2.2
 
 * Bug fix
