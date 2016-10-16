@@ -3,6 +3,7 @@
 ## v1.3.0-dev
 
 * Enhancements
+  * Make path parameters available in `conn.params`
   * Add `:init_opts` option to forward macro for plug options
 
 ## v1.2.2

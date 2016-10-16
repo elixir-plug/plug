@@ -20,6 +20,10 @@ defmodule Plug.RouterTest do
       conn |> resp(200, Enum.join(conn.script_name, ","))
     end
 
+    get "/params" do
+      conn |> resp(200, conn.params["param"])
+    end
+
     match "/throw", via: [:get, :post] do
       _ = conn
       throw :oops
@@ -125,6 +129,12 @@ defmodule Plug.RouterTest do
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
+
+    get "/params/get/:param" do
+      conn |> resp(200, conn.params["param"])
+    end
+
+    forward "/params/forward/:param", to: Forward
 
     get "/options/map", private: %{an_option: :a_value} do
       conn |> resp(200, inspect(conn.private))
@@ -335,6 +345,18 @@ defmodule Plug.RouterTest do
         assert_received @already_sent
         assert is_nil Process.get(:plug_handle_errors)
     end
+  end
+
+  test "assigns path params to conn params" do
+    conn = call(Sample, conn(:get, "/params/get/a_value"))
+    assert conn.params["param"] == "a_value"
+    assert conn.resp_body == "a_value"
+  end
+
+  test "assigns path params to conn params on forward" do
+    conn = call(Sample, conn(:get, "/params/forward/a_value/params"))
+    assert conn.params["param"] == "a_value"
+    assert conn.resp_body == "a_value"
   end
 
   test "assigns route options to private conn map" do

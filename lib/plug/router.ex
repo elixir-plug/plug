@@ -60,6 +60,9 @@ defmodule Plug.Router do
         send_resp(conn, 200, "hello #{name}")
       end
 
+  The `:name` parameter will also be available in the function body as
+  `conn.params["name"]`.
+
   Routes allow for globbing which will match the remaining parts
   of a route and can be available as a parameter in the function
   body. Also note that a glob can't be followed by other segments:
@@ -275,7 +278,8 @@ defmodule Plug.Router do
   @doc """
   Forwards requests to another Plug. The `path_info` of the forwarded
   connection will exclude the portion of the path specified in the
-  call to `forward`.
+  call to `forward`. If the path contains any parameters, those will
+  be available in the target Plug in `conn.params`.
 
   ## Options
 
@@ -297,6 +301,12 @@ defmodule Plug.Router do
   Assuming the above code, a request to `/users/sign_in` will be forwarded to
   the `UserRouter` plug, which will receive what it will see as a request to
   `/sign_in`.
+
+      forward "/foo/:bar/qux", to: FooPlug
+
+  Here, a request to `/foo/BAZ/qux` will be forwarded to the `FooPlug`
+  plug, which will receive what it will see as a request to `/qux`,
+  and `conn.params["bar"]` will be set to `"BAZ"`.
 
   Some other examples:
 
@@ -336,10 +346,11 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {_vars, match}   = Plug.Router.Utils.build_path_match(path)
+    {vars, match}    = Plug.Router.Utils.build_path_match(path)
+    params_match = Plug.Router.Utils.build_path_params_match(vars)
     private    = extract_private_merger(options)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, host_match, guards, private}
+    {quote(do: conn), method, match, params_match, host_match, guards, private}
   end
 
   # Entry point for both forward and match that is actually
@@ -363,11 +374,16 @@ defmodule Plug.Router do
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, host, guards, private} = route
+      {conn, method, match, params, host, guards, private} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host)) when unquote(guards) do
         unquote(private)
-        Plug.Conn.put_private(unquote(conn), :plug_route, fn var!(conn) -> unquote(body) end)
+
+        conn = update_in unquote(conn).params, fn
+          %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
+          fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
+        end
+        Plug.Conn.put_private(conn, :plug_route, fn var!(conn) -> unquote(body) end)
       end
     end
   end
