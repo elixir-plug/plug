@@ -200,11 +200,15 @@ defmodule Plug.Router do
   It accepts an expression representing the path and many options
   allowing the match to be configured.
 
+  The route can dispatch either to a function body or a Plug module.
+
   ## Examples
 
       match "/foo/bar", via: :get do
         send_resp(conn, 200, "hello world")
       end
+
+      match "/baz", to: MyPlug, init_opts: [an_option: :a_value]
 
   ## Options
 
@@ -222,6 +226,11 @@ defmodule Plug.Router do
     * `:do` - contains the implementation to be invoked in case
       the route matches.
 
+    * `:to` - a Plug that will be called in case the route matches.
+
+    * `:init_opts` - the options for the target Plug given by `:to`.
+
+  A route should specify only one of `:do` or `:to` options.
   """
   defmacro match(path, options, contents \\ []) do
     compile(nil, path, options, contents)
@@ -362,8 +371,15 @@ defmodule Plug.Router do
           {b, options}
         options[:do] ->
           Keyword.pop(options, :do)
+        options[:to] ->
+          {target, options} = Keyword.pop(options, :to)
+          {init_opts, options} = Keyword.pop(options, :init_opts, [])
+          body = quote bind_quoted: [target: target, init_opts: init_opts] do
+            target.call(var!(conn), target.init(init_opts))
+          end
+          {body, options}
         true ->
-          raise ArgumentError, message: "expected :do to be given as option"
+          raise ArgumentError, message: "expected one of :to or :do to be given as option"
       end
 
     {path, guards} = extract_path_and_guards(expr)

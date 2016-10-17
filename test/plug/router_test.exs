@@ -126,6 +126,9 @@ defmodule Plug.RouterTest do
       conn |> resp(200, bat)
     end
 
+    get "/plug/match", to: SamplePlug
+    get "/plug/match/options", to: SamplePlug, init_opts: :foo
+
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
@@ -227,6 +230,16 @@ defmodule Plug.RouterTest do
   test "dispatch wrong verb" do
     conn = call(Sample, conn(:post, "/1/bar"))
     assert conn.resp_body == "oops"
+  end
+
+  test "dispatch to plug" do
+    conn = call(Sample, conn(:get, "/plug/match"))
+    assert conn.resp_body == "ok"
+  end
+
+  test "dispatch to plug with options" do
+    conn = call(Sample, conn(:get, "/plug/match/options"))
+    assert conn.resp_body == ":foo"
   end
 
   test "dispatch with forwarding" do
