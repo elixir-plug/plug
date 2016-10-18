@@ -1,5 +1,12 @@
 ## Changelog
 
+## v1.3.0-dev
+
+* Enhancements
+  * Extend match macros to accept a plug and options
+  * Make path parameters available in `conn.params`
+  * Add `:init_opts` option to forward macro for plug options
+
 ## v1.2.2
 
 * Bug fix

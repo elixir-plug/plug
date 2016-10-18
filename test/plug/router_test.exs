@@ -20,6 +20,10 @@ defmodule Plug.RouterTest do
       conn |> resp(200, Enum.join(conn.script_name, ","))
     end
 
+    get "/params" do
+      conn |> resp(200, conn.params["param"])
+    end
+
     match "/throw", via: [:get, :post] do
       _ = conn
       throw :oops
@@ -56,6 +60,22 @@ defmodule Plug.RouterTest do
     plug :dispatch
 
     forward "/step2", to: Forward
+  end
+
+  defmodule SamplePlug do
+    import Plug.Conn
+
+    def init(options) do
+      options
+    end
+
+    def call(conn, []) do
+      send_resp(conn, 200, "ok")
+    end
+
+    def call(conn, options) do
+      send_resp(conn, 200, "#{inspect options}")
+    end
   end
 
   defmodule Sample do
@@ -106,15 +126,28 @@ defmodule Plug.RouterTest do
       conn |> resp(200, bat)
     end
 
+    get "/plug/match", to: SamplePlug
+    get "/plug/match/options", to: SamplePlug, init_opts: :foo
+
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
+
+    get "/params/get/:param" do
+      conn |> resp(200, conn.params["param"])
+    end
+
+    forward "/params/forward/:param", to: Forward
 
     get "/options/map", private: %{an_option: :a_value} do
       conn |> resp(200, inspect(conn.private))
     end
 
     forward "/options/forward", to: Forward, private: %{an_option: :a_value}
+
+    forward "plug/forward", to: SamplePlug
+    forward "plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
+    forward "plug/init_opts", to: SamplePlug, init_opts: [foo: :bar], private: %{baz: :qux}
 
     match _ do
       conn |> resp(404, "oops")
@@ -197,6 +230,16 @@ defmodule Plug.RouterTest do
   test "dispatch wrong verb" do
     conn = call(Sample, conn(:post, "/1/bar"))
     assert conn.resp_body == "oops"
+  end
+
+  test "dispatch to plug" do
+    conn = call(Sample, conn(:get, "/plug/match"))
+    assert conn.resp_body == "ok"
+  end
+
+  test "dispatch to plug with options" do
+    conn = call(Sample, conn(:get, "/plug/match/options"))
+    assert conn.resp_body == ":foo"
   end
 
   test "dispatch with forwarding" do
@@ -317,6 +360,18 @@ defmodule Plug.RouterTest do
     end
   end
 
+  test "assigns path params to conn params" do
+    conn = call(Sample, conn(:get, "/params/get/a_value"))
+    assert conn.params["param"] == "a_value"
+    assert conn.resp_body == "a_value"
+  end
+
+  test "assigns path params to conn params on forward" do
+    conn = call(Sample, conn(:get, "/params/forward/a_value/params"))
+    assert conn.params["param"] == "a_value"
+    assert conn.resp_body == "a_value"
+  end
+
   test "assigns route options to private conn map" do
     conn = call(Sample, conn(:get, "/options/map"))
     assert conn.private[:an_option] == :a_value
@@ -327,6 +382,23 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/options/forward"))
     assert conn.private[:an_option] == :a_value
     assert conn.resp_body == "forwarded"
+  end
+
+  test "forwards to a plug" do
+    conn = call(Sample, conn(:get, "/plug/forward"))
+    assert conn.resp_body == "ok"
+  end
+
+  test "forwards to a plug with options" do
+    conn = call(Sample, conn(:get, "/plug/options"))
+    assert conn.private[:baz] == :qux
+    assert conn.resp_body == "[foo: :bar]"
+  end
+
+  test "forwards to a plug with plug options" do
+    conn = call(Sample, conn(:get, "/plug/init_opts"))
+    assert conn.private[:baz] == :qux
+    assert conn.resp_body == "[foo: :bar]"
   end
 
   defp call(mod, conn) do

@@ -60,6 +60,9 @@ defmodule Plug.Router do
         send_resp(conn, 200, "hello #{name}")
       end
 
+  The `:name` parameter will also be available in the function body as
+  `conn.params["name"]`.
+
   Routes allow for globbing which will match the remaining parts
   of a route and can be available as a parameter in the function
   body. Also note that a glob can't be followed by other segments:
@@ -197,11 +200,15 @@ defmodule Plug.Router do
   It accepts an expression representing the path and many options
   allowing the match to be configured.
 
+  The route can dispatch either to a function body or a Plug module.
+
   ## Examples
 
       match "/foo/bar", via: :get do
         send_resp(conn, 200, "hello world")
       end
+
+      match "/baz", to: MyPlug, init_opts: [an_option: :a_value]
 
   ## Options
 
@@ -219,6 +226,11 @@ defmodule Plug.Router do
     * `:do` - contains the implementation to be invoked in case
       the route matches.
 
+    * `:to` - a Plug that will be called in case the route matches.
+
+    * `:init_opts` - the options for the target Plug given by `:to`.
+
+  A route should specify only one of `:do` or `:to` options.
   """
   defmacro match(path, options, contents \\ []) do
     compile(nil, path, options, contents)
@@ -275,18 +287,21 @@ defmodule Plug.Router do
   @doc """
   Forwards requests to another Plug. The `path_info` of the forwarded
   connection will exclude the portion of the path specified in the
-  call to `forward`.
+  call to `forward`. If the path contains any parameters, those will
+  be available in the target Plug in `conn.params`.
 
   ## Options
 
   `forward` accepts the following options:
 
     * `:to` - a Plug the requests will be forwarded to.
+    * `:init_opts` - the options for the target Plug.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
     * `:private` - values for `conn.private`, exactly like in `match/3`.
 
-  All remaining options are passed to the target plug.
+  If `:init_opts` is undefined, then all remaining options are passed
+  to the target plug.
 
   ## Examples
 
@@ -296,15 +311,24 @@ defmodule Plug.Router do
   the `UserRouter` plug, which will receive what it will see as a request to
   `/sign_in`.
 
+      forward "/foo/:bar/qux", to: FooPlug
+
+  Here, a request to `/foo/BAZ/qux` will be forwarded to the `FooPlug`
+  plug, which will receive what it will see as a request to `/qux`,
+  and `conn.params["bar"]` will be set to `"BAZ"`.
+
   Some other examples:
 
       forward "/foo/bar", to: :foo_bar_plug, host: "foobar."
       forward "/api", to: ApiRouter, plug_specific_option: true
+      forward "/baz", to: BazPlug, init_opts: [plug_specific_option: true]
   """
   defmacro forward(path, options) when is_binary(path) do
     quote bind_quoted: [path: path, options: options] do
+      # TODO: Require use of `:init_opts` for passing Plug options in 2.0
       {target, options}       = Keyword.pop(options, :to)
       {options, plug_options} = Keyword.split(options, [:host, :private])
+      plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
       if is_nil(target) or !is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
@@ -331,10 +355,11 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {_vars, match}   = Plug.Router.Utils.build_path_match(path)
+    {vars, match}    = Plug.Router.Utils.build_path_match(path)
+    params_match = Plug.Router.Utils.build_path_params_match(vars)
     private    = extract_private_merger(options)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, host_match, guards, private}
+    {quote(do: conn), method, match, params_match, host_match, guards, private}
   end
 
   # Entry point for both forward and match that is actually
@@ -346,8 +371,15 @@ defmodule Plug.Router do
           {b, options}
         options[:do] ->
           Keyword.pop(options, :do)
+        options[:to] ->
+          {target, options} = Keyword.pop(options, :to)
+          {init_opts, options} = Keyword.pop(options, :init_opts, [])
+          body = quote bind_quoted: [target: target, init_opts: init_opts] do
+            target.call(var!(conn), target.init(init_opts))
+          end
+          {body, options}
         true ->
-          raise ArgumentError, message: "expected :do to be given as option"
+          raise ArgumentError, message: "expected one of :to or :do to be given as option"
       end
 
     {path, guards} = extract_path_and_guards(expr)
@@ -358,11 +390,16 @@ defmodule Plug.Router do
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, host, guards, private} = route
+      {conn, method, match, params, host, guards, private} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host)) when unquote(guards) do
         unquote(private)
-        Plug.Conn.put_private(unquote(conn), :plug_route, fn var!(conn) -> unquote(body) end)
+
+        conn = update_in unquote(conn).params, fn
+          %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
+          fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
+        end
+        Plug.Conn.put_private(conn, :plug_route, fn var!(conn) -> unquote(body) end)
       end
     end
   end
