@@ -43,7 +43,9 @@ defmodule Plug.Conn do
     * `cookies`- the request cookies with the response cookies
     * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
     * `query_params` - the request query params, populated through `fetch_query_params/2`
+    * `path_params` - the request path params, populated by a `Plug.Router`
     * `params` - the request params, the result of merging the `:body_params` and `:query_params`
+       with `:path_params`
     * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
@@ -137,6 +139,7 @@ defmodule Plug.Conn do
               owner:           owner,
               params:          params | Unfetched.t,
               path_info:       segments,
+              path_params:     params | Unfetched.t,
               port:            :inet.port_number,
               private:         assigns,
               query_params:    params | Unfetched.t,
@@ -165,6 +168,7 @@ defmodule Plug.Conn do
             method:          "GET",
             owner:           nil,
             params:          %Unfetched{aspect: :params},
+            path_params:     %Unfetched{aspect: :path_params},
             path_info:       [],
             port:            0,
             private:         %{},

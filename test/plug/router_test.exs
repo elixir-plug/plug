@@ -20,7 +20,7 @@ defmodule Plug.RouterTest do
       conn |> resp(200, Enum.join(conn.script_name, ","))
     end
 
-    get "/params" do
+    match "/params" do
       conn |> resp(200, conn.params["param"])
     end
 
@@ -135,7 +135,7 @@ defmodule Plug.RouterTest do
     forward "/forward", to: Forward
     forward "/nested/forward", to: Forward
 
-    get "/params/get/:param" do
+    match "/params/get/:param" do
       conn |> resp(200, conn.params["param"])
     end
 
@@ -364,16 +364,27 @@ defmodule Plug.RouterTest do
     end
   end
 
-  test "assigns path params to conn params" do
+  test "assigns path params to conn params and path_params" do
     conn = call(Sample, conn(:get, "/params/get/a_value"))
     assert conn.params["param"] == "a_value"
+    assert conn.path_params["param"] == "a_value"
     assert conn.resp_body == "a_value"
   end
 
-  test "assigns path params to conn params on forward" do
+  test "assigns path params to conn params and path_params on forward" do
     conn = call(Sample, conn(:get, "/params/forward/a_value/params"))
     assert conn.params["param"] == "a_value"
+    assert conn.path_params["param"] == "a_value"
     assert conn.resp_body == "a_value"
+  end
+
+  test "path params have priority over body and query params" do
+    conn = conn(:post, "/params/get/p_value", "param=b_value")
+    |> put_req_header("content-type", "application/x-www-form-urlencoded")
+    |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
+
+    conn = call(Sample, conn)
+    assert conn.resp_body == "p_value"
   end
 
   test "assigns route options to private conn map" do

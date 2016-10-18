@@ -6,6 +6,8 @@
   * Extend match macros to accept a plug and options
   * Make path parameters available in `conn.params`
   * Add `:init_opts` option to forward macro for plug options
+  * Add the `:path_params` field to `Plug.Conn` to access path params
+    apart from the `params` field
 
 * Bug fixes
   * Keep `body_params` unfetched if the content-type is allowed to
