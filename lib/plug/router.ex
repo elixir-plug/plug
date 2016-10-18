@@ -372,11 +372,18 @@ defmodule Plug.Router do
         options[:do] ->
           Keyword.pop(options, :do)
         options[:to] ->
-          {target, options} = Keyword.pop(options, :to)
+          {to, options} = Keyword.pop(options, :to)
           {init_opts, options} = Keyword.pop(options, :init_opts, [])
-          body = quote bind_quoted: [target: target, init_opts: init_opts] do
-            target.call(var!(conn), target.init(init_opts))
-          end
+          body =
+            quote do
+              @plug_router_to.call(var!(conn), @plug_router_init)
+            end
+          options =
+            quote do
+              @plug_router_to unquote(to)
+              @plug_router_init unquote(init_opts)
+              unquote(options)
+            end
           {body, options}
         true ->
           raise ArgumentError, message: "expected one of :to or :do to be given as option"

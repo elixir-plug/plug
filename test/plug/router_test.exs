@@ -126,8 +126,10 @@ defmodule Plug.RouterTest do
       conn |> resp(200, bat)
     end
 
+    plug = SamplePlug
+    opts = :foo
     get "/plug/match", to: SamplePlug
-    get "/plug/match/options", to: SamplePlug, init_opts: :foo
+    get "/plug/match/options", to: plug, init_opts: opts
 
     forward "/step1", to: Reforward
     forward "/forward", to: Forward
@@ -145,9 +147,11 @@ defmodule Plug.RouterTest do
 
     forward "/options/forward", to: Forward, private: %{an_option: :a_value}
 
-    forward "plug/forward", to: SamplePlug
-    forward "plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
-    forward "plug/init_opts", to: SamplePlug, init_opts: [foo: :bar], private: %{baz: :qux}
+    plug = SamplePlug
+    opts = [foo: :bar]
+    forward "/plug/forward", to: SamplePlug
+    forward "/plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
+    forward "/plug/init_opts", to: plug, init_opts: opts, private: %{baz: :qux}
 
     match _ do
       conn |> resp(404, "oops")
