@@ -27,6 +27,14 @@ defmodule Plug.Adapters.CowboyTest do
             [env: [dispatch: @dispatch]]]
   end
 
+  test "builds args with non 2-element tuple options" do
+    assert args(:http, __MODULE__, [], [:inet6, {:raw, 1, 2, 3}, port: 3000, acceptors: 25, other: true]) ==
+           [Plug.Adapters.CowboyTest.HTTP,
+            25,
+            [:inet6, {:raw, 1, 2, 3}, max_connections: 16384, port: 3000, other: true],
+            [env: [dispatch: @dispatch]]]
+  end
+
   test "builds args with protocol option" do
     assert args(:http, __MODULE__, [], [port: 3000, acceptors: 25, compress: true, timeout: 30000]) ==
            [Plug.Adapters.CowboyTest.HTTP,

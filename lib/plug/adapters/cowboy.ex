@@ -169,7 +169,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp to_args(all_opts) do
-    {initial_transport_options, opts} = Enum.partition(all_opts, &is_atom/1)
+    {opts, initial_transport_options} = Enum.partition(all_opts, &is_tuple(&1) and tuple_size(&1) == 2)
     opts = Keyword.delete(opts, :otp_app)
     {ref, opts} = Keyword.pop(opts, :ref)
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
