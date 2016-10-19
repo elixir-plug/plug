@@ -106,7 +106,7 @@ defmodule Plug.Conn do
   @type adapter         :: {module, term}
   @type assigns         :: %{atom => any}
   @type before_send     :: [(t -> t)]
-  @type body            :: iodata | nil
+  @type body            :: iodata
   @type cookies         :: %{binary => binary}
   @type halted          :: boolean
   @type headers         :: [{binary, binary}]
@@ -146,7 +146,7 @@ defmodule Plug.Conn do
               req_cookies:     cookies | Unfetched.t,
               req_headers:     headers,
               request_path:    binary,
-              resp_body:       body,
+              resp_body:       body | nil,
               resp_cookies:    resp_cookies,
               resp_headers:    headers,
               scheme:          scheme,
