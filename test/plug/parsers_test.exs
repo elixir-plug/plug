@@ -31,6 +31,15 @@ defmodule Plug.ParsersTest do
     assert conn.params["params"] == "baz"
   end
 
+  test "parsing prefers path params over body params" do
+    conn = %{conn(:post, "/", "foo=body") | params: %{"foo" => "bar"},
+             path_params: %{"foo" => "path"}}
+    conn = conn
+           |> put_req_header("content-type", "application/x-www-form-urlencoded")
+           |> parse()
+    assert conn.params["foo"] == "path"
+  end
+
   test "parsing prefers body params over query params with existing params" do
     conn = %{conn(:post, "/?foo=query", "foo=body") | params: %{"foo" => "params"}}
     conn = conn

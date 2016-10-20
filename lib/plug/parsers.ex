@@ -189,7 +189,7 @@ defmodule Plug.Parsers do
   def call(%Conn{req_headers: req_headers, method: method,
                  body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
     conn = Conn.fetch_query_params(conn)
-    case List.keyfind(req_headers, "content-type", 0) do
+    conn = case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, headers} ->
@@ -200,23 +200,23 @@ defmodule Plug.Parsers do
       nil ->
         %{conn | body_params: %{}}
     end
+    merge_params(conn)
   end
 
   def call(%Conn{body_params: %Plug.Conn.Unfetched{}} = conn, _opts) do
     conn = Conn.fetch_query_params(conn)
-    %{conn | body_params: %{}}
+    conn = %{conn | body_params: %{}}
+    merge_params(conn)
   end
 
   def call(%Conn{} = conn, _opts) do
-    Conn.fetch_query_params(conn)
+    conn |> Conn.fetch_query_params |> merge_params
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      {:ok, body, %Conn{params: %Plug.Conn.Unfetched{}, query_params: query} = conn} ->
-        %{conn | body_params: body, params: query |> Map.merge(body)}
-      {:ok, body, %Conn{params: params, query_params: query} = conn} ->
-        %{conn | body_params: body, params: params |> Map.merge(query) |> Map.merge(body)}
+      {:ok, body, conn} ->
+        %{conn | body_params: body}
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
       {:error, :too_large, _conn} ->
@@ -236,4 +236,17 @@ defmodule Plug.Parsers do
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
     end
   end
+
+  defp merge_params(%{params: params, query_params: query_params,
+                      body_params: body_params, path_params: path_params} = conn) do
+    maybe_params = make_empty_if_unfetched(params)
+    maybe_query = make_empty_if_unfetched(query_params)
+    maybe_body = make_empty_if_unfetched(body_params)
+    maybe_path = make_empty_if_unfetched(path_params)
+    params = maybe_query |> Map.merge(maybe_params) |> Map.merge(maybe_body) |> Map.merge(maybe_path)
+    %{conn | params: params}
+  end
+
+  defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}
+  defp make_empty_if_unfetched(params), do: params
 end

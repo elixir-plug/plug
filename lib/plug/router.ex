@@ -61,7 +61,7 @@ defmodule Plug.Router do
       end
 
   The `:name` parameter will also be available in the function body as
-  `conn.params["name"]`.
+  `conn.params["name"]` and `conn.path_params["name"]`.
 
   Routes allow for globbing which will match the remaining parts
   of a route and can be available as a parameter in the function
@@ -288,7 +288,7 @@ defmodule Plug.Router do
   Forwards requests to another Plug. The `path_info` of the forwarded
   connection will exclude the portion of the path specified in the
   call to `forward`. If the path contains any parameters, those will
-  be available in the target Plug in `conn.params`.
+  be available in the target Plug in `conn.params` and `conn.path_params`.
 
   ## Options
 
@@ -402,10 +402,13 @@ defmodule Plug.Router do
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host)) when unquote(guards) do
         unquote(private)
 
-        conn = update_in unquote(conn).params, fn
+        merge_params = fn
           %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
           fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
         end
+        conn = update_in unquote(conn).params, merge_params
+        conn = update_in conn.path_params, merge_params
+
         Plug.Conn.put_private(conn, :plug_route, fn var!(conn) -> unquote(body) end)
       end
     end
