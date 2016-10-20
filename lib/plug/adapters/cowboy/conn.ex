@@ -2,6 +2,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
   @behaviour Plug.Conn.Adapter
   @moduledoc false
 
+  @statuses Application.get_env(:plug, :statuses, %{})
+
   alias :cowboy_req, as: Request
 
   def conn(req, transport) do
@@ -31,9 +33,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def send_resp(req, status, headers, body) do
-    statuses = Application.get_env(:plug, :statuses, %{})
     status =
-      case Map.get(statuses, status) do
+      case Map.get(@statuses, status) do
         nil -> status
         reason_phrase -> "#{status} #{reason_phrase}"
       end

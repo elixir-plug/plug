@@ -137,7 +137,11 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "allows customized statuses based on config" do
     assert {500, _headers, _} = request :get, "/send_451"
+
     Application.put_env(:plug, :statuses, %{451 => "Unavailable For Legal Reasons"})
+    Code.compiler_options(ignore_module_conflict: true)
+    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/adapters/cowboy/conn.ex"))
+
     assert {451, _headers, ""} = request :get, "/send_451"
 
     {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_451", [], "", async: :once)
