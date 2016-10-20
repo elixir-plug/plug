@@ -112,6 +112,12 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     conn
   end
 
+  def send_451(conn) do
+    conn
+    |> delete_resp_header("cache-control")
+    |> send_resp(451, "")
+  end
+
   def send_500(conn) do
     conn
     |> delete_resp_header("cache-control")
@@ -127,6 +133,30 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert List.keyfind(headers, "cache-control", 0) == nil
     assert List.keyfind(headers, "x-sample", 0) ==
            {"x-sample", "value"}
+  end
+
+  test "allows customized statuses based on config" do
+    assert {500, _headers, _} = request :get, "/send_451"
+    Application.put_env(:plug, :statuses, %{451 => "Unavailable For Legal Reasons"})
+    assert {451, _headers, ""} = request :get, "/send_451"
+
+    {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_451", [], "", async: :once)
+    assert_receive({:hackney_response, ^ref, {:status, 451, "Unavailable For Legal Reasons"}})
+    :hackney.close(ref)
+  end
+
+  test "existing statuses can be customized" do
+    {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_200", [], "", async: :once)
+    assert_receive({:hackney_response, ^ref, {:status, 200, "OK"}})
+    :hackney.close(ref)
+
+    Application.put_env(:plug, :statuses, %{200 => "Is there a good reason for this?"})
+    Code.compiler_options(ignore_module_conflict: true)
+    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/adapters/cowboy/conn.ex"))
+
+    {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_200", [], "", async: :once)
+    assert_receive({:hackney_response, ^ref, {:status, 200, "Is there a good reason for this?"}})
+    :hackney.close(ref)
   end
 
   test "skips body on head" do

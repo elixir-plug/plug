@@ -31,6 +31,13 @@ defmodule Plug.Adapters.Cowboy.Conn do
   end
 
   def send_resp(req, status, headers, body) do
+    statuses = Application.get_env(:plug, :statuses, %{})
+    status =
+      case Map.get(statuses, status) do
+        nil -> status
+        reason_phrase -> "#{status} #{reason_phrase}"
+      end
+
     {:ok, req} = Request.reply(status, headers, body, req)
     {:ok, nil, req}
   end
