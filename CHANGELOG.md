@@ -7,6 +7,10 @@
   * Make path parameters available in `conn.params`
   * Add `:init_opts` option to forward macro for plug options
 
+* Bug fixes
+  * Keep `body_params` unfetched if the content-type is allowed to
+    pass through the parser.
+
 ## v1.2.2
 
 * Bug fix
