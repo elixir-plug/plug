@@ -113,7 +113,13 @@ defmodule Plug.Conn.Status do
     integer
   end
 
-  for {code, reason_phrase} <- Map.merge(statuses, custom_statuses) do
+  for {code, reason_phrase} <- statuses do
+    atom = reason_phrase_to_atom.(reason_phrase)
+    def code(unquote(atom)), do: unquote(code)
+  end
+
+  # This ensures that both the default and custom statuses will work
+  for {code, reason_phrase} <- custom_statuses do
     atom = reason_phrase_to_atom.(reason_phrase)
     def code(unquote(atom)), do: unquote(code)
   end
