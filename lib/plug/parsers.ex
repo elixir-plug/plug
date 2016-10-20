@@ -186,37 +186,30 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(%Conn{req_headers: req_headers, method: method,
-                 body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
+  def call(%{req_headers: req_headers, method: method,
+             body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
     conn = Conn.fetch_query_params(conn)
-    conn = case List.keyfind(req_headers, "content-type", 0) do
+    case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, headers} ->
             reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->
-            %{conn | body_params: %{}}
+            merge_params(conn, %{})
         end
       nil ->
-        %{conn | body_params: %{}}
+        merge_params(conn, %{})
     end
-    merge_params(conn)
   end
 
-  def call(%Conn{body_params: %Plug.Conn.Unfetched{}} = conn, _opts) do
-    conn = Conn.fetch_query_params(conn)
-    conn = %{conn | body_params: %{}}
-    merge_params(conn)
-  end
-
-  def call(%Conn{} = conn, _opts) do
-    conn |> Conn.fetch_query_params |> merge_params
+  def call(%{body_params: body_params} = conn, _opts) do
+    merge_params(conn, make_empty_if_unfetched(body_params))
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
       {:ok, body, conn} ->
-        %{conn | body_params: body}
+        merge_params(conn, body)
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
       {:error, :too_large, _conn} ->
@@ -237,14 +230,19 @@ defmodule Plug.Parsers do
     end
   end
 
-  defp merge_params(%{params: params, query_params: query_params,
-                      body_params: body_params, path_params: path_params} = conn) do
-    maybe_params = make_empty_if_unfetched(params)
-    maybe_query = make_empty_if_unfetched(query_params)
-    maybe_body = make_empty_if_unfetched(body_params)
-    maybe_path = make_empty_if_unfetched(path_params)
-    params = maybe_query |> Map.merge(maybe_params) |> Map.merge(maybe_body) |> Map.merge(maybe_path)
-    %{conn | params: params}
+  defp merge_params(%{params: params, path_params: path_params} = conn, body_params) do
+    params = make_empty_if_unfetched(params)
+    query_params = fetch_query_params(conn)
+    params = query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
+    %{conn | params: params, query_params: query_params, body_params: body_params}
+  end
+
+  defp fetch_query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}) do
+    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
+    Plug.Conn.Query.decode(query_string)
+  end
+  defp fetch_query_params(%{query_params: query_params}) do
+    query_params
   end
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}
