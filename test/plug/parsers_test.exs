@@ -115,6 +115,7 @@ defmodule Plug.ParsersTest do
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["*/*"])
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
 
   test "does not raise when request cannot be processed if mime accepted" do
@@ -123,12 +124,14 @@ defmodule Plug.ParsersTest do
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["text/plain", "application/json"])
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
 
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "application/json")
       |> parse(pass: ["text/plain", "application/json"])
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
 
   test "does not raise when request cannot be processed if accepts mime range" do
@@ -137,5 +140,6 @@ defmodule Plug.ParsersTest do
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["text/plain", "text/*"])
     assert conn.params["foo"] == "bar"
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
 end

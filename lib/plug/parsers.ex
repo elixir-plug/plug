@@ -231,7 +231,7 @@ defmodule Plug.Parsers do
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
   defp ensure_accepted_mimes(conn, type, subtype, pass) do
     if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
-      %{conn | body_params: %{}}
+      conn
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
     end
