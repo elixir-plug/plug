@@ -140,7 +140,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
     Application.put_env(:plug, :statuses, %{451 => "Unavailable For Legal Reasons"})
     Code.compiler_options(ignore_module_conflict: true)
-    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/adapters/cowboy/conn.ex"))
+    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/conn/status.ex"))
 
     assert {451, _headers, ""} = request :get, "/send_451"
 
@@ -156,7 +156,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
     Application.put_env(:plug, :statuses, %{200 => "Is there a good reason for this?"})
     Code.compiler_options(ignore_module_conflict: true)
-    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/adapters/cowboy/conn.ex"))
+    Code.load_file(Path.join(__DIR__, "../../../../lib/plug/conn/status.ex"))
 
     {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_200", [], "", async: :once)
     assert_receive({:hackney_response, ^ref, {:status, 200, "Is there a good reason for this?"}})
