@@ -123,4 +123,26 @@ defmodule Plug.Test do
       {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
     end
   end
+
+  @doc """
+  Initializes the session with the given contents.
+
+  If the session has already been initialized, the new contents will be merged
+  with the previous ones.
+  """
+  @spec init_test_session(Conn.t, %{(String.t | atom) => any}) :: Conn.t
+  def init_test_session(conn, session) do
+    conn =
+      if conn.private[:plug_session_fetch] do
+        Conn.fetch_session(conn)
+      else
+        conn
+        |> Conn.put_private(:plug_session, %{})
+        |> Conn.put_private(:plug_session_fetch, :done)
+      end
+
+    Enum.reduce(session, conn, fn {key, value}, conn ->
+      Conn.put_session(conn, key, value)
+    end)
+  end
 end
