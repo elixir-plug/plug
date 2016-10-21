@@ -103,6 +103,34 @@ defmodule Plug.Conn do
       # Each item is emitted as a chunk
       Enum.into(~w(each chunk as a word), conn)
 
+  ## Custom Status Codes
+
+  Plug allows status codes to be overridden or added in order to allow
+  new codes not directly specified by plug or its adapters. Adding or
+  overriding a status code is done in the config file. For example, to
+  override the existing 404 reason phrase ("Not Found" by default)
+  and add a new code for 451, the following config can be used:
+
+      config :plug, :statuses, %{
+        404 => "Actually This Was Found",
+        451 => "Unavailable For Legal Reasons"
+      }
+
+  As this configuration is plug specific, plug will need to be recompiled
+  for the changes to take place using:
+
+      MIX_ENV=prod mix deps.compile plug
+
+  The atoms to be used are inflected from the reason_phrase. With the above
+  configuration, the following will all work:
+
+      put_status(conn, :not_found)                     # 404
+      put_status(conn, :actually_this_was_found)       # 404
+      put_status(conn, :unavailable_for_legal_reasons) # 451
+
+  Even though 404 has been overridden, the `:not_found` atom can still be
+  used to set the status to 404 as well as `:actually_this_was_found`.
+
   """
 
   @type adapter         :: {module, term}

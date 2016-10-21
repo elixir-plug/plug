@@ -72,7 +72,7 @@ defmodule Plug.Conn.Status do
   reason_phrase_to_atom = fn reason_phrase ->
     reason_phrase
     |> String.downcase()
-    |> String.replace(~r/[']/, "")
+    |> String.replace("'", "")
     |> String.replace(~r/[^a-z0-9]/, "_")
     |> String.to_atom()
   end
@@ -87,13 +87,13 @@ defmodule Plug.Conn.Status do
   end
 
   custom_status_doc =
-  if custom_statuses != %{} do
-    """
-    ## Custom Status Codes
+    if custom_statuses != %{} do
+      """
+      ## Custom Status Codes
 
-    #{status_map_to_doc.(custom_statuses)}
-    """
-  end
+      #{status_map_to_doc.(custom_statuses)}
+      """
+    end
 
   @doc """
   Returns the status code given an integer or a known atom.
@@ -124,12 +124,22 @@ defmodule Plug.Conn.Status do
     def code(unquote(atom)), do: unquote(code)
   end
 
-  @spec string(integer) :: String.t
-  def string(integer)
+  @spec reason_phrase(integer) :: String.t
+  def reason_phrase(integer)
 
-  for {code, reason_phrase} <- Map.merge(statuses, custom_statuses) do
-    def string(unquote(code)), do: unquote(reason_phrase)
+  for {code, phrase} <- Map.merge(statuses, custom_statuses) do
+    def reason_phrase(unquote(code)), do: unquote(phrase)
   end
 
-  def string(_), do: raise "#TODO: write the error"
+  def reason_phrase(code) do
+    raise ArgumentError, "Unknown status code #{inspect code}\n\n" <>
+      "Custom codes can be defined in the config file, using the code as the key " <>
+      "and the reason phrase as the value. For example:\n\n" <>
+      "    config :plug, :statuses, %{451 => \"Unavailable For Legal Reasons\"}\n\n" <>
+      "Doing this will allow the use of the atom :unavailable_for_legal_reasons " <>
+      "when setting the status code. For example:\n\n" <>
+      "    put_status(conn, :unavailable_for_legal_reasons)\n\n" <>
+      "After defining the config for custom statuses, recompile plug with:\n\n" <>
+      "    MIX_ENV=dev mix deps.compile plug\n"
+  end
 end
