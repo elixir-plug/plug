@@ -8,6 +8,8 @@
   * Add `:init_opts` option to forward macro for plug options
   * Add the `:path_params` field to `Plug.Conn` to access path params
     apart from the `params` field
+  * Add `:assigns` option to `Plug.Router` macros to assign values to
+    `conn.assigns` for use in the match
 
 * Bug fixes
   * Keep `body_params` unfetched if the content-type is allowed to

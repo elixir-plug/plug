@@ -220,6 +220,8 @@ defmodule Plug.Router do
 
     * `:private` - assigns values to `conn.private` for use in the match
 
+    * `:assigns` - assigns values to `conn.assigns` for use in the match
+
     * `:via` - matches the route against some specific HTTP method (specified as
       an atom, like `:get` or `:put`.
 
@@ -299,6 +301,7 @@ defmodule Plug.Router do
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
     * `:private` - values for `conn.private`, exactly like in `match/3`.
+    * `:assigns` - values for `conn.assigns`, exactly like in `match/3`.
 
   If `:init_opts` is undefined, then all remaining options are passed
   to the target plug.
@@ -327,7 +330,7 @@ defmodule Plug.Router do
     quote bind_quoted: [path: path, options: options] do
       # TODO: Require use of `:init_opts` for passing Plug options in 2.0
       {target, options}       = Keyword.pop(options, :to)
-      {options, plug_options} = Keyword.split(options, [:host, :private])
+      {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
       plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
       if is_nil(target) or !is_atom(target) do
@@ -357,9 +360,10 @@ defmodule Plug.Router do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {vars, match}    = Plug.Router.Utils.build_path_match(path)
     params_match = Plug.Router.Utils.build_path_params_match(vars)
-    private    = extract_private_merger(options)
+    private    = extract_merger(options, :private)
+    assigns    = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, params_match, host_match, guards, private}
+    {quote(do: conn), method, match, params_match, host_match, guards, private, assigns}
   end
 
   # Entry point for both forward and match that is actually
@@ -397,10 +401,11 @@ defmodule Plug.Router do
                         guards: Macro.escape(guards, unquote: true),
                         body: Macro.escape(body, unquote: true)] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, params, host, guards, private} = route
+      {conn, method, match, params, host, guards, private, assigns} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host)) when unquote(guards) do
         unquote(private)
+        unquote(assigns)
 
         merge_params = fn
           %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
@@ -414,10 +419,10 @@ defmodule Plug.Router do
     end
   end
 
-  defp extract_private_merger(options) when is_list(options) do
-    if private = Keyword.get(options, :private) do
+  defp extract_merger(options, key) when is_list(options) do
+    if option = Keyword.get(options, key) do
       quote do
-        conn = update_in conn.private, &Map.merge(&1, unquote(Macro.escape(private)))
+        conn = update_in conn.unquote(key), &Map.merge(&1, unquote(Macro.escape(option)))
       end
     end
   end
