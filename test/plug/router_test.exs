@@ -145,7 +145,12 @@ defmodule Plug.RouterTest do
       conn |> resp(200, inspect(conn.private))
     end
 
-    forward "/options/forward", to: Forward, private: %{an_option: :a_value}
+    get "/options/assigns", assigns: %{an_option: :a_value} do
+      conn |> resp(200, inspect(conn.assigns))
+    end
+
+    forward "/options/forward", to: Forward, private: %{an_option: :a_value},
+      assigns: %{another_option: :another_value}
 
     plug = SamplePlug
     opts = [foo: :bar]
@@ -393,9 +398,16 @@ defmodule Plug.RouterTest do
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
 
+  test "assigns route options to assigns conn map" do
+    conn = call(Sample, conn(:get, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
   test "assigns options on forward" do
     conn = call(Sample, conn(:get, "/options/forward"))
     assert conn.private[:an_option] == :a_value
+    assert conn.assigns[:another_option] == :another_value
     assert conn.resp_body == "forwarded"
   end
 
