@@ -127,4 +127,51 @@ defmodule Plug.SessionTest do
     opts = Plug.Session.init(store: :ets, key: "foobar", table: :some_table)
     assert opts.store == Plug.Session.ETS
   end
+
+  test "init_test_session/2" do
+    conn = conn(:get, "/") |> init_test_session(foo: "bar")
+    assert get_session(conn, :foo) == "bar"
+
+    conn = fetch_session(conn)
+    assert get_session(conn, :foo) == "bar"
+
+    conn = put_session(conn, :bar, "foo")
+    assert get_session(conn, :bar) == "foo"
+
+    conn = delete_session(conn, :bar)
+    refute get_session(conn, :bar)
+
+    conn = clear_session(conn)
+    refute get_session(conn, :foo)
+  end
+
+  test "init_test_session/2 merges values when called after Plug.Session" do
+    conn = conn(:get, "/") |> fetch_cookies
+
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+    conn = conn |> put_session(:foo, "bar") |> put_session(:bar, "foo")
+    conn = init_test_session(conn, bar: "bar", other: "other")
+
+    assert get_session(conn, :foo) == "bar"
+    assert get_session(conn, :other) == "other"
+    assert get_session(conn, :bar) == "bar"
+  end
+
+  test "init_test_session/2 merges values when called before Plug.Session" do
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+
+    conn = conn(:get, "/") |> fetch_cookies
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+    conn = conn |> put_session(:foo, "bar") |> put_session(:bar, "foo")
+    conn = send_resp(conn, 200, "")
+
+    conn = conn(:get, "/") |> recycle_cookies(conn)
+    conn = init_test_session(conn, bar: "bar", other: "other")
+    conn = Plug.Session.call(conn, opts) |> fetch_session
+
+    assert get_session(conn, :foo) == "bar"
+    assert get_session(conn, :other) == "other"
+    assert get_session(conn, :bar) == "bar"
+  end
 end
