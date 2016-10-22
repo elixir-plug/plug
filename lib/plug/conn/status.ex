@@ -132,14 +132,22 @@ defmodule Plug.Conn.Status do
   end
 
   def reason_phrase(code) do
-    raise ArgumentError, "Unknown status code #{inspect code}\n\n" <>
-      "Custom codes can be defined in the config file, using the code as the key " <>
-      "and the reason phrase as the value. For example:\n\n" <>
-      "    config :plug, :statuses, %{451 => \"Unavailable For Legal Reasons\"}\n\n" <>
-      "Doing this will allow the use of the atom :unavailable_for_legal_reasons " <>
-      "when setting the status code. For example:\n\n" <>
-      "    put_status(conn, :unavailable_for_legal_reasons)\n\n" <>
-      "After defining the config for custom statuses, recompile plug with:\n\n" <>
-      "    MIX_ENV=dev mix deps.compile plug\n"
+    raise ArgumentError, """
+    unknown status code #{inspect code}
+
+    Custom codes can be defined in the config file, using the code
+    as the key and the reason phrase as the value. For example:
+
+        config :plug, :statuses, %{451 => "Unavailable For Legal Reasons"}
+
+    After defining the config for custom statuses, recompile plug with:
+
+        MIX_ENV=dev mix deps.compile plug
+
+    Doing this will allow the use of the integer status code 451 as
+    well as the atom :unavailable_for_legal_reasons. For example:
+
+        put_status(conn, :unavailable_for_legal_reasons)
+    """
   end
 end
