@@ -371,9 +371,9 @@ defmodule Plug.Router do
   defp compile(method, expr, options, contents) do
     {body, options} =
       cond do
-        b = contents[:do] ->
-          {b, options}
-        options[:do] ->
+        Keyword.has_key?(contents, :do) ->
+          {contents[:do], options}
+        Keyword.has_key?(options, :do) ->
           Keyword.pop(options, :do)
         options[:to] ->
           {to, options} = Keyword.pop(options, :to)
