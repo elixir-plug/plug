@@ -182,7 +182,7 @@ defmodule Plug.RouterTest do
   end
 
   test "dispatch empty body plug" do
-    assert_raise RuntimeError, fn ->
+    assert_raise RuntimeError, ~r{expected dispatch/2 to return a Plug.Conn}, fn ->
       call(Sample, conn(:get, "/bodyless"))
     end
   end
