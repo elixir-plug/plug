@@ -55,10 +55,7 @@ defmodule Plug.Session do
   end
 
   def call(conn, config) do
-    conn
-    |> Conn.put_private(:plug_session_init, conn.private[:plug_session] || %{})
-    |> Conn.put_private(:plug_session, nil)
-    |> Conn.put_private(:plug_session_fetch, fetch_session(config))
+    Conn.put_private(conn, :plug_session_fetch, fetch_session(config))
   end
 
   defp convert_store(store) do
@@ -79,7 +76,7 @@ defmodule Plug.Session do
           {nil, %{}}
         end
 
-      session = Map.merge(session, conn.private.plug_session_init)
+      session = Map.merge(session, Map.get(conn.private, :plug_session, %{}))
 
       conn
       |> Conn.put_private(:plug_session, session)
