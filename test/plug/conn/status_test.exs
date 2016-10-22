@@ -33,7 +33,7 @@ defmodule Plug.Conn.StatusTest do
   end
 
   test "reason_phrase with an unknown code raises an error" do
-    assert_raise(ArgumentError, fn ->
+    assert_raise(ArgumentError, ~r/unknown status code 999\n\nCustom codes/, fn ->
       Status.reason_phrase(999)
     end)
   end

@@ -113,13 +113,11 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   def send_418(conn) do
-    conn
-    |> send_resp(418, "")
+    send_resp(conn, 418, "")
   end
 
   def send_451(conn) do
-    conn
-    |> send_resp(451, "")
+    send_resp(conn, 451, "")
   end
 
   def send_500(conn) do
