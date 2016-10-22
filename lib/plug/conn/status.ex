@@ -141,8 +141,8 @@ defmodule Plug.Conn.Status do
 
         config :plug, :statuses, %{451 => "Unavailable For Legal Reasons"}
 
-    After defining the config for custom statuses, recompile Plug for the changes
-    to take place:
+    After defining the config for custom statuses, Plug must be recompiled for
+    the changes to take place using:
 
         MIX_ENV=dev mix deps.compile plug
 

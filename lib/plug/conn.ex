@@ -132,9 +132,9 @@ defmodule Plug.Conn do
       put_status(conn, :actually_this_was_found)       # 404
       put_status(conn, :unavailable_for_legal_reasons) # 451
 
-  Even though 404 has been overridden, the `:not_found` atom can still be
-  used to set the status to 404 as well as the new reason
-  `:actually_this_was_found`.
+  Even though 404 has been overridden, the `:not_found` atom can still be used
+  to set the status to 404 as well as the new atom `:actually_this_was_found`
+  inflected from the reason phrase "Actually This Was Found".
   """
 
   @type adapter         :: {module, term}
