@@ -89,7 +89,7 @@ defmodule Plug.Conn.Status do
   custom_status_doc =
     if custom_statuses != %{} do
       """
-      ## Custom Status Codes
+      ## Custom status codes
 
       #{status_map_to_doc.(custom_statuses)}
       """
@@ -135,17 +135,20 @@ defmodule Plug.Conn.Status do
     raise ArgumentError, """
     unknown status code #{inspect code}
 
-    Custom codes can be defined in the config file, using the code
-    as the key and the reason phrase as the value. For example:
+    Custom codes can be defined in the configuration for the :plug application,
+    under the :statuses key (which contains a map of status codes as keys and
+    reason phrases as values). For example:
 
         config :plug, :statuses, %{451 => "Unavailable For Legal Reasons"}
 
-    After defining the config for custom statuses, recompile plug with:
+    After defining the config for custom statuses, recompile Plug for the changes
+    to take place:
 
         MIX_ENV=dev mix deps.compile plug
 
     Doing this will allow the use of the integer status code 451 as
-    well as the atom :unavailable_for_legal_reasons. For example:
+    well as the atom :unavailable_for_legal_reasons in many Plug functions.
+    For example:
 
         put_status(conn, :unavailable_for_legal_reasons)
     """

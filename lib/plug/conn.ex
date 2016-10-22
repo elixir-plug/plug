@@ -103,25 +103,29 @@ defmodule Plug.Conn do
       # Each item is emitted as a chunk
       Enum.into(~w(each chunk as a word), conn)
 
-  ## Custom Status Codes
+  ## Custom status codes
 
-  Plug allows status codes to be overridden or added in order to allow
-  new codes not directly specified by plug or its adapters. Adding or
-  overriding a status code is done in the config file. For example, to
-  override the existing 404 reason phrase ("Not Found" by default)
-  and add a new code for 451, the following config can be used:
+  Plug allows status codes to be overridden or added in order to allow new codes
+  not directly specified by Plug or its adapters. Adding or overriding a status
+  code is done through the Mix configuration of the `:plug` application. For
+  example, to override the existing 404 reason phrase for the 404 status code
+  ("Not Found" by default) and add a new 451 status code, the following config
+  can be specified:
 
       config :plug, :statuses, %{
         404 => "Actually This Was Found",
         451 => "Unavailable For Legal Reasons"
       }
 
-  As this configuration is plug specific, plug will need to be recompiled
-  for the changes to take place using:
+  As this configuration is Plug specific, Plug will need to be recompiled for
+  the changes to take place: this will not happen automatically as dependencies
+  are not automatically recompiled when their configuration changes. To recompile
+  Plug:
 
       MIX_ENV=prod mix deps.compile plug
 
-  The atoms to be used are inflected from the reason_phrase. With the above
+  The atoms that can be used in place of the status code in many functions are
+  inflected from the reason phrase of the status code. With the above
   configuration, the following will all work:
 
       put_status(conn, :not_found)                     # 404
@@ -129,8 +133,8 @@ defmodule Plug.Conn do
       put_status(conn, :unavailable_for_legal_reasons) # 451
 
   Even though 404 has been overridden, the `:not_found` atom can still be
-  used to set the status to 404 as well as `:actually_this_was_found`.
-
+  used to set the status to 404 as well as the new reason
+  `:actually_this_was_found`.
   """
 
   @type adapter         :: {module, term}
