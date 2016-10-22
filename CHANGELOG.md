@@ -3,17 +3,17 @@
 ## v1.3.0-dev
 
 * Enhancements
-  * Extend match macros to accept a plug and options
-  * Make path parameters available in `conn.params`
-  * Add `:init_opts` option to forward macro for plug options
-  * Add the `:path_params` field to `Plug.Conn` to access path params
-    apart from the `params` field
-  * Add `:assigns` option to `Plug.Router` macros to assign values to
-    `conn.assigns` for use in the match
+  * [Plug.Adapters.Cowboy] Support tuples with other than 2 elements in the adapter options
+  * [Plug.Conn] Add the `:path_params` field to access path params apart from the `params` field
+  * [Plug.Conn.Status] Allow custom status codes to be configured and dynamically inflect their atom name
+  * [Plug.Router] Extend `match/2` macros to accept a plug and options
+  * [Plug.Router] Make path parameters available in `conn.params`
+  * [Plug.Router] Add `:init_opts` option to `forward` macro for plug options
+  * [Plug.Router] Add `:assigns` option to router macros to assign values to `conn.assigns`
 
 * Bug fixes
-  * Keep `body_params` unfetched if the content-type is allowed to
-    pass through the parser.
+  * [Plug.Debugger] Do not show query parameters when debugging a page with bad query string
+  * [Plug.Parsers] Keep `body_params` unfetched if the content-type is allowed to pass through the parser
 
 ## v1.2.2
 
