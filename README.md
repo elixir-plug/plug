@@ -224,7 +224,27 @@ Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help d
   * `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
   * `Plug.ErrorHandler` - allows developers to customize error pages in case of crashes instead of sending a blank one;
 
+## Contributing
+
+We welcome everyone to contribute to Plug and help us tackle existing issues!
+
+Use the [issue tracker][issues] for bug reports or feature requests. You may also start a discussion on the [mailing list][ML] or the **[#elixir-lang][IRC]** channel on [Freenode][freenode] IRC. Open a [pull request][pulls] when you are ready to contribute.
+
+When submitting a pull request you should not update the `CHANGELOG.md`.
+
+If you are planning to contribute documentation, [please check our best practices for writing documentation][writing-docs].
+
+Finally, remember all interactions in our official spaces follow our [Code of Conduct][code-of-conduct].
+
 ## License
 
 Plug source code is released under Apache 2 License.
 Check LICENSE file for more information.
+
+  [issues]: https://github.com/elixir-lang/plug/issues
+  [pulls]: https://github.com/elixir-lang/plug/pulls
+  [ML]: https://groups.google.com/group/elixir-lang-core
+  [code-of-conduct]: https://github.com/elixir-lang/elixir/blob/master/CODE_OF_CONDUCT.md
+  [writing-docs]: http://elixir-lang.org/docs/stable/elixir/writing-documentation.html
+  [IRC]: https://webchat.freenode.net/?channels=#elixir-lang
+  [freenode]: http://www.freenode.net
