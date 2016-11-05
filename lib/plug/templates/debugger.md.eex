@@ -17,8 +17,8 @@ Exception:
   * Peer: <%= peer(@conn) %>
 
 ### Headers
-    <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-    <%= key %>: <%= value %><% end %>
+  <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+  * <%= key %>: <%= value %><% end %>
 
 ### Session
 
