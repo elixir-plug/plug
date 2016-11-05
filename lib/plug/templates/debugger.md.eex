@@ -18,7 +18,7 @@ Exception:
 
 ### Headers
     <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-      <%= key %>: <%= value %><% end %>
+    <%= key %>: <%= value %><% end %>
 
 ### Session
 

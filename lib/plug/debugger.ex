@@ -204,7 +204,7 @@ defmodule Plug.Debugger do
   defp accepts_html?(_accept_header = []),
     do: false
   defp accepts_html?(_accept_header = [header | _]),
-    do: String.contains?(header, ["*/*", "text/html"])
+    do: String.contains?(header, ["*/*", "text/*", "text/html"])
 
   defp maybe_fetch_session(conn) do
     if conn.private[:plug_session_fetch] do
