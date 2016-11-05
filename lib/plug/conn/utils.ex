@@ -182,11 +182,10 @@ defmodule Plug.Conn.Utils do
   end
 
   @doc ~S"""
-  Parses a value as defined in [RFC-1341][1].
+  Parses a value as defined in [RFC-1341](http://www.w3.org/Protocols/rfc1341/4_Content-Type.html).
+
   For convenience, trims whitespace at the end of the token.
   Returns `false` if the token is invalid.
-
-  [1]: http://www.w3.org/Protocols/rfc1341/4_Content-Type.html
 
   ## Examples
 
