@@ -54,7 +54,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden" do
-    conn = conn(:get, "/boom")
+    conn = conn(:get, "/boom") |> put_req_header("accept", "text/html")
 
     assert_raise RuntimeError, "<oops>", fn ->
       Router.call(conn, [])
@@ -70,7 +70,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden and warns on non-500 errors" do
-    conn = conn(:get, "/soft_boom")
+    conn = conn(:get, "/soft_boom") |> put_req_header("accept", "text/html")
 
     capture_log fn ->
       assert_raise Exception, fn ->
@@ -88,7 +88,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden but is a no-op when response is already sent" do
-    conn = conn(:get, "/send_and_boom")
+    conn = conn(:get, "/send_and_boom") |> put_req_header("accept", "text/html")
 
     capture_log fn ->
       assert_raise RuntimeError, "oops", fn ->
@@ -101,7 +101,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden and unwrapps wrapped errors" do
-    conn = conn(:get, "/send_and_wrapped")
+    conn = conn(:get, "/send_and_wrapped") |> put_req_header("accept", "text/html")
 
     capture_log fn ->
       assert_raise Exception, "oops", fn ->
@@ -163,7 +163,10 @@ defmodule Plug.DebuggerTest do
   end
 
   test "shows request info" do
-    conn = render(conn(:get, "/foo/bar?baz=bat"), [], fn -> raise "oops" end)
+    conn =
+      conn(:get, "/foo/bar?baz=bat")
+      |> put_req_header("accept", "text/html")
+      |> render([], fn -> raise "oops" end)
 
     assert conn.resp_body =~ "<summary>Request info</summary>"
     assert conn.resp_body =~ "http://www.example.com:80/foo/bar"
@@ -175,6 +178,7 @@ defmodule Plug.DebuggerTest do
     conn =
       conn(:get, "/foo/bar?baz=bat", [])
       |> put_req_header("my-header", "my-value")
+      |> put_req_header("accept", "text/html")
       |> render([], fn -> raise "oops" end)
 
     assert conn.resp_body =~ "<summary>Headers</summary>"
@@ -185,6 +189,7 @@ defmodule Plug.DebuggerTest do
   test "shows params" do
     conn =
       conn(:get, "/foo/bar?from-qs-key=from-qs-value", %{"from-body-key" => "from-body-value"})
+      |> put_req_header("accept", "text/html")
       |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
       |> render([], fn -> raise "oops" end)
 
@@ -210,6 +215,7 @@ defmodule Plug.DebuggerTest do
 
     conn =
       conn(:get, "/foo/bar")
+      |> put_req_header("accept", "text/html")
       |> fetch_cookies
       |> (&put_in(&1.cookies["foobar"], "sid")).()
       |> Plug.Session.call(Plug.Session.init(store: Plug.ProcessStore, key: "foobar"))
@@ -221,7 +227,7 @@ defmodule Plug.DebuggerTest do
   end
 
   defp stack(stack) do
-    render(conn(:get, "/"), [stack: stack], fn ->
+    render(conn(:get, "/") |> put_req_header("accept", "text/html"), [stack: stack], fn ->
       raise "oops"
     end)
   end
@@ -229,6 +235,7 @@ defmodule Plug.DebuggerTest do
   test "sanitizes output" do
     conn =
       conn(:get, "/foo/bar?x=<script>alert(document.domain)</script>")
+      |> put_req_header("accept", "text/html")
       |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
       |> put_req_header("<script>xss-header</script>", "<script>xss-val</script>")
       |> render([], fn -> raise "<script>oops</script>" end)
@@ -252,13 +259,25 @@ defmodule Plug.DebuggerTest do
   end
 
   test "styles can be overridden" do
-    conn = conn(:get, "/boom")
+    conn = conn(:get, "/boom") |> put_req_header("accept", "text/html")
     assert_raise RuntimeError, fn ->
       StyledRouter.call(conn, [])
     end
     {_status, _headers, body} = sent_resp(conn)
     assert body =~ "color: #c0ffee"
     refute body =~ ~r(\.exception-logo {\s*position: absolute)
+  end
+
+  test "if the Accept header is something else than text/html, Markdown is rendered" do
+    conn = conn(:get, "/") |> put_req_header("accept", "application/json")
+    conn = render(conn, [], fn ->
+      raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
+    end)
+
+    assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
+
+    assert conn.resp_body =~ "# Plug.Parsers.UnsupportedMediaTypeError at GET /"
+    assert conn.resp_body =~ "unsupported media type foo/bar"
   end
 
   test "stacktrace from otp_app" do

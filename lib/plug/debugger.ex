@@ -165,7 +165,8 @@ defmodule Plug.Debugger do
   ## Rendering
 
   require EEx
-  EEx.function_from_file :defp, :template, "lib/plug/templates/debugger.eex", [:assigns]
+  EEx.function_from_file :defp, :template_html, "lib/plug/templates/debugger.html.eex", [:assigns]
+  EEx.function_from_file :defp, :template_markdown, "lib/plug/templates/debugger.md.eex", [:assigns]
 
   # Made public with @doc false for testing.
   @doc false
@@ -173,13 +174,37 @@ defmodule Plug.Debugger do
     session = maybe_fetch_session(conn)
     params  = maybe_fetch_query_params(conn)
     {title, message} = info(kind, reason)
-    conn = put_resp_content_type(conn, "text/html")
     style = Enum.into(opts[:style] || [], @default_style)
-    send_resp conn, status, template(conn: conn, frames: frames(stack, opts),
-                                     title: title, message: message,
-                                     session: session, params: params,
-                                     style: style)
+
+    if accepts_html?(get_req_header(conn, "accept")) do
+      conn = put_resp_content_type(conn, "text/html")
+      assigns = [
+        conn: conn,
+        frames: frames(stack, opts),
+        title: title,
+        message: message,
+        session: session,
+        params: params,
+        style: style,
+      ]
+      send_resp(conn, status, template_html(assigns))
+    else
+      conn = put_resp_content_type(conn, "text/markdown")
+      assigns = [
+        conn: conn,
+        title: title,
+        formatted: Exception.format(kind, reason, stack),
+        session: session,
+        params: params,
+      ]
+      send_resp(conn, status, template_markdown(assigns))
+    end
   end
+
+  defp accepts_html?(_accept_header = []),
+    do: false
+  defp accepts_html?(_accept_header = [header | _]),
+    do: String.contains?(header, ["*/*", "text/*", "text/html"])
 
   defp maybe_fetch_session(conn) do
     if conn.private[:plug_session_fetch] do
