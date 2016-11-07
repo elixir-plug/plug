@@ -772,7 +772,6 @@
 
         function itemOnclick () {
             var idx = this.getAttribute('data-index')
-            console.log(idx)
 
             var $detail = document.querySelector('[role~="stack-trace-details"].-active')
             if ($detail) removeClass($detail, '-active')
