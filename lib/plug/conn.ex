@@ -510,7 +510,8 @@ defmodule Plug.Conn do
   """
   @spec get_req_header(t, binary) :: [binary]
   def get_req_header(%Conn{req_headers: headers}, key) when is_binary(key) do
-    for {k, v} <- headers, k == key, do: v
+    downcased_key = String.downcase(key)
+    for {k, v} <- headers, String.downcase(k) == downcased_key, do: v
   end
 
   @doc """
