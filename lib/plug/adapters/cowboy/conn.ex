@@ -69,7 +69,14 @@ defmodule Plug.Adapters.Cowboy.Conn do
     # otherwise cowboy will attempt to load the
     # whole length at once.
     {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
-    {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, opts, [], callback)
+
+    # We need to construct the header opts using fix defaults here, since once opts
+    # are passed cowboy defaults are not applied anymore and fallbacks in body function are used.
+    header_opts = [length: 64000,
+                   read_length:  opts[:header_read_length]  || 64000,
+                   read_timeout: opts[:header_read_timeout] ||  5000 ]
+
+    {:ok, limit, acc, req} = parse_multipart(Request.part(req, header_opts), limit, opts, [], callback)
 
     params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
 
