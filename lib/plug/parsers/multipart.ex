@@ -1,6 +1,11 @@
 defmodule Plug.Parsers.MULTIPART do
   @moduledoc """
   Parses multipart request body.
+
+  Besides the options supported by `Plug.Conn.read_body/2`,
+  the multipart parser also checks for `:headers` option that
+  contains the same `:length`, `:read_length` and `:read_timeout`
+  options which are used explicitly for parsing multipart headers.
   """
 
   @behaviour Plug.Parsers

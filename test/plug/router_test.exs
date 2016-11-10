@@ -94,9 +94,6 @@ defmodule Plug.RouterTest do
       conn |> resp(200, "root")
     end
 
-    get "/bodyless" do
-    end
-
     get "/1/bar" do
       conn |> resp(200, "ok")
     end
@@ -179,12 +176,6 @@ defmodule Plug.RouterTest do
   test "dispatch root" do
     conn = call(Sample, conn(:get, "/"))
     assert conn.resp_body == "root"
-  end
-
-  test "dispatch empty body plug" do
-    assert_raise RuntimeError, ~r{expected dispatch/2 to return a Plug.Conn}, fn ->
-      call(Sample, conn(:get, "/bodyless"))
-    end
   end
 
   test "dispatch literal segment" do
