@@ -69,7 +69,16 @@ defmodule Plug.Adapters.Cowboy.Conn do
     # otherwise cowboy will attempt to load the
     # whole length at once.
     {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
-    {:ok, limit, acc, req} = parse_multipart(Request.part(req), limit, opts, [], callback)
+
+    # We need to construct the header opts using fix defaults here, since once opts
+    # are passed cowboy defaults are not applied anymore and fallbacks in body function are used.
+    maybe_header_opts = Keyword.get(opts, :header, [])
+    header_opts = [length: 64000,
+                   read_length:  maybe_header_opts[:read_length]  || 64000,
+                   read_timeout: maybe_header_opts[:read_timeout] ||  5000]
+
+
+    {:ok, limit, acc, req} = parse_multipart(Request.part(req, header_opts), limit, opts, header_opts, [], callback)
 
     params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
 
@@ -92,14 +101,14 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   ## Multipart
 
-  defp parse_multipart({:ok, headers, req}, limit, opts, acc, callback) when limit >= 0 do
+  defp parse_multipart({:ok, headers, req}, limit, opts, header_opts, acc, callback) when limit >= 0 do
     case callback.(headers) do
       {:binary, name} ->
         {:ok, limit, body, req} =
           parse_multipart_body(Request.part_body(req, opts), limit, opts, "")
 
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
-        parse_multipart(Request.part(req), limit, opts, [{name, body}|acc], callback)
+        parse_multipart(Request.part(req, header_opts), limit, opts, [{name, body}|acc], callback)
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
@@ -108,18 +117,18 @@ defmodule Plug.Adapters.Cowboy.Conn do
           parse_multipart_file(Request.part_body(req, opts), limit, opts, file)
 
         :ok = File.close(file)
-        parse_multipart(Request.part(req), limit, opts, [{name, uploaded}|acc], callback)
+        parse_multipart(Request.part(req, header_opts), limit, opts, [{name, uploaded}|acc], callback)
 
       :skip ->
-        parse_multipart(Request.part(req), limit, opts, acc, callback)
+        parse_multipart(Request.part(req, header_opts), limit, opts, acc, callback)
     end
   end
 
-  defp parse_multipart({:ok, _headers, req}, limit, _opts, acc, _callback) do
+  defp parse_multipart({:ok, _headers, req}, limit, _opts, _header_opts, acc, _callback) do
     {:ok, limit, acc, req}
   end
 
-  defp parse_multipart({:done, req}, limit, _opts, acc, _callback) do
+  defp parse_multipart({:done, req}, limit, _opts, _header_opts, acc, _callback) do
     {:ok, limit, acc, req}
   end
 
