@@ -52,7 +52,7 @@ defmodule Plug do
   pipelines.
   """
 
-  @type opts :: tuple | atom | integer | float | [opts] | %{opts => opts}
+  @type opts :: binary | tuple | atom | integer | float | [opts] | %{opts => opts}
 
   use Application
 
