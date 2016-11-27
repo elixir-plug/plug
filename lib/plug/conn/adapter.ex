@@ -82,9 +82,9 @@ defmodule Plug.Conn.Adapter do
   the body. The callback will return one of the following values:
 
   * `{:binary, name}` - the current segment must be treated as a regular
-                          binary value with the given `name`
-  * `{:file, name, file, upload} - the current segment is a file upload with `name`
-                                     and contents should be written to the given `file`
+    binary value with the given `name`
+  * `{:file, name, file, upload}` - the current segment is a file upload with `name`
+    and contents should be written to the given `file`
   * `:skip` - this multipart segment should be skipped
 
   This function may return a `:ok` or `:more` tuple. The first one is
