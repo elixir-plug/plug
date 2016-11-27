@@ -4,8 +4,10 @@
 
 * Enhancements
   * [Plug.Adapters.Cowboy] Support tuples with other than 2 elements in the adapter options
+  * [Plug.Adapters.Cowboy] Support controlling how multipart headers are parsed
   * [Plug.Conn] Add the `:path_params` field to access path params apart from the `params` field
   * [Plug.Conn.Status] Allow custom status codes to be configured and dynamically inflect their atom name
+  * [Plug.Debugger] Support content negotiation and defaults to Markdown when HTML cannot be served
   * [Plug.Router] Extend `match/2` macros to accept a plug and options
   * [Plug.Router] Make path parameters available in `conn.params`
   * [Plug.Router] Add `:init_opts` option to `forward` macro for plug options
