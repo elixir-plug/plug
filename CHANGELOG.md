@@ -1,6 +1,6 @@
 ## Changelog
 
-## v1.3.0-dev
+## v1.3.0
 
 * Enhancements
   * [Plug.Adapters.Cowboy] Support tuples with other than 2 elements in the adapter options
