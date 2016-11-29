@@ -31,12 +31,14 @@ defmodule Plug do
   Here's an example of a function plug:
 
       def json_header_plug(conn, opts) do
-        conn |> put_resp_content_type("application/json")
+        conn |> Plug.Conn.put_resp_content_type("application/json")
       end
 
   Here's an example of a module plug:
 
       defmodule JSONHeaderPlug do
+        import Plug.Conn
+
         def init(opts) do
           opts
         end
