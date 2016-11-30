@@ -122,7 +122,7 @@ defmodule Plug.Conn do
   are not automatically recompiled when their configuration changes. To recompile
   Plug:
 
-      MIX_ENV=prod mix deps.compile plug
+      mix deps.clean --build plug
 
   The atoms that can be used in place of the status code in many functions are
   inflected from the reason phrase of the status code. With the above
