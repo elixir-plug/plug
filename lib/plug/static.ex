@@ -63,7 +63,7 @@ defmodule Plug.Static do
       to `nil` (no filtering).
 
     * `:only_matching` - a relaxed version of `:only` that will
-      serve any request as long as one the given values matches the
+      serve any request as long as one of the given values matches the
       given path. For example, `only_matching: ["images", "favicon"]`
       will match any request that starts at "images" or "favicon",
       be it "/images/foo.png", "/images-high/foo.png", "/favicon.ico"
