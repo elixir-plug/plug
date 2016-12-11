@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Cowboy do
     Defaults to 100.
 
   * `:max_connections` - max number of connections supported.
-    Defaults to `16384`.
+    Defaults to `16_384`.
 
   * `:dispatch` - manually configure Cowboy's dispatch.
     If this option is used, the given plug won't be initialized
@@ -43,7 +43,7 @@ defmodule Plug.Adapters.Cowboy do
       Enum.partition(cowboy_options, &is_tuple(&1) and tuple_size(&1) == 2)
 
     cowboy_options
-    |> Keyword.put_new(:max_connections, 16384)
+    |> Keyword.put_new(:max_connections, 16_384)
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
     |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
     |> normalize_cowboy_options(scheme)
@@ -189,7 +189,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp dispatch_for(plug, opts) do
     opts = plug.init(opts)
-    [{:_, [ {:_, Plug.Adapters.Cowboy.Handler, {plug, opts}} ]}]
+    [{:_, [{:_, Plug.Adapters.Cowboy.Handler, {plug, opts}}]}]
   end
 
   defp normalize_ssl_file(key, cowboy_options) do

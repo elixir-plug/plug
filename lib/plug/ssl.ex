@@ -79,7 +79,7 @@ defmodule Plug.SSL do
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
     if Keyword.get(opts, :hsts, true) do
-      expires    = Keyword.get(opts, :expires, 31536000)
+      expires    = Keyword.get(opts, :expires, 31_536_000)
       subdomains = Keyword.get(opts, :subdomains, false)
 
       "max-age=#{expires}" <>

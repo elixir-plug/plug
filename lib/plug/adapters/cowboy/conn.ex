@@ -71,7 +71,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
     # We need to construct the header opts using defaults here,
     # since once opts are passed cowboy defaults are not applied anymore.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
-    headers_opts = headers_opts ++ [length: 64000, read_length:  64000, read_timeout: 5000]
+    headers_opts = headers_opts ++ [length: 64_000, read_length:  64_000, read_timeout: 5000]
 
     {:ok, limit, acc, req} = parse_multipart(:cowboy_req.part(req, headers_opts), limit, opts, headers_opts, [], callback)
 
