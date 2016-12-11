@@ -189,7 +189,7 @@ defmodule Plug.Adapters.Cowboy do
 
   defp dispatch_for(plug, opts) do
     opts = plug.init(opts)
-    [{:_, [ {:_, Plug.Adapters.Cowboy.Handler, {plug, opts}} ]}]
+    [{:_, [{:_, Plug.Adapters.Cowboy.Handler, {plug, opts}}]}]
   end
 
   defp normalize_ssl_file(key, cowboy_options) do

@@ -26,7 +26,7 @@ defmodule Plug.HTML do
     {?', "&#39;"}
   ]
 
-  Enum.each @escapes, fn { match, insert } ->
+  Enum.each @escapes, fn {match, insert} ->
     defp escape_char(unquote(match)), do: unquote(insert)
   end
 
