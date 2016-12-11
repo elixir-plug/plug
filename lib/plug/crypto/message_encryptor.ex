@@ -131,7 +131,7 @@ defmodule Plug.Crypto.MessageEncryptor do
 
   # Verifies and decrypts a message using AES128-CBC mode
   # with HMAC-SHA-1 for the authentication code.
-  # 
+  #
   # Decryption will never be performed prior to verification.
   defp aes256_cbc_hmac_sha1_decrypt(cipher_text, secret, sign_secret)
       when bit_size(secret) > 256,
@@ -157,7 +157,7 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   # Encrypts and authenticates a message using AES128-GCM mode.
-  # 
+  #
   # A random 128-bit content encryption key (CEK) is generated for
   # every message which is then encrypted with `aes_gcm_key_wrap/3`.
   defp aes128_gcm_encrypt(plain_text, secret, sign_secret)
@@ -176,9 +176,9 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   # Verifies and decrypts a message using AES128-GCM mode.
-  # 
+  #
   # Decryption will never be performed prior to verification.
-  # 
+  #
   # The encrypted content encryption key (CEK) is decrypted
   # with `aes_gcm_key_unwrap/3`.
   defp aes128_gcm_decrypt(cipher_text, secret, sign_secret)
@@ -212,7 +212,7 @@ defmodule Plug.Crypto.MessageEncryptor do
 
   # Wraps a decrypted content encryption key (CEK) with secret and
   # sign_secret using AES GCM mode.
-  # 
+  #
   # See: https://tools.ietf.org/html/rfc7518#section-4.7
   defp aes_gcm_key_wrap(cek, secret, sign_secret)
       when bit_size(secret) > 256,
@@ -228,7 +228,7 @@ defmodule Plug.Crypto.MessageEncryptor do
 
   # Unwraps an encrypted content encryption key (CEK) with secret and
   # sign_secret using AES GCM mode.
-  # 
+  #
   # See: https://tools.ietf.org/html/rfc7518#section-4.7
   defp aes_gcm_key_unwrap(wrapped_cek, secret, sign_secret)
       when bit_size(secret) > 256,
@@ -266,7 +266,7 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   # Unpads a message using the PKCS #7 cryptographic message syntax.
-  # 
+  #
   # See: https://tools.ietf.org/html/rfc2315
   # See: `pkcs7_pad/1`
   defp pkcs7_unpad(<<>>),
