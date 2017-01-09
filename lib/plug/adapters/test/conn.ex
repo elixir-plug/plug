@@ -86,8 +86,16 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
-  def parse_req_multipart(%{params: multipart} = state, _limit, _callback) do
-    {:ok, multipart, %{state | params: nil}}
+  def parse_req_multipart(%{params: params} = state, _opts, _callback) do
+    {:ok, params, state}
+  end
+
+  def parse_req_multipart(%{req_body: multipart} = state, opts, callback) do
+    boundary = Keyword.get(opts, :boundary)
+    params = parse_multipart(:cow_multipart.parse_headers(multipart, boundary), boundary, [], callback)
+      |> Enum.reduce(%{}, &Plug.Conn.Query.decode_pair/2)
+
+    {:ok, params, state}
   end
 
   ## Private helpers
@@ -137,5 +145,28 @@ defmodule Plug.Adapters.Test.Conn do
     after
       0 -> :ok
     end
+  end
+
+  defp parse_multipart({:ok, headers, body}, boundary, acc, callback) do
+    {:done, content, rest} = :cow_multipart.parse_body(body, boundary)
+
+    case callback.(headers)do
+      {:file, name, path, %Plug.Upload{} = uploaded} ->
+        {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
+        IO.binwrite(file, content)
+        File.close(file)
+
+        parse_multipart(:cow_multipart.parse_headers(rest, boundary), boundary, [{name, uploaded}|acc], callback)
+
+        {:binary, name} ->
+          parse_multipart(:cow_multipart.parse_headers(rest, boundary), boundary, [{name, content}|acc], callback)
+
+        :skip ->
+          parse_multipart(:cow_multipart.parse_headers(rest, boundary), boundary, acc, callback)
+    end
+  end
+
+  defp parse_multipart({:done, _rest}, _boundary, acc, _callback) do
+    acc
   end
 end

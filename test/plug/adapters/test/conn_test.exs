@@ -54,10 +54,52 @@ defmodule Plug.Adapters.Test.ConnTest do
   end
 
   test "parse_req_multipart/4" do
-    conn = conn(:get, "/", a: "b", c: [%{d: "e"}, "f"])
-    {adapter, state} = conn.adapter
-    assert {:ok, params, _} = adapter.parse_req_multipart(state, 1_000_000, fn _ -> :ok end)
-    assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
+    Content-Type: text/plain\r
+    \r
+    hello
+
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"empty\"; filename=\"\"\r
+    Content-Type: application/octet-stream\r
+    \r
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice1\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice2\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"commit\"\r
+    \r
+    Create User\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    conn = conn(:post, "/")
+
+    {adapter, _state} = conn.adapter
+
+    assert {:ok, params, _} = adapter.parse_req_multipart(%{req_body: multipart}, [{:boundary, "----w58EW1cEpjzydSCq"}], &Plug.Parsers.MULTIPART.handle_headers/1)
+
+    assert params["name"] == "hello"
+    assert params["status"] == ["choice1", "choice2"]
+    assert params["empty"] == nil
+
+    assert %Plug.Upload{} = file = params["pic"]
+    assert File.read!(file.path) == "hello\n\n"
+    assert file.content_type == "text/plain"
+    assert file.filename == "foo.txt"
   end
 
   test "use existing conn.host if exists" do
