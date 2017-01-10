@@ -798,6 +798,11 @@ defmodule Plug.Conn do
   @doc """
   Puts a response cookie.
 
+  The cookie value is not automatically escaped. Therefore, if you
+  want to store values with comma, quotes, etc, you need to explicitly
+  escape them or use a function such as `Base.encode64` when writing
+  and `Base.decode64` when reading the cookie.
+
   ## Options
 
     * `:domain` - the domain the cookie applies to
