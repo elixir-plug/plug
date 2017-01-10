@@ -23,8 +23,8 @@ defmodule Plug.RequestId do
   ## Options
 
     * `:http_header` - The name of the HTTP *request* header to check for
-    existing request ids. This is also the HTTP *response* header that will be
-    set with the request id. Default value is "x-request-id"
+      existing request ids. This is also the HTTP *response* header that will be
+      set with the request id. Default value is "x-request-id"
 
         plug Plug.RequestId, http_header: "custom-request-id"
   """
