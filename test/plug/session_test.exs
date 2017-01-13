@@ -12,11 +12,11 @@ defmodule Plug.SessionTest do
     assert conn.resp_cookies == %{}
 
     conn = conn(:get, "/") |> fetch_cookies
-    opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path")
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path", extra: "extra")
     conn = Plug.Session.call(conn, opts) |> fetch_session
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
-    assert %{"foobar" => %{value: _, secure: true, path: "some/path"}} = conn.resp_cookies
+    assert %{"foobar" => %{value: _, secure: true, path: "some/path", extra: "extra"}} = conn.resp_cookies
     refute conn.resp_cookies["foobar"] |> Map.has_key?(:http_only)
 
     conn = conn(:get, "/") |> fetch_cookies
