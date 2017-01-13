@@ -68,6 +68,7 @@ defmodule Plug.Conn.Cookies do
     |> concat_if(opts[:max_age], &encode_max_age(&1, opts))
     |> concat_if(Map.get(opts, :secure, false), "; secure")
     |> concat_if(Map.get(opts, :http_only, true), "; HttpOnly")
+    |> concat_if(opts[:extra], &"; #{&1}")
   end
 
   defp encode_max_age(max_age, opts) do
