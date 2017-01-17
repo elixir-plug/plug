@@ -157,7 +157,7 @@ and then update `lib/my_app.ex` as follows:
 defmodule MyApp do
   use Application
 
-  # See http://elixir-lang.org/docs/stable/elixir/Application.html
+  # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     import Supervisor.Spec
@@ -167,7 +167,7 @@ defmodule MyApp do
       Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
     ]
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)
