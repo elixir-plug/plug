@@ -51,6 +51,11 @@ defmodule Plug.Static do
     * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
 
+    * `:etag_generation` - specify a `{module, function, args}` to be used to generate
+      an etag. The `path` of the resource will be passed to the function, as well as the `args`.
+      If this option is not supplied, etags will be generated based off of
+      file size and modification time.
+
     * `:cache_control_for_vsn_requests` - sets the cache header for
       requests starting with "?vsn=" in the query string. Defaults to
       `"public, max-age=31536000"`.
@@ -121,6 +126,7 @@ defmodule Plug.Static do
 
     qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
     et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
+    et_generation = Keyword.get(opts, :etag_generation, nil)
     headers = Keyword.get(opts, :headers, %{})
 
     from =
@@ -131,10 +137,10 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers}
+    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, et_generation, only, prefix, headers}
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, only, prefix, headers})
+  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, et_generation, only, prefix, headers})
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
@@ -147,7 +153,7 @@ defmodule Plug.Static do
 
       path = path(from, segments)
       encoding = file_encoding(conn, path, gzip?, brotli?)
-      serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, headers)
+      serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, et_generation, headers)
     else
       conn
     end
@@ -172,8 +178,8 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, headers) do
-    case put_cache_header(conn, qs_cache, et_cache, file_info) do
+  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, et_generation, headers) do
+    case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
         content_type = segments |> List.last |> MIME.from_path
 
@@ -190,7 +196,7 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _headers) do
+  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _et_generation, _headers) do
     conn
   end
 
@@ -205,13 +211,13 @@ defmodule Plug.Static do
     end
   end
 
-  defp put_cache_header(%Conn{query_string: "vsn=" <> _} = conn, qs_cache, _et_cache, _file_info)
+  defp put_cache_header(%Conn{query_string: "vsn=" <> _} = conn, qs_cache, _et_cache, _et_generation, _file_info, _path)
       when is_binary(qs_cache) do
     {:stale, put_resp_header(conn, "cache-control", qs_cache)}
   end
 
-  defp put_cache_header(conn, _qs_cache, et_cache, file_info) when is_binary(et_cache) do
-    etag = etag_for_path(file_info)
+  defp put_cache_header(conn, _qs_cache, et_cache, et_generation, file_info, path) when is_binary(et_cache) do
+    etag = etag_for_path(file_info, et_generation, path)
 
     conn =
       conn
@@ -225,13 +231,18 @@ defmodule Plug.Static do
     end
   end
 
-  defp put_cache_header(conn, _, _, _) do
+  defp put_cache_header(conn, _, _, _, _, _) do
     {:stale, conn}
   end
 
-  defp etag_for_path(file_info) do
-    file_info(size: size, mtime: mtime) = file_info
-    {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
+  defp etag_for_path(file_info, et_generation, path) do
+    case et_generation do
+      {module, function, args} ->
+        apply(module, function, [path | args])
+      nil ->
+        file_info(size: size, mtime: mtime) = file_info
+        {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
+    end
   end
 
   defp file_encoding(conn, path, gzip?, brotli?) do
