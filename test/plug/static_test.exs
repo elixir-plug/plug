@@ -55,6 +55,40 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "etag") == [etag]
   end
 
+  defmodule EtagGenerator do
+    def generate(path, a, b) do
+      {:ok, contents} = :prim_file.read_file(path)
+      (contents |> :erlang.phash2() |> Integer.to_string(16)) <> "#{a}#{b}"
+    end
+  end
+
+  test "performs etag negotiation with user defined etag generation" do
+    opts =
+      [at: "/public",
+      from: Path.expand("..", __DIR__),
+      etag_generation: {EtagGenerator, :generate, ["x", "y"]}]
+
+    conn = conn(:get, "/public/fixtures/static.txt")
+           |> Plug.Static.call(Plug.Static.init(opts))
+
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type")  == ["text/plain"]
+    assert [etag] = get_resp_header(conn, "etag")
+    assert etag == EtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y")
+    assert get_resp_header(conn, "cache-control")  == ["public"]
+
+    conn = conn(:get, "/public/fixtures/static.txt", nil)
+           |> put_req_header("if-none-match", etag)
+           |> Plug.Static.call(Plug.Static.init(opts))
+
+    assert conn.status == 304
+    assert conn.resp_body == ""
+    assert get_resp_header(conn, "cache-control")  == ["public"]
+    assert get_resp_header(conn, "content-type")  == []
+    assert get_resp_header(conn, "etag") == [etag]
+  end
+
   test "sets the cache-control_for_vsn_requests when there's a query string" do
     conn = conn(:get, "/public/fixtures/static.txt?vsn=bar") |> call
     assert conn.status == 200
