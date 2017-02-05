@@ -97,10 +97,10 @@ defmodule Plug.Router do
       defmodule AppRouter do
         use Plug.Router
 
+        plug :match
         plug Plug.Parsers, parsers: [:json],
                            pass:  ["application/json"],
                            json_decoder: Poison
-        plug :match
         plug :dispatch
 
         post "/hello" do
@@ -111,6 +111,11 @@ defmodule Plug.Router do
 
   It is important that `Plug.Parsers` is ordered prior to the `:dispatch` plug
   otherwise the matched function will not receive the parsed `Plug.Conn`.
+
+  We could also plug `Plug.Parsers` after :match (but still before `:dispatch`),
+  this means `Plug.Parsers` will only run if there is matching route. It is 
+  useful to perform actions such as authentication, which should only execute
+  after an appropriate route is found.
 
   ## Error handling
 
