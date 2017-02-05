@@ -113,7 +113,7 @@ defmodule Plug.Router do
   otherwise the matched function will not receive the parsed `Plug.Conn`.
 
   We could also plug `Plug.Parsers` after :match (but still before `:dispatch`),
-  this means `Plug.Parsers` will only run if there is matching route. It is 
+  this means `Plug.Parsers` will only run if there is matching route. It is
   useful to perform actions such as authentication, which should only execute
   after an appropriate route is found.
 
