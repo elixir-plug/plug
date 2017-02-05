@@ -73,6 +73,9 @@ defmodule Plug.Parsers do
   the map of params parsed by one of the parsers listed in `:parsers` and
   `:params` set to the result of merging the `:body_params` and `:query_params`.
 
+  It is important that `Plug.Parsers` is ordered prior to the `:dispatch` plug
+  otherwise the matched function will not receive the parsed `Plug.Conn`.
+
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
   the request cannot be parsed by any of the given types and the MIME type has
   not been explicity accepted with the `:pass` option.
@@ -99,6 +102,9 @@ defmodule Plug.Parsers do
       plug Plug.Parsers, parsers: [:urlencoded, :json],
                          pass:  ["text/*"],
                          json_decoder: Poison
+      # ...
+      plug :match
+      plug :dispatch
 
   ## Built-in parsers
 
