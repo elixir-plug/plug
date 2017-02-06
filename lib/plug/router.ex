@@ -88,11 +88,12 @@ defmodule Plug.Router do
   ## Parameter Parsing
 
   Handling request data can be done through the
-  [`Plug.Parsers`](https://hexdocs.pm/plug/Plug.Parsers.html#content) module. It
-  provides support for parsing url encoded, form-data, and json data as well as
-  providing a behaviour that all other Parsers should adopt.
+  [`Plug.Parsers`](https://hexdocs.pm/plug/Plug.Parsers.html#content) plug. It
+  provides support for parsing URL-encoded, form-data, and JSON data as well as
+  providing a behaviour that others parsers can adopt.
 
-  Here is an example of how it can be used to parse a JSON POST Body:
+  Here is an example of `Plug.Parsers` can be used in a `Plug.Router` router to
+  parse the JSON-encoded body of a POST request:
 
       defmodule AppRouter do
         use Plug.Router
@@ -104,18 +105,20 @@ defmodule Plug.Router do
         plug :dispatch
 
         post "/hello" do
-          IO.puts conn.body_params # Prints JSON POST body
+          IO.inspect conn.body_params # Prints JSON POST body
           send_resp(conn, 200, "Success!")
         end
       end
 
-  It is important that `Plug.Parsers` is ordered prior to the `:dispatch` plug
-  otherwise the matched function will not receive the parsed `Plug.Conn`.
+  It is important that `Plug.Parsers` is placed before the `:dispatch` plug in
+  the pipeline, otherwise the matched clause route will not receive the parsed
+  body in its `Plug.Conn` argument when dispatched.
 
-  We could also plug `Plug.Parsers` after :match (but still before `:dispatch`),
-  this means `Plug.Parsers` will only run if there is matching route. It is
-  useful to perform actions such as authentication, which should only execute
-  after an appropriate route is found.
+  `Plug.Parsers` can also be plugged between `:match` and `:dispatch` (like in
+  the example above): this means that `Plug.Parsers` will run only if there is a
+  matching route. This can be useful to perform actions such as authentication
+  *before* parsing the body, which should only be parsed if a route matches
+  afterwards.
 
   ## Error handling
 
