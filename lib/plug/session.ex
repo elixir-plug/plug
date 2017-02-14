@@ -93,22 +93,30 @@ defmodule Plug.Session do
           value = put_session(sid, conn, config)
           put_cookie(value, conn, config)
         :drop ->
-          if sid do
-            delete_session(sid, conn, config)
-            delete_cookie(conn, config)
-          else
-            conn
-          end
+          drop_session(sid, conn, config)
         :renew ->
-          if sid, do: delete_session(sid, conn, config)
-          value = put_session(nil, conn, config)
-          put_cookie(value, conn, config)
+          renew_session(sid, conn, config)
         :ignore ->
           conn
         nil ->
           conn
       end
     end
+  end
+
+  defp drop_session(sid, conn, config) do
+    if sid do
+      delete_session(sid, conn, config)
+      delete_cookie(conn, config)
+    else
+      conn
+    end
+  end
+
+  defp renew_session(sid, conn, config) do
+    if sid, do: delete_session(sid, conn, config)
+    value = put_session(nil, conn, config)
+    put_cookie(value, conn, config)
   end
 
   defp put_session(sid, conn, %{store: store, store_config: store_config}),

@@ -193,7 +193,8 @@ defmodule Plug.Parsers do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, headers} ->
-            reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
+            content_type = %{type: type, subtype: subtype, headers: headers}
+            reduce(conn, Keyword.fetch!(opts, :parsers), content_type, opts)
           :error ->
             merge_params(conn, %{})
         end
@@ -206,19 +207,19 @@ defmodule Plug.Parsers do
     merge_params(conn, make_empty_if_unfetched(body_params))
   end
 
-  defp reduce(conn, [h|t], type, subtype, headers, opts) do
-    case h.parse(conn, type, subtype, headers, opts) do
+  defp reduce(conn, [h|t], content_type, opts) do
+    case h.parse(conn, content_type.type, content_type.subtype, content_type.headers, opts) do
       {:ok, body, conn} ->
         merge_params(conn, body)
       {:next, conn} ->
-        reduce(conn, t, type, subtype, headers, opts)
+        reduce(conn, t, content_type, opts)
       {:error, :too_large, _conn} ->
         raise RequestTooLargeError
     end
   end
 
-  defp reduce(conn, [], type, subtype, _headers, opts) do
-    ensure_accepted_mimes(conn, type, subtype, Keyword.fetch!(opts, :pass))
+  defp reduce(conn, [], content_type, opts) do
+    ensure_accepted_mimes(conn, content_type.type, content_type.subtype, Keyword.fetch!(opts, :pass))
   end
 
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn

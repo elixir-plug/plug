@@ -119,15 +119,17 @@ defmodule Plug.Static do
   def init(opts) do
     at = Keyword.fetch!(opts, :at)
     from = Keyword.fetch!(opts, :from)
-    gzip? = Keyword.get(opts, :gzip, false)
-    brotli? = Keyword.get(opts, :brotli, false)
-    only = Keyword.get(opts, :only, [])
-    prefix = Keyword.get(opts, :only_matching, [])
 
-    qs_cache = Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000")
-    et_cache = Keyword.get(opts, :cache_control_for_etags, "public")
-    et_generation = Keyword.get(opts, :etag_generation, nil)
-    headers = Keyword.get(opts, :headers, %{})
+    opts = %{
+      gzip?: Keyword.get(opts, :gzip, false),
+      brotli?: Keyword.get(opts, :brotli, false),
+      only: Keyword.get(opts, :only, []),
+      prefix: Keyword.get(opts, :only_matching, []),
+      qs_cache: Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000"),
+      et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
+      et_generation: Keyword.get(opts, :etag_generation, nil),
+      headers: Keyword.get(opts, :headers, %{})
+    }
 
     from =
       case from do
@@ -137,23 +139,25 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
-    {Plug.Router.Utils.split(at), from, gzip?, brotli?, qs_cache, et_cache, et_generation, only, prefix, headers}
+    opts
+    |> Map.put(:at, Plug.Router.Utils.split(at))
+    |> Map.put(:from, from)
   end
 
-  def call(conn = %Conn{method: meth}, {at, from, gzip?, brotli?, qs_cache, et_cache, et_generation, only, prefix, headers})
+  def call(conn = %Conn{method: meth}, opts)
       when meth in @allowed_methods do
-    segments = subset(at, conn.path_info)
+    segments = subset(opts.at, conn.path_info)
 
-    if allowed?(only, prefix, segments) do
+    if allowed?(opts.only, opts.prefix, segments) do
       segments = Enum.map(segments, &uri_decode/1)
 
       if invalid_path?(segments) do
         raise InvalidPathError
       end
 
-      path = path(from, segments)
-      encoding = file_encoding(conn, path, gzip?, brotli?)
-      serve_static(encoding, segments, gzip?, brotli?, qs_cache, et_cache, et_generation, headers)
+      path = path(opts.from, segments)
+      encoding = file_encoding(conn, path, opts.gzip?, opts.brotli?)
+      serve_static(encoding, segments, opts)
     else
       conn
     end
@@ -178,15 +182,15 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, gzip?, brotli?, qs_cache, et_cache, et_generation, headers) do
-    case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
+  defp serve_static({:ok, conn, file_info, path}, segments, opts) do
+    case put_cache_header(conn, opts.qs_cache, opts.et_cache, opts.et_generation, file_info, path) do
       {:stale, conn} ->
         content_type = segments |> List.last |> MIME.from_path
 
         conn
-        |> maybe_add_vary(gzip?, brotli?)
+        |> maybe_add_vary(opts.gzip?, opts.brotli?)
         |> put_resp_header("content-type", content_type)
-        |> merge_resp_headers(headers)
+        |> merge_resp_headers(opts.headers)
         |> send_file(200, path)
         |> halt
       {:fresh, conn} ->
@@ -196,7 +200,7 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _gzip?, _brotli?, _qs_cache, _et_cache, _et_generation, _headers) do
+  defp serve_static({:error, conn}, _segments, _opts) do
     conn
   end
 
