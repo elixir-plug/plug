@@ -327,7 +327,7 @@ defmodule Plug.Crypto.MessageEncryptor do
   defp encode_legacy_token(sign_secret, iv, cipher_text) do
     cipher_text = Base.encode64(cipher_text) <> "--" <> Base.encode64(iv)
     cipher_text = Base.url_encode64(cipher_text)
-    cipher_tag = :crypto.hmac(:sha, sign_secret, cipher_text) |> Base.url_encode64
+    cipher_tag = Base.url_encode64(:crypto.hmac(:sha, sign_secret, cipher_text))
     cipher_text <> "##" <> cipher_tag
   end
 

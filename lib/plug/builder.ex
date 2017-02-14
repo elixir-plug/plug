@@ -77,7 +77,6 @@ defmodule Plug.Builder do
         end
       end
 
-
   ## Halting a plug pipeline
 
   A plug pipeline can be halted with `Plug.Conn.halt/1`. The builder will

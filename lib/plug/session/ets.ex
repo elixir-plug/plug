@@ -78,7 +78,7 @@ defmodule Plug.Session.ETS do
 
   defp put_new(data, table, counter \\ 0)
       when counter < @max_tries do
-    sid = :crypto.strong_rand_bytes(96) |> Base.encode64
+    sid = Base.encode64(:crypto.strong_rand_bytes(96))
 
     if :ets.insert_new(table, {sid, data, now()}) do
       sid

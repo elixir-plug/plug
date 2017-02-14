@@ -43,7 +43,7 @@ defmodule Plug.Session do
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra]
 
   def init(opts) do
-    store        = Keyword.fetch!(opts, :store) |> convert_store
+    store        = convert_store(Keyword.fetch!(opts, :store))
     key          = Keyword.fetch!(opts, :key)
     cookie_opts  = Keyword.take(opts, @cookie_opts)
     store_opts   = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)

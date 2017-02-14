@@ -679,12 +679,12 @@ defmodule Plug.Conn do
   def put_resp_content_type(conn, content_type, charset \\ "utf-8")
 
   def put_resp_content_type(conn, content_type, nil) when is_binary(content_type) do
-    conn |> put_resp_header("content-type", content_type)
+    put_resp_header(conn, "content-type", content_type)
   end
 
   def put_resp_content_type(conn, content_type, charset) when
       is_binary(content_type) and is_binary(charset) do
-    conn |> put_resp_header("content-type", "#{content_type}; charset=#{charset}")
+    put_resp_header(conn, "content-type", "#{content_type}; charset=#{charset}")
   end
 
   @doc """
@@ -821,7 +821,7 @@ defmodule Plug.Conn do
       is_binary(key) and is_binary(value) and is_list(opts) do
     cookie = [{:value, value}|opts] |> :maps.from_list() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.put(&1, key, value))
+    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
   end
 
   defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
@@ -840,7 +840,7 @@ defmodule Plug.Conn do
       is_binary(key) and is_list(opts) do
     opts = [universal_time: @epoch, max_age: 0] ++ opts
     resp_cookies = Map.put(resp_cookies, key, :maps.from_list(opts))
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.delete(&1, key))
+    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.delete(&1, key))
   end
 
   @doc """
@@ -1010,7 +1010,7 @@ defmodule Plug.Conn do
 
   defp put_session(conn, fun) do
     private = conn.private
-              |> Map.put(:plug_session, get_session(conn) |> fun.())
+              |> Map.put(:plug_session, fun.(get_session(conn)))
               |> Map.put_new(:plug_session_info, :write)
 
     %{conn | private: private}

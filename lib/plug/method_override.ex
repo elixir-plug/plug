@@ -37,7 +37,7 @@ defmodule Plug.MethodOverride do
   end
 
   defp override_method(conn, body_params) do
-    method = (body_params["_method"] || "") |> String.upcase
+    method = String.upcase(body_params["_method"] || "")
 
     cond do
       method in @allowed_methods -> %{conn | method: method}
