@@ -110,7 +110,7 @@ defmodule Plug.BuilderTest do
 
   test "an exception is raised if a plug doesn't return a connection" do
     assert_raise RuntimeError, fn ->
-       FaultyModulePlug.call(conn(:get, "/"), [])
+      FaultyModulePlug.call(conn(:get, "/"), [])
     end
 
     assert_raise RuntimeError, fn ->
