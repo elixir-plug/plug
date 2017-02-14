@@ -168,7 +168,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert List.keyfind(headers, "cache-control", 0) ==
            {"cache-control", "max-age=0, private, must-revalidate"}
     assert List.keyfind(headers, "content-length", 0) ==
-           {"content-length", File.stat!(__ENV__.file).size |> Integer.to_string}
+           {"content-length", __ENV__.file |> File.stat!() |> Map.fetch!(:size) |> Integer.to_string()}
   end
 
   test "skips file on head" do

@@ -13,15 +13,15 @@ defmodule Plug.RouterTest do
     end
 
     get "/" do
-      conn |> resp(200, "forwarded")
+      resp(conn, 200, "forwarded")
     end
 
     get "/script_name" do
-      conn |> resp(200, Enum.join(conn.script_name, ","))
+      resp(conn, 200, Enum.join(conn.script_name, ","))
     end
 
     match "/params" do
-      conn |> resp(200, conn.params["param"])
+      resp(conn, 200, conn.params["param"])
     end
 
     match "/throw", via: [:get, :post] do
@@ -86,44 +86,44 @@ defmodule Plug.RouterTest do
     plug :verify_router_options
     plug :dispatch
 
-    get "/", host: "foo.bar", do: conn |> resp(200, "foo.bar root")
-    get "/", host: "foo.",    do: conn |> resp(200, "foo.* root")
+    get "/", host: "foo.bar", do: resp(conn, 200, "foo.bar root")
+    get "/", host: "foo.",    do: resp(conn, 200, "foo.* root")
     forward "/", to: Forward, host: "foo."
 
     get "/" do
-      conn |> resp(200, "root")
+      resp(conn, 200, "root")
     end
 
     get "/1/bar" do
-      conn |> resp(200, "ok")
+      resp(conn, 200, "ok")
     end
 
     get "/2/:bar" do
-      conn |> resp(200, inspect(bar))
+      resp(conn, 200, inspect(bar))
     end
 
     get "/3/bar-:bar" do
-      conn |> resp(200, inspect(bar))
+      resp(conn, 200, inspect(bar))
     end
 
     get "/4/*bar" do
-      conn |> resp(200, inspect(bar))
+      resp(conn, 200, inspect(bar))
     end
 
     get "/5/bar-*bar" do
-      conn |> resp(200, inspect(bar))
+      resp(conn, 200, inspect(bar))
     end
 
     match "/6/bar" do
-      conn |> resp(200, "ok")
+      resp(conn, 200, "ok")
     end
 
     get "/7/:bar" when byte_size(bar) <= 3,
       some_option: :hello,
-      do: conn |> resp(200, inspect(bar))
+      do: resp(conn, 200, inspect(bar))
 
     get "/8/bar baz/:bat" do
-      conn |> resp(200, bat)
+      resp(conn, 200, bat)
     end
 
     plug = SamplePlug
@@ -136,17 +136,17 @@ defmodule Plug.RouterTest do
     forward "/nested/forward", to: Forward
 
     match "/params/get/:param" do
-      conn |> resp(200, conn.params["param"])
+      resp(conn, 200, conn.params["param"])
     end
 
     forward "/params/forward/:param", to: Forward
 
     get "/options/map", private: %{an_option: :a_value} do
-      conn |> resp(200, inspect(conn.private))
+      resp(conn, 200, inspect(conn.private))
     end
 
     get "/options/assigns", assigns: %{an_option: :a_value} do
-      conn |> resp(200, inspect(conn.assigns))
+      resp(conn, 200, inspect(conn.assigns))
     end
 
     forward "/options/forward", to: Forward, private: %{an_option: :a_value},
@@ -159,7 +159,7 @@ defmodule Plug.RouterTest do
     forward "/plug/init_opts", to: plug, init_opts: opts, private: %{baz: :qux}
 
     match _ do
-      conn |> resp(404, "oops")
+      resp(conn, 404, "oops")
     end
 
     defp verify_router_options(conn, _opts) do

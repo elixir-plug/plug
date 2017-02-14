@@ -20,21 +20,21 @@ defmodule Plug.StaticTest do
   defp call(conn), do: MyPlug.call(conn, [])
 
   test "serves the file" do
-    conn = conn(:get, "/public/fixtures/static.txt") |> call
+    conn = call(conn(:get, "/public/fixtures/static.txt"))
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
   end
 
   test "serves the file with a urlencoded filename" do
-    conn = conn(:get, "/public/fixtures/static%20with%20spaces.txt") |> call
+    conn = call(conn(:get, "/public/fixtures/static%20with%20spaces.txt"))
     assert conn.status == 200
     assert conn.resp_body == "SPACES"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
   end
 
   test "performs etag negotiation" do
-    conn = conn(:get, "/public/fixtures/static.txt") |> call
+    conn = call(conn(:get, "/public/fixtures/static.txt"))
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
@@ -68,8 +68,7 @@ defmodule Plug.StaticTest do
       from: Path.expand("..", __DIR__),
       etag_generation: {EtagGenerator, :generate, ["x", "y"]}]
 
-    conn = conn(:get, "/public/fixtures/static.txt")
-           |> Plug.Static.call(Plug.Static.init(opts))
+    conn = Plug.Static.call(conn(:get, "/public/fixtures/static.txt"), Plug.Static.init(opts))
 
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
@@ -90,7 +89,7 @@ defmodule Plug.StaticTest do
   end
 
   test "sets the cache-control_for_vsn_requests when there's a query string" do
-    conn = conn(:get, "/public/fixtures/static.txt?vsn=bar") |> call
+    conn = call(conn(:get, "/public/fixtures/static.txt?vsn=bar"))
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
@@ -107,8 +106,7 @@ defmodule Plug.StaticTest do
       cache_control_for_etags: nil,
       headers: %{"x-custom" => "x-value"}]
 
-    conn = conn(:get, "/public/fixtures/static.txt")
-           |> Plug.Static.call(Plug.Static.init(opts))
+    conn = Plug.Static.call(conn(:get, "/public/fixtures/static.txt"), Plug.Static.init(opts))
 
     assert conn.status == 200
     assert get_resp_header(conn, "cache-control") == ["max-age=0, private, must-revalidate"]
@@ -117,35 +115,35 @@ defmodule Plug.StaticTest do
   end
 
   test "passes through on other paths" do
-    conn = conn(:get, "/another/fallback.txt") |> call
+    conn = call(conn(:get, "/another/fallback.txt"))
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
     assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes through on non existing files" do
-    conn = conn(:get, "/public/fixtures/unknown.txt") |> call
+    conn = call(conn(:get, "/public/fixtures/unknown.txt"))
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
     assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes through on directories" do
-    conn = conn(:get, "/public/fixtures") |> call
+    conn = call(conn(:get, "/public/fixtures"))
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
     assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes for non-get/non-head requests" do
-    conn = conn(:post, "/public/fixtures/static.txt") |> call
+    conn = call(conn(:post, "/public/fixtures/static.txt"))
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
     assert get_resp_header(conn, "x-custom")  == []
   end
 
   test "passes through does not check path validity" do
-    conn = conn(:get, "/another/fallback%2Ftxt") |> call
+    conn = call(conn(:get, "/another/fallback%2Ftxt"))
     assert conn.status == 404
     assert conn.resp_body == "Passthrough"
     assert get_resp_header(conn, "x-custom")  == []
@@ -154,19 +152,19 @@ defmodule Plug.StaticTest do
   test "returns 400 for unsafe paths" do
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
-      conn(:get, "/public/fixtures/../fixtures/static/file.txt") |> call
+      call(conn(:get, "/public/fixtures/../fixtures/static/file.txt"))
     end
     assert Plug.Exception.status(exception) == 400
 
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
-      conn(:get, "/public/fixtures/%2E%2E/fixtures/static/file.txt") |> call
+      call(conn(:get, "/public/fixtures/%2E%2E/fixtures/static/file.txt"))
     end
     assert Plug.Exception.status(exception) == 400
 
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
-      conn(:get, "/public/c:\\foo.txt") |> call
+      call(conn(:get, "/public/c:\\foo.txt"))
     end
     assert Plug.Exception.status(exception) == 400
   end
@@ -174,7 +172,7 @@ defmodule Plug.StaticTest do
   test "returns 400 for invalid paths" do
     exception = assert_raise Plug.Static.InvalidPathError,
                              "invalid path for static asset", fn ->
-      conn(:get, "/public/%3C%=%20pkgSlugName%20%") |> call
+      call(conn(:get, "/public/%3C%=%20pkgSlugName%20%"))
     end
 
     assert Plug.Exception.status(exception) == 400
@@ -240,19 +238,19 @@ defmodule Plug.StaticTest do
   end
 
   test "serves only allowed files" do
-    conn = conn(:get, "/static.txt") |> FilterPlug.call([])
+    conn = FilterPlug.call(conn(:get, "/static.txt"), [])
     assert conn.status == 200
 
-    conn = conn(:get, "/ssl/cert.pem") |> FilterPlug.call([])
+    conn = FilterPlug.call(conn(:get, "/ssl/cert.pem"), [])
     assert conn.status == 200
 
-    conn = conn(:get, "/") |> FilterPlug.call([])
+    conn = FilterPlug.call(conn(:get, "/"), [])
     assert conn.status == 404
 
-    conn = conn(:get, "/static/file.txt") |> FilterPlug.call([])
+    conn = FilterPlug.call(conn(:get, "/static/file.txt"), [])
     assert conn.status == 404
 
-    conn = conn(:get, "/file-deadbeef.txt") |> FilterPlug.call([])
+    conn = FilterPlug.call(conn(:get, "/file-deadbeef.txt"), [])
     assert conn.status == 200
   end
 end

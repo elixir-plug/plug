@@ -20,7 +20,7 @@ defmodule Plug.ProcessStore do
   end
 
   def put(conn, nil, data, nil) do
-    sid = :crypto.strong_rand_bytes(96) |> Base.encode64
+    sid = Base.encode64(:crypto.strong_rand_bytes(96))
     put(conn, sid, data, nil)
   end
 

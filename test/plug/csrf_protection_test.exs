@@ -17,18 +17,21 @@ defmodule Plug.CSRFProtectionTest do
   @secret String.duplicate("abcdef0123456789", 8)
 
   def call(conn, csrf_plug_opts \\ []) do
-    do_call(conn, csrf_plug_opts)
+    conn
+    |> do_call(csrf_plug_opts)
     |> handle_token
   end
 
   def call_with_invalid_token(conn) do
-    do_call(conn, [])
+    conn
+    |> do_call([])
     |> put_session("_csrf_token", "invalid")
     |> handle_token
   end
 
   defp do_call(conn, csrf_plug_opts) do
-    put_in(conn.secret_key_base, @secret)
+    conn.secret_key_base
+    |> put_in(@secret)
     |> fetch_query_params
     |> Plug.Session.call(@default_opts)
     |> fetch_session
@@ -66,11 +69,11 @@ defmodule Plug.CSRFProtectionTest do
 
   test "raise error for missing authenticity token in session" do
     assert_raise InvalidCSRFTokenError, fn ->
-      conn(:post, "/") |> call()
+      call(conn(:post, "/"))
     end
 
     assert_raise InvalidCSRFTokenError, fn ->
-      conn(:post, "/", %{_csrf_token: "foo"}) |> call()
+      call(conn(:post, "/", %{_csrf_token: "foo"}))
     end
   end
 
@@ -78,19 +81,17 @@ defmodule Plug.CSRFProtectionTest do
     old_conn = call(conn(:get, "/"))
 
     assert_raise InvalidCSRFTokenError, fn ->
-      conn(:post, "/", %{_csrf_token: "foo"})
-      |> call_with_old_conn(old_conn)
+      call_with_old_conn(conn(:post, "/", %{_csrf_token: "foo"}), old_conn)
     end
 
     assert_raise InvalidCSRFTokenError, fn ->
-      conn(:post, "/", %{})
-      |> call_with_old_conn(old_conn)
+      call_with_old_conn(conn(:post, "/", %{}), old_conn)
     end
   end
 
   test "raise error when unrecognized option is sent" do
     assert_raise ArgumentError, fn ->
-      conn(:post, "/") |> call(with: :unknown_opt)
+      call(conn(:post, "/"), with: :unknown_opt)
     end
   end
 
@@ -117,11 +118,11 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "clear session only for the current running connection" do
-    conn = conn(:get, "/?token=get") |> call
+    conn = call(conn(:get, "/?token=get"))
     csrf_token = conn.resp_body
 
-    conn = conn(:post, "/") |> call_with_old_conn(conn, with: :clear_session)
-    assert conn |> get_session("key") == nil
+    conn = call_with_old_conn(conn(:post, "/"), conn, with: :clear_session)
+    assert get_session(conn, "key") == nil
 
     assert conn(:post, "/")
            |> put_req_header("x-csrf-token", csrf_token)
@@ -130,61 +131,61 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "unprotected requests are always valid" do
-    conn = conn(:get, "/") |> call()
+    conn = call(conn(:get, "/"))
     refute conn.halted
     refute get_session(conn, "_csrf_token")
 
-    conn = conn(:head, "/") |> call()
+    conn = call(conn(:head, "/"))
     refute conn.halted
     refute get_session(conn, "_csrf_token")
 
-    conn = conn(:options, "/") |> call()
+    conn = call(conn(:options, "/"))
     refute conn.halted
     refute get_session(conn, "_csrf_token")
   end
 
   test "tokens are generated and deleted on demand" do
-    conn = conn(:get, "/?token=get") |> call()
+    conn = call(conn(:get, "/?token=get"))
     refute conn.halted
     assert get_session(conn, "_csrf_token")
 
-    conn = conn(:get, "/?token=delete") |> call_with_old_conn(conn)
+    conn = call_with_old_conn(conn(:get, "/?token=delete"), conn)
     refute conn.halted
     refute get_session(conn, "_csrf_token")
   end
 
   test "tokens are ignored when invalid and deleted on demand" do
-    conn = conn(:get, "/?token=get") |> call_with_invalid_token()
-    conn = conn(:get, "/?token=get") |> call_with_old_conn(conn)
+    conn = call_with_invalid_token(conn(:get, "/?token=get"))
+    conn = call_with_old_conn(conn(:get, "/?token=get"), conn)
     assert get_session(conn, "_csrf_token")
   end
 
   test "generated tokens are always masked" do
-    conn1 = conn(:get, "/?token=get") |> call()
+    conn1 = call(conn(:get, "/?token=get"))
     assert byte_size(conn1.resp_body) == 56
 
-    conn2 = conn(:get, "/?token=get") |> call()
+    conn2 = call(conn(:get, "/?token=get"))
     assert byte_size(conn2.resp_body) == 56
 
     assert conn1.resp_body != conn2.resp_body
   end
 
   test "protected requests with valid token in params are allowed" do
-    old_conn = conn(:get, "/?token=get") |> call
+    old_conn = call(conn(:get, "/?token=get"))
     params = %{_csrf_token: old_conn.resp_body}
 
-    conn = conn(:post, "/", params) |> call_with_old_conn(old_conn)
+    conn = call_with_old_conn(conn(:post, "/", params), old_conn)
     refute conn.halted
 
-    conn = conn(:put, "/", params) |> call_with_old_conn(old_conn)
+    conn = call_with_old_conn(conn(:put, "/", params), old_conn)
     refute conn.halted
 
-    conn = conn(:patch, "/", params) |> call_with_old_conn(old_conn)
+    conn = call_with_old_conn(conn(:patch, "/", params), old_conn)
     refute conn.halted
   end
 
   test "protected requests with valid token in header are allowed" do
-    old_conn = conn(:get, "/?token=get") |> call
+    old_conn = call(conn(:get, "/?token=get"))
     csrf_token = old_conn.resp_body
 
     conn =

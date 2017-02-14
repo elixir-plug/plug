@@ -5,11 +5,11 @@ defmodule Plug.Conn.QueryTest do
   doctest Plug.Conn.Query
 
   test "decode queries" do
-    params = decode "foo=bar&baz=bat"
+    params = decode("foo=bar&baz=bat")
     assert params["foo"] == "bar"
     assert params["baz"] == "bat"
 
-    params = decode "users[name]=hello&users[age]=17"
+    params = decode("users[name]=hello&users[age]=17")
     assert params["users"]["name"] == "hello"
     assert params["users"]["age"]  == "17"
 
@@ -34,8 +34,8 @@ defmodule Plug.Conn.QueryTest do
     assert decode("x[y][z]=1&x[y][z]=2")["x"]["y"]["z"] == "2"
     assert decode("x[y][z][]=1&x[y][z][]=2")["x"]["y"]["z"] == ["1", "2"]
 
-    assert (decode("x[y][][z]=1")["x"]["y"] |> Enum.at(0))["z"] == "1"
-    assert (decode("x[y][][z][]=1")["x"]["y"] |> Enum.at(0))["z"] |> Enum.at(0) == "1"
+    assert (Enum.at(decode("x[y][][z]=1")["x"]["y"], 0))["z"] == "1"
+    assert (Enum.at(decode("x[y][][z][]=1")["x"]["y"], 0))["z"] |> Enum.at(0) == "1"
   end
 
   test "last always wins on bad queries" do
