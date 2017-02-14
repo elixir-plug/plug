@@ -20,7 +20,7 @@ defmodule Plug.Session.ETSTest do
     assert {"bar", %{bar: :foo}} = ETS.get(%{}, "bar", opts)
     assert [{"foo", %{foo: :bar}, get_timestamp}] = :ets.lookup(@ets_table, "foo")
 
-    assert get_timestamp > put_timestamp
+    assert get_timestamp >= put_timestamp
     assert {nil, %{}} = ETS.get(%{}, "unknown", opts)
   end
 
