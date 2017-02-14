@@ -88,19 +88,19 @@ defmodule Plug.BuilderTest do
   end
 
   test "builds plug stack in the order" do
-    conn = conn(:get, "/") |> assign(:stack, [])
+    conn = assign(conn(:get, "/"), :stack, [])
     assert Sample.call(conn, []).assigns[:stack] ==
            [call: {:init, :opts}, fun: []]
   end
 
   test "allows call/2 to be overridden with super" do
-    conn = conn(:get, "/") |> Overridable.call([])
+    conn = Overridable.call(conn(:get, "/"), [])
     assert conn.assigns[:not_found] == :caught
     assert conn.assigns[:entered_stack] == true
   end
 
   test "halt/2 halts the plug stack" do
-    conn = conn(:get, "/") |> Halter.call([])
+    conn = Halter.call(conn(:get, "/"), [])
     assert conn.halted
     assert conn.assigns[:first]
     assert conn.assigns[:second]
@@ -110,11 +110,11 @@ defmodule Plug.BuilderTest do
 
   test "an exception is raised if a plug doesn't return a connection" do
     assert_raise RuntimeError, fn ->
-      conn(:get, "/") |> FaultyModulePlug.call([])
+       FaultyModulePlug.call(conn(:get, "/"), [])
     end
 
     assert_raise RuntimeError, fn ->
-      conn(:get, "/") |> FaultyFunctionPlug.call([])
+      FaultyFunctionPlug.call(conn(:get, "/"), [])
     end
   end
 

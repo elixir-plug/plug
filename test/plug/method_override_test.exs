@@ -3,45 +3,46 @@ defmodule Plug.MethodOverrideTest do
   use Plug.Test
 
   def urlencoded_conn(method, body) do
-    conn(method, "/?_method=DELETE", body)
+    method
+    |> conn("/?_method=DELETE", body)
     |> put_req_header("content-type", "application/x-www-form-urlencoded")
   end
 
   test "no-op when body is not parsed" do
-    conn = call conn(:post, "/")
+    conn = call(conn(:post, "/"))
     assert conn.method == "POST"
   end
 
   test "ignores query parameters" do
-    conn = call urlencoded_conn(:post, "")
+    conn = call(urlencoded_conn(:post, ""))
     assert conn.method == "POST"
   end
 
   test "converts POST to DELETE when _method=DELETE param is specified" do
-    conn = call urlencoded_conn(:post, "_method=DELETE")
+    conn = call(urlencoded_conn(:post, "_method=DELETE"))
     assert conn.method == "DELETE"
   end
 
   test "converts POST to PUT when _method=PUT param is specified" do
-    conn = call urlencoded_conn(:post, "_method=PUT")
+    conn = call(urlencoded_conn(:post, "_method=PUT"))
     assert conn.method == "PUT"
   end
 
   test "converts POST to PATCH when _method=PATCH param is specified" do
-    conn = call urlencoded_conn(:post, "_method=PATCH")
+    conn = call(urlencoded_conn(:post, "_method=PATCH"))
     assert conn.method == "PATCH"
   end
 
   test "the _method parameter works with non-uppercase methods" do
-    conn = call urlencoded_conn(:post, "_method=delete")
+    conn = call(urlencoded_conn(:post, "_method=delete"))
     assert conn.method == "DELETE"
   end
 
   test "non-POST requests are not modified" do
-    conn = call urlencoded_conn(:get, "_method=DELETE")
+    conn = call(urlencoded_conn(:get, "_method=DELETE"))
     assert conn.method == "GET"
 
-    conn = call urlencoded_conn(:put, "_method=DELETE")
+    conn = call(urlencoded_conn(:put, "_method=DELETE"))
     assert conn.method == "PUT"
   end
 

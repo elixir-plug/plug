@@ -7,34 +7,34 @@ defmodule Plug.SSLTest do
   end
 
   test "hsts headers by default" do
-    conn = conn(:get, "https://example.com/") |> call
+    conn = call(conn(:get, "https://example.com/"))
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000"]
     refute conn.halted
   end
 
   test "hsts is true" do
-    conn = conn(:get, "https://example.com/") |> call(hsts: true)
+    conn = call(conn(:get, "https://example.com/"), hsts: true)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000"]
     refute conn.halted
   end
 
   test "hsts is false" do
-    conn = conn(:get, "https://example.com/") |> call(hsts: false)
+    conn = call(conn(:get, "https://example.com/"), hsts: false)
     assert get_resp_header(conn, "strict-transport-security") == []
     refute conn.halted
   end
 
   test "hsts custom expires" do
-    conn = conn(:get, "https://example.com/") |> call(expires: 3600)
+    conn = call(conn(:get, "https://example.com/"), expires: 3600)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=3600"]
     refute conn.halted
   end
 
   test "hsts include subdomains" do
-    conn = conn(:get, "https://example.com/") |> call(subdomains: true)
+    conn = call(conn(:get, "https://example.com/"), subdomains: true)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000; includeSubDomains"]
     refute conn.halted
@@ -50,20 +50,19 @@ defmodule Plug.SSLTest do
   end
 
   test "redirects to host when insecure" do
-    conn = conn(:get, "http://example.com/") |> call()
+    conn = call(conn(:get, "http://example.com/"))
     assert get_resp_header(conn, "location") ==
            ["https://example.com/"]
     assert conn.halted
 
-    conn = conn(:get, "http://example.com/foo?bar=baz") |> call()
+    conn = call(conn(:get, "http://example.com/foo?bar=baz"))
     assert get_resp_header(conn, "location") ==
            ["https://example.com/foo?bar=baz"]
     assert conn.halted
   end
 
   test "redirects to custom host on get" do
-    conn = conn(:get, "http://example.com/")
-           |> call(host: "ssl.example.com:443")
+    conn = call(conn(:get, "http://example.com/"), host: "ssl.example.com:443")
     assert get_resp_header(conn, "location") ==
            ["https://ssl.example.com:443/"]
     assert conn.status == 301
@@ -72,8 +71,7 @@ defmodule Plug.SSLTest do
 
   test "redirects to environment host on get" do
     System.put_env("PLUG_SSL_HOST", "ssl.example.com:443")
-    conn = conn(:get, "http://example.com/")
-           |> call(host: {:system, "PLUG_SSL_HOST"})
+    conn = call(conn(:get, "http://example.com/"), host: {:system, "PLUG_SSL_HOST"})
     assert get_resp_header(conn, "location") ==
            ["https://ssl.example.com:443/"]
     assert conn.status == 301
@@ -81,14 +79,14 @@ defmodule Plug.SSLTest do
   end
 
   test "redirects to host on head" do
-    conn = conn(:head, "http://example.com/") |> call
+    conn = call(conn(:head, "http://example.com/"))
     assert conn.status == 301
     assert conn.halted
   end
 
   test "redirects to custom host with other verbs" do
     for method <- ~w(options post put delete patch)a do
-      conn = conn(method, "http://example.com/") |> call
+      conn = call(conn(method, "http://example.com/"))
       assert conn.status == 307
       assert conn.halted
     end

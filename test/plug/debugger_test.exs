@@ -54,7 +54,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden" do
-    conn = conn(:get, "/boom") |> put_req_header("accept", "text/html")
+    conn = put_req_header(conn(:get, "/boom"), "accept", "text/html")
 
     assert_raise RuntimeError, "<oops>", fn ->
       Router.call(conn, [])
@@ -70,7 +70,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden and warns on non-500 errors" do
-    conn = conn(:get, "/soft_boom") |> put_req_header("accept", "text/html")
+    conn = put_req_header(conn(:get, "/soft_boom"), "accept", "text/html")
 
     capture_log fn ->
       assert_raise Exception, fn ->
@@ -88,7 +88,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden but is a no-op when response is already sent" do
-    conn = conn(:get, "/send_and_boom") |> put_req_header("accept", "text/html")
+    conn = put_req_header(conn(:get, "/send_and_boom"), "accept", "text/html")
 
     capture_log fn ->
       assert_raise RuntimeError, "oops", fn ->
@@ -101,7 +101,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "call/2 is overridden and unwrapps wrapped errors" do
-    conn = conn(:get, "/send_and_wrapped") |> put_req_header("accept", "text/html")
+    conn = put_req_header(conn(:get, "/send_and_wrapped"), "accept", "text/html")
 
     capture_log fn ->
       assert_raise Exception, "oops", fn ->
@@ -201,9 +201,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "shows no query params on bad query string" do
-    conn =
-      conn(:get, "/foo/bar?q=%{")
-      |> render([], fn -> raise "oops" end)
+    conn = render(conn(:get, "/foo/bar?q=%{"), [], fn -> raise "oops" end)
     assert conn.resp_body =~ "RuntimeError"
     assert conn.resp_body =~ "at GET /foo/bar"
     assert conn.resp_body =~ "oops"
@@ -227,7 +225,7 @@ defmodule Plug.DebuggerTest do
   end
 
   defp stack(stack) do
-    render(conn(:get, "/") |> put_req_header("accept", "text/html"), [stack: stack], fn ->
+    render(put_req_header(conn(:get, "/"), "accept", "text/html"), [stack: stack], fn ->
       raise "oops"
     end)
   end
@@ -259,7 +257,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "styles can be overridden" do
-    conn = conn(:get, "/boom") |> put_req_header("accept", "text/html")
+    conn = put_req_header(conn(:get, "/boom"), "accept", "text/html")
     assert_raise RuntimeError, fn ->
       StyledRouter.call(conn, [])
     end
@@ -269,7 +267,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "if the Accept header is something else than text/html, Markdown is rendered" do
-    conn = conn(:get, "/") |> put_req_header("accept", "application/json")
+    conn = put_req_header(conn(:get, "/"), "accept", "application/json")
     conn = render(conn, [], fn ->
       raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
     end)

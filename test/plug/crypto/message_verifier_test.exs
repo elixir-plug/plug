@@ -5,20 +5,20 @@ defmodule Plug.Crypto.MessageVerifierTest do
 
   test "generates a signed message" do
     [protected, payload, signature] = String.split MV.sign("hello world", "secret"), "."
-    assert protected |> Base.url_decode64(padding: false) == {:ok, "HS256"}
-    assert payload |> Base.url_decode64(padding: false) == {:ok, "hello world"}
+    assert Base.url_decode64(protected, padding: false) == {:ok, "HS256"}
+    assert Base.url_decode64(payload, padding: false) == {:ok, "hello world"}
     assert byte_size(signature) == 43
     [protected, payload, signature] = String.split MV.sign("hello world", "secret", :sha384), "."
-    assert protected |> Base.url_decode64(padding: false) == {:ok, "HS384"}
-    assert payload |> Base.url_decode64(padding: false) == {:ok, "hello world"}
+    assert Base.url_decode64(protected, padding: false) == {:ok, "HS384"}
+    assert Base.url_decode64(payload, padding: false) == {:ok, "hello world"}
     assert byte_size(signature) == 64
     [protected, payload, signature] = String.split MV.sign("hello world", "secret", :sha512), "."
-    assert protected |> Base.url_decode64(padding: false) == {:ok, "HS512"}
-    assert payload |> Base.url_decode64(padding: false) == {:ok, "hello world"}
+    assert Base.url_decode64(protected, padding: false) == {:ok, "HS512"}
+    assert Base.url_decode64(payload, padding: false) == {:ok, "hello world"}
     assert byte_size(signature) == 86
     # Legacy support for HMAC SHA-1
     [content, encoded] = String.split MV.sign("hello world", "secret", :sha), "##"
-    assert content |> Base.url_decode64 == {:ok, "hello world"}
+    assert Base.url_decode64(content) == {:ok, "hello world"}
     assert byte_size(encoded) == 28
   end
 
