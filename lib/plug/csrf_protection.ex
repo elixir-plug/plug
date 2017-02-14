@@ -153,7 +153,7 @@ defmodule Plug.CSRFProtection do
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods
       || valid_csrf_token?(csrf_token, conn.params["_csrf_token"])
-      || valid_csrf_token?(csrf_token, get_req_header(conn, "x-csrf-token") |> List.first)
+      || valid_csrf_token?(csrf_token, List.first(get_req_header(conn, "x-csrf-token")))
       || skip_csrf_protection?(conn)
   end
 
@@ -221,6 +221,6 @@ defmodule Plug.CSRFProtection do
   end
 
   defp generate_token do
-    :crypto.strong_rand_bytes(@token_size) |> Base.encode64
+    Base.encode64(:crypto.strong_rand_bytes(@token_size))
   end
 end
