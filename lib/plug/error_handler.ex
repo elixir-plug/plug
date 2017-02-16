@@ -75,27 +75,24 @@ defmodule Plug.ErrorHandler do
   @doc false
   def __catch__(_conn, :error, %Plug.Conn.WrapperError{} = wrapper, handle_errors) do
     %{conn: conn, kind: kind, reason: reason, stack: stack} = wrapper
-    __catch__(conn, kind, reason, stack, handle_errors)
+    __catch__(conn, kind, wrapper, reason, stack, handle_errors)
   end
 
   def __catch__(conn, kind, reason, handle_errors) do
-    __catch__(conn, kind, reason, System.stacktrace, handle_errors)
+    __catch__(conn, kind, reason, reason, System.stacktrace, handle_errors)
   end
 
-  defp __catch__(conn, kind, reason, stack, handle_errors) do
-    reason =
-      receive do
-        @already_sent ->
-          send self(), @already_sent
-          reason
-      after
-        0 ->
-          reason = Exception.normalize(kind, reason, stack)
-          conn
-          |> Plug.Conn.put_status(status(kind, reason))
-          |> handle_errors.(%{kind: kind, reason: reason, stack: stack})
-          reason
-      end
+  defp __catch__(conn, kind, reason, wrapped_reason, stack, handle_errors) do
+    receive do
+      @already_sent ->
+        send self(), @already_sent
+    after
+      0 ->
+        normalized_reason = Exception.normalize(kind, wrapped_reason, stack)
+        conn
+        |> Plug.Conn.put_status(status(kind, normalized_reason))
+        |> handle_errors.(%{kind: kind, reason: normalized_reason, stack: stack})
+    end
 
     :erlang.raise(kind, reason, stack)
   end
