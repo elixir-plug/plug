@@ -55,10 +55,10 @@ defmodule Plug.ErrorHandlerTest do
     assert {200, _headers, "oops"} = sent_resp(conn)
   end
 
-  test "call/2 is overridden and unwrapps wrapped errors" do
+  test "call/2 is overridden and does not unwrap wrapped errors" do
     conn = conn(:get, "/send_and_wrapped")
 
-    assert_raise Exception, "oops", fn ->
+    assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.Exception) oops", fn ->
       Router.call(conn, [])
     end
 
