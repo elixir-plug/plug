@@ -207,12 +207,12 @@ defmodule Plug.Parsers do
     merge_params(conn, make_empty_if_unfetched(body_params))
   end
 
-  defp reduce(conn, [h|t], content_type, opts) do
-    case h.parse(conn, content_type.type, content_type.subtype, content_type.params, opts) do
+  defp reduce(conn, [parser | rest], content_type, opts) do
+    case parser.parse(conn, content_type.type, content_type.subtype, content_type.params, opts) do
       {:ok, body, conn} ->
         merge_params(conn, body)
       {:next, conn} ->
-        reduce(conn, t, content_type, opts)
+        reduce(conn, rest, content_type, opts)
       {:error, :too_large, _conn} ->
         raise RequestTooLargeError
     end

@@ -117,10 +117,8 @@ defmodule Plug.Static do
   end
 
   def init(opts) do
-    from = Keyword.fetch!(opts, :from)
-
     from =
-      case from do
+      case from = Keyword.fetch!(opts, :from) do
         {_, _} -> from
         _ when is_atom(from) -> {from, "priv/static"}
         _ when is_binary(from) -> from
