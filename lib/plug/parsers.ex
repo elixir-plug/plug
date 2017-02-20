@@ -192,8 +192,8 @@ defmodule Plug.Parsers do
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
-          {:ok, type, subtype, headers} ->
-            content_type = %{type: type, subtype: subtype, headers: headers}
+          {:ok, type, subtype, params} ->
+            content_type = %{type: type, subtype: subtype, params: params}
             reduce(conn, Keyword.fetch!(opts, :parsers), content_type, opts)
           :error ->
             merge_params(conn, %{})
@@ -208,7 +208,7 @@ defmodule Plug.Parsers do
   end
 
   defp reduce(conn, [h|t], content_type, opts) do
-    case h.parse(conn, content_type.type, content_type.subtype, content_type.headers, opts) do
+    case h.parse(conn, content_type.type, content_type.subtype, content_type.params, opts) do
       {:ok, body, conn} ->
         merge_params(conn, body)
       {:next, conn} ->
