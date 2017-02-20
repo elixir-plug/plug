@@ -135,8 +135,8 @@ defmodule Plug.Parsers do
   alias Plug.Conn
 
   @doc """
-  Attempts to parse the connection's request body given the content-type type and
-  subtype and a map of parameters for `Plug.Parsers`.
+  Attempts to parse the connection's request body given the content-type type,
+  subtype and its parameters.
 
   The arguments are:
 
@@ -145,7 +145,8 @@ defmodule Plug.Parsers do
       `"x-sample/json"` content-type)
     * `subtype`, the content-type subtype (e.g., `"json"` for the
       `"x-sample/json"` content-type)
-    * `params`, a map of parameters passed to the `Plug.Parsers` plug
+    * `params`, the content-type parameters (e.g., `%{"foo" => "bar"}`
+      for the `"text/plain;  foo=bar"` content-type)
 
   This function should return:
 
