@@ -177,7 +177,9 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, %{qs_cache: qs_cache, et_cache: et_cache, et_generation: et_generation, gzip?: gzip?, brotli?: brotli?, headers: headers}) do
+  defp serve_static({:ok, conn, file_info, path}, segments, options) do
+    %{qs_cache: qs_cache, et_cache: et_cache, et_generation: et_generation,
+      gzip?: gzip?, brotli?: brotli?, headers: headers} = options
     case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
         content_type = segments |> List.last |> MIME.from_path
