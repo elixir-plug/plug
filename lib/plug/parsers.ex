@@ -136,7 +136,7 @@ defmodule Plug.Parsers do
 
   @doc """
   Attempts to parse the connection's request body given the content-type type,
-  subtype and its parameters.
+  subtype, and its parameters.
 
   The arguments are:
 
@@ -146,7 +146,7 @@ defmodule Plug.Parsers do
     * `subtype`, the content-type subtype (e.g., `"json"` for the
       `"x-sample/json"` content-type)
     * `params`, the content-type parameters (e.g., `%{"foo" => "bar"}`
-      for the `"text/plain;  foo=bar"` content-type)
+      for the `"text/plain; foo=bar"` content-type)
 
   This function should return:
 
