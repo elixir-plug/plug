@@ -144,8 +144,8 @@ defmodule Plug.CSRFProtection do
   ## Verification
 
   defp get_csrf_from_session(conn) do
-    if (csrf_token = get_session(conn, "_csrf_token")) &&
-       byte_size(csrf_token) == @encoded_token_size do
+    csrf_token = get_session(conn, "_csrf_token")
+    if csrf_token && byte_size(csrf_token) == @encoded_token_size do
       csrf_token
     end
   end
