@@ -118,10 +118,10 @@ defmodule Plug.Static do
 
   def init(opts) do
     from =
-      case from = Keyword.fetch!(opts, :from) do
-        {_, _} -> from
-        _ when is_atom(from) -> {from, "priv/static"}
-        _ when is_binary(from) -> from
+      case Keyword.fetch!(opts, :from) do
+        {_, _} = from -> from
+        from when is_atom(from) -> {from, "priv/static"}
+        from when is_binary(from) -> from
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
@@ -139,19 +139,19 @@ defmodule Plug.Static do
     }
   end
 
-  def call(conn = %Conn{method: meth}, options)
+  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?} = options)
       when meth in @allowed_methods do
-    segments = subset(options.at, conn.path_info)
+    segments = subset(at, conn.path_info)
 
-    if allowed?(options.only, options.prefix, segments) do
+    if allowed?(only, prefix, segments) do
       segments = Enum.map(segments, &uri_decode/1)
 
       if invalid_path?(segments) do
         raise InvalidPathError
       end
 
-      path = path(options.from, segments)
-      encoding = file_encoding(conn, path, options.gzip?, options.brotli?)
+      path = path(from, segments)
+      encoding = file_encoding(conn, path, gzip?, brotli?)
       serve_static(encoding, segments, options)
     else
       conn
