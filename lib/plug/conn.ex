@@ -578,7 +578,7 @@ defmodule Plug.Conn do
   ## Examples
 
       iex> conn = %{conn | resp_headers: [{"content-type", "text/plain"}]}
-      iex> conn |> get_resp_header("content-type")
+      iex> get_resp_header(conn, "content-type")
       ["text/plain"]
 
   """
