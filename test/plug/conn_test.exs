@@ -102,7 +102,7 @@ defmodule Plug.ConnTest do
 
   test "peer and remote_ip fields" do
     conn = conn(:get, "/")
-    assert conn.peer == {{127, 0, 0, 1}, 111317}
+    assert conn.peer == {{127, 0, 0, 1}, 111_317}
     assert conn.remote_ip == {127, 0, 0, 1}
   end
 
