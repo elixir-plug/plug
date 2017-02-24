@@ -251,7 +251,7 @@ defmodule Plug.DebuggerTest do
     file = Path.expand("lib/plug/conn.ex")
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=1"
 
-    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
+    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
     file = Path.expand(GenServer.__info__(:compile)[:source])
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=10000"
   end
@@ -289,7 +289,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "stacktrace from elixir" do
-    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10000}]
+    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
     assert conn.resp_body =~ "<span class=\"info\">GenServer.call/2</span>"
     assert conn.resp_body =~ "<span class=\"line\">:10000</span>"
     assert conn.resp_body =~ "lib/gen_server.ex"
