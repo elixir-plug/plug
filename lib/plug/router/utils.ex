@@ -37,7 +37,7 @@ defmodule Plug.Router.Utils do
       iex> Plug.Router.Utils.build_host_match("foo.com")
       "foo.com"
 
-      iex> Plug.Router.Utils.build_host_match("api.") |> Macro.to_string
+      iex> "api." |> Plug.Router.Utils.build_host_match() |> Macro.to_string()
       "\"api.\" <> _"
 
   """
