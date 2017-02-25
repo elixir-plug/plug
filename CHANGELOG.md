@@ -1,5 +1,15 @@
 ## Changelog
 
+## v1.3.1
+
+* Enhancements
+  * [Plug.Conn] Support arbitrary cookie attributes
+  * [Plug.SSL] Support tuple hosts in Plug.SSL
+  * [Plug.Static] Add ability to generate etags via a user defined function
+
+* Bug fixes
+  * [Plug.ErrorHandler] Do not unwrap errors wrapped in `Plug.Conn.WrapperError` when reraising
+
 ## v1.3.0
 
 * Enhancements
