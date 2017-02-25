@@ -69,9 +69,9 @@ defmodule Plug.SSLTest do
     assert conn.halted
   end
 
-  test "redirects to environment host on get" do
+  test "redirects to tuple host on get" do
     System.put_env("PLUG_SSL_HOST", "ssl.example.com:443")
-    conn = call(conn(:get, "http://example.com/"), host: {:system, "PLUG_SSL_HOST"})
+    conn = call(conn(:get, "http://example.com/"), host: {System, :get_env, ["PLUG_SSL_HOST"]})
     assert get_resp_header(conn, "location") ==
            ["https://ssl.example.com:443/"]
     assert conn.status == 301
