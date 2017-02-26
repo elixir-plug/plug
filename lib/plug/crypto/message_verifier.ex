@@ -8,8 +8,6 @@ defmodule Plug.Crypto.MessageVerifier do
   tampered with.
   """
 
-  # @delimiter "##"
-
   @doc """
   Signs a message according to the given secret.
   """
