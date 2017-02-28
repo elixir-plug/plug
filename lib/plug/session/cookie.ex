@@ -121,12 +121,15 @@ defmodule Plug.Session.COOKIE do
     binary
   end
 
-  defp decode({:ok, binary}, :external_term_format, _log) do
+  defp decode({:ok, binary}, :external_term_format, log) do
     {:term,
       try do
-        :erlang.binary_to_term(binary)
+        Plug.Crypto.safe_binary_to_term(binary)
       rescue
-        _ -> %{}
+        e ->
+          Logger.log log, "Plug.Session could not decode incoming session cookie. Reason: " <>
+                          Exception.message(e)
+          %{}
       end}
   end
 
@@ -142,7 +145,7 @@ defmodule Plug.Session.COOKIE do
   end
 
   defp decode(:error, _serializer, log) do
-    Logger.log log, "Plug.Session could not decode incoming session cookie. " <>
+    Logger.log log, "Plug.Session could not verify incoming session cookie. " <>
                     "This may happen when the session settings change or a stale cookie is sent."
     {nil, %{}}
   end

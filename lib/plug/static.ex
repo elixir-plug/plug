@@ -288,6 +288,6 @@ defmodule Plug.Static do
     do: []
 
   defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
-  defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":"]) or invalid_path?(t)
+  defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":", "\0"]) or invalid_path?(t)
   defp invalid_path?([]), do: false
 end

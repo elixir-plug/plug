@@ -167,6 +167,18 @@ defmodule Plug.StaticTest do
       call(conn(:get, "/public/c:\\foo.txt"))
     end
     assert Plug.Exception.status(exception) == 400
+
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      call(conn(:get, "/public/sample.txt%00.html"))
+    end
+    assert Plug.Exception.status(exception) == 400
+
+    exception = assert_raise Plug.Static.InvalidPathError,
+                             "invalid path for static asset", fn ->
+      call(conn(:get, "/public/sample.txt\0.html"))
+    end
+    assert Plug.Exception.status(exception) == 400
   end
 
   test "returns 400 for invalid paths" do
