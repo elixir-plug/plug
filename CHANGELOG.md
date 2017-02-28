@@ -1,8 +1,15 @@
 ## Changelog
 
+## v1.1.7
+
+* Bug fixes
+  * [Plug.Crypto] Provide safer deserialization mechanisms
+  * [Plug.Static] Properly handle null bytes
+
 ## v1.1.6
 
-* Fix warnings on Elixir v1.3 and v1.4-dev
+* Bug fixes
+  * Fix warnings on Elixir v1.3 and v1.4-dev
 
 ## v1.1.5
 
