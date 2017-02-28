@@ -186,7 +186,7 @@ defmodule Plug.Crypto.MessageEncryptor do
          {:ok, iv}            <- Base.url_decode64(iv, padding: false),
          {:ok, cipher_text}   <- Base.url_decode64(cipher_text, padding: false),
          {:ok, cipher_tag}    <- Base.url_decode64(cipher_tag, padding: false) do
-      {true, protected, encrypted_key, iv, cipher_text, cipher_tag}
+      {protected, encrypted_key, iv, cipher_text, cipher_tag}
     else
       _ -> :error
     end
@@ -286,7 +286,7 @@ defmodule Plug.Crypto.MessageEncryptor do
          [cipher_text, iv]  <- String.split(cipher_text, "--", parts: 2),
          {:ok, cipher_text} <- Base.decode64(cipher_text),
          {:ok, iv}          <- Base.decode64(iv) do
-      {true, "A256CBC-HS1", "", iv, cipher_text, cipher_tag}
+      {"A256CBC-HS1", "", iv, cipher_text, cipher_tag}
     else
       _ -> :error
     end

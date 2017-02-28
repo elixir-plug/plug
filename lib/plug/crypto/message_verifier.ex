@@ -102,7 +102,7 @@ defmodule Plug.Crypto.MessageVerifier do
          {:ok, protected} <- Base.url_decode64(protected, padding: false),
          {:ok, payload}   <- Base.url_decode64(payload, padding: false),
          {:ok, signature} <- Base.url_decode64(signature, padding: false) do
-      {true, protected, payload, protected <> "." <> payload, signature}
+      {protected, payload, protected <> "." <> payload, signature}
     else
       _ -> :error
     end
@@ -129,7 +129,7 @@ defmodule Plug.Crypto.MessageVerifier do
     with  [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 <- split,
           {:ok, payload}   <- decode_legacy_base64(plain_text),
           {:ok, signature} <- decode_legacy_base64(signature) do
-      {true, "HS1", payload, plain_text, signature}
+      {"HS1", payload, plain_text, signature}
     else
       _ -> :error
     end

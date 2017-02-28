@@ -22,22 +22,6 @@ defmodule Plug.Crypto.MessageEncryptorTest do
 
     decrypted = ME.decrypt(encrypted, @right, @right)
     assert decrypted == {:ok, data}
-
-    # Legacy support for AES256-CBC with HMAC SHA-1
-    encrypted = ME.encrypt_and_sign(<<0, "hełłoworld", 0>>, @right, @right, :aes_cbc256)
-
-    decrypted = ME.verify_and_decrypt(encrypted, @wrong, @wrong)
-    assert decrypted == :error
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @wrong)
-    assert decrypted == :error
-
-    # This can fail depending on the initialization vector
-    # decrypted = ME.verify_and_decrypt(encrypted, @wrong, @right)
-    # assert decrypted == :error
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @right)
-    assert decrypted == {:ok, data}
   end
 
   test "it uses only the first 32 bytes to encrypt/decrypt" do
@@ -68,35 +52,6 @@ defmodule Plug.Crypto.MessageEncryptorTest do
     assert decrypted == :error
 
     decrypted = ME.decrypt(encrypted, @right, @right)
-    assert decrypted == :error
-
-    # Legacy support for AES256-CBC with HMAC SHA-1
-    encrypted = ME.encrypt_and_sign(<<0, "helloworld", 0>>, @large, @large, :aes_cbc256)
-
-    decrypted = ME.verify_and_decrypt(encrypted, @large, @large)
-    assert decrypted == {:ok, data}
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @large)
-    assert decrypted == {:ok, data}
-
-    decrypted = ME.verify_and_decrypt(encrypted, @large, @right)
-    assert decrypted == :error
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @right)
-    assert decrypted == :error
-
-    encrypted = ME.encrypt_and_sign(<<0, "helloworld", 0>>, @right, @large, :aes_cbc256)
-
-    decrypted = ME.verify_and_decrypt(encrypted, @large, @large)
-    assert decrypted == {:ok, data}
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @large)
-    assert decrypted == {:ok, data}
-
-    decrypted = ME.verify_and_decrypt(encrypted, @large, @right)
-    assert decrypted == :error
-
-    decrypted = ME.verify_and_decrypt(encrypted, @right, @right)
     assert decrypted == :error
   end
 end
