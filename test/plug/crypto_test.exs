@@ -28,7 +28,7 @@ defmodule Plug.CryptoTest do
   end
 
   test "safe_binary_to_term" do
-    value = %{1 => {:foo, ["bar", 2.0, self(), make_ref()]}}
+    value = %{1 => {:foo, ["bar", 2.0, [self() | make_ref()], <<0::4>>]}}
     assert safe_binary_to_term(:erlang.term_to_binary(value)) == value
 
     assert_raise ArgumentError, fn ->
