@@ -165,7 +165,7 @@ defmodule Plug.Adapters.Cowboy do
     assert_ssl_options(cowboy_options)
     cowboy_options = Keyword.put_new cowboy_options, :port, 4040
     cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile, :dhfile], cowboy_options, &normalize_ssl_file(&1, &2)
-    cowboy_options = Enum.reduce [:password], cowboy_options, &to_char_list(&2, &1)
+    cowboy_options = Enum.reduce [:password], cowboy_options, &to_charlist(&2, &1)
     cowboy_options
   end
 
@@ -217,7 +217,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp put_ssl_file(cowboy_options, key, value) do
-    value = to_char_list(value)
+    value = to_charlist(value)
     unless File.exists?(value) do
       fail "the file #{value} required by SSL's #{inspect key} either does not exist, or the application does not have permission to access it"
     end
@@ -233,9 +233,9 @@ defmodule Plug.Adapters.Cowboy do
     end
   end
 
-  defp to_char_list(cowboy_options, key) do
+  defp to_charlist(cowboy_options, key) do
     if value = cowboy_options[key] do
-      Keyword.put cowboy_options, key, to_char_list(value)
+      Keyword.put cowboy_options, key, to_charlist(value)
     else
       cowboy_options
     end

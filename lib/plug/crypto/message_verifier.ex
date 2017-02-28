@@ -8,6 +8,8 @@ defmodule Plug.Crypto.MessageVerifier do
   tampered with.
   """
 
+  # TODO: Remove deprecated API.
+
   @doc """
   Signs a message according to the given secret.
   """
@@ -16,8 +18,9 @@ defmodule Plug.Crypto.MessageVerifier do
       when is_binary(message) and is_binary(secret) and digest_type in [:sha256, :sha384, :sha512] do
     hmac_sha2_sign(message, secret, digest_type)
   end
-  def sign(message, secret, :sha)
-      when is_binary(message) and is_binary(secret) do
+  def sign(message, secret, :sha) when is_binary(message) and is_binary(secret) do
+    IO.puts :stderr, "warning: using Plug.Crypto.MessageVerifier with :sha is deprecated and unsafe, " <>
+                     "use :sha256 instead\n" <> Exception.format_stacktrace
     hmac_sha1_sign(message, secret)
   end
 
@@ -72,8 +75,7 @@ defmodule Plug.Crypto.MessageVerifier do
     encode_token(plain_text, signature)
   end
 
-  defp hmac_sha2_verify(signed, key)
-      when is_binary(signed) and is_binary(key) do
+  defp hmac_sha2_verify(signed, key) when is_binary(signed) and is_binary(key) do
     case decode_token(signed) do
       {protected, payload, plain_text, signature} when protected in ["HS256", "HS384", "HS512"] ->
         digest_type = hmac_sha2_to_digest_type(protected)
@@ -96,28 +98,17 @@ defmodule Plug.Crypto.MessageVerifier do
   end
 
   defp decode_token(token) do
-    case String.split(token, ".", parts: 3) do
-      [protected, payload, signature] ->
-        plain_text = protected <> "." <> payload
-        # TODO: Use with/else once we depend on Elixir v1.3+ only
-        with {:ok, protected} <- Base.url_decode64(protected, padding: false),
-             {:ok, payload}   <- Base.url_decode64(payload, padding: false),
-             {:ok, signature} <- Base.url_decode64(signature, padding: false) do
-          {true, protected, payload, plain_text, signature}
-        end
-        |> case do
-          {true, protected, payload, plain_text, signature} ->
-            {protected, payload, plain_text, signature}
-          _ ->
-            :error
-        end
-      _ ->
-        :error
+    with [protected, payload, signature] <- String.split(token, ".", parts: 3),
+         {:ok, protected} <- Base.url_decode64(protected, padding: false),
+         {:ok, payload}   <- Base.url_decode64(payload, padding: false),
+         {:ok, signature} <- Base.url_decode64(signature, padding: false) do
+      {true, protected, payload, protected <> "." <> payload, signature}
+    else
+      _ -> :error
     end
   end
 
-  defp signing_input(protected, payload)
-      when is_binary(protected) and is_binary(payload) do
+  defp signing_input(protected, payload) when is_binary(protected) and is_binary(payload) do
     protected
     |> Base.url_encode64(padding: false)
     |> Kernel.<>(".")
@@ -127,31 +118,23 @@ defmodule Plug.Crypto.MessageVerifier do
   ## Legacy Helpers
 
   defp decode_legacy_token(token) do
-    token
-    |> String.split("##", parts: 2)
-    |> case do
-      [_, _] = both -> both
-      _ -> String.split(token, "--", parts: 2)
-    end
-    |> case do
-      [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 ->
-        # TODO: Use with/else once we depend on Elixir v1.3+ only
-        with {:ok, payload}   <- decode_legacy_base64(plain_text),
-             {:ok, signature} <- decode_legacy_base64(signature) do
-          {true, "HS1", payload, plain_text, signature}
-        end
-        |> case do
-          {true, protected, payload, plain_text, signature} ->
-            {protected, payload, plain_text, signature}
-          _ ->
-            :error
-        end
-      _ ->
-        :error
+    split =
+      token
+      |> String.split("##", parts: 2)
+      |> case do
+        [_, _] = both -> both
+        _ -> String.split(token, "--", parts: 2)
+      end
+
+    with  [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 <- split,
+          {:ok, payload}   <- decode_legacy_base64(plain_text),
+          {:ok, signature} <- decode_legacy_base64(signature) do
+      {true, "HS1", payload, plain_text, signature}
+    else
+      _ -> :error
     end
   end
 
-  # TODO: Remove after backwards compatibility period
   defp decode_legacy_base64(content) do
     case Base.url_decode64(content) do
       {:ok, binary} -> {:ok, binary}

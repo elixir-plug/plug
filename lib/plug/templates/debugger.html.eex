@@ -632,7 +632,7 @@
                     </div>
 
                     <%= if (snippet = frame.snippet) && snippet != [] do %>
-<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.rstrip(line) %></span></span>
+<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.trim_trailing(line) %></span></span>
 <% end %></pre>
                     <% else %>
                     <div class="code code-block-empty">No code available.</div>

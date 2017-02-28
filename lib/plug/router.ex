@@ -358,12 +358,11 @@ defmodule Plug.Router do
   Some other examples:
 
       forward "/foo/bar", to: :foo_bar_plug, host: "foobar."
-      forward "/api", to: ApiRouter, plug_specific_option: true
       forward "/baz", to: BazPlug, init_opts: [plug_specific_option: true]
+
   """
   defmacro forward(path, options) when is_binary(path) do
     quote bind_quoted: [path: path, options: options] do
-      # TODO: Require use of `:init_opts` for passing Plug options in 2.0
       {target, options}       = Keyword.pop(options, :to)
       {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
       plug_options = Keyword.get(plug_options, :init_opts, plug_options)

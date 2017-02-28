@@ -22,7 +22,10 @@ defmodule Plug.Crypto.MessageEncryptor do
       encrypted = MessageEncryptor.encrypt(data, secret, sign_secret)
       decrypted = MessageEncryptor.decrypt(encrypted, secret, sign_secret)
       decrypted # => {:ok, "José"}
+
   """
+
+  # TODO: Remove deprecated API.
 
   alias Plug.Crypto.MessageVerifier
 
@@ -177,24 +180,15 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   defp decode_token(token) do
-    case String.split(token, ".", parts: 5) do
-      [protected, encrypted_key, iv, cipher_text, cipher_tag] ->
-        # TODO: Use with/else once we depend on Elixir v1.3+ only
-        with {:ok, protected}     <- Base.url_decode64(protected, padding: false),
-             {:ok, encrypted_key} <- Base.url_decode64(encrypted_key, padding: false),
-             {:ok, iv}            <- Base.url_decode64(iv, padding: false),
-             {:ok, cipher_text}   <- Base.url_decode64(cipher_text, padding: false),
-             {:ok, cipher_tag}    <- Base.url_decode64(cipher_tag, padding: false) do
-          {true, protected, encrypted_key, iv, cipher_text, cipher_tag}
-        end
-        |> case do
-          {true, protected, encrypted_key, iv, cipher_text, cipher_tag} ->
-            {protected, encrypted_key, iv, cipher_text, cipher_tag}
-          _ ->
-            :error
-        end
-      _ ->
-        :error
+    with [protected, encrypted_key, iv, cipher_text, cipher_tag] <- String.split(token, ".", parts: 5),
+         {:ok, protected}     <- Base.url_decode64(protected, padding: false),
+         {:ok, encrypted_key} <- Base.url_decode64(encrypted_key, padding: false),
+         {:ok, iv}            <- Base.url_decode64(iv, padding: false),
+         {:ok, cipher_text}   <- Base.url_decode64(cipher_text, padding: false),
+         {:ok, cipher_tag}    <- Base.url_decode64(cipher_tag, padding: false) do
+      {true, protected, encrypted_key, iv, cipher_text, cipher_tag}
+    else
+      _ -> :error
     end
   end
 
@@ -206,9 +200,9 @@ defmodule Plug.Crypto.MessageEncryptor do
   """
   def encrypt_and_sign(message, secret, sign_secret, cipher \\ nil)
       when is_binary(message) and is_binary(secret) and is_binary(sign_secret) do
-    # TODO: Deprecate after backwards compatibility period
-    # IO.puts :stderr, "warning: `Plug.Crypto.MessageEncryptor.encrypt_and_sign/4` is deprecated," <>
-    #                  "please use `encrypt/3` instead\n" <> Exception.format_stacktrace
+    IO.puts :stderr, "warning: `Plug.Crypto.MessageEncryptor.encrypt_and_sign/4` is deprecated," <>
+                     "please use `encrypt/3` instead\n" <> Exception.format_stacktrace
+
     case cipher do
       nil ->
         encrypt(message, secret, sign_secret)
@@ -236,9 +230,8 @@ defmodule Plug.Crypto.MessageEncryptor do
   """
   def verify_and_decrypt(encrypted, secret, sign_secret, cipher \\ nil)
       when is_binary(encrypted) and is_binary(secret) and is_binary(sign_secret) do
-    # TODO: Deprecate after backwards compatibility period
-    # IO.puts :stderr, "warning: `Plug.Crypto.MessageEncryptor.verify_and_decrypt/4` is deprecated," <>
-    #                  "please use `decrypt/3` instead\n" <> Exception.format_stacktrace
+    IO.puts :stderr, "warning: `Plug.Crypto.MessageEncryptor.verify_and_decrypt/4` is deprecated," <>
+                     "please use `decrypt/3` instead\n" <> Exception.format_stacktrace
     case cipher do
       nil ->
         if String.contains?(encrypted, ".") do
@@ -277,33 +270,25 @@ defmodule Plug.Crypto.MessageEncryptor do
   end
 
   defp decode_legacy_token(token, sign_secret) do
-    token
-    |> String.split("##", parts: 2)
-    |> case do
-      [_, _] = both -> both
-      _ -> String.split(token, "--", parts: 2)
-    end
-    |> case do
-      [cipher_text, cipher_tag]
-          when byte_size(cipher_text) > 0 and byte_size(cipher_tag) > 0 ->
-        # TODO: Use with/else once we depend on Elixir v1.3+ only
-        with {:ok, cipher_tag}  <- Base.url_decode64(cipher_tag),
-             challenge           = :crypto.hmac(:sha, sign_secret, cipher_text),
-             true               <- Plug.Crypto.secure_compare(challenge, cipher_tag),
-             {:ok, cipher_text} <- Base.url_decode64(cipher_text),
-             [cipher_text, iv]  <- String.split(cipher_text, "--", parts: 2),
-             {:ok, cipher_text} <- Base.decode64(cipher_text),
-             {:ok, iv}          <- Base.decode64(iv) do
-          {true, "A256CBC-HS1", "", iv, cipher_text, cipher_tag}
-        end
-        |> case do
-          {true, protected, encrypted_key, iv, cipher_text, cipher_tag} ->
-            {protected, encrypted_key, iv, cipher_text, cipher_tag}
-          _ ->
-            :error
-        end
-      _ ->
-        :error
+    split =
+      token
+      |> String.split("##", parts: 2)
+      |> case do
+        [_, _] = both -> both
+        _ -> String.split(token, "--", parts: 2)
+      end
+
+    with [cipher_text, cipher_tag] when byte_size(cipher_text) > 0 and byte_size(cipher_tag) > 0 <- split,
+         {:ok, cipher_tag}  <- Base.url_decode64(cipher_tag),
+         challenge           = :crypto.hmac(:sha, sign_secret, cipher_text),
+         true               <- Plug.Crypto.secure_compare(challenge, cipher_tag),
+         {:ok, cipher_text} <- Base.url_decode64(cipher_text),
+         [cipher_text, iv]  <- String.split(cipher_text, "--", parts: 2),
+         {:ok, cipher_text} <- Base.decode64(cipher_text),
+         {:ok, iv}          <- Base.decode64(iv) do
+      {true, "A256CBC-HS1", "", iv, cipher_text, cipher_tag}
+    else
+      _ -> :error
     end
   end
 

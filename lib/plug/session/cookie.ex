@@ -81,17 +81,15 @@ defmodule Plug.Session.COOKIE do
   end
 
   def get(conn, cookie, opts) do
-    %{key_opts: key_opts, signing_salt: signing_salt, log: log} = opts
+    %{key_opts: key_opts, signing_salt: signing_salt, log: log, serializer: serializer} = opts
 
     case opts do
       %{encryption_salt: nil} ->
         MessageVerifier.verify(cookie, derive(conn, signing_salt, key_opts))
       %{encryption_salt: key} ->
-        # TODO: Change to verify/3 after backwards compatibility period.
-        MessageEncryptor.verify_and_decrypt(cookie,
-                                            derive(conn, key, key_opts),
-                                            derive(conn, signing_salt, key_opts))
-    end |> decode(opts.serializer, log)
+        MessageEncryptor.decrypt(cookie, derive(conn, key, key_opts),
+                                         derive(conn, signing_salt, key_opts))
+    end |> decode(serializer, log)
   end
 
   def put(conn, _sid, term, opts) do
