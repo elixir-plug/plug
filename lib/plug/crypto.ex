@@ -6,6 +6,43 @@ defmodule Plug.Crypto do
   use Bitwise
 
   @doc """
+  A restricted version a `:erlang.binary_to_term/1` that
+  forbids possibly unsafe terms.
+  """
+  def safe_binary_to_term(binary) when is_binary(binary) do
+    safe_terms(:erlang.binary_to_term(binary))
+  end
+
+  defp safe_terms(list) when is_list(list) do
+    for item <- list, do: safe_terms(item)
+    list
+  end
+  defp safe_terms(tuple) when is_tuple(tuple) do
+    safe_tuple(tuple, tuple_size(tuple))
+    tuple
+  end
+  defp safe_terms(map) when is_map(map) do
+    for {key, value} <- map do
+      safe_terms(key)
+      safe_terms(value)
+    end
+    map
+  end
+  defp safe_terms(other) when is_atom(other) or is_number(other) or is_binary(other) or
+                              is_pid(other) or is_reference(other) do
+    other
+  end
+  defp safe_terms(other) do
+    raise ArgumentError, "cannot deserialize #{inspect other}, the term is not safe for deserialization"
+  end
+
+  defp safe_tuple(_tuple, 0), do: :ok
+  defp safe_tuple(tuple, n) do
+    safe_terms(:erlang.element(n, tuple))
+    safe_tuple(tuple, n - 1)
+  end
+
+  @doc """
   Masks the token on the left with the token on the right.
 
   Both tokens are required to have the same size.

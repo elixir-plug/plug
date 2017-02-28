@@ -112,7 +112,7 @@ defmodule Plug.Session.COOKIE do
   defp decode({:ok, binary}, :external_term_format) do
     {:term,
       try do
-        :erlang.binary_to_term(binary)
+        Plug.Crypto.safe_binary_to_term(binary)
       rescue
         _ -> %{}
       end}

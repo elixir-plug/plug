@@ -1,5 +1,11 @@
 ## Changelog
 
+## v1.0.4
+
+* Bug fixes
+  * [Plug.Crypto] Provide safer deserialization mechanisms
+  * [Plug.Static] Properly handle null bytes
+
 ## v1.0.3
 
 * Enhancements
