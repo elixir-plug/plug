@@ -45,6 +45,6 @@ defmodule Plug.Logger do
   defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string, "ms"]
   defp formatted_diff(diff), do: [Integer.to_string(diff), "µs"]
 
-  defp connection_type(%{state: :chunked}), do: "Chunked"
+  defp connection_type(%{state: :set_chunked}), do: "Chunked"
   defp connection_type(_), do: "Sent"
 end

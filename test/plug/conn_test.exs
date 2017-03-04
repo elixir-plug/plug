@@ -358,6 +358,13 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "put_resp_header/3 raises when the conn is chunked" do
+    conn = send_chunked(conn(:get, "/foo"), 200)
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      put_resp_header(conn, "x-foo", "bar")
+    end
+  end
+
   test "put_resp_header/3 raises when invalid header key given" do
     conn = conn(:get, "/foo")
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
@@ -418,6 +425,13 @@ defmodule Plug.ConnTest do
 
   test "update_resp_header/4 raises when the conn was already been sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      update_resp_header(conn, "x-foo", "init", &(&1))
+    end
+  end
+
+  test "update_resp_header/4 raises when the conn is chunked" do
+    conn = send_chunked(conn(:get, "/foo"), 200)
     assert_raise Plug.Conn.AlreadySentError, fn ->
       update_resp_header(conn, "x-foo", "init", &(&1))
     end
@@ -634,6 +648,16 @@ defmodule Plug.ConnTest do
 
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection was already sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      put_resp_cookie(conn, "foo", "bar")
+    end
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      delete_resp_cookie(conn, "foo")
+    end
+  end
+
+  test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection is chunked" do
+    conn = send_chunked(conn(:get, "/foo"), 200)
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_cookie(conn, "foo", "bar")
     end
