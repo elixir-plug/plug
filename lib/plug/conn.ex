@@ -237,14 +237,6 @@ defmodule Plug.Conn do
     """
   end
 
-  defmodule AlreadyChunkedError do
-    defexception message: "the response was already sent chunked"
-
-    @moduledoc """
-    Error raised when trying to add a header after a response has had headers set as chunked
-    """
-  end
-
   defmodule CookieOverflowError do
     defexception message: "cookie exceeds maximum size of 4096 bytes"
 
@@ -557,7 +549,7 @@ defmodule Plug.Conn do
   end
 
   def delete_req_header(%Conn{state: :chunked}, _key) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def delete_req_header(%Conn{req_headers: headers} = conn, key) when
@@ -578,7 +570,7 @@ defmodule Plug.Conn do
   end
 
   def update_req_header(%Conn{state: :chunked}, _key, _initial, _fun) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def update_req_header(%Conn{} = conn, key, initial, fun) when
@@ -616,7 +608,7 @@ defmodule Plug.Conn do
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent`.
 
-  Raises a `Plug.Conn.AlreadyChunkedError` if the connection has already been
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
@@ -628,7 +620,7 @@ defmodule Plug.Conn do
   end
 
   def put_resp_header(%Conn{state: :chunked}, _key, _value) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
@@ -647,7 +639,7 @@ defmodule Plug.Conn do
   end
 
   def merge_resp_headers(%Conn{state: :chunked}, _headers) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def merge_resp_headers(conn, headers) when headers == %{} do
@@ -675,7 +667,7 @@ defmodule Plug.Conn do
   end
 
   def delete_resp_header(%Conn{state: :chunked}, _key) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def delete_resp_header(%Conn{resp_headers: headers} = conn, key) when
@@ -696,7 +688,7 @@ defmodule Plug.Conn do
   end
 
   def update_resp_header(%Conn{state: :chunked}, _key, _initial, _fun) do
-    raise AlreadyChunkedError
+    raise AlreadySentError
   end
 
   def update_resp_header(%Conn{} = conn, key, initial, fun) when
@@ -1029,7 +1021,7 @@ defmodule Plug.Conn do
   defp update_cookies(%Conn{state: :sent}, _fun),
     do: raise AlreadySentError
   defp update_cookies(%Conn{state: :chunked}, _fun),
-    do: raise AlreadyChunkedError
+    do: raise AlreadySentError
   defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, _fun),
     do: conn
   defp update_cookies(%Conn{cookies: cookies} = conn, fun),

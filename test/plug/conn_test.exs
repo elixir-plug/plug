@@ -360,7 +360,7 @@ defmodule Plug.ConnTest do
 
   test "put_resp_header/3 raises when the conn is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
-    assert_raise Plug.Conn.AlreadyChunkedError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_header(conn, "x-foo", "bar")
     end
   end
@@ -432,7 +432,7 @@ defmodule Plug.ConnTest do
 
   test "update_resp_header/4 raises when the conn is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
-    assert_raise Plug.Conn.AlreadyChunkedError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       update_resp_header(conn, "x-foo", "init", &(&1))
     end
   end
@@ -658,10 +658,10 @@ defmodule Plug.ConnTest do
 
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
-    assert_raise Plug.Conn.AlreadyChunkedError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_cookie(conn, "foo", "bar")
     end
-    assert_raise Plug.Conn.AlreadyChunkedError, fn ->
+    assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_resp_cookie(conn, "foo")
     end
   end
