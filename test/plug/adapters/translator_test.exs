@@ -31,15 +31,15 @@ defmodule Plug.Adapters.TranslatorTest do
   end
 
   test "ranch/cowboy non-500 skips" do
-    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 9001
+    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 9002
     on_exit fn -> Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP) end
 
     output = capture_log fn ->
-      :hackney.get("http://127.0.0.1:9001/warn", [], "", [])
+      :hackney.get("http://127.0.0.1:9002/warn", [], "", [])
     end
 
     refute output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest terminated"
-    refute output =~ "Server: 127.0.0.1:9001 (http)"
+    refute output =~ "Server: 127.0.0.1:9002 (http)"
     refute output =~ "Request: GET /"
     refute output =~ "** (exit) an exception was raised:"
   end
