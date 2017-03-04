@@ -363,7 +363,7 @@ defmodule Plug.Conn do
   atoms is available in `Plug.Conn.Status`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec put_status(t, status) :: t
   def put_status(%Conn{state: :sent}, _status),
@@ -524,7 +524,7 @@ defmodule Plug.Conn do
   is not lowercase.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec put_req_header(t, binary, binary) :: t
   def put_req_header(%Conn{state: :sent}, _key, _value) do
@@ -541,7 +541,7 @@ defmodule Plug.Conn do
   Deletes a request header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec delete_req_header(t, binary) :: t
   def delete_req_header(%Conn{state: :sent}, _key) do
@@ -562,7 +562,7 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec update_req_header(t, binary, binary, (binary -> binary)) :: t
   def update_req_header(%Conn{state: :sent}, _key, _initial, _fun) do
@@ -606,10 +606,7 @@ defmodule Plug.Conn do
   is not lowercase.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
-
-  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:chunked`.
+  `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (\r) or newline (\n) characters.
@@ -659,7 +656,7 @@ defmodule Plug.Conn do
   Deletes a response header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec delete_resp_header(t, binary) :: t
   def delete_resp_header(%Conn{state: :sent}, _key) do
@@ -680,7 +677,7 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
   def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
