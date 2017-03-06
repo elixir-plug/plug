@@ -262,27 +262,39 @@ defmodule Plug.StaticTest do
     end
 
     test "returns 416 if range is invalid (1)" do
-      conn = conn(:get, "/public/fixtures/static.txt", [])
-             |> put_req_header("range", "bytes=-")
-             |> call
+      exception = assert_raise Plug.Static.InvalidRangeError,
+                               "invalid range for static asset",
+        fn ->
+          conn(:get, "/public/fixtures/static.txt", [])
+            |> put_req_header("range", "bytes=-")
+            |> call
+        end
 
-      assert conn.status == 416
+      assert Plug.Exception.status(exception) == 416
     end
 
     test "returns 416 if range is invalid (2)" do
-      conn = conn(:get, "/public/fixtures/static.txt", [])
-             |> put_req_header("range", "bytes=nope")
-             |> call
+      exception = assert_raise Plug.Static.InvalidRangeError,
+                               "invalid range for static asset",
+        fn ->
+          conn(:get, "/public/fixtures/static.txt", [])
+            |> put_req_header("range", "bytes=nope")
+            |> call
+        end
 
-      assert conn.status == 416
+      assert Plug.Exception.status(exception) == 416
     end
 
     test "returns 416 if range is invalid (3)" do
-      conn = conn(:get, "/public/fixtures/static.txt", [])
-             |> put_req_header("range", "bytes")
-             |> call
+      exception = assert_raise Plug.Static.InvalidRangeError,
+                               "invalid range for static asset",
+        fn ->
+          conn(:get, "/public/fixtures/static.txt", [])
+            |> put_req_header("range", "bytes")
+            |> call
+        end
 
-      assert conn.status == 416
+      assert Plug.Exception.status(exception) == 416
     end
   end
 

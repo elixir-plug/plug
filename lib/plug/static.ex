@@ -116,6 +116,10 @@ defmodule Plug.Static do
     defexception message: "invalid path for static asset", plug_status: 400
   end
 
+  defmodule InvalidRangeError do
+    defexception message: "invalid range for static asset", plug_status: 416
+  end
+
   def init(opts) do
     from =
       case Keyword.fetch!(opts, :from) do
@@ -151,8 +155,8 @@ defmodule Plug.Static do
       end
 
       path = path(from, segments)
-      encoding = file_encoding(conn, path, gzip?, brotli?)
-      serve_static(encoding, segments, options)
+      range = get_req_header(conn, "range")
+      serve_range(conn, path, segments, range, gzip?, brotli?, options)
     else
       conn
     end
@@ -175,6 +179,100 @@ defmodule Plug.Static do
   defp allowed?([], [], _list), do: true
   defp allowed?(only, prefix, [h|_]) do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
+  end
+
+  defp serve_range(conn, path, segments, [], gzip?, brotli?, options) do
+    encoding = file_encoding(conn, path, gzip?, brotli?)
+    serve_static(encoding, segments, options)
+  end
+  defp serve_range(conn, path, segments, [range], _gzip?, _brotli?, options) do
+    encoding = file_encoding(conn, path, false, false)
+    serve_range(encoding, range, segments, options)
+  end
+  defp serve_range(_conn, _path, _segments, range, _gzip?, _brotli?, _options) do
+    raise InvalidRangeError
+  end
+
+  @byte_range_pattern ~r/bytes=([0-9]+)?-([0-9]+)?/
+
+  defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
+    file_size = elem(file_info, 1)
+
+    parsed_range =
+      @byte_range_pattern
+      |> Regex.run(range)
+      |> start_and_end(file_size)
+      |> check_bounds(file_size)
+
+    case parsed_range do
+      {range_start, range_end} ->
+        send_range(conn, path, range_start, range_end, file_size, segments, options)
+      :entire_file ->
+        serve_static({:ok, conn, file_info, path}, segments, options)
+      :invalid ->
+        raise InvalidRangeError
+    end
+  end
+
+  defp serve_range({:error, conn}, _range, _segments, _options) do
+    conn
+  end
+
+  defp start_and_end([_, "", ""], _file_size), do: :invalid
+
+  defp start_and_end([_, range_start], file_size)
+    when is_binary(range_start)
+  do
+    {to_integer(range_start), file_size - 1}
+  end
+
+  defp start_and_end([_, "", tail_length], file_size)
+    when is_binary(tail_length)
+  do
+    {file_size - to_integer(tail_length), file_size - 1}
+  end
+
+  defp start_and_end([_, range_start, range_end], _file_size) do
+    {to_integer(range_start), to_integer(range_end)}
+  end
+
+  defp start_and_end(_range, _file_size), do: :invalid
+
+  defp check_bounds(:invalid, _file_size), do: :invalid
+
+  defp check_bounds({range_start, range_end}, file_size)
+    when range_start < 0 or range_end >= file_size or range_start > range_end
+  do
+    :invalid
+  end
+
+  defp check_bounds({0, range_end}, file_size)
+    when range_end == file_size - 1
+  do
+    :entire_file
+  end
+
+  defp check_bounds({range_start, range_end}, _file_size) do
+    {range_start, range_end}
+  end
+
+  defp to_integer(str) do
+    {num, _} = Integer.parse(str)
+    num
+  end
+
+  defp send_range(conn, path, range_start, range_end, file_size, segments, options) do
+    %{headers: headers} = options
+    length = (range_end - range_start) + 1
+    content_type = segments |> List.last |> MIME.from_path
+
+    conn
+    |> put_resp_header("content-type", content_type)
+    |> put_resp_header("accept-ranges", "bytes")
+    |> put_resp_header("content-range", "bytes #{range_start}-#{range_end}/#{file_size}")
+    |> merge_resp_headers(headers)
+    |> send_file(206, path, range_start, length)
+    |> halt
   end
 
   defp serve_static({:ok, conn, file_info, path}, segments, options) do
