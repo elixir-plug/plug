@@ -230,6 +230,62 @@ defmodule Plug.StaticTest do
     end
   end
 
+  describe "range request" do
+    test "serves entire file if range is 0-" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=0-")
+             |> call
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+    end
+
+    test "serves requested range of file starting from byte 0" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=0-1")
+             |> call
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+    end
+
+    test "serves tail of file if range is -n" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=-3")
+             |> call
+
+      assert conn.status == 206
+      assert conn.resp_body == "LLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+    end
+
+    test "returns 416 if range is invalid (1)" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=-")
+             |> call
+
+      assert conn.status == 416
+    end
+
+    test "returns 416 if range is invalid (2)" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=nope")
+             |> call
+
+      assert conn.status == 416
+    end
+
+    test "returns 416 if range is invalid (3)" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes")
+             |> call
+
+      assert conn.status == 416
+    end
+  end
+
   defmodule FilterPlug do
     use Plug.Builder
 
