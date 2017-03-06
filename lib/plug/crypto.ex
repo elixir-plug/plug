@@ -22,11 +22,11 @@ defmodule Plug.Crypto do
     tuple
   end
   defp safe_terms(map) when is_map(map) do
-    for {key, value} <- map do
+    :maps.fold(fn key, value, acc ->
       safe_terms(key)
       safe_terms(value)
-    end
-    map
+      acc
+    end, map, map)
   end
   defp safe_terms(other) when is_atom(other) or is_number(other) or is_bitstring(other) or
                               is_pid(other) or is_reference(other) do
