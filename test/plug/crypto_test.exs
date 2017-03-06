@@ -26,4 +26,13 @@ defmodule Plug.CryptoTest do
     refute masked_compare(<<1>>, <<>>, <<0>>)
     refute masked_compare(<<0>>, <<1>>, <<0>>)
   end
+
+  test "safe_binary_to_term" do
+    value = %{1 => {:foo, ["bar", 2.0, %URI{}, [self() | make_ref()], <<0::4>>]}}
+    assert safe_binary_to_term(:erlang.term_to_binary(value)) == value
+
+    assert_raise ArgumentError, fn ->
+      safe_binary_to_term(:erlang.term_to_binary(%{1 => {:foo, [fn -> :bar end]}}))
+    end
+  end
 end
