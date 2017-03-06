@@ -181,7 +181,7 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_range(conn, path, segments, [], %{gzip?: gzip?, brotli?: brotli} = options) do
+  defp serve_range(conn, path, segments, [], %{gzip?: gzip?, brotli?: brotli?} = options) do
     encoding = file_encoding(conn, path, gzip?, brotli?)
     serve_static(encoding, segments, options)
   end
