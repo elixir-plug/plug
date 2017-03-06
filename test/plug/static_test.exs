@@ -296,6 +296,32 @@ defmodule Plug.StaticTest do
 
       assert Plug.Exception.status(exception) == 416
     end
+
+    test "returns 416 if range is invalid (4)" do
+      exception = assert_raise Plug.Static.InvalidRangeError,
+                               "invalid range for static asset",
+        fn ->
+          conn(:get, "/public/fixtures/static.txt", [])
+            |> put_req_header("range", "bytes=-")
+            |> call
+        end
+
+      assert Plug.Exception.status(exception) == 416
+    end
+
+    test "returns 416 if range contains multiple byte ranges" do
+      # Multiple byte ranges are not supported by Plug.Static at this time.
+
+      exception = assert_raise Plug.Static.InvalidRangeError,
+                               "invalid range for static asset",
+        fn ->
+          conn(:get, "/public/fixtures/static.txt", [])
+            |> put_req_header("range", "bytes=0-1,3-4")
+            |> call
+        end
+
+      assert Plug.Exception.status(exception) == 416
+    end
   end
 
   defmodule FilterPlug do

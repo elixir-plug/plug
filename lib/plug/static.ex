@@ -189,11 +189,11 @@ defmodule Plug.Static do
     encoding = file_encoding(conn, path, false, false)
     serve_range(encoding, range, segments, options)
   end
-  defp serve_range(_conn, _path, _segments, range, _gzip?, _brotli?, _options) do
+  defp serve_range(_conn, _path, _segments, _range, _gzip?, _brotli?, _options) do
     raise InvalidRangeError
   end
 
-  @byte_range_pattern ~r/bytes=([0-9]+)?-([0-9]+)?/
+  @byte_range_pattern ~r/^\s*bytes=([0-9]+)?-([0-9]+)?\s*$/
 
   defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
     file_size = elem(file_info, 1)
