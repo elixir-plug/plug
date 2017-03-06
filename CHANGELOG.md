@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.1.8
+
+* Bug fixes
+  * Support improper lists, bitstrings and structs in safe_binary_to_term
+
 ## v1.1.7
 
 * Bug fixes

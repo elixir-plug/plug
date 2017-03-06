@@ -1,7 +1,7 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
-  @version "1.1.7"
+  @version "1.1.8"
 
   def project do
     [app: :plug,
@@ -33,7 +33,7 @@ defmodule Plug.Mixfile do
   end
 
   defp package do
-    %{licenses: ["Apache 2"],
+    %{licenses: ["Apache 2"], maintainers: ["José Valim"],
       links: %{"GitHub" => "https://github.com/elixir-lang/plug"}}
   end
 end
