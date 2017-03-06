@@ -143,7 +143,7 @@ defmodule Plug.Static do
     }
   end
 
-  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?} = options)
+  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from} = options)
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
@@ -156,7 +156,7 @@ defmodule Plug.Static do
 
       path = path(from, segments)
       range = get_req_header(conn, "range")
-      serve_range(conn, path, segments, range, gzip?, brotli?, options)
+      serve_range(conn, path, segments, range, options)
     else
       conn
     end
@@ -181,15 +181,15 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_range(conn, path, segments, [], gzip?, brotli?, options) do
+  defp serve_range(conn, path, segments, [], %{gzip?: gzip?, brotli?: brotli} = options) do
     encoding = file_encoding(conn, path, gzip?, brotli?)
     serve_static(encoding, segments, options)
   end
-  defp serve_range(conn, path, segments, [range], _gzip?, _brotli?, options) do
+  defp serve_range(conn, path, segments, [range], options) do
     encoding = file_encoding(conn, path, false, false)
     serve_range(encoding, range, segments, options)
   end
-  defp serve_range(_conn, _path, _segments, _range, _gzip?, _brotli?, _options) do
+  defp serve_range(_conn, _path, _segments, _range, _options) do
     raise InvalidRangeError
   end
 
