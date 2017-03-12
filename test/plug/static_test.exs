@@ -265,4 +265,36 @@ defmodule Plug.StaticTest do
     conn = FilterPlug.call(conn(:get, "/file-deadbeef.txt"), [])
     assert conn.status == 200
   end
+
+  defmodule IndexPlug do
+    use Plug.Builder
+
+    plug Plug.Static,
+      at: "/public",
+      index: "fixtures/index.html",
+      from: Path.expand("..", __DIR__),
+      gzip: true,
+      headers: %{"x-custom" => "x-value"}
+
+    plug :passthrough
+
+    defp passthrough(conn, _), do:
+      Plug.Conn.send_resp(conn, 404, "Passthrough")
+  end
+
+  test "serves the index configed file on root url" do
+    conn = IndexPlug.call(conn(:get, "/public"), [])
+    assert conn.status == 200
+    assert conn.resp_body == "index!"
+
+    conn = IndexPlug.call(conn(:get, "/public/unknown.txt"), [])
+    assert conn.status == 404
+    assert conn.resp_body == "Passthrough"
+    assert get_resp_header(conn, "x-custom")  == []
+
+    conn = IndexPlug.call(conn(:get, "/public/fixtures/static.txt"), [])
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type")  == ["text/plain"]
+  end
 end
