@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.3.4
+
+* Bug fixes
+  * Do not convert exits into errors
+
 ## v1.3.3
 
 * Bug fixes
