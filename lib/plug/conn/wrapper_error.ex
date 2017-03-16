@@ -17,10 +17,12 @@ defmodule Plug.Conn.WrapperError do
   def reraise(_conn, :error, %__MODULE__{stack: stack} = reason) do
     :erlang.raise(:error, reason, stack)
   end
-
-  def reraise(conn, kind, reason) do
+  def reraise(conn, :error, reason) do
     stack   = System.stacktrace
-    wrapper = %__MODULE__{conn: conn, kind: kind, reason: reason, stack: stack}
+    wrapper = %__MODULE__{conn: conn, kind: :error, reason: reason, stack: stack}
     :erlang.raise(:error, wrapper, stack)
+  end
+  def reraise(_conn, kind, reason) do
+    :erlang.raise(kind, reason, System.stacktrace)
   end
 end
