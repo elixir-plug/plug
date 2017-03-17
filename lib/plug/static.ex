@@ -77,6 +77,10 @@ defmodule Plug.Static do
 
     * `:headers` - other headers to be set when serving static assets.
 
+    * `:index` - relative path of the index file that is rendered
+      when the root of the request path is requested.
+      For example: `index: "index.html"`. Defaults to `nil`.
+
   ## Examples
 
   This plug can be mounted in a `Plug.Builder` pipeline as follows:
@@ -135,13 +139,15 @@ defmodule Plug.Static do
       et_generation: Keyword.get(opts, :etag_generation, nil),
       headers: Keyword.get(opts, :headers, %{}),
       from: from,
-      at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split()
+      at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split(),
+      index: Keyword.get(opts, :index, nil)
     }
   end
 
-  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?} = options)
+  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?, index: index} = options)
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
+               |> index_on_root(index)
 
     if allowed?(only, prefix, segments) do
       segments = Enum.map(segments, &uri_decode/1)
@@ -286,6 +292,13 @@ defmodule Plug.Static do
     do: actual
   defp subset(_, _),
     do: []
+
+  defp index_on_root([], index) when index != nil do
+    :binary.split(index, "/")
+  end
+  defp index_on_root(segments, _) do
+    segments
+  end
 
   defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
   defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":", "\0"]) or invalid_path?(t)
