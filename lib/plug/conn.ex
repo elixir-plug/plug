@@ -629,6 +629,10 @@ defmodule Plug.Conn do
 
   @doc """
   Merges a series of response headers into the connection.
+
+  ## Example
+
+      iex> conn = merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
   """
   @spec merge_resp_headers(t, Enum.t) :: t
   def merge_resp_headers(%Conn{state: :sent}, _headers) do
