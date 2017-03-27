@@ -624,7 +624,11 @@ defmodule Plug.Conn do
       is_binary(key) and is_binary(value) do
     validate_header_key!(adapter, key)
     validate_header_value!(value)
-    %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
+    headers = cond do
+      Plug.Conn.Utils.header_is_list(key) -> [{key, value}|headers]
+      true -> List.keystore(headers, key, 0, {key, value})
+    end
+    %{conn | resp_headers: headers}
   end
 
   @doc """

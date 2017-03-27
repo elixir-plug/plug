@@ -265,6 +265,25 @@ defmodule Plug.Conn.Utils do
   end
 
   @doc """
+  Checks if a header can be duplicated
+
+  ## Examples
+
+      iex> header_is_list("set-cookie")
+      true
+
+      iex> header_is_list("vary")
+      true
+
+      iex> header_is_list("date")
+      false
+  """
+  @spec header_is_list(binary) :: boolean
+  def header_is_list("vary"), do: true
+  def header_is_list("set-cookie"), do: true
+  def header_is_list(_other), do: false
+
+  @doc """
   Validates the given binary is valid UTF-8.
   """
   @spec validate_utf8!(binary, module, binary) :: :ok | no_return
