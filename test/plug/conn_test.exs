@@ -881,5 +881,8 @@ defmodule Plug.ConnTest do
     conn = Plug.Conn.send_chunked(conn, 200)
 
     assert {:ok, conn} == Plug.Conn.chunk(conn, "")
+  after
+    :code.purge(RaisesOnEmptyChunkAdapter)
+    :code.delete(RaisesOnEmptyChunkAdapter)
   end
 end
