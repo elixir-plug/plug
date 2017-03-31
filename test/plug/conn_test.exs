@@ -870,9 +870,10 @@ defmodule Plug.ConnTest do
       defdelegate send_chunked(state, status, headers), to: Plug.Adapters.Test.Conn
 
       def chunk(payload, chunk) do
-        case IO.iodata_length(chunk) do
-          0 -> flunk "empty chunk #{inspect chunk} was unexpectedly sent"
-          _ -> Plug.Adapters.Test.Conn.chunk(payload, chunk)
+        if IO.iodata_length(chunk) == 0 do
+          flunk "empty chunk #{inspect chunk} was unexpectedly sent"
+        else
+          Plug.Adapters.Test.Conn.chunk(payload, chunk)
         end
       end
     end

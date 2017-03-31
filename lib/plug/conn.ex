@@ -461,14 +461,14 @@ defmodule Plug.Conn do
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    case IO.iodata_length(chunk) do
-      0 -> {:ok, conn}
-      _ ->
-        case adapter.chunk(payload, chunk) do
-          :ok                  -> {:ok, conn}
-          {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
-          {:error, _} = error  -> error
-        end
+    if IO.iodata_length(chunk) == 0 do
+      {:ok, conn}
+    else
+      case adapter.chunk(payload, chunk) do
+        :ok -> {:ok, conn}
+        {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+        {:error, _} = error -> error
+      end
     end
   end
 
