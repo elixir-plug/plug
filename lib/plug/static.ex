@@ -293,7 +293,11 @@ defmodule Plug.Static do
   defp subset(_, _),
     do: []
 
-  defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
-  defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":", "\0"]) or invalid_path?(t)
-  defp invalid_path?([]), do: false
+  defp invalid_path?(list) do
+    invalid_path?(list, :binary.compile_pattern(["/", "\\", ":", "\0"]))
+  end
+
+  defp invalid_path?([h|_], _match) when h in [".", "..", ""], do: true
+  defp invalid_path?([h|t], match), do: String.contains?(h, match) or invalid_path?(t)
+  defp invalid_path?([], _match), do: false
 end
