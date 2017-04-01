@@ -478,9 +478,9 @@ defmodule Plug.Conn do
   end
 
   defp iodata_empty?(""), do: true
-  defp iodata_empty?(binary) when is_binary(binary), do: false
   defp iodata_empty?([]), do: true
-  defp iodata_empty?([hd | tl]), do: iodata_empty?(hd) && iodata_empty?(tl)
+  defp iodata_empty?([head | tail]), do: iodata_empty?(head) and iodata_empty?(tail)
+  defp iodata_empty?(_), do: false
 
   @doc """
   Sends a response with the given status and body.
