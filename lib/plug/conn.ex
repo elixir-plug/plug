@@ -463,12 +463,15 @@ defmodule Plug.Conn do
   otherwise `{:error, reason}`.
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
-  def chunk(%Conn{state: :chunked} = conn, ""), do: {:ok, conn}
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    case adapter.chunk(payload, chunk) do
-      :ok                  -> {:ok, conn}
-      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
-      {:error, _} = error  -> error
+    if iodata_empty?(chunk) do
+      {:ok, conn}
+    else
+      case adapter.chunk(payload, chunk) do
+        :ok -> {:ok, conn}
+        {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+        {:error, _} = error -> error
+      end
     end
   end
 
@@ -476,6 +479,11 @@ defmodule Plug.Conn do
     raise ArgumentError, "chunk/2 expects a chunked response. Please ensure " <>
                          "you have called send_chunked/2 before you send a chunk"
   end
+
+  defp iodata_empty?(""), do: true
+  defp iodata_empty?([]), do: true
+  defp iodata_empty?([head | tail]), do: iodata_empty?(head) and iodata_empty?(tail)
+  defp iodata_empty?(_), do: false
 
   @doc """
   Sends a response with the given status and body.

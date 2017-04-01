@@ -871,12 +871,17 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "does not delegate to connections' adapter's chunk/2 when called with emtpy chunk" do
+  test "does not delegate to connections' adapter's chunk/2 when called with an empty chunk" do
     defmodule RaisesOnEmptyChunkAdapter do
       defdelegate send_chunked(state, status, headers), to: Plug.Adapters.Test.Conn
 
-      def chunk(_payload, ""), do: raise "the empty chunk was unexpectedly sent"
-      def chunk(payload, chunk), do: Plug.Adapters.Test.Conn.chunk(payload, chunk)
+      def chunk(payload, chunk) do
+        if IO.iodata_length(chunk) == 0 do
+          flunk "empty chunk #{inspect chunk} was unexpectedly sent"
+        else
+          Plug.Adapters.Test.Conn.chunk(payload, chunk)
+        end
+      end
     end
 
     conn = %Conn{
@@ -887,5 +892,9 @@ defmodule Plug.ConnTest do
     conn = Plug.Conn.send_chunked(conn, 200)
 
     assert {:ok, conn} == Plug.Conn.chunk(conn, "")
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [""])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [[]])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [["", ""]])
   end
 end
