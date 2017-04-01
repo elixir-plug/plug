@@ -184,14 +184,14 @@ defmodule MyPlugTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  @opts AppRouter.init([])
+  @opts MyRouter.init([])
 
   test "returns hello world" do
     # Create a test connection
     conn = conn(:get, "/hello")
 
     # Invoke the plug
-    conn = AppRouter.call(conn, @opts)
+    conn = MyRouter.call(conn, @opts)
 
     # Assert the response and status
     assert conn.state == :sent
