@@ -246,6 +246,12 @@ defmodule Plug.ConnTest do
     assert conn.state == :sent
   end
 
+  test "send_file/3 raises on null-byte" do
+    assert_raise ArgumentError, fn ->
+      send_file(conn(:get, "/foo"), 200, "foo.md\0.html")
+    end
+  end
+
   test "send_file/3 sends self a message" do
     refute_received {:plug_conn, :sent}
     send_file(conn(:get, "/foo"), 200, __ENV__.file)

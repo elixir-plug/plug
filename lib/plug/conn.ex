@@ -423,8 +423,11 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length)
-      when is_binary(file) do
+  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length) when is_binary(file) do
+    if file =~ "\0" do
+      raise ArgumentError, "cannot send_file/5 with null byte"
+    end
+
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send owner, @already_sent
