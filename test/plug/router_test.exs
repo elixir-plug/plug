@@ -65,13 +65,8 @@ defmodule Plug.RouterTest do
   defmodule SamplePlug do
     import Plug.Conn
 
-    def init(options) do
-      options
-    end
-
-    def call(conn, []) do
-      send_resp(conn, 200, "ok")
-    end
+    def init(:hello), do: :world
+    def init(options), do: options
 
     def call(conn, options) do
       send_resp(conn, 200, "#{inspect options}")
@@ -127,7 +122,7 @@ defmodule Plug.RouterTest do
     end
 
     plug = SamplePlug
-    opts = :foo
+    opts = :hello
     get "/plug/match", to: SamplePlug
     get "/plug/match/options", to: plug, init_opts: opts
 
@@ -153,9 +148,8 @@ defmodule Plug.RouterTest do
       assigns: %{another_option: :another_value}
 
     plug = SamplePlug
-    opts = [foo: :bar]
+    opts = :hello
     forward "/plug/forward", to: SamplePlug
-    forward "/plug/options", to: SamplePlug, foo: :bar, private: %{baz: :qux}
     forward "/plug/init_opts", to: plug, init_opts: opts, private: %{baz: :qux}
 
     match _ do
@@ -243,12 +237,12 @@ defmodule Plug.RouterTest do
 
   test "dispatch to plug" do
     conn = call(Sample, conn(:get, "/plug/match"))
-    assert conn.resp_body == "ok"
+    assert conn.resp_body == "[]"
   end
 
   test "dispatch to plug with options" do
     conn = call(Sample, conn(:get, "/plug/match/options"))
-    assert conn.resp_body == ":foo"
+    assert conn.resp_body == ":world"
   end
 
   test "dispatch with forwarding" do
@@ -413,19 +407,13 @@ defmodule Plug.RouterTest do
 
   test "forwards to a plug" do
     conn = call(Sample, conn(:get, "/plug/forward"))
-    assert conn.resp_body == "ok"
+    assert conn.resp_body == "[]"
   end
 
-  test "forwards to a plug with options" do
-    conn = call(Sample, conn(:get, "/plug/options"))
-    assert conn.private[:baz] == :qux
-    assert conn.resp_body == "[foo: :bar]"
-  end
-
-  test "forwards to a plug with plug options" do
+  test "forwards to a plug with init options" do
     conn = call(Sample, conn(:get, "/plug/init_opts"))
     assert conn.private[:baz] == :qux
-    assert conn.resp_body == "[foo: :bar]"
+    assert conn.resp_body == ":world"
   end
 
   defp call(mod, conn) do
