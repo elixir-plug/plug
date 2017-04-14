@@ -33,8 +33,8 @@ defmodule Plug.SSL do
     * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to true.
     * `:expires` - seconds to expires for HSTS, defaults to 31536000 (a year).
-    * `:preload` - a boolean to request inclusion on the HSTS preload list 
-       (for full set of required flags, see: 
+    * `:preload` - a boolean to request inclusion on the HSTS preload list
+       (for full set of required flags, see:
        [Chromium HSTS submission site](https://hstspreload.org)).
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to false.
@@ -87,7 +87,7 @@ defmodule Plug.SSL do
       preload    = Keyword.get(opts, :preload, false)
       subdomains = Keyword.get(opts, :subdomains, false)
 
-      "max-age=#{expires}" 
+      "max-age=#{expires}"
         <> if(preload, do: "; preload", else: "")
         <> if(subdomains, do: "; includeSubDomains", else: "")
     end
