@@ -40,6 +40,20 @@ defmodule Plug.SSLTest do
     refute conn.halted
   end
 
+  test "hsts include preload" do
+    conn = call(conn(:get, "https://example.com/"), preload: true)
+    assert get_resp_header(conn, "strict-transport-security") ==
+           ["max-age=31536000; preload"]
+    refute conn.halted
+  end
+
+  test "hsts with multiple flags" do
+    conn = call(conn(:get, "https://example.com/"), preload: true, subdomains: true)
+    assert get_resp_header(conn, "strict-transport-security") ==
+           ["max-age=31536000; preload; includeSubDomains"]
+    refute conn.halted
+  end
+
   test "rewrites conn http to https based on x-forwarded-proto" do
     conn = conn(:get, "http://example.com/")
            |> put_req_header("x-forwarded-proto", "https")
