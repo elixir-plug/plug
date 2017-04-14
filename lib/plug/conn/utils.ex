@@ -307,8 +307,6 @@ defmodule Plug.Conn.Utils do
     do: split_unquoted(t, s, [<<g :: binary,?">> | groups], !quoted?)
   defp split_unquoted(<<h, t :: binary>>, s, groups, false) when <<h>> == s,
     do: split_unquoted(t, s, [<<>> | groups], false)
-  defp split_unquoted(<<h, t :: binary>>, s, [g | groups], true) when <<h>> == s,
-    do: split_unquoted(t, s, [<<g :: binary, ?;>> | groups], true)
   defp split_unquoted(<<h, t :: binary>>, s, [g | groups], quoted?),
     do: split_unquoted(t, s, [<<g :: binary, h>> | groups], quoted?)
 end
