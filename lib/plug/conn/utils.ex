@@ -124,7 +124,7 @@ defmodule Plug.Conn.Utils do
     end
   end
 
-  @doc """
+  @doc ~S"""
   Parses headers parameters.
 
   Keys are case insensitive and downcased,
@@ -147,6 +147,12 @@ defmodule Plug.Conn.Utils do
       iex> params("foo=BAR ; wat")
       %{"foo" => "BAR"}
 
+      iex> params("foo=\"bar\"; baz=\"boing\"")
+      %{"foo" => "bar", "baz" => "boing"}
+
+      iex> params("foo=\"bar;\"; baz=\"boing\"")
+      %{"foo" => "bar;", "baz" => "boing"}
+
       iex> params("=")
       %{}
 
@@ -154,7 +160,7 @@ defmodule Plug.Conn.Utils do
   @spec params(binary) :: params
   def params(t) do
     t
-    |> :binary.split(";", [:global])
+    |> split_unquoted(";")
     |> Enum.reduce(%{}, &params/2)
   end
 
@@ -293,4 +299,14 @@ defmodule Plug.Conn.Utils do
 
   defp downcase_char(char) when char in @upper, do: char + 32
   defp downcase_char(char), do: char
+
+  defp split_unquoted(bin, s, groups \\ [<<>>], quoted? \\ false)
+  defp split_unquoted(<<>>, _s, groups, _quoted?),
+    do: groups
+  defp split_unquoted(<<?", t :: binary>>, s, [g | groups], quoted?),
+    do: split_unquoted(t, s, [<<g :: binary,?">> | groups], !quoted?)
+  defp split_unquoted(<<h, t :: binary>>, s, groups, false) when <<h>> == s,
+    do: split_unquoted(t, s, [<<>> | groups], false)
+  defp split_unquoted(<<h, t :: binary>>, s, [g | groups], quoted?),
+    do: split_unquoted(t, s, [<<g :: binary, h>> | groups], quoted?)
 end
