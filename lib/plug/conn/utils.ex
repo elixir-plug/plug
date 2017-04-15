@@ -160,7 +160,7 @@ defmodule Plug.Conn.Utils do
   @spec params(binary) :: params
   def params(t) do
     t
-    |> split_unquoted(";")
+    |> split_semicolon("", [], false)
     |> Enum.reduce(%{}, &params/2)
   end
 
@@ -300,13 +300,14 @@ defmodule Plug.Conn.Utils do
   defp downcase_char(char) when char in @upper, do: char + 32
   defp downcase_char(char), do: char
 
-  defp split_unquoted(bin, s, groups \\ [<<>>], quoted? \\ false)
-  defp split_unquoted(<<>>, _s, groups, _quoted?),
-    do: groups
-  defp split_unquoted(<<?", t :: binary>>, s, [g | groups], quoted?),
-    do: split_unquoted(t, s, [<<g :: binary,?">> | groups], !quoted?)
-  defp split_unquoted(<<h, t :: binary>>, s, groups, false) when <<h>> == s,
-    do: split_unquoted(t, s, [<<>> | groups], false)
-  defp split_unquoted(<<h, t :: binary>>, s, [g | groups], quoted?),
-    do: split_unquoted(t, s, [<<g :: binary, h>> | groups], quoted?)
+  defp split_semicolon(<<>>, <<>>, acc, _),
+    do: acc
+  defp split_semicolon(<<>>, buffer, acc, _),
+    do: [buffer | acc]
+  defp split_semicolon(<<?", t :: binary>>, buffer, acc, quoted?),
+    do: split_semicolon(t, <<buffer :: binary, ?">>, acc, not quoted?)
+  defp split_semicolon(<<?;, t :: binary>>, buffer, acc, false),
+    do: split_semicolon(t, <<>>, [buffer | acc], false)
+  defp split_semicolon(<<h, t :: binary>>, buffer, acc, quoted?),
+    do: split_semicolon(t, <<buffer :: binary, h>>, acc, quoted?)
 end
