@@ -11,6 +11,13 @@ defmodule Plug.Test do
 
     * import all the functions from this module
     * import all the functions from the `Plug.Conn` module
+
+  By default, Plug tests checks for invalid header keys, e.g. header keys which
+  include uppercase letters, and raises a `Plug.Conn.InvalidHeaderError` when it finds one.
+  To disable it, set :validate_header_keys_during_test to false on the app config.
+
+      config :plug, :validate_header_keys_during_test, true
+
   """
 
   @doc false

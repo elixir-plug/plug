@@ -544,7 +544,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    validate_header_key_if_test!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -633,7 +633,7 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    validate_header_key_if_test!(adapter, key)
     validate_header_value!(value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
@@ -1058,13 +1058,13 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
-    unless valid_header_key?(key) do
+  defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
+    if Application.get_env(:plug, :validate_header_keys_during_test) and not valid_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
-  defp validate_header_key!(_adapter, _key) do
+  defp validate_header_key_if_test!(_adapter, _key) do
     :ok
   end
 
