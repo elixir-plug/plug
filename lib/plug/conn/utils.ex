@@ -304,10 +304,10 @@ defmodule Plug.Conn.Utils do
     do: acc
   defp split_semicolon(<<>>, buffer, acc, _),
     do: [buffer | acc]
-  defp split_semicolon(<<?", t :: binary>>, buffer, acc, quoted?),
-    do: split_semicolon(t, <<buffer :: binary, ?">>, acc, not quoted?)
-  defp split_semicolon(<<?;, t :: binary>>, buffer, acc, false),
-    do: split_semicolon(t, <<>>, [buffer | acc], false)
-  defp split_semicolon(<<h, t :: binary>>, buffer, acc, quoted?),
-    do: split_semicolon(t, <<buffer :: binary, h>>, acc, quoted?)
+  defp split_semicolon(<<?", rest::binary>>, buffer, acc, quoted?),
+    do: split_semicolon(rest, <<buffer::binary, ?">>, acc, not quoted?)
+  defp split_semicolon(<<?;, rest::binary>>, buffer, acc, false),
+    do: split_semicolon(rest, <<>>, [buffer | acc], false)
+  defp split_semicolon(<<char, rest::binary>>, buffer, acc, quoted?),
+    do: split_semicolon(rest, <<buffer::binary, char>>, acc, quoted?)
 end
