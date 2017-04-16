@@ -544,7 +544,9 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    if Application.get_env(:plug, :validate_header_keys_during_test, true) do
+      validate_header_key!(adapter, key)
+    end
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -633,7 +635,9 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    if Application.get_env(:plug, :validate_header_keys_during_test, true) do
+      validate_header_key!(adapter, key)
+    end
     validate_header_value!(value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
