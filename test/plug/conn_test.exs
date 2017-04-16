@@ -372,6 +372,7 @@ defmodule Plug.ConnTest do
   end
 
   test "put_resp_header/3 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_resp_header(conn, "X-Foo", "bar")
@@ -382,7 +383,6 @@ defmodule Plug.ConnTest do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     put_resp_header(conn, "X-Foo", "bar")
-    Application.delete_env(:plug, :validate_header_keys_during_test)
   end
 
   test "put_resp_header/3 raises when invalid header value given" do
@@ -504,6 +504,7 @@ defmodule Plug.ConnTest do
   end
 
   test "put_req_header/3 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
@@ -514,7 +515,6 @@ defmodule Plug.ConnTest do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     put_req_header(conn, "X-Foo", "bar")
-    Application.delete_env(:plug, :validate_header_keys_during_test)
   end
 
   test "delete_req_header/2" do
