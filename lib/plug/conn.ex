@@ -634,7 +634,7 @@ defmodule Plug.Conn do
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
     validate_header_key_if_test!(adapter, key)
-    validate_header_value!(value)
+    validate_header_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -1027,8 +1027,7 @@ defmodule Plug.Conn do
           "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
-    validate_header_value!(cookie)
-    cookie
+    validate_header_value!("set-cookie", cookie)
   end
 
   defp update_cookies(%Conn{state: :sent}, _fun),
@@ -1075,10 +1074,10 @@ defmodule Plug.Conn do
   defp valid_header_key?(<<>>), do: true
   defp valid_header_key?(_), do: false
 
-  defp validate_header_value!(value) do
+  defp validate_header_value!(key, value) do
     case :binary.match(value, ["\n", "\r"]) do
-      {_, _}   -> raise InvalidHeaderError, "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
-      :nomatch -> :ok
+      {_, _}   -> raise InvalidHeaderError, "value for header #{inspect key} contains control feed (\\r) or newline (\\n): #{inspect(value)}"
+      :nomatch -> value
     end
   end
 end
