@@ -350,6 +350,32 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     :ok = Plug.Adapters.Cowboy.shutdown __MODULE__.HTTPS
   end
 
+  test "returns listener info from ranch" do
+    opts = [port: 8003, ref: :info_test, max_connections: 25]
+    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], opts
+    info = Plug.Adapters.Cowboy.info opts[:ref]
+    # The tests here are in pairs to capture that we're receiving sane information
+    # and that information is the same as what Ranch is reporting.
+    assert info[:port] == 8003
+    assert info[:port] == :ranch.get_port(opts[:ref])
+
+    assert info[:max_connections] == 25
+    assert info[:max_connections] == :ranch.get_max_connections(opts[:ref])
+
+    # Maybe actually set this? It'd be (essentially) re-testing a Ranch call,
+    # so just checking that info/1 sets this should be OK.
+    assert info[:protocol_options] != []
+    assert info[:protocol_options] == :ranch.get_protocol_options(opts[:ref])
+  end
+
+  test "ephemeral port is nonzero after startup" do
+    opts = [port: 0, ref: :ephemeral_test]
+    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], opts
+    info = Plug.Adapters.Cowboy.info opts[:ref]
+    assert info[:port] != 0
+    assert info[:port] == :ranch.get_port(opts[:ref])
+  end
+
   ## Helpers
 
   defp request(:head = verb, path) do

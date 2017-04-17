@@ -142,6 +142,19 @@ defmodule Plug.Adapters.Cowboy do
     :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
   end
 
+  @doc """
+  Returns runtime info about the Ranch listener given by `ref`.
+
+  For more information, see `ranch:get_port/1`, `ranch:get_max_connections/1`, 
+  and `ranch:get_protocol_options/1` in the [Ranch 1.1 
+  documentation](http://ninenines.eu/docs/en/ranch/1.1/manual/ranch/index.html).
+  """
+  def info(ref) do
+    [port:             :ranch.get_port(ref),
+     max_connections:  :ranch.get_max_connections(ref),
+     protocol_options: :ranch.get_protocol_options(ref)]
+  end
+
   ## Helpers
 
   @protocol_options [:timeout, :compress]
