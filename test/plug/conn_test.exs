@@ -588,6 +588,22 @@ defmodule Plug.ConnTest do
            ["foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"]
   end
 
+  test "put_resp_cookie/4 raises when over 4096 bytes" do
+    assert_raise RuntimeError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", String.duplicate("a", 4095))
+      |> send_resp(200, "OK")
+    end
+  end
+
+  test "put_resp_cookie/4 raises on new line" do
+    assert_raise Plug.Conn.InvalidHeaderError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "bar\nbaz")
+      |> send_resp(200, "OK")
+    end
+  end
+
   test "put_resp_cookie/4 is secure on https" do
     conn = conn(:get, "https://example.com/")
            |> put_resp_cookie("foo", "baz", path: "/baz")

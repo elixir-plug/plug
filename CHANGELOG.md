@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.0.6
+
+* Bug fixes
+  * Validate cookie headers
+
 ## v1.0.5
 
 * Bug fixes

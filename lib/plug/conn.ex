@@ -889,8 +889,16 @@ defmodule Plug.Conn do
 
   defp merge_headers(headers, cookies) do
     Enum.reduce(cookies, headers, fn {key, opts}, acc ->
-      [{"set-cookie", Plug.Conn.Cookies.encode(key, opts)}|acc]
+      [{"set-cookie", Plug.Conn.Cookies.encode(key, opts) |> verify_cookie!(key)}|acc]
     end)
+  end
+
+  defp verify_cookie!(cookie, key) when byte_size(cookie) > 4096 do
+    raise "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
+  end
+  defp verify_cookie!(cookie, _key) do
+    validate_header_value!(cookie)
+    cookie
   end
 
   defp update_cookies(%Conn{state: :sent}, _fun),
