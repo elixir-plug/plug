@@ -605,6 +605,14 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "put_resp_cookie/4 raises on new line" do
+    assert_raise Plug.Conn.InvalidHeaderError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "bar\nbaz")
+      |> send_resp(200, "OK")
+    end
+  end
+
   test "put_resp_cookie/4 is secure on https" do
     conn = conn(:get, "https://example.com/")
            |> put_resp_cookie("foo", "baz", path: "/baz")
