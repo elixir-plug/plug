@@ -928,6 +928,7 @@ defmodule Plug.Conn do
       message: "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
+    validate_header_value!(cookie)
     cookie
   end
 
