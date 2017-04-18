@@ -207,6 +207,15 @@ defmodule Plug.CSRFProtectionTest do
     refute conn.halted
   end
 
+  test "cache-control header has no-store and no-cache" do
+    [cache_control_header] = conn(:get, "/?token=get")
+    |> call()
+    |> get_resp_header("cache-control")
+
+    assert Regex.match?(~r/no-cache/, cache_control_header) and Regex.match?(~r/no-store/, cache_control_header)
+  end
+
+
   test "non-XHR Javascript GET requests are forbidden" do
     assert_raise InvalidCrossOriginRequestError, fn ->
       conn(:get, "/") |> assign(:content_type, "application/javascript") |> call()
