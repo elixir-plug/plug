@@ -21,7 +21,8 @@ defmodule Plug.Mixfile do
   # Configuration for the OTP application
   def application do
     [applications: [:crypto, :logger, :mime],
-     mod: {Plug, []}]
+     mod: {Plug, []},
+     env: [validate_header_keys_during_test: true]]
   end
 
   def deps do

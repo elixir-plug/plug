@@ -246,6 +246,12 @@ defmodule Plug.ConnTest do
     assert conn.state == :sent
   end
 
+  test "send_file/3 raises on null-byte" do
+    assert_raise ArgumentError, fn ->
+      send_file(conn(:get, "/foo"), 200, "foo.md\0.html")
+    end
+  end
+
   test "send_file/3 sends self a message" do
     refute_received {:plug_conn, :sent}
     send_file(conn(:get, "/foo"), 200, __ENV__.file)
@@ -366,18 +372,25 @@ defmodule Plug.ConnTest do
   end
 
   test "put_resp_header/3 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_resp_header(conn, "X-Foo", "bar")
     end
   end
 
+  test "put_resp_header/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+    put_resp_header(conn, "X-Foo", "bar")
+  end
+
   test "put_resp_header/3 raises when invalid header value given" do
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
       put_resp_header(conn(:get, "foo"), "x-sample", "value\rBAR")
     end
 
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[header value contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
       put_resp_header(conn(:get, "foo"), "x-sample", "value\n\nBAR")
     end
   end
@@ -491,10 +504,17 @@ defmodule Plug.ConnTest do
   end
 
   test "put_req_header/3 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
     end
+  end
+
+  test "put_req_header/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+    put_req_header(conn, "X-Foo", "bar")
   end
 
   test "delete_req_header/2" do
@@ -609,6 +629,14 @@ defmodule Plug.ConnTest do
     assert_raise Plug.Conn.CookieOverflowError, fn ->
       conn(:get, "/")
       |> put_resp_cookie("foo", String.duplicate("a", 4095))
+      |> send_resp(200, "OK")
+    end
+  end
+
+  test "put_resp_cookie/4 raises on new line" do
+    assert_raise Plug.Conn.InvalidHeaderError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "bar\nbaz")
       |> send_resp(200, "OK")
     end
   end
@@ -865,12 +893,17 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "does not delegate to connections' adapter's chunk/2 when called with emtpy chunk" do
+  test "does not delegate to connections' adapter's chunk/2 when called with an empty chunk" do
     defmodule RaisesOnEmptyChunkAdapter do
       defdelegate send_chunked(state, status, headers), to: Plug.Adapters.Test.Conn
 
-      def chunk(_payload, ""), do: raise "the empty chunk was unexpectedly sent"
-      def chunk(payload, chunk), do: Plug.Adapters.Test.Conn.chunk(payload, chunk)
+      def chunk(payload, chunk) do
+        if IO.iodata_length(chunk) == 0 do
+          flunk "empty chunk #{inspect chunk} was unexpectedly sent"
+        else
+          Plug.Adapters.Test.Conn.chunk(payload, chunk)
+        end
+      end
     end
 
     conn = %Conn{
@@ -881,5 +914,9 @@ defmodule Plug.ConnTest do
     conn = Plug.Conn.send_chunked(conn, 200)
 
     assert {:ok, conn} == Plug.Conn.chunk(conn, "")
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [""])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [[]])
+    assert {:ok, conn} == Plug.Conn.chunk(conn, [["", ""]])
   end
 end

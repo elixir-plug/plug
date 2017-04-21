@@ -418,8 +418,9 @@ defmodule Plug.Router do
             end
           options =
             quote do
-              @plug_router_to unquote(to)
-              @plug_router_init unquote(init_opts)
+              to = unquote(to)
+              @plug_router_to to
+              @plug_router_init to.init(unquote(init_opts))
               unquote(options)
             end
           {body, options}

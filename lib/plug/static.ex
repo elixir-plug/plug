@@ -77,6 +77,10 @@ defmodule Plug.Static do
 
     * `:headers` - other headers to be set when serving static assets.
 
+    * `:content_types` - custom MIME type mapping. As a map with filename as key
+      and content type as value. For example:
+      `content_types: %{"apple-app-site-association" => "application/json"}`.
+
   ## Examples
 
   This plug can be mounted in a `Plug.Builder` pipeline as follows:
@@ -138,6 +142,7 @@ defmodule Plug.Static do
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
       et_generation: Keyword.get(opts, :etag_generation, nil),
       headers: Keyword.get(opts, :headers, %{}),
+      content_types: Keyword.get(opts, :content_types, %{}),
       from: from,
       at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split()
     }
@@ -277,10 +282,11 @@ defmodule Plug.Static do
 
   defp serve_static({:ok, conn, file_info, path}, segments, options) do
     %{qs_cache: qs_cache, et_cache: et_cache, et_generation: et_generation,
-      gzip?: gzip?, brotli?: brotli?, headers: headers} = options
+      gzip?: gzip?, brotli?: brotli?, headers: headers, content_types: types} = options
     case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
-        content_type = segments |> List.last |> MIME.from_path
+        filename = List.last(segments)
+        content_type = Map.get(types, filename) || MIME.from_path(filename)
 
         conn
         |> maybe_add_vary(gzip?, brotli?)
@@ -385,7 +391,11 @@ defmodule Plug.Static do
   defp subset(_, _),
     do: []
 
-  defp invalid_path?([h|_]) when h in [".", "..", ""], do: true
-  defp invalid_path?([h|t]), do: String.contains?(h, ["/", "\\", ":", "\0"]) or invalid_path?(t)
-  defp invalid_path?([]), do: false
+  defp invalid_path?(list) do
+    invalid_path?(list, :binary.compile_pattern(["/", "\\", ":", "\0"]))
+  end
+
+  defp invalid_path?([h|_], _match) when h in [".", "..", ""], do: true
+  defp invalid_path?([h|t], match), do: String.contains?(h, match) or invalid_path?(t)
+  defp invalid_path?([], _match), do: false
 end

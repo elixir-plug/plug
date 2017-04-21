@@ -9,7 +9,8 @@ defmodule Plug.StaticTest do
       at: "/public",
       from: Path.expand("..", __DIR__),
       gzip: true,
-      headers: %{"x-custom" => "x-value"}
+      headers: %{"x-custom" => "x-value"},
+      content_types: %{"manifest-file" => "application/vnd.manifest+json"}
 
     plug :passthrough
 
@@ -24,6 +25,13 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type")  == ["text/plain"]
+  end
+
+  test "serves the file with a custom content type" do
+    conn = call(conn(:get, "/public/fixtures/manifest-file"))
+    assert conn.status == 200
+    assert conn.resp_body == "[]"
+    assert get_resp_header(conn, "content-type") == ["application/vnd.manifest+json"]
   end
 
   test "serves the file with a urlencoded filename" do

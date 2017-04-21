@@ -424,8 +424,11 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length)
-      when is_binary(file) do
+  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length) when is_binary(file) do
+    if file =~ "\0" do
+      raise ArgumentError, "cannot send_file/5 with null byte"
+    end
+
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send owner, @already_sent
@@ -460,12 +463,15 @@ defmodule Plug.Conn do
   otherwise `{:error, reason}`.
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
-  def chunk(%Conn{state: :chunked} = conn, ""), do: {:ok, conn}
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    case adapter.chunk(payload, chunk) do
-      :ok                  -> {:ok, conn}
-      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
-      {:error, _} = error  -> error
+    if iodata_empty?(chunk) do
+      {:ok, conn}
+    else
+      case adapter.chunk(payload, chunk) do
+        :ok -> {:ok, conn}
+        {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+        {:error, _} = error -> error
+      end
     end
   end
 
@@ -473,6 +479,11 @@ defmodule Plug.Conn do
     raise ArgumentError, "chunk/2 expects a chunked response. Please ensure " <>
                          "you have called send_chunked/2 before you send a chunk"
   end
+
+  defp iodata_empty?(""), do: true
+  defp iodata_empty?([]), do: true
+  defp iodata_empty?([head | tail]), do: iodata_empty?(head) and iodata_empty?(tail)
+  defp iodata_empty?(_), do: false
 
   @doc """
   Sends a response with the given status and body.
@@ -533,7 +544,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    validate_header_key_if_test!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -622,13 +633,17 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
-    validate_header_value!(value)
+    validate_header_key_if_test!(adapter, key)
+    validate_header_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
   @doc """
   Merges a series of response headers into the connection.
+
+  ## Example
+
+      iex> conn = merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
   """
   @spec merge_resp_headers(t, Enum.t) :: t
   def merge_resp_headers(%Conn{state: :sent}, _headers) do
@@ -1012,7 +1027,7 @@ defmodule Plug.Conn do
           "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
-    cookie
+    validate_header_value!("set-cookie", cookie)
   end
 
   defp update_cookies(%Conn{state: :sent}, _fun),
@@ -1043,13 +1058,13 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
-    unless valid_header_key?(key) do
+  defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
+    if Application.get_env(:plug, :validate_header_keys_during_test) and not valid_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
-  defp validate_header_key!(_adapter, _key) do
+  defp validate_header_key_if_test!(_adapter, _key) do
     :ok
   end
 
@@ -1059,10 +1074,10 @@ defmodule Plug.Conn do
   defp valid_header_key?(<<>>), do: true
   defp valid_header_key?(_), do: false
 
-  defp validate_header_value!(value) do
+  defp validate_header_value!(key, value) do
     case :binary.match(value, ["\n", "\r"]) do
-      {_, _}   -> raise InvalidHeaderError, "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
-      :nomatch -> :ok
+      {_, _}   -> raise InvalidHeaderError, "value for header #{inspect key} contains control feed (\\r) or newline (\\n): #{inspect(value)}"
+      :nomatch -> value
     end
   end
 end

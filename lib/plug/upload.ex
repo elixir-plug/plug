@@ -138,6 +138,7 @@ defmodule Plug.Upload do
   ## Callbacks
 
   def init(:ok) do
+    Process.flag(:trap_exit, true)
     tmp = Enum.find_value @temp_env_vars, "/tmp", &System.get_env/1
     cwd = Path.join(File.cwd!, "tmp")
     :ets.new(@table, [:named_table, :public, :set])
@@ -153,7 +154,7 @@ defmodule Plug.Upload do
     case :ets.lookup(@table, pid) do
       [{pid, _tmp, paths}] ->
         :ets.delete(@table, pid)
-        Enum.each paths, &:file.delete/1
+        delete_paths(paths)
       [] ->
         :ok
     end
@@ -162,5 +163,17 @@ defmodule Plug.Upload do
 
   def handle_info(msg, state) do
     super(msg, state)
+  end
+
+  def terminate(_reason, _state) do
+    :ets.foldl(@table, :ok, fn {_pid, _tmp, paths} ->
+      delete_paths(paths)
+    end)
+    :ok
+  end
+
+  defp delete_paths(paths) do
+    for path <- paths, do: :file.delete(path)
+    :ok
   end
 end

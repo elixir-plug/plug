@@ -6,37 +6,51 @@ defmodule Plug.SSLTest do
     Plug.SSL.call(conn, Plug.SSL.init(opts))
   end
 
-  test "hsts headers by default" do
+  test "HSTS headers by default" do
     conn = call(conn(:get, "https://example.com/"))
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000"]
     refute conn.halted
   end
 
-  test "hsts is true" do
+  test "HSTS is true" do
     conn = call(conn(:get, "https://example.com/"), hsts: true)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000"]
     refute conn.halted
   end
 
-  test "hsts is false" do
+  test "HSTS is false" do
     conn = call(conn(:get, "https://example.com/"), hsts: false)
     assert get_resp_header(conn, "strict-transport-security") == []
     refute conn.halted
   end
 
-  test "hsts custom expires" do
+  test "HSTS custom expires" do
     conn = call(conn(:get, "https://example.com/"), expires: 3600)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=3600"]
     refute conn.halted
   end
 
-  test "hsts include subdomains" do
+  test "HSTS include subdomains" do
     conn = call(conn(:get, "https://example.com/"), subdomains: true)
     assert get_resp_header(conn, "strict-transport-security") ==
            ["max-age=31536000; includeSubDomains"]
+    refute conn.halted
+  end
+
+  test "HSTS include preload" do
+    conn = call(conn(:get, "https://example.com/"), preload: true)
+    assert get_resp_header(conn, "strict-transport-security") ==
+           ["max-age=31536000; preload"]
+    refute conn.halted
+  end
+
+  test "HSTS with multiple flags" do
+    conn = call(conn(:get, "https://example.com/"), preload: true, subdomains: true)
+    assert get_resp_header(conn, "strict-transport-security") ==
+           ["max-age=31536000; preload; includeSubDomains"]
     refute conn.halted
   end
 

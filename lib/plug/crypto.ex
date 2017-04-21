@@ -10,23 +10,23 @@ defmodule Plug.Crypto do
   forbids possibly unsafe terms.
   """
   def safe_binary_to_term(binary) when is_binary(binary) do
-    safe_terms(:erlang.binary_to_term(binary))
+    term = :erlang.binary_to_term(binary)
+    safe_terms(term)
+    term
   end
 
   defp safe_terms(list) when is_list(list) do
     safe_list(list)
-    list
   end
   defp safe_terms(tuple) when is_tuple(tuple) do
     safe_tuple(tuple, tuple_size(tuple))
-    tuple
   end
   defp safe_terms(map) when is_map(map) do
-    for {key, value} <- map do
+    :maps.fold(fn key, value, acc ->
       safe_terms(key)
       safe_terms(value)
-    end
-    map
+      acc
+    end, map, map)
   end
   defp safe_terms(other) when is_atom(other) or is_number(other) or is_bitstring(other) or
                               is_pid(other) or is_reference(other) do
