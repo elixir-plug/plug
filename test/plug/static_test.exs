@@ -261,7 +261,7 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
-    test "returns 416 if range is invalid (1)" do
+    test "returns 416 if range does not contain either start or end" do
       exception = assert_raise Plug.Static.InvalidRangeError,
                                "invalid range for static asset",
         fn ->
@@ -273,7 +273,7 @@ defmodule Plug.StaticTest do
       assert Plug.Exception.status(exception) == 416
     end
 
-    test "returns 416 if range is invalid (2)" do
+    test "returns 416 if range is contains non-integers" do
       exception = assert_raise Plug.Static.InvalidRangeError,
                                "invalid range for static asset",
         fn ->
@@ -285,24 +285,12 @@ defmodule Plug.StaticTest do
       assert Plug.Exception.status(exception) == 416
     end
 
-    test "returns 416 if range is invalid (3)" do
+    test "returns 416 if range is missing =" do
       exception = assert_raise Plug.Static.InvalidRangeError,
                                "invalid range for static asset",
         fn ->
           conn(:get, "/public/fixtures/static.txt", [])
             |> put_req_header("range", "bytes")
-            |> call
-        end
-
-      assert Plug.Exception.status(exception) == 416
-    end
-
-    test "returns 416 if range is invalid (4)" do
-      exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset",
-        fn ->
-          conn(:get, "/public/fixtures/static.txt", [])
-            |> put_req_header("range", "bytes=-")
             |> call
         end
 
