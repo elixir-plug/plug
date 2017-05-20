@@ -18,6 +18,12 @@ defmodule Plug.CSRFProtection do
   can leak information. For this reason, this plug also forbids
   any GET JavaScript request that is not XHR (or AJAX).
 
+  Note that it is recommended to enable CSRFProtection whenever
+  a session is used, even for JSON requests. For example, Chrome
+  had a bug that allowed POST requests to be triggered with
+  arbitrary content-type, making JSON exploitable. More info:
+  https://bugs.chromium.org/p/chromium/issues/detail?id=490015
+
   ## Token generation
 
   This plug won't generate tokens automatically. Instead,

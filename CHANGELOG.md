@@ -1,5 +1,36 @@
 ## Changelog
 
+## v1.4.0-dev
+
+This version requires Elixir v1.3 and deprecates unsafe Plug.Crypto APIs.
+
+* Enhancements
+  * Introduce `Plug.HTML.html_escape_to_iodata/1`
+  * Add HSTS 'preload' flag to `Plug.SSL` options
+  * Add support for custom content-types in `Plug.Static`
+  * Raise `Plug.AlreadyChunkedError` when setting headers on chunked conn
+
+* Bug fixes
+  * Fix issue with file uploads containing `;`s in filenames
+  * Ensure `plug.init/1` is called in `Plug.Router.forward`
+  * Do not send empty iodata chunks
+  * Do not convert throws and exits into errors in `Plug.Conn.WrapperError`
+
+## v1.3.5
+
+* Bug fixes
+  * Validate cookie headers
+
+## v1.3.4
+
+* Bug fixes
+  * Do not convert exits into errors
+
+## v1.3.3
+
+* Bug fixes
+  * Support improper lists, bitstrings and structs in safe_binary_to_term
+
 ## v1.3.2
 
 * Bug fixes
