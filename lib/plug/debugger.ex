@@ -297,7 +297,7 @@ defmodule Plug.Debugger do
       top_10 =
         for {_, args, guards, _block} <- Enum.take(clauses, 10) do
           call =
-            Enum.reduce guards, {fun, [], args}, fn guard, acc ->
+            Enum.reduce guards, {fun, [], rewrite_args(args)}, fn guard, acc ->
               {:when, [], [acc, rewrite_guard(guard)]}
             end
           "#{kind} #{Macro.to_string(call)}"
@@ -306,6 +306,15 @@ defmodule Plug.Debugger do
     else
       _ -> nil
     end
+  end
+
+  defp rewrite_args(args) do
+    Macro.prewalk(args, fn
+      {:%{}, meta, [__struct__: Range, first: first, last: last]} ->
+        {:.., meta, [first, last]}
+      other ->
+        other
+    end)
   end
 
   defp rewrite_guard(guard) do
