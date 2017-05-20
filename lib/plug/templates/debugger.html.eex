@@ -283,6 +283,7 @@
     }
 
     .frame-info > details.meta {
+        border-top: solid 1px <%= @style.line_color %>;
         padding: 0;
     }
 
@@ -294,16 +295,16 @@
      * Frame details
      */
 
-    .frame-summary.-short {
+    .frame-mfa {
         color: <%= @style.accent %>;
     }
 
-    .frame-summary > .app {
+    .frame-mfa > .app {
         color: <%= @style.primary %>;
         font-weight: 700;
     }
 
-    .frame-summary > .app:after {
+    .frame-mfa > .app:after {
         content: '·';
         margin: 0 .2em;
     }
@@ -638,25 +639,43 @@
                     <div class="code code-block-empty">No code available.</div>
                     <% end %>
 
-                    <%= if frame.args != [] do %>
-                    <details class="meta">
-                        <summary class="frame-summary">
-                            <%= if app = frame.app do %>
-                            <span class="app"><%= h app %></span>
-                            <% end %>
-                            <%= h frame.info %>
-                        </summary>
-                        <blockquote class="code-quote -padded"><%= h inspect(frame.args) %></blockquote>
-                    </details>
-                    <% else %>
                     <div class="meta">
-                        <div class="frame-summary -short">
+                        <div class="frame-mfa">
                             <%= if app = frame.app do %>
                             <span class="app"><%= h app %></span>
                             <% end %>
                             <%= h frame.info %>
+                            <%= if doc = frame.doc do %>
+                              <a href="<%= h doc %>">(docs)</a>
+                            <% end %>
                         </div>
                     </div>
+
+                    <%= if frame.args != [] do %>
+                        <details class="meta">
+                            <summary>Called with <%= length(frame.args) %> arguments</summary>
+                            <blockquote class="code-quote -padded">
+                                <ol>
+                                    <%= for arg <- frame.args do %>
+                                        <li><%= h inspect arg %></li>
+                                    <% end %>
+                                </ol>
+                            </blockquote>
+                        </details>
+                    <% end %>
+
+                    <%= if frame.clauses do %>
+                        <% {min, max, clauses} = frame.clauses %>
+                        <details class="meta">
+                            <summary>Available clauses (<%= min %> out of <%= max %>)</summary>
+                            <blockquote class="code-quote -padded">
+                                <ul>
+                                    <%= for clause <- clauses do %>
+                                        <li><%= h clause %></li>
+                                    <% end %>
+                                </ul>
+                            </blockquote>
+                        </details>
                     <% end %>
                 </div>
                 <% end %>

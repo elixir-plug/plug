@@ -219,12 +219,15 @@ defmodule Plug.Debugger do
   end
 
   defp each_frame(entry, index, root, editor) do
-    {module, info, location, app, func, args} = get_entry(entry)
+    {module, info, location, app, fun, args} = get_entry(entry)
     {file, line} = {to_string(location[:file] || "nofile"), location[:line]}
 
-    source  = get_source(module, file)
+    arity = length(args)
+    doc = get_doc(module, fun, arity, app)
+    source = get_source(module, file)
     context = get_context(root, app)
     snippet = get_snippet(source, line)
+    clauses = get_clauses(module, fun, arity)
 
     {%{app: app,
        info: info,
@@ -233,7 +236,8 @@ defmodule Plug.Debugger do
        context: context,
        snippet: snippet,
        index: index,
-       func: func,
+       doc: doc,
+       clauses: clauses,
        args: args,
        link: editor && get_editor(source, line, editor)
      }, index + 1}
@@ -272,6 +276,60 @@ defmodule Plug.Debugger do
       :undefined -> nil
     end
   end
+
+  defp get_doc(module, fun, arity, app) do
+    with docs when is_list(docs) <- Code.get_docs(module, :docs),
+         true <- List.keymember?(docs, {fun, arity}, 0),
+         {:ok, vsn} <- :application.get_key(app, :vsn) do
+      vsn = vsn |> List.to_string() |> String.split("-") |> hd()
+      fun = fun |> Atom.to_string() |> URI.encode()
+      "https://hexdocs.pm/#{app}/#{vsn}/#{inspect module}.html##{fun}/#{arity}"
+    else
+      _ -> nil
+    end
+  end
+
+  defp get_clauses(module, fun, arity) do
+    with path when is_list(path) <- :code.which(module),
+         {:ok, {_, [debug_info: {:debug_info_v1, backend, data}]}} <- :beam_lib.chunks(path, [:debug_info]),
+         {:ok, %{definitions: defs}} <- backend.debug_info(:elixir_v1, module, data, []),
+         {_, kind, _, clauses} <- List.keyfind(defs, {fun, arity}, 0) do
+      top_10 =
+        for {_, args, guards, _block} <- Enum.take(clauses, 10) do
+          call =
+            Enum.reduce guards, {fun, [], args}, fn guard, acc ->
+              {:when, [], [acc, rewrite_guard(guard)]}
+            end
+          "#{kind} #{Macro.to_string(call)}"
+        end
+      {length(top_10), length(clauses), top_10}
+    else
+      _ -> nil
+    end
+  end
+
+  defp rewrite_guard(guard) do
+    Macro.prewalk(guard, fn
+      {:., _, [:erlang, call]} ->
+        rewrite_guard_call(call)
+      other ->
+        other
+    end)
+  end
+
+  defp rewrite_guard_call(:"orelse"), do: :or
+  defp rewrite_guard_call(:"andalso"), do: :and
+  defp rewrite_guard_call(:"=<"), do: :<=
+  defp rewrite_guard_call(:"/="), do: :!=
+  defp rewrite_guard_call(:"=:="), do: :===
+  defp rewrite_guard_call(:"=/="), do: :!==
+
+  defp rewrite_guard_call(op) when op in [:band, :bor, :bnot, :bsl, :bsr, :bxor],
+    do: {:., [], [Bitwise, op]}
+  defp rewrite_guard_call(op) when op in [:xor, :element, :size],
+    do: {:., [], [:erlang, op]}
+  defp rewrite_guard_call(op),
+    do: op
 
   defp get_context(app, app) when app != nil, do: :app
   defp get_context(_app1, _app2),             do: :all
