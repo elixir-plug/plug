@@ -77,9 +77,8 @@ defmodule Plug.Adapters.Test.ConnTest do
   end
 
   test "use existing conn.remote_ip if exists" do
-    conn =
-      %Plug.Conn{conn(:get, "/") | remote_ip: {151, 236, 219, 228}}
-      |> Plug.Adapters.Test.Conn.conn(:get, "/")
-    assert conn.remote_ip == {151, 236, 219, 228}
+    conn_with_remote_ip = %Plug.Conn{conn(:get, "/") | remote_ip: {151, 236, 219, 228}}
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_remote_ip, :get, "/", foo: "bar")
+    assert child_conn.remote_ip == {151, 236, 219, 228}
   end
 end
