@@ -543,6 +543,14 @@
         padding: 0 16px 16px 16px;
     }
 
+    .code-quote .green {
+        color: #009900;
+    }
+
+    .code-quote .red {
+        color: #CC0000;
+    }
+
     /*
      * Conn info
      */
@@ -651,7 +659,7 @@
                         </div>
                     </div>
 
-                    <%= if frame.args != [] do %>
+                    <%= if frame.args do %>
                         <details class="meta">
                             <summary>Called with <%= length(frame.args) %> arguments</summary>
                             <blockquote class="code-quote -padded">
@@ -670,9 +678,7 @@
                             <summary>Available clauses (<%= min %> out of <%= max %>)</summary>
                             <blockquote class="code-quote -padded">
                                 <ul>
-                                    <%= for clause <- clauses do %>
-                                        <li><%= h clause %></li>
-                                    <% end %>
+                                    <%= for clause <- clauses do %><li><%= clause %></li><% end %>
                                 </ul>
                             </blockquote>
                         </details>

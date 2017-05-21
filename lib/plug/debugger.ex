@@ -166,6 +166,14 @@ defmodule Plug.Debugger do
       ]
       send_resp(conn, status, template_html(assigns))
     else
+      {reason, stack} =
+        # TODO: Remove exported check once we depend on Elixir v1.5 only
+        if function_exported?(Exception, :blame, 3) do
+          apply(Exception, :blame, [kind, reason, stack])
+        else
+          {reason, stack}
+        end
+
       conn = put_resp_content_type(conn, "text/markdown")
       assigns = [
         conn: conn,
@@ -219,15 +227,14 @@ defmodule Plug.Debugger do
   end
 
   defp each_frame(entry, index, root, editor) do
-    {module, info, location, app, fun, args} = get_entry(entry)
+    {module, info, location, app, fun, arity, args} = get_entry(entry)
     {file, line} = {to_string(location[:file] || "nofile"), location[:line]}
 
-    arity = length(args)
-    doc = get_doc(module, fun, arity, app)
-    source = get_source(module, file)
+    doc = module && get_doc(module, fun, arity, app)
+    source = module && get_source(module, file)
+    clauses = module && get_clauses(module, fun, args)
     context = get_context(root, app)
     snippet = get_snippet(source, line)
-    clauses = get_clauses(module, fun, arity)
 
     {%{app: app,
        info: info,
@@ -245,29 +252,30 @@ defmodule Plug.Debugger do
 
   # From :elixir_compiler_*
   defp get_entry({module, :__MODULE__, 0, location}) do
-    {module, inspect(module) <> " (module)", location, get_app(module), nil, []}
+    {module, inspect(module) <> " (module)", location, get_app(module), nil, nil, nil}
   end
 
   # From :elixir_compiler_*
   defp get_entry({_module, :__MODULE__, 1, location}) do
-    {nil, "(module)", location, nil, nil, []}
+    {nil, "(module)", location, nil, nil, nil, nil}
   end
 
   # From :elixir_compiler_*
   defp get_entry({_module, :__FILE__, 1, location}) do
-    {nil, "(file)", location, nil, nil, []}
+    {nil, "(file)", location, nil, nil, nil, nil}
   end
 
   defp get_entry({module, fun, args, location}) when is_list(args) do
-    {module, Exception.format_mfa(module, fun, length(args)), location, get_app(module), fun, args}
+    arity = length(args)
+    {module, Exception.format_mfa(module, fun, arity), location, get_app(module), fun, arity, args}
   end
 
   defp get_entry({module, fun, arity, location}) do
-    {module, Exception.format_mfa(module, fun, arity), location, get_app(module), fun, []}
+    {module, Exception.format_mfa(module, fun, arity), location, get_app(module), fun, arity, nil}
   end
 
   defp get_entry({fun, arity, location}) do
-    {nil, Exception.format_fa(fun, arity), location, nil, fun, []}
+    {nil, Exception.format_fa(fun, arity), location, nil, fun, arity, nil}
   end
 
   defp get_app(module) do
@@ -289,56 +297,31 @@ defmodule Plug.Debugger do
     end
   end
 
-  defp get_clauses(module, fun, arity) do
-    with path when is_list(path) <- :code.which(module),
-         {:ok, {_, [debug_info: {:debug_info_v1, backend, data}]}} <- :beam_lib.chunks(path, [:debug_info]),
-         {:ok, %{definitions: defs}} <- backend.debug_info(:elixir_v1, module, data, []),
-         {_, kind, _, clauses} <- List.keyfind(defs, {fun, arity}, 0) do
+  defp get_clauses(module, fun, args) do
+    # TODO: Remove exported check once we depend on Elixir v1.5 only
+    with true <- is_list(args),
+         true <- function_exported?(Exception, :blame_mfa, 3),
+         {:ok, kind, clauses} <- apply(Exception, :blame_mfa, [module, fun, args]) do
       top_10 =
-        for {_, args, guards, _block} <- Enum.take(clauses, 10) do
-          call =
-            Enum.reduce guards, {fun, [], rewrite_args(args)}, fn guard, acc ->
-              {:when, [], [acc, rewrite_guard(guard)]}
-            end
-          "#{kind} #{Macro.to_string(call)}"
-        end
+        clauses
+        |> Enum.take(10)
+        |> Enum.map(fn {args, guards} ->
+          code = Enum.reduce(guards, {fun, [], args}, &{:when, [], [&2, &1]})
+          "#{kind} " <> Macro.to_string(code, &clause_match/2)
+        end)
+
       {length(top_10), length(clauses), top_10}
     else
       _ -> nil
     end
   end
 
-  defp rewrite_args(args) do
-    Macro.prewalk(args, fn
-      {:%{}, meta, [__struct__: Range, first: first, last: last]} ->
-        {:.., meta, [first, last]}
-      other ->
-        other
-    end)
-  end
-
-  defp rewrite_guard(guard) do
-    Macro.prewalk(guard, fn
-      {:., _, [:erlang, call]} ->
-        rewrite_guard_call(call)
-      other ->
-        other
-    end)
-  end
-
-  defp rewrite_guard_call(:"orelse"), do: :or
-  defp rewrite_guard_call(:"andalso"), do: :and
-  defp rewrite_guard_call(:"=<"), do: :<=
-  defp rewrite_guard_call(:"/="), do: :!=
-  defp rewrite_guard_call(:"=:="), do: :===
-  defp rewrite_guard_call(:"=/="), do: :!==
-
-  defp rewrite_guard_call(op) when op in [:band, :bor, :bnot, :bsl, :bsr, :bxor],
-    do: {:., [], [Bitwise, op]}
-  defp rewrite_guard_call(op) when op in [:xor, :element, :size],
-    do: {:., [], [:erlang, op]}
-  defp rewrite_guard_call(op),
-    do: op
+  defp clause_match(%{match?: true, node: node}, _),
+    do: ~s(<span class="green">) <> h(Macro.to_string(node)) <> "</span>"
+  defp clause_match(%{match?: false, node: node}, _),
+    do: ~s(<span class="red">) <> h(Macro.to_string(node)) <> "</span>"
+  defp clause_match(_, string),
+    do: string
 
   defp get_context(app, app) when app != nil, do: :app
   defp get_context(_app1, _app2),             do: :all
@@ -397,14 +380,6 @@ defmodule Plug.Debugger do
     "#{:inet_parse.ntoa host}:#{port}"
 
   defp h(string) do
-    for <<code <- to_string(string)>> do
-      << case code do
-           ?& -> "&amp;"
-           ?< -> "&lt;"
-           ?> -> "&gt;"
-           ?" -> "&quot;"
-           _  -> <<code>>
-         end :: binary >>
-    end
+    string |> to_string() |> Plug.HTML.html_escape()
   end
 end
