@@ -24,7 +24,7 @@ defmodule Plug.Adapters.Test.Conn do
       path_info: split_path(uri.path),
       port: uri.port || 80,
       peer: {{127, 0, 0, 1}, 111_317},
-      remote_ip: {127, 0, 0, 1},
+      remote_ip: conn.remote_ip || {127, 0, 0, 1},
       req_headers: req_headers,
       request_path: uri.path,
       query_string: query,
