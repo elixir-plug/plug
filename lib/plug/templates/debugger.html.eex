@@ -660,7 +660,7 @@
                     </div>
 
                     <%= if frame.args do %>
-                        <details class="meta">
+                        <details class="meta" open>
                             <summary>Called with <%= length(frame.args) %> arguments</summary>
                             <blockquote class="code-quote -padded">
                                 <ol>
@@ -674,8 +674,8 @@
 
                     <%= if frame.clauses do %>
                         <% {min, max, clauses} = frame.clauses %>
-                        <details class="meta">
-                            <summary>Available clauses (<%= min %> out of <%= max %>)</summary>
+                        <details class="meta" open>
+                            <summary>Function clauses (<%= min %> out of <%= max %>)</summary>
                             <blockquote class="code-quote -padded">
                                 <ul>
                                     <%= for clause <- clauses do %><li><%= clause %></li><% end %>
@@ -689,10 +689,10 @@
 
             <div class="stack-trace">
                 <div class="stack-trace-heading">
-                    <label><input type="checkbox" role="show-all-toggle"> Show all frames</label>
+                    <label><input type="checkbox" role="show-all-toggle">Show only app frames</label>
                 </div>
 
-                <ul class="stack-trace-list" role="stack-trace-list">
+                <ul class="stack-trace-list -show-all" role="stack-trace-list">
                     <%= for frame <- @frames do %>
                     <li>
                         <button class="stack-trace-item -<%= frame.context %>" role="stack-trace-item" data-index="<%= frame.index %>">
@@ -781,17 +781,13 @@
 
         on($toggle, 'click', toggleOnclick)
 
-        // Auto-check "show all" if there are no app frames.
-        if (document.querySelectorAll('[role~="stack-trace-list"] .-app').length === 0) {
-            $toggle.checked = true
-            toggleOnclick.call($toggle)
-        }
-
         function toggleOnclick () {
             if (this.checked) {
-                addClass($list, '-show-all')
-            } else {
+                var $first = document.querySelector('[role~="stack-trace-item"].-app:first-of-type')
+                if ($first) itemOnclick.call($first)
                 removeClass($list, '-show-all')
+            } else {
+                addClass($list, '-show-all')
             }
         }
 
@@ -811,10 +807,7 @@
             if ($item) addClass($item, '-active')
         }
 
-        var $first =
-          document.querySelector('[role~="stack-trace-item"].-app:first-of-type') ||
-          document.querySelector('[role~="stack-trace-item"]:first-of-type')
-
+        var $first = document.querySelector('[role~="stack-trace-item"]:first-of-type')
         if ($first) itemOnclick.call($first)
 
         /*

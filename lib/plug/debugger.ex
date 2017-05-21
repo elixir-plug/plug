@@ -162,7 +162,7 @@ defmodule Plug.Debugger do
         message: message,
         session: session,
         params: params,
-        style: style,
+        style: style
       ]
       send_resp(conn, status, template_html(assigns))
     else
