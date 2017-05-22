@@ -75,4 +75,10 @@ defmodule Plug.Adapters.Test.ConnTest do
     child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
     assert child_conn.host == "www.example.org"
   end
+
+  test "use existing conn.remote_ip if exists" do
+    conn_with_remote_ip = %Plug.Conn{conn(:get, "/") | remote_ip: {151, 236, 219, 228}}
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_remote_ip, :get, "/", foo: "bar")
+    assert child_conn.remote_ip == {151, 236, 219, 228}
+  end
 end
