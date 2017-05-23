@@ -6,7 +6,7 @@ defmodule Plug.Crypto.MessageEncryptor do
   The encrypted key, initialization vector, cipher text, and cipher tag
   are base64url encoded and returned to you.
 
-  This can be used in situations similar to the `MessageVerifier`, but where
+  This can be used in situations similar to the `Plug.Crypto.MessageVerifier`, but where
   you don't want users to be able to determine the value of the payload.
 
   ## Example
