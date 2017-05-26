@@ -21,6 +21,7 @@ defmodule Plug.Session.ETS do
   ## Options
 
     * `:table` - ETS table name (required)
+    * `:ttl` - The session expired seconds (optional)
 
   For more information on ETS tables, visit the Erlang documentation at
   http://www.erlang.org/doc/man/ets.html.
@@ -42,36 +43,44 @@ defmodule Plug.Session.ETS do
       # Use the session plug with the table name
       plug Plug.Session, store: :ets, key: "sid", table: :session
 
+      # Use the session plug with the table name and ttl
+      plug Plug.Session, store: :ets, key: "sid", table: :session, ttl: 3600
+
   """
 
   @behaviour Plug.Session.Store
 
   @max_tries 100
 
+  require Record
+  Record.defrecordp :config, [
+    ttl: nil,
+    table: nil,
+  ]
+
   def init(opts) do
-    Keyword.fetch!(opts, :table)
+    config(ttl: Keyword.get(opts, :ttl), table: Keyword.get(opts, :table))
   end
 
-  def get(_conn, sid, table) do
+  def get(_conn, sid, config(ttl: ttl, table: table)) do
     case :ets.lookup(table, sid) do
-      [{^sid, data, _timestamp}] ->
-        :ets.update_element(table, sid, {3, now()})
-        {sid, data}
+      [result] ->
+        check_result(ttl, table, result)
       [] ->
         {nil, %{}}
     end
   end
 
-  def put(_conn, nil, data, table) do
+  def put(_conn, nil, data, config(ttl: _ttl, table: table)) do
     put_new(data, table)
   end
 
-  def put(_conn, sid, data, table) do
+  def put(_conn, sid, data, config(ttl: _ttl, table: table)) do
     :ets.insert(table, {sid, data, now()})
     sid
   end
 
-  def delete(_conn, sid, table) do
+  def delete(_conn, sid, config(ttl: _ttl, table: table)) do
     :ets.delete(table, sid)
     :ok
   end
@@ -89,5 +98,22 @@ defmodule Plug.Session.ETS do
 
   defp now() do
     :os.timestamp()
+  end
+
+  defp is_expired?(:nil, _timestamp) do
+    :false
+  end
+  defp is_expired?(ttl, {mega_secs, secs, micro_secs}) do
+    {mega_secs, secs + ttl, micro_secs} < now()
+  end
+
+  defp check_result(ttl, table, {sid, data, timestamp}) do
+    if is_expired?(ttl, timestamp) do
+      :ets.delete(table, sid)
+      {nil, %{}}
+    else
+      :ets.update_element(table, sid, {3, now()})
+      {sid, data}
+    end
   end
 end

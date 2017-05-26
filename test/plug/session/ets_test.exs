@@ -45,4 +45,24 @@ defmodule Plug.Session.ETSTest do
     opts = ETS.init([table: @ets_table])
     assert {nil, %{}} = ETS.get(%{}, "unknown_sid", opts)
   end
+
+  test "get after expiration with ttl 1" do
+    opts = ETS.init([table: @ets_table, ttl: 1])
+
+    assert "foo" = ETS.put(%{}, "foo", %{foo: :bar}, opts)
+    assert "bar" = ETS.put(%{}, "bar", %{bar: :foo}, opts)
+    assert [{"foo", %{foo: :bar}, put_timestamp}] = :ets.lookup(@ets_table, "foo")
+
+    assert {"foo", %{foo: :bar}} = ETS.get(%{}, "foo", opts)
+    assert {"bar", %{bar: :foo}} = ETS.get(%{}, "bar", opts)
+    assert [{"foo", %{foo: :bar}, get_timestamp}] = :ets.lookup(@ets_table, "foo")
+
+    assert get_timestamp > put_timestamp
+
+    :timer.sleep(1001)
+
+    assert {nil, %{}} = ETS.get(%{}, "foo", opts)
+    assert {nil, %{}} = ETS.get(%{}, "bar", opts)
+    assert [] = :ets.lookup(@ets_table, "foo")
+  end
 end
