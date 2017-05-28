@@ -25,7 +25,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       req_headers: hdrs,
       request_path: path,
       scheme: scheme(transport)
-   }
+    }
   end
 
   def send_resp(req, status, headers, body) do
