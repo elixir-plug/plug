@@ -8,7 +8,8 @@ defmodule Plug.Session.Store do
   """
   @type sid :: term | nil
   @typedoc """
-  The cookie value that will be sent in cookie headers.
+  The cookie value that will be sent in cookie headers. This value should be
+  base64 encoded to avoid security issues.
   """
   @type cookie :: binary
   @typedoc """
