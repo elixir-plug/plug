@@ -2,8 +2,19 @@ defmodule Plug.Session.Store do
   @moduledoc """
   Specification for session stores.
   """
+  
+  @typedoc """
+  The internal reference to the session in the store.
+  """
   @type sid :: term | nil
+  @typedoc """
+  The cookie value that will encoded in cookie headers.
+  """
   @type cookie :: binary
+  @typedoc """
+  The session contents, the final data to be stored after it has been built
+  with `Plug.Conn.put_session/3` and the other session manipulating functions.
+  """
   @type session :: map
 
   @doc """
