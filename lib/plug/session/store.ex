@@ -8,7 +8,7 @@ defmodule Plug.Session.Store do
   """
   @type sid :: term | nil
   @typedoc """
-  The cookie value that will encoded in cookie headers.
+  The cookie value that will be sent in cookie headers.
   """
   @type cookie :: binary
   @typedoc """
