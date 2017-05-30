@@ -13,7 +13,7 @@ defmodule Plug.UploadTest do
       receive do
         {:DOWN, ^ref, :process, ^pid, :normal} -> :ok
       after
-	20_000 -> :timed_out
+        20_000 -> :timed_out
       end
     end
   end
@@ -22,7 +22,7 @@ defmodule Plug.UploadTest do
     # this is necessary for windoes which does not give us microsecond resolution
     # do it in spawned processes to take advantage of auto-cleanup
     # loop for at least 50 milli seconds, or 100000 iterations
-    spawn_lots_of_temporary_files(:os.system_time(:milli_seconds) + 50, 100000)
+    spawn_lots_of_temporary_files(:os.system_time(:milli_seconds) + 50, 100_000)
   end
 
   test "removes the random file on process death" do
