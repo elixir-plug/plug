@@ -473,6 +473,14 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == "HELLO"
   end
 
+  test "case_insensitive get_req_header/2" do
+    conn = conn(:get, "/")
+    assert get_req_header(conn, "foo") == []
+
+    conn = put_req_header(conn, "foo", "bar")
+    assert get_req_header(conn, "FOO") == ["bar"]
+  end
+
   test "get_req_header/2, put_req_header/3 and delete_req_header/2" do
     conn = conn(:get, "/")
     assert get_req_header(conn, "foo") == []
