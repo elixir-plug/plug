@@ -229,13 +229,6 @@
     }
 
     /*
-     * Snippets
-     */
-
-    .code-snippets {
-    }
-
-    /*
      * Frame info:
      * Holds the code (code-block) and more
      */
@@ -271,6 +264,7 @@
     .frame-info > .code {
         border-top: solid 1px <%= @style.line_color %>;
         border-bottom: solid 1px <%= @style.line_color %>;
+        font-size: 0.8em;
     }
 
     /* Hiding */
@@ -283,6 +277,7 @@
     }
 
     .frame-info > details.meta {
+        border-top: solid 1px <%= @style.line_color %>;
         padding: 0;
     }
 
@@ -290,22 +285,60 @@
         padding: 12px 16px;
     }
 
+    .frame-info > details.meta > pre {
+        line-height: 16px;
+        padding: 6px 0 24px 30px;
+    }
+
+    .frame-info > details.meta > ol {
+        counter-reset: item;
+        padding: 6px 0 24px 46px;
+        list-style: none;
+    }
+
+    .frame-info > details.meta > ol > li {
+        counter-increment: item;
+    }
+
+    .frame-info > details.meta > ol > li:before {
+        content: counter(item) ". ";
+        color: <%= @style.accent %>;
+    }
+
     /*
      * Frame details
      */
 
-    .frame-summary.-short {
+    .frame-mfa {
         color: <%= @style.accent %>;
     }
 
-    .frame-summary > .app {
-        color: <%= @style.primary %>;
-        font-weight: 700;
+    .frame-mfa > .app {
+        color: <%= @style.accent %>;
     }
 
-    .frame-summary > .app:after {
+    .frame-mfa > .docs {
+        color: <%= @style.primary %>;
+        text-decoration: none;
+    }
+
+    .frame-mfa .docs:hover {
+        text-decoration: underline;
+    }
+
+    .frame-mfa > .right {
+        float: right;
+        padding-left: 5px;
+    }
+
+    .frame-mfa > .right:after {
         content: '·';
-        margin: 0 .2em;
+        margin-left: .2em;
+        padding-left: .2em;
+    }
+
+    .frame-mfa > .right:first-child:after {
+        content: '';
     }
 
     /*
@@ -316,7 +349,7 @@
     .code-block {
         margin: 0;
         padding: 12px 0;
-        font-size: .8em;
+        font-size: <%= :math.pow(1.2, -1) %>em;
         line-height: 1.4;
         white-space: normal;
     }
@@ -477,7 +510,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background: <%= @style.accent %>;
+        background: #a0b0c0;
         border-radius: 50%;
         margin-right: 8px;
     }
@@ -497,7 +530,7 @@
     }
 
     .stack-trace-item > .info {
-        color: <%= @style.gray %>;
+        color: <%= @style.accent %>;
         float: right;
         max-width: 45%;
     }
@@ -538,8 +571,17 @@
         white-space: normal;
     }
 
-    .code-quote.-padded {
+    .code.-padded {
         padding: 0 16px 16px 16px;
+    }
+
+    .code i.red {
+        color: #CC0000;
+        font-style: normal;
+    }
+
+    .code i.green {
+        font-style: normal;
     }
 
     /*
@@ -584,7 +626,7 @@
         width: 20%;
         float: left;
         font-size: <%= :math.pow(1.2, -1) %>em;
-        color: <%= @style.gray %>;
+        color: <%= @style.accent %>;
         overflow: hidden;
         text-overflow: ellipsis;
         position: relative;
@@ -638,25 +680,39 @@
                     <div class="code code-block-empty">No code available.</div>
                     <% end %>
 
-                    <%= if frame.args != [] do %>
-                    <details class="meta">
-                        <summary class="frame-summary">
-                            <%= if app = frame.app do %>
-                            <span class="app"><%= h app %></span>
-                            <% end %>
-                            <%= h frame.info %>
-                        </summary>
-                        <blockquote class="code-quote -padded"><%= h inspect(frame.args) %></blockquote>
-                    </details>
-                    <% else %>
                     <div class="meta">
-                        <div class="frame-summary -short">
-                            <%= if app = frame.app do %>
-                            <span class="app"><%= h app %></span>
-                            <% end %>
+                        <div class="frame-mfa">
                             <%= h frame.info %>
+                            <%= if doc = frame.doc do %>
+                                <a class="docs right" href="<%= h doc %>">docs</a>
+                            <% end %>
+                            <%= if app = frame.app do %>
+                                <span class="app right"><%= h app %></span>
+                            <% end %>
                         </div>
                     </div>
+
+                    <%= if frame.args do %>
+                        <details class="meta" open>
+                            <summary>Called with <%= length(frame.args) %> arguments</summary>
+                            <ol class="code code-quote -padded">
+                                <%= for arg <- frame.args do %>
+                                    <li><%= h inspect arg %></li>
+                                <% end %>
+                            </ol>
+                        </details>
+                    <% end %>
+
+                    <%= if frame.clauses do %>
+                        <% {min, max, clauses} = frame.clauses %>
+                        <details class="meta" open>
+                            <summary>Attempted function clauses (showing <%= min %> out of <%= max %>)</summary>
+                            <pre class="code code-block -padded">
+                                <%= for clause <- clauses do %>
+                                    <span class="line"><%= clause %></span>
+                                <% end %>
+                            </pre>
+                        </details>
                     <% end %>
                 </div>
                 <% end %>
@@ -664,10 +720,10 @@
 
             <div class="stack-trace">
                 <div class="stack-trace-heading">
-                    <label><input type="checkbox" role="show-all-toggle"> Show all frames</label>
+                    <label><input type="checkbox" role="show-all-toggle">Show only app frames</label>
                 </div>
 
-                <ul class="stack-trace-list" role="stack-trace-list">
+                <ul class="stack-trace-list -show-all" role="stack-trace-list">
                     <%= for frame <- @frames do %>
                     <li>
                         <button class="stack-trace-item -<%= frame.context %>" role="stack-trace-item" data-index="<%= frame.index %>">
@@ -756,17 +812,13 @@
 
         on($toggle, 'click', toggleOnclick)
 
-        // Auto-check "show all" if there are no app frames.
-        if (document.querySelectorAll('[role~="stack-trace-list"] .-app').length === 0) {
-            $toggle.checked = true
-            toggleOnclick.call($toggle)
-        }
-
         function toggleOnclick () {
             if (this.checked) {
-                addClass($list, '-show-all')
-            } else {
+                var $first = document.querySelector('[role~="stack-trace-item"].-app:first-of-type')
+                if ($first) itemOnclick.call($first)
                 removeClass($list, '-show-all')
+            } else {
+                addClass($list, '-show-all')
             }
         }
 
@@ -786,10 +838,7 @@
             if ($item) addClass($item, '-active')
         }
 
-        var $first =
-          document.querySelector('[role~="stack-trace-item"].-app:first-of-type') ||
-          document.querySelector('[role~="stack-trace-item"]:first-of-type')
-
+        var $first = document.querySelector('[role~="stack-trace-item"]:first-of-type')
         if ($first) itemOnclick.call($first)
 
         /*
