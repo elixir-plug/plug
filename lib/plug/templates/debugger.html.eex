@@ -229,13 +229,6 @@
     }
 
     /*
-     * Snippets
-     */
-
-    .code-snippets {
-    }
-
-    /*
      * Frame info:
      * Holds the code (code-block) and more
      */
@@ -271,6 +264,7 @@
     .frame-info > .code {
         border-top: solid 1px <%= @style.line_color %>;
         border-bottom: solid 1px <%= @style.line_color %>;
+        font-size: 0.8em;
     }
 
     /* Hiding */
@@ -291,6 +285,26 @@
         padding: 12px 16px;
     }
 
+    .frame-info > details.meta > pre {
+        line-height: 16px;
+        padding: 6px 0 24px 30px;
+    }
+
+    .frame-info > details.meta > ol {
+        counter-reset: item;
+        padding: 6px 0 24px 46px;
+        list-style: none;
+    }
+
+    .frame-info > details.meta > ol > li {
+        counter-increment: item;
+    }
+
+    .frame-info > details.meta > ol > li:before {
+        content: counter(item) ". ";
+        color: <%= @style.accent %>;
+    }
+
     /*
      * Frame details
      */
@@ -300,13 +314,31 @@
     }
 
     .frame-mfa > .app {
-        color: <%= @style.primary %>;
-        font-weight: 700;
+        color: <%= @style.accent %>;
     }
 
-    .frame-mfa > .app:after {
+    .frame-mfa > .docs {
+        color: <%= @style.primary %>;
+        text-decoration: none;
+    }
+
+    .frame-mfa .docs:hover {
+        text-decoration: underline;
+    }
+
+    .frame-mfa > .right {
+        float: right;
+        padding-left: 5px;
+    }
+
+    .frame-mfa > .right:after {
         content: '·';
-        margin: 0 .2em;
+        margin-left: .2em;
+        padding-left: .2em;
+    }
+
+    .frame-mfa > .right:first-child:after {
+        content: '';
     }
 
     /*
@@ -317,7 +349,7 @@
     .code-block {
         margin: 0;
         padding: 12px 0;
-        font-size: .8em;
+        font-size: <%= :math.pow(1.2, -1) %>em;
         line-height: 1.4;
         white-space: normal;
     }
@@ -478,7 +510,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background: <%= @style.accent %>;
+        background: #a0b0c0;
         border-radius: 50%;
         margin-right: 8px;
     }
@@ -498,7 +530,7 @@
     }
 
     .stack-trace-item > .info {
-        color: <%= @style.gray %>;
+        color: <%= @style.accent %>;
         float: right;
         max-width: 45%;
     }
@@ -539,16 +571,17 @@
         white-space: normal;
     }
 
-    .code-quote.-padded {
+    .code.-padded {
         padding: 0 16px 16px 16px;
     }
 
-    .code-quote .green {
-        color: #009900;
+    .code i.red {
+        color: #CC0000;
+        font-style: normal;
     }
 
-    .code-quote .red {
-        color: #CC0000;
+    .code i.green {
+        font-style: normal;
     }
 
     /*
@@ -593,7 +626,7 @@
         width: 20%;
         float: left;
         font-size: <%= :math.pow(1.2, -1) %>em;
-        color: <%= @style.gray %>;
+        color: <%= @style.accent %>;
         overflow: hidden;
         text-overflow: ellipsis;
         position: relative;
@@ -649,12 +682,12 @@
 
                     <div class="meta">
                         <div class="frame-mfa">
-                            <%= if app = frame.app do %>
-                            <span class="app"><%= h app %></span>
-                            <% end %>
                             <%= h frame.info %>
                             <%= if doc = frame.doc do %>
-                              <a href="<%= h doc %>">(docs)</a>
+                                <a class="docs right" href="<%= h doc %>">docs</a>
+                            <% end %>
+                            <%= if app = frame.app do %>
+                                <span class="app right"><%= h app %></span>
                             <% end %>
                         </div>
                     </div>
@@ -662,25 +695,23 @@
                     <%= if frame.args do %>
                         <details class="meta" open>
                             <summary>Called with <%= length(frame.args) %> arguments</summary>
-                            <blockquote class="code-quote -padded">
-                                <ol>
-                                    <%= for arg <- frame.args do %>
-                                        <li><%= h inspect arg %></li>
-                                    <% end %>
-                                </ol>
-                            </blockquote>
+                            <ol class="code code-quote -padded">
+                                <%= for arg <- frame.args do %>
+                                    <li><%= h inspect arg %></li>
+                                <% end %>
+                            </ol>
                         </details>
                     <% end %>
 
                     <%= if frame.clauses do %>
                         <% {min, max, clauses} = frame.clauses %>
                         <details class="meta" open>
-                            <summary>Function clauses (<%= min %> out of <%= max %>)</summary>
-                            <blockquote class="code-quote -padded">
-                                <ul>
-                                    <%= for clause <- clauses do %><li><%= clause %></li><% end %>
-                                </ul>
-                            </blockquote>
+                            <summary>Attempted function clauses (showing <%= min %> out of <%= max %>)</summary>
+                            <pre class="code code-block -padded">
+                                <%= for clause <- clauses do %>
+                                    <span class="line"><%= clause %></span>
+                                <% end %>
+                            </pre>
                         </details>
                     <% end %>
                 </div>
