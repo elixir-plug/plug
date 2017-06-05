@@ -157,7 +157,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   def send_file(conn) do
     conn = send_file(conn, 200, __ENV__.file)
-    assert conn.state == :sent
+    assert conn.state == :file
     assert conn.resp_body == nil
     conn
   end
