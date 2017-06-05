@@ -91,6 +91,7 @@ defmodule Plug.ErrorHandler do
         normalized_reason = Exception.normalize(kind, wrapped_reason, stack)
         conn
         |> Plug.Conn.put_status(status(kind, normalized_reason))
+        |> Plug.Conn.merge_resp_headers(headers(kind, normalized_reason))
         |> handle_errors.(%{kind: kind, reason: normalized_reason, stack: stack})
     end
 
@@ -100,4 +101,8 @@ defmodule Plug.ErrorHandler do
   defp status(:error, error),  do: Plug.Exception.status(error)
   defp status(:throw, _throw), do: 500
   defp status(:exit, _exit),   do: 500
+
+  defp headers(:error, error), do: Plug.Exception.headers(error)
+  defp headers(:throw, _throw), do: []
+  defp headers(:exit, _exit),   do: []
 end
