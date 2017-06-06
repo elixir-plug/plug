@@ -10,11 +10,11 @@ defmodule Plug.Parsers.MULTIPART do
 
   @behaviour Plug.Parsers
 
-  def parse(conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
+  def parse(conn, "multipart", subtype, headers, opts) when subtype in ["form-data", "mixed"] do
     {adapter, state} = conn.adapter
 
     try do
-      adapter.parse_req_multipart(state, opts, &handle_headers/1)
+      adapter.parse_req_multipart(state, add_boundary(opts, Map.get(headers, "boundary")), &handle_headers/1)
     rescue
       e in Plug.UploadError -> # Do not ignore upload errors
         reraise e, System.stacktrace
@@ -36,7 +36,7 @@ defmodule Plug.Parsers.MULTIPART do
     {:next, conn}
   end
 
-  defp handle_headers(headers) do
+  def handle_headers(headers) do
     case List.keyfind(headers, "content-disposition", 0) do
       {_, disposition} -> handle_disposition(disposition, headers)
       nil -> :skip
@@ -73,5 +73,10 @@ defmodule Plug.Parsers.MULTIPART do
       {^key, value} -> value
       nil -> nil
     end
+  end
+
+  defp add_boundary(opts, nil), do: opts
+  defp add_boundary(opts, boundary) do
+    opts ++ [{:boundary, boundary}]
   end
 end
