@@ -104,13 +104,13 @@ defmodule Plug.Parsers do
 
   Plug ships with the following parsers:
 
-  * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
-    requests (can be used as `:urlencoded` as well in the `:parsers` option)
-  * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
-    `multipart/mixed` requests (can be used as `:multipart` as well in the
-    `:parsers` option)
-  * `Plug.Parsers.JSON` - parses `application/json` requests with the given
-    `:json_decoder` (can be used as `:json` as well in the `:parsers` option)
+    * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
+      requests (can be used as `:urlencoded` as well in the `:parsers` option)
+    * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
+      `multipart/mixed` requests (can be used as `:multipart` as well in the
+      `:parsers` option)
+    * `Plug.Parsers.JSON` - parses `application/json` requests with the given
+      `:json_decoder` (can be used as `:json` as well in the `:parsers` option)
 
   ## File handling
 

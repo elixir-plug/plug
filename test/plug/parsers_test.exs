@@ -72,12 +72,64 @@ defmodule Plug.ParsersTest do
     assert conn.params["foo"] == "baz"
   end
 
-  test "parses multipart bodies" do
+  test "parses multipart bodies with test params" do
     conn = parse(conn(:post, "/?foo=bar"))
     assert conn.params == %{"foo" => "bar"}
 
     conn = parse(conn(:post, "/?foo=bar", [foo: "baz"]))
     assert conn.params == %{"foo" => "baz"}
+  end
+
+  test "parses multipart bodies with test body" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
+    Content-Type: text/plain\r
+    \r
+    hello
+
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data\r
+    \r
+    skipped\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"empty\"; filename=\"\"\r
+    Content-Type: application/octet-stream\r
+    \r
+    \r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice1\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name="status[]"\r
+    \r
+    choice2\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"commit\"\r
+    \r
+    Create User\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse()
+
+    assert params["name"] == "hello"
+    assert params["status"] == ["choice1", "choice2"]
+    assert params["empty"] == nil
+
+    assert %Plug.Upload{} = file = params["pic"]
+    assert File.read!(file.path) == "hello\n\n"
+    assert file.content_type == "text/plain"
+    assert file.filename == "foo.txt"
   end
 
   test "raises on invalid url encoded" do

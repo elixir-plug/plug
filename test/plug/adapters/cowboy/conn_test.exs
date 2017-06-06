@@ -82,15 +82,15 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "request_path" do
     assert {200, _, "/return_request_path/foo"} =
-      request :get, "/return_request_path/foo?barbat"
+           request :get, "/return_request_path/foo?barbat"
     assert {200, _, "/return_request_path/foo/bar"} =
-      request :get, "/return_request_path/foo/bar?bar=bat"
+           request :get, "/return_request_path/foo/bar?bar=bat"
     assert {200, _, "/return_request_path/foo/bar/"} =
-      request :get, "/return_request_path/foo/bar/?bar=bat"
+           request :get, "/return_request_path/foo/bar/?bar=bat"
     assert {200, _, "/return_request_path/foo//bar"} =
-      request :get, "/return_request_path/foo//bar"
+           request :get, "/return_request_path/foo//bar"
     assert {200, _, "//return_request_path//foo//bar//"} =
-      request :get, "//return_request_path//foo//bar//"
+           request :get, "//return_request_path//foo//bar//"
   end
 
   def headers(conn) do
@@ -321,12 +321,25 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data"},
+      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
        {"Content-Length", byte_size(multipart)}]
 
     assert {500, _, body} = request :post, "/multipart", headers, multipart
-    assert body =~ "malformed request, a MatchError exception was raised with message " <>
-      ~s("no match of right hand side value: false")
+    assert body =~ "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
+
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello
+    """
+
+    headers =
+      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+       {"Content-Length", byte_size(multipart)}]
+
+    assert {500, _, body} = request :post, "/multipart", headers, multipart
+    assert body =~ "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
   end
 
   def https(conn) do

@@ -62,28 +62,6 @@ defmodule Plug.Adapters.Cowboy.Conn do
     :cowboy_req.body(req, opts)
   end
 
-  def parse_req_multipart(req, opts, callback) do
-    # We need to remove the length from the list
-    # otherwise cowboy will attempt to load the
-    # whole length at once.
-    {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
-
-    # We need to construct the header opts using defaults here,
-    # since once opts are passed cowboy defaults are not applied anymore.
-    {headers_opts, opts} = Keyword.pop(opts, :headers, [])
-    headers_opts = headers_opts ++ [length: 64_000, read_length:  64_000, read_timeout: 5000]
-
-    {:ok, limit, acc, req} = parse_multipart(:cowboy_req.part(req, headers_opts), limit, opts, headers_opts, [], callback)
-
-    params = Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2)
-
-    if limit > 0 do
-      {:ok, params, req}
-    else
-      {:more, params, req}
-    end
-  end
-
   ## Helpers
 
   defp scheme(:tcp), do: :http
@@ -92,75 +70,5 @@ defmodule Plug.Adapters.Cowboy.Conn do
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
     for segment <- segments, segment != "", do: segment
-  end
-
-  ## Multipart
-
-  defp parse_multipart({:ok, headers, req}, limit, opts, headers_opts, acc, callback) when limit >= 0 do
-    case callback.(headers) do
-      {:binary, name} ->
-        {:ok, limit, body, req} =
-          parse_multipart_body(:cowboy_req.part_body(req, opts), limit, opts, "")
-
-        Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
-        parse_multipart(:cowboy_req.part(req, headers_opts), limit, opts, headers_opts,
-                        [{name, body}|acc], callback)
-
-      {:file, name, path, %Plug.Upload{} = uploaded} ->
-        {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
-
-        {:ok, limit, req} =
-          parse_multipart_file(:cowboy_req.part_body(req, opts), limit, opts, file)
-
-        :ok = File.close(file)
-        parse_multipart(:cowboy_req.part(req, headers_opts), limit, opts, headers_opts,
-                        [{name, uploaded}|acc], callback)
-
-      :skip ->
-        parse_multipart(:cowboy_req.part(req, headers_opts), limit, opts, headers_opts,
-                        acc, callback)
-    end
-  end
-
-  defp parse_multipart({:ok, _headers, req}, limit, _opts, _headers_opts, acc, _callback) do
-    {:ok, limit, acc, req}
-  end
-
-  defp parse_multipart({:done, req}, limit, _opts, _headers_opts, acc, _callback) do
-    {:ok, limit, acc, req}
-  end
-
-  defp parse_multipart_body({:more, tail, req}, limit, opts, body) when limit >= byte_size(tail) do
-    parse_multipart_body(:cowboy_req.part_body(req, opts), limit - byte_size(tail), opts, body <> tail)
-  end
-
-  defp parse_multipart_body({:more, tail, req}, limit, _opts, body) do
-    {:ok, limit - byte_size(tail), body, req}
-  end
-
-  defp parse_multipart_body({:ok, tail, req}, limit, _opts, body) when limit >= byte_size(tail) do
-    {:ok, limit - byte_size(tail), body <> tail, req}
-  end
-
-  defp parse_multipart_body({:ok, tail, req}, limit, _opts, body) do
-    {:ok, limit - byte_size(tail), body, req}
-  end
-
-  defp parse_multipart_file({:more, tail, req}, limit, opts, file) when limit >= byte_size(tail) do
-    IO.binwrite(file, tail)
-    parse_multipart_file(:cowboy_req.part_body(req, opts), limit - byte_size(tail), opts, file)
-  end
-
-  defp parse_multipart_file({:more, tail, req}, limit, _opts, _file) do
-    {:ok, limit - byte_size(tail), req}
-  end
-
-  defp parse_multipart_file({:ok, tail, req}, limit, _opts, file) when limit >= byte_size(tail) do
-    IO.binwrite(file, tail)
-    {:ok, limit - byte_size(tail), req}
-  end
-
-  defp parse_multipart_file({:ok, tail, req}, limit, _opts, _file) do
-    {:ok, limit - byte_size(tail), req}
   end
 end
