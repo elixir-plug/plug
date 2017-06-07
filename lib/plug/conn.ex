@@ -408,7 +408,7 @@ defmodule Plug.Conn do
   the operating system `sendfile` operation.
 
   It expects a connection that has not been `:sent` yet and sets its
-  state to `:sent` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
+  state to `:file` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
 
   ## Examples
 
