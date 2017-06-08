@@ -3,11 +3,12 @@
 
 defprotocol Plug.Exception do
   @moduledoc """
-  A protocol that extends exceptions to be status-code aware.
+  A protocol that extends exceptions to be status-code and headers aware.
 
   By default, it looks for an implementation of the protocol,
   otherwise checks if the exception has the `:plug_status` field
   or simply returns 500.
+  It also checks for the `:plug_headers` field for additional headers.
   """
 
   @fallback_to_any true
@@ -17,11 +18,20 @@ defprotocol Plug.Exception do
   """
   @spec status(t) :: Plug.Conn.status
   def status(exception)
+
+  @doc """
+  Receives an exception and returns its HTTP headers.
+  """
+  @spec headers(t) :: Keyword.t
+  def headers(exception)
 end
 
 defimpl Plug.Exception, for: Any do
   def status(%{plug_status: status}) when is_integer(status), do: status
   def status(_), do: 500
+
+  def headers(%{plug_headers: headers}) when is_list(headers), do: headers
+  def headers(_), do: []
 end
 
 defmodule Plug.BadRequestError do
