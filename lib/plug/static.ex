@@ -198,14 +198,11 @@ defmodule Plug.Static do
     raise InvalidRangeError
   end
 
-  @byte_range_pattern ~r/^\s*bytes=([0-9]+)?-([0-9]+)?\s*$/
-
   defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
     file_size = elem(file_info, 1)
 
-    parsed_range =
-      @byte_range_pattern
-      |> Regex.run(range)
+    parsed_range = range
+      |> parse_range
       |> start_and_end(file_size)
       |> check_bounds(file_size)
 
@@ -221,15 +218,17 @@ defmodule Plug.Static do
 
   defp serve_range({:error, conn}, _range, _segments, _options), do: conn
 
-  defp start_and_end([_, "", ""], _file_size), do: :invalid
+  defp parse_range(range) when is_binary(range), do: parse_range(Plug.Conn.Utils.params(range))
+  defp parse_range(%{"bytes" => bytes}), do: String.split(bytes, "-")
+  defp parse_range(_), do: :invalid
 
-  defp start_and_end([_, range_start], file_size) when is_binary(range_start), do:
+  defp start_and_end(["", ""], _file_size), do: :invalid
+  defp start_and_end([range_start, ""], file_size) when is_binary(range_start), do:
     {to_integer(range_start), file_size - 1}
-  defp start_and_end([_, "", tail_length], file_size) when is_binary(tail_length), do:
+  defp start_and_end(["", tail_length], file_size) when is_binary(tail_length), do:
     {file_size - to_integer(tail_length), file_size - 1}
-  defp start_and_end([_, range_start, range_end], _file_size), do:
+  defp start_and_end([range_start, range_end], _file_size), do:
     {to_integer(range_start), to_integer(range_end)}
-
   defp start_and_end(_range, _file_size), do: :invalid
 
   defp check_bounds(:invalid, _file_size), do: :invalid
