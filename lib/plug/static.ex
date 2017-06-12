@@ -219,43 +219,29 @@ defmodule Plug.Static do
     end
   end
 
-  defp serve_range({:error, conn}, _range, _segments, _options) do
-    conn
-  end
+  defp serve_range({:error, conn}, _range, _segments, _options), do: conn
 
   defp start_and_end([_, "", ""], _file_size), do: :invalid
 
-  defp start_and_end([_, range_start], file_size) when is_binary(range_start) do
+  defp start_and_end([_, range_start], file_size) when is_binary(range_start), do:
     {to_integer(range_start), file_size - 1}
-  end
-
-  defp start_and_end([_, "", tail_length], file_size) when is_binary(tail_length) do
+  defp start_and_end([_, "", tail_length], file_size) when is_binary(tail_length), do:
     {file_size - to_integer(tail_length), file_size - 1}
-  end
-
-  defp start_and_end([_, range_start, range_end], _file_size) do
+  defp start_and_end([_, range_start, range_end], _file_size), do:
     {to_integer(range_start), to_integer(range_end)}
-  end
 
   defp start_and_end(_range, _file_size), do: :invalid
 
   defp check_bounds(:invalid, _file_size), do: :invalid
 
   defp check_bounds({range_start, range_end}, file_size)
-    when range_start < 0 or range_end >= file_size or range_start > range_end
-  do
+       when range_start < 0 or range_end >= file_size or range_start > range_end, do:
     :invalid
-  end
 
-  defp check_bounds({0, range_end}, file_size)
-    when range_end == file_size - 1
-  do
+  defp check_bounds({0, range_end}, file_size) when range_end == file_size - 1, do:
     :entire_file
-  end
 
-  defp check_bounds({range_start, range_end}, _file_size) do
-    {range_start, range_end}
-  end
+  defp check_bounds({range_start, range_end}, _file_size), do: {range_start, range_end}
 
   defp to_integer(str) do
     {num, _} = Integer.parse(str)
