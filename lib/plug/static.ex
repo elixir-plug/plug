@@ -248,9 +248,11 @@ defmodule Plug.Static do
   end
 
   defp send_range(conn, path, range_start, range_end, file_size, segments, options) do
-    %{headers: headers} = options
+    %{headers: headers, content_types: types} = options
     length = (range_end - range_start) + 1
-    content_type = segments |> List.last |> MIME.from_path
+
+    filename = List.last(segments)
+    content_type = Map.get(types, filename) || MIME.from_path(filename)
 
     conn
     |> put_resp_header("content-type", content_type)

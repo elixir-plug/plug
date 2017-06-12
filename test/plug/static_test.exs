@@ -259,6 +259,16 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
+    test "serves the file with a custom content type" do
+      conn = conn(:get, "/public/fixtures/manifest-file", [])
+              |> put_req_header("range", "bytes=-1")
+              |> call
+
+      assert conn.status == 206
+      assert conn.resp_body == "]"
+      assert get_resp_header(conn, "content-type") == ["application/vnd.manifest+json"]
+    end
+
     test "serves tail of file if range is -n" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
              |> put_req_header("range", "bytes=-3")
