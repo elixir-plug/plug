@@ -199,7 +199,7 @@ defmodule Plug.Static do
   end
 
   defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
-    file_size = elem(file_info, 1)
+    file_info(size: file_size) = file_info
 
     parsed_range = range
       |> parse_range
