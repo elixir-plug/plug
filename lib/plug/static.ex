@@ -120,10 +120,6 @@ defmodule Plug.Static do
     defexception message: "invalid path for static asset", plug_status: 400
   end
 
-  defmodule InvalidRangeError do
-    defexception message: "invalid range for static asset", plug_status: 416
-  end
-
   def init(opts) do
     from =
       case Keyword.fetch!(opts, :from) do
@@ -186,16 +182,13 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_range(conn, path, segments, [], %{gzip?: gzip?, brotli?: brotli?} = options) do
-    encoding = file_encoding(conn, path, gzip?, brotli?)
-    serve_static(encoding, segments, options)
-  end
   defp serve_range(conn, path, segments, [range], options) do
     encoding = file_encoding(conn, path, false, false)
     serve_range(encoding, range, segments, options)
   end
-  defp serve_range(_conn, _path, _segments, _range, _options) do
-    raise InvalidRangeError
+  defp serve_range(conn, path, segments, _range, %{gzip?: gzip?, brotli?: brotli?} = options) do
+    encoding = file_encoding(conn, path, gzip?, brotli?)
+    serve_static(encoding, segments, options)
   end
 
   defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
@@ -211,8 +204,6 @@ defmodule Plug.Static do
         send_range(conn, path, range_start, range_end, file_size, segments, options)
       :entire_file ->
         serve_static({:ok, conn, file_info, path}, segments, options)
-      :invalid ->
-        raise InvalidRangeError
     end
   end
 
@@ -220,22 +211,22 @@ defmodule Plug.Static do
 
   defp parse_range(range) when is_binary(range), do: parse_range(Plug.Conn.Utils.params(range))
   defp parse_range(%{"bytes" => bytes}), do: String.split(bytes, "-")
-  defp parse_range(_), do: :invalid
+  defp parse_range(_), do: :entire_file
 
-  defp start_and_end(["", ""], _file_size), do: :invalid
+  defp start_and_end(["", ""], _file_size), do: :entire_file
   defp start_and_end([range_start, ""], file_size) when is_binary(range_start), do:
     {to_integer(range_start), file_size - 1}
   defp start_and_end(["", tail_length], file_size) when is_binary(tail_length), do:
     {file_size - to_integer(tail_length), file_size - 1}
   defp start_and_end([range_start, range_end], _file_size), do:
     {to_integer(range_start), to_integer(range_end)}
-  defp start_and_end(_range, _file_size), do: :invalid
+  defp start_and_end(_range, _file_size), do: :entire_file
 
-  defp check_bounds(:invalid, _file_size), do: :invalid
+  defp check_bounds(:entire_file, _file_size), do: :entire_file
 
   defp check_bounds({range_start, range_end}, file_size)
        when range_start < 0 or range_end >= file_size or range_start > range_end, do:
-    :invalid
+    :entire_file
 
   defp check_bounds({0, range_end}, file_size) when range_end == file_size - 1, do:
     :entire_file

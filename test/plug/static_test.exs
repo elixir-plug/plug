@@ -279,51 +279,46 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
-    test "returns 416 if range does not contain either start or end" do
-      exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset",
-        fn ->
-          conn(:get, "/public/fixtures/static.txt", [])
-            |> put_req_header("range", "bytes=-")
-            |> call
-        end
+    test "returns entire file if range does not contain either start or end" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=-")
+              |> call
 
-      assert Plug.Exception.status(exception) == 416
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
-    test "returns 416 if range is contains non-integers" do
-      exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset", fn ->
-        conn(:get, "/public/fixtures/static.txt", [])
-          |> put_req_header("range", "bytes=nope")
-          |> call
-      end
+    test "returns entire file if range contains non-integers" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=nope")
+              |> call
 
-      assert Plug.Exception.status(exception) == 416
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
-    test "returns 416 if range is missing =" do
-      exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset", fn ->
-        conn(:get, "/public/fixtures/static.txt", [])
-          |> put_req_header("range", "bytes")
-          |> call
-      end
+    test "returns entire file if range is missing =" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes")
+              |> call
 
-      assert Plug.Exception.status(exception) == 416
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
 
-    test "returns 416 if range contains multiple byte ranges" do
+    test "returns entire file if range contains multiple byte ranges" do
       # Multiple byte ranges are not supported by Plug.Static at this time.
 
-      exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset", fn ->
-        conn(:get, "/public/fixtures/static.txt", [])
-          |> put_req_header("range", "bytes=0-1,3-4")
-          |> call
-      end
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=0-1,3-4")
+              |> call
 
-      assert Plug.Exception.status(exception) == 416
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
     end
   end
 
