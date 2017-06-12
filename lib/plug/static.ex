@@ -223,14 +223,11 @@ defmodule Plug.Static do
   defp start_and_end(_range, _file_size), do: :entire_file
 
   defp check_bounds(:entire_file, _file_size), do: :entire_file
-
   defp check_bounds({range_start, range_end}, file_size)
        when range_start < 0 or range_end >= file_size or range_start > range_end, do:
     :entire_file
-
   defp check_bounds({0, range_end}, file_size) when range_end == file_size - 1, do:
     :entire_file
-
   defp check_bounds({range_start, range_end}, _file_size), do: {range_start, range_end}
 
   defp to_integer(str) do
