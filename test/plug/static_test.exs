@@ -246,7 +246,7 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
     end
 
     test "serves requested range of file starting from byte 0" do
@@ -256,7 +256,9 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 206
       assert conn.resp_body == "HE"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
     end
 
     test "serves the file with a custom content type" do
@@ -267,6 +269,8 @@ defmodule Plug.StaticTest do
       assert conn.status == 206
       assert conn.resp_body == "]"
       assert get_resp_header(conn, "content-type") == ["application/vnd.manifest+json"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 1-1/2"]
     end
 
     test "serves tail of file if range is -n" do
@@ -276,7 +280,9 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 206
       assert conn.resp_body == "LLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 2-4/5"]
     end
 
     test "returns entire file if range does not contain either start or end" do
@@ -286,7 +292,7 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
     end
 
     test "returns entire file if range contains non-integers" do
@@ -296,7 +302,7 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
     end
 
     test "returns entire file if range is missing =" do
@@ -306,7 +312,7 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
     end
 
     test "returns entire file if range contains multiple byte ranges" do
@@ -318,7 +324,7 @@ defmodule Plug.StaticTest do
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
-      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
     end
   end
 
