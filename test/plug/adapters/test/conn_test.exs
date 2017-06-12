@@ -42,7 +42,7 @@ defmodule Plug.Adapters.Test.ConnTest do
 
   test "custom params sets content-type to multipart/mixed when content-type is not set" do
     conn = conn(:get, "/", foo: "bar")
-    assert conn.req_headers == [{"content-type", "multipart/mixed; charset: utf-8"}]
+    assert conn.req_headers == [{"content-type", "multipart/mixed; boundary=plug_conn_test"}]
   end
 
   test "custom params does not change content-type when set" do
@@ -51,13 +51,6 @@ defmodule Plug.Adapters.Test.ConnTest do
       |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
       |> Plug.Adapters.Test.Conn.conn(:get, "/", foo: "bar")
     assert conn.req_headers == [{"content-type", "application/vnd.api+json"}]
-  end
-
-  test "parse_req_multipart/4" do
-    conn = conn(:get, "/", a: "b", c: [%{d: "e"}, "f"])
-    {adapter, state} = conn.adapter
-    assert {:ok, params, _} = adapter.parse_req_multipart(state, 1_000_000, fn _ -> :ok end)
-    assert params == %{"a" => "b", "c" => [%{"d" => "e"}, "f"]}
   end
 
   test "use existing conn.host if exists" do
@@ -74,5 +67,11 @@ defmodule Plug.Adapters.Test.ConnTest do
 
     child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
     assert child_conn.host == "www.example.org"
+  end
+
+  test "use existing conn.remote_ip if exists" do
+    conn_with_remote_ip = %Plug.Conn{conn(:get, "/") | remote_ip: {151, 236, 219, 228}}
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_remote_ip, :get, "/", foo: "bar")
+    assert child_conn.remote_ip == {151, 236, 219, 228}
   end
 end

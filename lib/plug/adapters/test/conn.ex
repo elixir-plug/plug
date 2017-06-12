@@ -24,7 +24,7 @@ defmodule Plug.Adapters.Test.Conn do
       path_info: split_path(uri.path),
       port: uri.port || 80,
       peer: {{127, 0, 0, 1}, 111_317},
-      remote_ip: {127, 0, 0, 1},
+      remote_ip: conn.remote_ip || {127, 0, 0, 1},
       req_headers: req_headers,
       request_path: uri.path,
       query_string: query,
@@ -86,10 +86,6 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
-  def parse_req_multipart(%{params: multipart} = state, _limit, _callback) do
-    {:ok, multipart, %{state | params: nil}}
-  end
-
   ## Private helpers
 
   defp body_or_params(nil, _query, headers),
@@ -104,10 +100,11 @@ defmodule Plug.Adapters.Test.Conn do
   end
 
   defp body_or_params(params, query, headers) when is_map(params) do
-    content_type = List.keyfind(headers, "content-type", 0, {"content-type", "multipart/mixed; charset: utf-8"})
+    content_type = List.keyfind(headers, "content-type", 0,
+                                {"content-type", "multipart/mixed; boundary=plug_conn_test"})
     headers = List.keystore(headers, "content-type", 0, content_type)
     params = Map.merge(Plug.Conn.Query.decode(query), stringify_params(params))
-    {"", params, headers}
+    {"--plug_conn_test--", params, headers}
   end
 
   defp stringify_params([{_, _}|_] = params),

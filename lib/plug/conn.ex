@@ -53,7 +53,7 @@ defmodule Plug.Conn do
   These fields contain response information:
 
     * `resp_body` - the response body, by default is an empty string. It is set
-      to nil after the response is set, except for test connections.
+      to nil after the response is sent, except for test connections.
     * `resp_charset` - the response charset, defaults to "utf-8"
     * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
@@ -78,9 +78,9 @@ defmodule Plug.Conn do
     * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts as
-  `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:set_chunked`
-  (used only for `before_send` callbacks by `Plug.conn.send_chunked/2`) or `:file`
-  (when invoked via `Plug.Conn.send_file/3`). Its final result is `:sent` or
+  `:unset` but is changed to `:set` (via `resp/3`) or `:set_chunked`
+  (used only for `before_send` callbacks by `send_chunked/2`) or `:file`
+  (when invoked via `send_file/3`). Its final result is `:sent` or
   `:chunked` depending on the response model.
 
   ## Private fields
@@ -158,7 +158,7 @@ defmodule Plug.Conn do
   @type scheme          :: :http | :https
   @type secret_key_base :: binary | nil
   @type segments        :: [binary]
-  @type state           :: :unset | :set | :set_chunked | :file | :chunked | :sent
+  @type state           :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status          :: atom | int_status
 
   @type t :: %__MODULE__{
@@ -269,7 +269,7 @@ defmodule Plug.Conn do
 
   alias Plug.Conn
   @already_sent {:plug_conn, :sent}
-  @unsent [:unset, :set, :set_chunked]
+  @unsent [:unset, :set, :set_chunked, :set_file]
 
   @doc """
   Assigns a value to a key in the connection
@@ -408,7 +408,7 @@ defmodule Plug.Conn do
   the operating system `sendfile` operation.
 
   It expects a connection that has not been `:sent` yet and sets its
-  state to `:sent` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
+  state to `:file` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
 
   ## Examples
 
@@ -429,10 +429,10 @@ defmodule Plug.Conn do
       raise ArgumentError, "cannot send_file/5 with null byte"
     end
 
-    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
+    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :set_file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send owner, @already_sent
-    %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
+    %{conn | adapter: {adapter, payload}, state: :file, resp_body: body}
   end
 
   @doc """
@@ -774,12 +774,12 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:length` - sets the maximum number of bytes to read from the body for each
-    chunk, defaults to 8_000_000 bytes
-  * `:read_length` - sets the amount of bytes to read at one time from the
-    underlying socket to fill the chunk, defaults to 1_000_000 bytes
-  * `:read_timeout` - sets the timeout for each socket read, defaults to
-    15_000 ms
+    * `:length` - sets the maximum number of bytes to read from the body for
+      each chunk, defaults to 8_000_000 bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to 1_000_000 bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      15_000ms
 
   The values above are not meant to be exact. For example, setting the
   length to 8_000_000 may end up reading some hundred bytes more from
@@ -802,6 +802,122 @@ defmodule Plug.Conn do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Reads the headers of a multipart request.
+
+  It returns `{:ok, headers, conn}` with the headers or
+  `{:done, conn}` if there are no more parts.
+
+  Once `read_part_headers/2` is invoked, a developer may call
+  `read_part_body/2` to read the body associated to the headers.
+  If `read_part_headers/2` is called instead, the body is automatically
+  skipped until the next part headers.
+
+  ## Options
+
+    * `:length` - sets the maximum number of bytes to read from the body for
+      each chunk, defaults to 64_000 bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to 64_000 bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      5_000ms
+
+  """
+  @spec read_part_headers(t, Keyword.t) :: {:ok, headers, t} | {:done, t}
+  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
+    opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
+    case init_multipart(conn) do
+      {boundary, buffer} ->
+        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
+        read_part_headers(conn, data, boundary, adapter, state, opts)
+      :done ->
+        {:done, conn}
+    end
+  end
+
+  defp read_part_headers(conn, data, boundary, adapter, state, opts) do
+    case :plug_multipart.parse_headers(data, boundary) do
+      {:ok, headers, rest} ->
+        {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
+      :more ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_headers(conn, data <> next, boundary, adapter, state, opts)
+      {:more, rest} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_headers(conn, rest <> next, boundary, adapter, state, opts)
+      {:done, _} ->
+        {:done, store_multipart(conn, :done, adapter, state)}
+    end
+  end
+
+  @doc """
+  Reads the body of a multipart request.
+
+  Returns `{:ok, body, conn}` if all body has been read,
+  `{:more, binary, conn}` otherwise.
+
+  It accepts the same options as `read_body/2`.
+  """
+  @spec read_part_body(t, Keyword.t) :: {:ok, binary, t} | {:more, binary, t}
+  def read_part_body(%{adapter: {adapter, state}} = conn, opts) do
+    case init_multipart(conn) do
+      {boundary, buffer} ->
+        length = Keyword.get(opts, :length, 8_000_000)
+        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
+        read_part_body(conn, data, "", length, boundary, adapter, state, opts)
+      :done ->
+        {:done, conn}
+    end
+  end
+
+  defp read_part_body(conn, data, acc, length, boundary, adapter, state, _opts) when byte_size(acc) > length do
+    {:more, acc, store_multipart(conn, {boundary, data}, adapter, state)}
+  end
+  defp read_part_body(conn, data, acc, length, boundary, adapter, state, opts) do
+    case :plug_multipart.parse_body(data, boundary) do
+      {:ok, body} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_body(conn, next, acc <> body, length, boundary, adapter, state, opts)
+      {:ok, body, rest} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_body(conn, rest <> next, acc <> body, length, boundary, adapter, state, opts)
+      :done ->
+        {:ok, acc, store_multipart(conn, {boundary, ""}, adapter, state)}
+      {:done, body} ->
+        {:ok, acc <> body, store_multipart(conn, {boundary, ""}, adapter, state)}
+      {:done, body, rest} ->
+        {:ok, acc <> body, store_multipart(conn, {boundary, rest}, adapter, state)}
+    end
+  end
+
+  defp init_multipart(%{private: %{plug_multipart: plug_multipart}}) do
+    plug_multipart
+  end
+  defp init_multipart(%{req_headers: req_headers}) do
+    {_, content_type} = List.keyfind(req_headers, "content-type", 0)
+    {:ok, "multipart", _, %{"boundary" => boundary}} = Plug.Conn.Utils.content_type(content_type)
+    {boundary, ""}
+  end
+
+  defp next_multipart(adapter, state, opts) do
+    case adapter.read_req_body(state, opts) do
+      {:ok, "", _} -> raise "invalid multipart, body terminated too soon"
+      valid -> valid
+    end
+  end
+
+  defp store_multipart(conn, multipart, adapter, state) do
+    %{put_in(conn.private[:plug_multipart], multipart) | adapter: {adapter, state}}
+  end
+
+  defp read_multipart_from_buffer_or_adapter("", adapter, state, opts) do
+    {_, data, state} = adapter.read_req_body(state, opts)
+    {data, state}
+  end
+  defp read_multipart_from_buffer_or_adapter(buffer, _adapter, state, _opts) do
+    {buffer, state}
   end
 
   @doc """

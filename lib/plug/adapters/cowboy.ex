@@ -5,7 +5,8 @@ defmodule Plug.Adapters.Cowboy do
   ## Options
 
   * `:ip` - the ip to bind the server to.
-    Must be a tuple in the format `{x, y, z, w}`.
+    Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4
+    or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6.
 
   * `:port` - the port to run the server.
     Defaults to 4000 (http) and 4040 (https).

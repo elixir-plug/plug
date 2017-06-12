@@ -72,26 +72,4 @@ defmodule Plug.Conn.Adapter do
               {:ok, data :: binary, payload} |
               {:more, data :: binary, payload} |
               {:error, term}
-
-  @doc """
-  Parses a multipart request.
-
-  This function receives the payload, the body limit and a callback.
-  When parsing each multipart segment, the parser should invoke the
-  given fallback passing the headers for that segment, before consuming
-  the body. The callback will return one of the following values:
-
-  * `{:binary, name}` - the current segment must be treated as a regular
-    binary value with the given `name`
-  * `{:file, name, file, upload}` - the current segment is a file upload with `name`
-    and contents should be written to the given `file`
-  * `:skip` - this multipart segment should be skipped
-
-  This function may return a `:ok` or `:more` tuple. The first one is
-  returned when there is no more multipart data to be processed.
-
-  For the supported options, please read `Plug.Conn.read_body/2` docs.
-  """
-  @callback parse_req_multipart(payload, options :: Keyword.t, fun) ::
-              {:ok, Conn.params, payload} | {:more, Conn.params, payload}
 end

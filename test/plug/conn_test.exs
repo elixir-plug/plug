@@ -243,7 +243,7 @@ defmodule Plug.ConnTest do
     conn = send_file(conn(:get, "/foo"), 200, __ENV__.file)
     assert conn.status == 200
     assert conn.resp_body =~ "send_file/3"
-    assert conn.state == :sent
+    assert conn.state == :file
   end
 
   test "send_file/3 raises on null-byte" do
@@ -278,13 +278,27 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["FILE"]
   end
 
+  test "send_file/3 works with put_session/3 in a before_send callback" do
+    opts = Plug.Session.init(store: ProcessStore, key: "foobar")
+    conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
+
+    conn = conn
+           |> register_before_send(&put_session(&1, "foo", "bar"))
+           |> send_file(200, __ENV__.file)
+
+    assert conn.status == 200
+    assert conn.resp_body =~ "send_file/3"
+    assert conn.state == :file
+    assert get_session(conn, "foo") == "bar"
+  end
+
   test "send_file/5 limits on offset" do
     %File.Stat{type: :regular, size: size} = File.stat!(__ENV__.file)
     :rand.seed(:exs64)
     offset = round(:rand.uniform() * size)
     conn = send_file(conn(:get, "/foo"), 206, __ENV__.file, offset)
     assert conn.status == 206
-    assert conn.state == :sent
+    assert conn.state == :file
     assert byte_size(conn.resp_body) == (size - offset)
   end
 
@@ -295,7 +309,7 @@ defmodule Plug.ConnTest do
     length = round((size - offset) * 0.25)
     conn = send_file(conn(:get, "/foo"), 206, __ENV__.file, offset, length)
     assert conn.status == 206
-    assert conn.state == :sent
+    assert conn.state == :file
     assert byte_size(conn.resp_body) == length
   end
 

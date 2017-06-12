@@ -3,7 +3,7 @@ defmodule Plug.Session.COOKIE do
   Stores the session in a cookie.
 
   This cookie store is based on `Plug.Crypto.MessageVerifier`
-  and `Plug.Crypto.Message.Encryptor` which encrypts and signs
+  and `Plug.Crypto.MessageEncryptor` which encrypts and signs
   each cookie to ensure they can't be read nor tampered with.
 
   Since this store uses crypto features, it requires you to
