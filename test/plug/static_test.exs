@@ -283,24 +283,22 @@ defmodule Plug.StaticTest do
 
     test "returns 416 if range is contains non-integers" do
       exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset",
-        fn ->
-          conn(:get, "/public/fixtures/static.txt", [])
-            |> put_req_header("range", "bytes=nope")
-            |> call
-        end
+                               "invalid range for static asset", fn ->
+        conn(:get, "/public/fixtures/static.txt", [])
+          |> put_req_header("range", "bytes=nope")
+          |> call
+      end
 
       assert Plug.Exception.status(exception) == 416
     end
 
     test "returns 416 if range is missing =" do
       exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset",
-        fn ->
-          conn(:get, "/public/fixtures/static.txt", [])
-            |> put_req_header("range", "bytes")
-            |> call
-        end
+                               "invalid range for static asset", fn ->
+        conn(:get, "/public/fixtures/static.txt", [])
+          |> put_req_header("range", "bytes")
+          |> call
+      end
 
       assert Plug.Exception.status(exception) == 416
     end
@@ -309,12 +307,11 @@ defmodule Plug.StaticTest do
       # Multiple byte ranges are not supported by Plug.Static at this time.
 
       exception = assert_raise Plug.Static.InvalidRangeError,
-                               "invalid range for static asset",
-        fn ->
-          conn(:get, "/public/fixtures/static.txt", [])
-            |> put_req_header("range", "bytes=0-1,3-4")
-            |> call
-        end
+                               "invalid range for static asset", fn ->
+        conn(:get, "/public/fixtures/static.txt", [])
+          |> put_req_header("range", "bytes=0-1,3-4")
+          |> call
+      end
 
       assert Plug.Exception.status(exception) == 416
     end

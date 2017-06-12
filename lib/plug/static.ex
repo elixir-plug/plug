@@ -225,15 +225,11 @@ defmodule Plug.Static do
 
   defp start_and_end([_, "", ""], _file_size), do: :invalid
 
-  defp start_and_end([_, range_start], file_size)
-    when is_binary(range_start)
-  do
+  defp start_and_end([_, range_start], file_size) when is_binary(range_start) do
     {to_integer(range_start), file_size - 1}
   end
 
-  defp start_and_end([_, "", tail_length], file_size)
-    when is_binary(tail_length)
-  do
+  defp start_and_end([_, "", tail_length], file_size) when is_binary(tail_length) do
     {file_size - to_integer(tail_length), file_size - 1}
   end
 
