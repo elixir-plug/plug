@@ -18,18 +18,24 @@ defmodule Plug.CSRFProtectionTest do
 
   def call(conn, csrf_plug_opts \\ []) do
     conn
-    |> do_call(csrf_plug_opts)
+    |> call_csrf_with_session(csrf_plug_opts)
     |> handle_token
   end
 
   def call_with_invalid_token(conn) do
     conn
-    |> do_call([])
+    |> call_csrf_with_session([])
     |> put_session("_csrf_token", "invalid")
     |> handle_token
   end
 
-  defp do_call(conn, csrf_plug_opts) do
+  def call_with_old_conn(conn, old_conn, csrf_plug_opts \\ []) do
+    conn
+    |> recycle_cookies(old_conn)
+    |> call(csrf_plug_opts)
+  end
+
+  defp call_csrf_with_session(conn, csrf_plug_opts) do
     conn.secret_key_base
     |> put_in(@secret)
     |> fetch_query_params
@@ -38,12 +44,6 @@ defmodule Plug.CSRFProtectionTest do
     |> put_session("key", "val")
     |> CSRFProtection.call(CSRFProtection.init(csrf_plug_opts))
     |> put_resp_content_type(conn.assigns[:content_type] || "text/html")
-  end
-
-  def call_with_old_conn(conn, old_conn, csrf_plug_opts \\ []) do
-    conn
-    |> recycle_cookies(old_conn)
-    |> call(csrf_plug_opts)
   end
 
   defp handle_token(conn) do
@@ -152,6 +152,19 @@ defmodule Plug.CSRFProtectionTest do
     conn = call_with_old_conn(conn(:get, "/?token=delete"), conn)
     refute conn.halted
     refute get_session(conn, "_csrf_token")
+  end
+
+  test "tokens are generated and deleted with custom key" do
+    conn = call(conn(:get, "/?token=get"), session_key: "my_csrf_token")
+    refute conn.halted
+    token = conn.resp_body
+    assert byte_size(token) == 56
+    refute get_session(conn, "_csrf_token")
+    assert get_session(conn, "my_csrf_token")
+
+    conn = call_with_old_conn(conn(:get, "/?token=delete"), conn, session_key: "my_csrf_token")
+    refute conn.halted
+    refute get_session(conn, "my_csrf_token")
   end
 
   test "tokens are ignored when invalid and deleted on demand" do
