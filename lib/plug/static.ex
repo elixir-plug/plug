@@ -195,7 +195,7 @@ defmodule Plug.Static do
     file_info(size: file_size) = file_info
 
     parsed_range = range
-      |> parse_range
+      |> parse_range()
       |> start_and_end(file_size)
       |> check_bounds(file_size)
 
