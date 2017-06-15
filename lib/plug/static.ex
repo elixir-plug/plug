@@ -262,6 +262,7 @@ defmodule Plug.Static do
         conn
         |> maybe_add_vary(gzip?, brotli?)
         |> put_resp_header("content-type", content_type)
+        |> put_resp_header("accept-ranges", "bytes")
         |> merge_resp_headers(headers)
         |> send_file(200, path)
         |> halt
