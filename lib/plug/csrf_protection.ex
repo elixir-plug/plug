@@ -41,6 +41,7 @@ defmodule Plug.CSRFProtection do
 
   ## Options
 
+    * `:session_key` - the name of the key in session to store the token under
     * `:with` - should be one of `:exception` or `:clear_session`. Defaults to
     `:exception`.
       * `:exception` -  for invalid requests, this plug will raise
@@ -126,10 +127,13 @@ defmodule Plug.CSRFProtection do
   @encoded_token_size 24
   @double_encoded_token_size 32
 
-  def init(opts), do: Keyword.get(opts, :with, :exception)
+  def init(opts) do
+    {Keyword.get(opts, :session_key, "_csrf_token"),
+     Keyword.get(opts, :with, :exception)}
+  end
 
-  def call(conn, mode) do
-    csrf_token = get_csrf_from_session(conn)
+  def call(conn, {session_key, mode}) do
+    csrf_token = get_csrf_from_session(conn, session_key)
     Process.put(:plug_unmasked_csrf_token, csrf_token)
 
     conn =
@@ -144,14 +148,14 @@ defmodule Plug.CSRFProtection do
           raise ArgumentError, "option :with should be one of :exception or :clear_session, got #{inspect mode}"
       end
 
-    register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, csrf_token))
+    register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, session_key, csrf_token))
   end
 
   ## Verification
 
-  defp get_csrf_from_session(conn) do
-    csrf_token = get_session(conn, "_csrf_token")
-    if csrf_token && byte_size(csrf_token) == @encoded_token_size do
+  defp get_csrf_from_session(conn, session_key) do
+    csrf_token = get_session(conn, session_key)
+    if is_binary(csrf_token) and byte_size(csrf_token) == @encoded_token_size do
       csrf_token
     end
   end
@@ -175,12 +179,12 @@ defmodule Plug.CSRFProtection do
 
   ## Before send
 
-  defp ensure_same_origin_and_csrf_token!(conn, csrf_token) do
+  defp ensure_same_origin_and_csrf_token!(conn, session_key, csrf_token) do
     if cross_origin_js?(conn) do
       raise InvalidCrossOriginRequestError
     end
 
-    ensure_csrf_token(conn, csrf_token)
+    ensure_csrf_token(conn, session_key, csrf_token)
   end
 
   defp cross_origin_js?(%Plug.Conn{method: "GET"} = conn),
@@ -198,11 +202,11 @@ defmodule Plug.CSRFProtection do
     "XMLHttpRequest" in get_req_header(conn, "x-requested-with")
   end
 
-  defp ensure_csrf_token(conn, csrf_token) do
+  defp ensure_csrf_token(conn, session_key, csrf_token) do
     Process.delete(:plug_masked_csrf_token)
     case Process.delete(:plug_unmasked_csrf_token) do
       ^csrf_token -> conn
-      current     -> put_session(conn, "_csrf_token", current)
+      current     -> put_session(conn, session_key, current)
     end
   end
 
