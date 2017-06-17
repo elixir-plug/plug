@@ -242,7 +242,7 @@ defmodule Plug.StaticTest do
     test "serves entire file if range is 0-" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
              |> put_req_header("range", "bytes=0-")
-             |> call
+             |> call()
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
@@ -252,7 +252,7 @@ defmodule Plug.StaticTest do
     test "serves requested range of file starting from byte 0" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
              |> put_req_header("range", "bytes=0-1")
-             |> call
+             |> call()
 
       assert conn.status == 206
       assert conn.resp_body == "HE"
@@ -264,7 +264,7 @@ defmodule Plug.StaticTest do
     test "serves the file with a custom content type" do
       conn = conn(:get, "/public/fixtures/manifest-file", [])
               |> put_req_header("range", "bytes=-1")
-              |> call
+              |> call()
 
       assert conn.status == 206
       assert conn.resp_body == "]"
@@ -276,7 +276,7 @@ defmodule Plug.StaticTest do
     test "serves tail of file if range is -n" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
              |> put_req_header("range", "bytes=-3")
-             |> call
+             |> call()
 
       assert conn.status == 206
       assert conn.resp_body == "LLO"
@@ -288,7 +288,7 @@ defmodule Plug.StaticTest do
     test "returns entire file if range does not contain either start or end" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
               |> put_req_header("range", "bytes=-")
-              |> call
+              |> call()
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
@@ -298,7 +298,7 @@ defmodule Plug.StaticTest do
     test "returns entire file if range contains non-integers" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
               |> put_req_header("range", "bytes=nope")
-              |> call
+              |> call()
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
@@ -308,7 +308,7 @@ defmodule Plug.StaticTest do
     test "returns entire file if range is missing =" do
       conn = conn(:get, "/public/fixtures/static.txt", [])
               |> put_req_header("range", "bytes")
-              |> call
+              |> call()
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
@@ -320,7 +320,7 @@ defmodule Plug.StaticTest do
 
       conn = conn(:get, "/public/fixtures/static.txt", [])
               |> put_req_header("range", "bytes=0-1,3-4")
-              |> call
+              |> call()
 
       assert conn.status == 200
       assert conn.resp_body == "HELLO"
