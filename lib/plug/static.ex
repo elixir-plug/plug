@@ -194,46 +194,43 @@ defmodule Plug.Static do
   defp serve_range({:ok, conn, file_info, path}, range, segments, options) do
     file_info(size: file_size) = file_info
 
-    parsed_range = range
-      |> parse_range()
-      |> start_and_end(file_size)
-      |> check_bounds(file_size)
-
-    case parsed_range do
-      {range_start, range_end} ->
-        send_range(conn, path, range_start, range_end, file_size, segments, options)
-      :entire_file ->
-        serve_static({:ok, conn, file_info, path}, segments, options)
+    with %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
+         {range_start, range_end} <- start_and_end(bytes, file_size),
+         :ok <- check_bounds(range_start, range_end, file_size) do
+      send_range(conn, path, range_start, range_end, file_size, segments, options)
+    else
+      _ -> serve_static({:ok, conn, file_info, path}, segments, options)
     end
   end
 
   defp serve_range({:error, conn}, _range, _segments, _options), do: conn
 
-  defp parse_range(range) when is_binary(range), do: parse_range(Plug.Conn.Utils.params(range))
-  defp parse_range(%{"bytes" => bytes}), do: String.split(bytes, "-")
-  defp parse_range(_), do: :entire_file
-
-  defp start_and_end(["", ""], _file_size), do: :entire_file
-  defp start_and_end([range_start, ""], file_size) when is_binary(range_start), do:
-    {to_integer(range_start), file_size - 1}
-  defp start_and_end(["", tail_length], file_size) when is_binary(tail_length), do:
-    {file_size - to_integer(tail_length), file_size - 1}
-  defp start_and_end([range_start, range_end], _file_size), do:
-    {to_integer(range_start), to_integer(range_end)}
-  defp start_and_end(_range, _file_size), do: :entire_file
-
-  defp check_bounds(:entire_file, _file_size), do: :entire_file
-  defp check_bounds({range_start, range_end}, file_size)
-       when range_start < 0 or range_end >= file_size or range_start > range_end, do:
-    :entire_file
-  defp check_bounds({0, range_end}, file_size) when range_end == file_size - 1, do:
-    :entire_file
-  defp check_bounds({range_start, range_end}, _file_size), do: {range_start, range_end}
-
-  defp to_integer(str) do
-    {num, _} = Integer.parse(str)
-    num
+  defp start_and_end("-" <> rest, file_size) do
+    case Integer.parse(rest) do
+      {last, ""} -> {file_size - last, file_size - 1}
+      _ -> :error
+    end
   end
+  defp start_and_end(range, file_size) do
+    case Integer.parse(range) do
+      {first, "-"} ->
+        {first, file_size - 1}
+      {first, "-" <> rest} ->
+        case Integer.parse(rest) do
+         {last, ""} -> {first, last}
+          _ -> :error
+        end
+      _ ->
+        :error
+    end
+  end
+
+  defp check_bounds(range_start, range_end, file_size)
+       when range_start < 0 or range_end >= file_size or range_start > range_end, do:
+    :error
+  defp check_bounds(0, range_end, file_size) when range_end == file_size - 1, do:
+    :error
+  defp check_bounds(_range_start, _range_end, _file_size), do: :ok
 
   defp send_range(conn, path, range_start, range_end, file_size, segments, options) do
     %{headers: headers, content_types: types} = options

@@ -261,6 +261,17 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
     end
 
+    test "serves entire file if range contains non-integers" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=00-FF")
+             |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+    end
+
     test "serves the file with a custom content type" do
       conn = conn(:get, "/public/fixtures/manifest-file", [])
               |> put_req_header("range", "bytes=-1")
