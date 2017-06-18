@@ -238,6 +238,201 @@ defmodule Plug.StaticTest do
     end
   end
 
+  describe "range request" do
+    test "serves entire file if range is 0-" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=0-")
+             |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "serves requested range of file starting from byte 0" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=0-1")
+             |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+    end
+
+    test "serves entire file if range contains non-integers" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=00-FF")
+             |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+    end
+
+    test "serves the file with a custom content type" do
+      conn = conn(:get, "/public/fixtures/manifest-file", [])
+              |> put_req_header("range", "bytes=-1")
+              |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "]"
+      assert get_resp_header(conn, "content-type") == ["application/vnd.manifest+json"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 1-1/2"]
+    end
+
+    test "serves tail of file if range is -n" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+             |> put_req_header("range", "bytes=-3")
+             |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "LLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 2-4/5"]
+    end
+
+    test "returns entire file if range does not contain either start or end" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=-")
+              |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "returns entire file if range contains non-integers" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=nope")
+              |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "returns entire file if range is missing =" do
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes")
+              |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "returns entire file if range contains multiple byte ranges" do
+      # Multiple byte ranges are not supported by Plug.Static at this time.
+
+      conn = conn(:get, "/public/fixtures/static.txt", [])
+              |> put_req_header("range", "bytes=0-1,3-4")
+              |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "performs etag negotiation" do
+      conn = conn(:get, "/public/fixtures/static.txt")
+             |> put_req_header("range", "bytes=0-1")
+             |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+
+      assert [etag] = get_resp_header(conn, "etag")
+      assert get_resp_header(conn, "cache-control")  == ["public"]
+
+      conn = conn(:get, "/public/fixtures/static.txt", nil)
+             |> put_req_header("range", "bytes=0-1")
+             |> put_req_header("if-none-match", etag)
+             |> call()
+      assert conn.status == 304
+      assert conn.resp_body == ""
+      assert get_resp_header(conn, "cache-control")  == ["public"]
+      assert get_resp_header(conn, "x-custom")  == []
+
+      assert get_resp_header(conn, "content-type")  == []
+      assert get_resp_header(conn, "etag") == [etag]
+    end
+
+    test "performs etag negotiation with user defined etag generation" do
+      opts =
+        [at: "/public",
+        from: Path.expand("..", __DIR__),
+        etag_generation: {EtagGenerator, :generate, ["x", "y"]}]
+
+      conn = conn(:get, "/public/fixtures/static.txt")
+             |> put_req_header("range", "bytes=0-1")
+             |> Plug.Static.call(Plug.Static.init(opts))
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+      assert [etag] = get_resp_header(conn, "etag")
+      assert etag == EtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y")
+      assert get_resp_header(conn, "cache-control")  == ["public"]
+
+      conn = conn(:get, "/public/fixtures/static.txt", nil)
+             |> put_req_header("range", "bytes=0-1")
+             |> put_req_header("if-none-match", etag)
+             |> Plug.Static.call(Plug.Static.init(opts))
+
+      assert conn.status == 304
+      assert conn.resp_body == ""
+      assert get_resp_header(conn, "cache-control")  == ["public"]
+      assert get_resp_header(conn, "content-type")  == []
+      assert get_resp_header(conn, "etag") == [etag]
+    end
+
+    test "sets the cache-control_for_vsn_requests when there's a query string" do
+      conn = conn(:get, "/public/fixtures/static.txt?vsn=bar")
+             |> put_req_header("range", "bytes=0-1")
+             |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-type")  == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+      assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+      assert get_resp_header(conn, "etag") == []
+      assert get_resp_header(conn, "x-custom")  == ["x-value"]
+    end
+
+    test "doesn't set cache control headers" do
+      opts =
+        [at: "/public",
+        from: Path.expand("..", __DIR__),
+        cache_control_for_vsn_requests: nil,
+        cache_control_for_etags: nil,
+        headers: %{"x-custom" => "x-value"}]
+
+      conn = conn(:get, "/public/fixtures/static.txt")
+             |> put_req_header("range", "bytes=0-1")
+             |> Plug.Static.call(Plug.Static.init(opts))
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+      assert get_resp_header(conn, "cache-control") == ["max-age=0, private, must-revalidate"]
+      assert get_resp_header(conn, "etag") == []
+      assert get_resp_header(conn, "x-custom")  == ["x-value"]
+    end
+  end
+
   defmodule FilterPlug do
     use Plug.Builder
 

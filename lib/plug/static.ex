@@ -156,8 +156,9 @@ defmodule Plug.Static do
       end
 
       path = path(from, segments)
-      encoding = file_encoding(conn, path, gzip?, brotli?)
-      serve_static(encoding, segments, options)
+      range = get_req_header(conn, "range")
+      encoding = file_encoding(conn, path, range, gzip?, brotli?)
+      serve_static(encoding, segments, range, options)
     else
       conn
     end
@@ -182,29 +183,86 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, options) do
+  defp serve_static({:ok, conn, file_info, path}, segments, range, options) do
     %{qs_cache: qs_cache, et_cache: et_cache, et_generation: et_generation,
-      gzip?: gzip?, brotli?: brotli?, headers: headers, content_types: types} = options
+      headers: headers, content_types: types} = options
     case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
         filename = List.last(segments)
         content_type = Map.get(types, filename) || MIME.from_path(filename)
 
         conn
-        |> maybe_add_vary(gzip?, brotli?)
         |> put_resp_header("content-type", content_type)
+        |> put_resp_header("accept-ranges", "bytes")
         |> merge_resp_headers(headers)
-        |> send_file(200, path)
-        |> halt
+        |> serve_range(file_info, path, range, options)
+
       {:fresh, conn} ->
         conn
         |> send_resp(304, "")
         |> halt
     end
   end
-
-  defp serve_static({:error, conn}, _segments, _options) do
+  defp serve_static({:error, conn}, _segments, _range, _options) do
     conn
+  end
+
+  defp serve_range(conn, file_info, path, [range], options) do
+    file_info(size: file_size) = file_info
+
+    with %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
+         {range_start, range_end} <- start_and_end(bytes, file_size),
+         :ok <- check_bounds(range_start, range_end, file_size) do
+      send_range(conn, path, range_start, range_end, file_size)
+    else
+      _ -> send_entire_file(conn, path, options)
+    end
+  end
+  defp serve_range(conn, _file_info, path, _range, options) do
+    send_entire_file(conn, path, options)
+  end
+
+  defp start_and_end("-" <> rest, file_size) do
+    case Integer.parse(rest) do
+      {last, ""} -> {file_size - last, file_size - 1}
+      _ -> :error
+    end
+  end
+  defp start_and_end(range, file_size) do
+    case Integer.parse(range) do
+      {first, "-"} ->
+        {first, file_size - 1}
+      {first, "-" <> rest} ->
+        case Integer.parse(rest) do
+         {last, ""} -> {first, last}
+          _ -> :error
+        end
+      _ ->
+        :error
+    end
+  end
+
+  defp check_bounds(range_start, range_end, file_size)
+       when range_start < 0 or range_end >= file_size or range_start > range_end, do:
+    :error
+  defp check_bounds(0, range_end, file_size) when range_end == file_size - 1, do:
+    :error
+  defp check_bounds(_range_start, _range_end, _file_size), do: :ok
+
+  defp send_range(conn, path, range_start, range_end, file_size) do
+    length = (range_end - range_start) + 1
+
+    conn
+    |> put_resp_header("content-range", "bytes #{range_start}-#{range_end}/#{file_size}")
+    |> send_file(206, path, range_start, length)
+    |> halt
+  end
+
+  defp send_entire_file(conn, path, %{gzip?: gzip?, brotli?: brotli?} = _options) do
+    conn
+    |> maybe_add_vary(gzip?, brotli?)
+    |> send_file(200, path)
+    |> halt
   end
 
   defp maybe_add_vary(conn, gzip?, brotli?) do
@@ -252,7 +310,11 @@ defmodule Plug.Static do
     end
   end
 
-  defp file_encoding(conn, path, gzip?, brotli?) do
+  defp file_encoding(conn, path, [_range], _gzip?, _brotli?) do
+    file_encoding(conn, path, nil, false, false)
+      # We do not support compression for range queries.
+  end
+  defp file_encoding(conn, path, _range, gzip?, brotli?) do
     cond do
       file_info = brotli? and accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
         {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path <> ".br"}
