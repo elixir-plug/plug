@@ -200,7 +200,7 @@ defmodule Plug.Static do
       {:fresh, conn} ->
         conn
         |> send_resp(304, "")
-        |> halt
+        |> halt()
     end
   end
   defp serve_static({:error, conn}, _segments, _range, _options) do
@@ -243,11 +243,15 @@ defmodule Plug.Static do
   end
 
   defp check_bounds(range_start, range_end, file_size)
-       when range_start < 0 or range_end >= file_size or range_start > range_end, do:
+       when range_start < 0 or range_end >= file_size or range_start > range_end do
     :error
-  defp check_bounds(0, range_end, file_size) when range_end == file_size - 1, do:
+  end
+  defp check_bounds(0, range_end, file_size) when range_end == file_size - 1 do
     :error
-  defp check_bounds(_range_start, _range_end, _file_size), do: :ok
+  end
+  defp check_bounds(_range_start, _range_end, _file_size) do
+    :ok
+  end
 
   defp send_range(conn, path, range_start, range_end, file_size) do
     length = (range_end - range_start) + 1
@@ -255,14 +259,14 @@ defmodule Plug.Static do
     conn
     |> put_resp_header("content-range", "bytes #{range_start}-#{range_end}/#{file_size}")
     |> send_file(206, path, range_start, length)
-    |> halt
+    |> halt()
   end
 
   defp send_entire_file(conn, path, %{gzip?: gzip?, brotli?: brotli?} = _options) do
     conn
     |> maybe_add_vary(gzip?, brotli?)
     |> send_file(200, path)
-    |> halt
+    |> halt()
   end
 
   defp maybe_add_vary(conn, gzip?, brotli?) do
@@ -311,8 +315,8 @@ defmodule Plug.Static do
   end
 
   defp file_encoding(conn, path, [_range], _gzip?, _brotli?) do
+    # We do not support compression for range queries.
     file_encoding(conn, path, nil, false, false)
-      # We do not support compression for range queries.
   end
   defp file_encoding(conn, path, _range, gzip?, brotli?) do
     cond do
