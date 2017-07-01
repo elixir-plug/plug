@@ -234,17 +234,9 @@ defmodule Plug.Parsers do
 
   defp merge_params(%{params: params, path_params: path_params} = conn, body_params) do
     params = make_empty_if_unfetched(params)
-    query_params = fetch_query_params(conn)
-    params = query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
-    %{conn | params: params, query_params: query_params, body_params: body_params}
-  end
-
-  defp fetch_query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}) do
-    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
-    Plug.Conn.Query.decode(query_string)
-  end
-  defp fetch_query_params(%{query_params: query_params}) do
-    query_params
+    conn = Plug.Conn.fetch_query_params(conn)
+    params = conn.query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
+    %{conn | params: params, body_params: body_params}
   end
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}

@@ -355,7 +355,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "https" do
     {:ok, _pid} = Plug.Adapters.Cowboy.https __MODULE__, [], @https_options
-    ssl_options = [ssl_options: [cacertfile: @https_options[:certfile]]]
+    ssl_options = [ssl_options: [cacertfile: @https_options[:certfile], server_name_indication: 'localhost']]
     assert {:ok, 200, _headers, client} = :hackney.get("https://127.0.0.1:8002/https", [], "", ssl_options)
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
