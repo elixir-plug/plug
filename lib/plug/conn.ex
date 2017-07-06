@@ -191,7 +191,7 @@ defmodule Plug.Conn do
               state:           state,
               status:          int_status}
 
-  defstruct adapter:         {Plug.Conn, nil},
+  defstruct adapter:         {Plug.MissingAdapter, nil},
             assigns:         %{},
             before_send:     [],
             body_params:     %Unfetched{aspect: :body_params},
