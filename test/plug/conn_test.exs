@@ -933,4 +933,10 @@ defmodule Plug.ConnTest do
     assert {:ok, conn} == Plug.Conn.chunk(conn, [[]])
     assert {:ok, conn} == Plug.Conn.chunk(conn, [["", ""]])
   end
+
+  test "default adapter doesn't cause confusing errors for newbies" do
+    assert_raise UndefinedFunctionError, ~r/Plug\.MissingAdapter\.send_resp\/4/, fn ->
+      Conn.send_resp(%Plug.Conn{}, 200, "Hello World")
+    end
+  end
 end
