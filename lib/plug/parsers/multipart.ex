@@ -34,7 +34,7 @@ defmodule Plug.Parsers.MULTIPART do
 
     # The read length is now our effective length per call.
     {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
-    opts = [read: read_length, read_length: read_length] ++ opts
+    opts = [length: read_length, read_length: read_length] ++ opts
 
     # The header options are handled indidually.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
