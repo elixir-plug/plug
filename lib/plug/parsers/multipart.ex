@@ -32,6 +32,10 @@ defmodule Plug.Parsers.MULTIPART do
     # to eagerly read the body on the limit value.
     {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
 
+    # The read length is now our effective length per call.
+    {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
+    opts = [read: read_length, read_length: read_length] ++ opts
+
     # The header options are handled indidually.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
 

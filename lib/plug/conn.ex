@@ -774,8 +774,8 @@ defmodule Plug.Conn do
 
   ## Options
 
-    * `:length` - sets the maximum number of bytes to read from the body for
-      each chunk, defaults to 8_000_000 bytes
+    * `:length` - sets the maximum number of bytes to read from the body on
+      every call, defaults to 8_000_000 bytes
     * `:read_length` - sets the amount of bytes to read at one time from the
       underlying socket to fill the chunk, defaults to 1_000_000 bytes
     * `:read_timeout` - sets the timeout for each socket read, defaults to
@@ -864,6 +864,8 @@ defmodule Plug.Conn do
   def read_part_body(%{adapter: {adapter, state}} = conn, opts) do
     case init_multipart(conn) do
       {boundary, buffer} ->
+        # Note we will read the whole length from the socket
+        # and then break it apart as necessary.
         length = Keyword.get(opts, :length, 8_000_000)
         {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
         read_part_body(conn, data, "", length, boundary, adapter, state, opts)
@@ -879,10 +881,12 @@ defmodule Plug.Conn do
     case :plug_multipart.parse_body(data, boundary) do
       {:ok, body} ->
         {_, next, state} = next_multipart(adapter, state, opts)
-        read_part_body(conn, next, acc <> body, length, boundary, adapter, state, opts)
+        read_part_body(conn, next, prepend_unless_empty(acc, body),
+                       length, boundary, adapter, state, opts)
       {:ok, body, rest} ->
         {_, next, state} = next_multipart(adapter, state, opts)
-        read_part_body(conn, rest <> next, acc <> body, length, boundary, adapter, state, opts)
+        read_part_body(conn, prepend_unless_empty(rest, next), prepend_unless_empty(acc, body),
+                       length, boundary, adapter, state, opts)
       :done ->
         {:ok, acc, store_multipart(conn, {boundary, ""}, adapter, state)}
       {:done, body} ->
@@ -891,6 +895,10 @@ defmodule Plug.Conn do
         {:ok, acc <> body, store_multipart(conn, {boundary, rest}, adapter, state)}
     end
   end
+
+  @compile {:inline, prepend_unless_empty: 2}
+  defp prepend_unless_empty("", body), do: body
+  defp prepend_unless_empty(acc, body), do: acc <> body
 
   defp init_multipart(%{private: %{plug_multipart: plug_multipart}}) do
     plug_multipart
