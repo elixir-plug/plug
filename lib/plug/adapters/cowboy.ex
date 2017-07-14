@@ -4,35 +4,35 @@ defmodule Plug.Adapters.Cowboy do
 
   ## Options
 
-  * `:ip` - the ip to bind the server to.
-    Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4
-    or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6.
+    * `:ip` - the ip to bind the server to.
+      Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4
+      or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6.
 
-  * `:port` - the port to run the server.
-    Defaults to 4000 (http) and 4040 (https).
+    * `:port` - the port to run the server.
+      Defaults to 4000 (http) and 4040 (https).
 
-  * `:acceptors` - the number of acceptors for the listener.
-    Defaults to 100.
+    * `:acceptors` - the number of acceptors for the listener.
+      Defaults to 100.
 
-  * `:max_connections` - max number of connections supported.
-    Defaults to `16_384`.
+    * `:max_connections` - max number of connections supported.
+      Defaults to `16_384`.
 
-  * `:dispatch` - manually configure Cowboy's dispatch.
-    If this option is used, the given plug won't be initialized
-    nor dispatched to (and doing so becomes the user's responsibility).
+    * `:dispatch` - manually configure Cowboy's dispatch.
+      If this option is used, the given plug won't be initialized
+      nor dispatched to (and doing so becomes the user's responsibility).
 
-  * `:ref` - the reference name to be used.
-    Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
-    This is the value that needs to be given on shutdown.
+    * `:ref` - the reference name to be used.
+      Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
+      This is the value that needs to be given on shutdown.
 
-  * `:compress` - Cowboy will attempt to compress the response body.
-    Defaults to false.
+    * `:compress` - Cowboy will attempt to compress the response body.
+      Defaults to false.
 
-  * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
-    Defaults to 5000ms.
+    * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
+      Defaults to 5000ms.
 
-  * `:protocol_options` - Specifies remaining protocol options,
-    see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
+    * `:protocol_options` - Specifies remaining protocol options,
+      see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
 
   All other options are given to the underlying transport.
   """
@@ -114,6 +114,10 @@ defmodule Plug.Adapters.Cowboy do
   @doc """
   Returns a child spec to be supervised by your application.
 
+  This function returns the old child specs used by early OTP
+  and Elixir versions. See `child_spec/1` for the Elixir v1.5
+  based child specifications.
+
   ## Example
 
   Presuming your Plug module is named `MyRouter` you can add it to your
@@ -141,6 +145,40 @@ defmodule Plug.Adapters.Cowboy do
       :https -> :ranch_ssl
     end
     :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
+  end
+
+  @doc """
+  A function for starting a Cowboy server under Elixir v1.5 supervisors.
+
+  It expects three options:
+
+    * `:scheme` - either `:http` or `:https`
+    * `:plug` - such as MyPlug or {MyPlug, plug_opts}
+    * `:options` - the server options as specified in the module documentation
+
+  ## Examples
+
+      children = [
+        {Plug.Adapters.Cowboy, scheme: :http, plug: MyApp, options: [port: 4040]}
+      ]
+
+      Supervisor.start_link(children, strategy: :one_for_one)
+
+  """
+  def child_spec(opts) do
+    scheme = Keyword.fetch!(opts, :scheme)
+    cowboy_opts = Keyword.fetch!(opts, :options)
+    {plug, plug_opts} =
+      case Keyword.fetch!(opts, :plug) do
+        {_, _} = tuple -> tuple
+        plug -> {plug, []}
+      end
+
+    {id, start, restart, shutdown, type, modules} =
+      child_spec(scheme, plug, plug_opts, cowboy_opts)
+
+    %{id: id, start: start, restart: restart,
+      shutdown: shutdown, type: type, modules: modules}
   end
 
   ## Helpers
