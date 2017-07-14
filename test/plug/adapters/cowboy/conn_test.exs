@@ -1,8 +1,9 @@
 defmodule Plug.Adapters.Cowboy.ConnTest do
   use ExUnit.Case, async: true
 
-  alias  Plug.Conn
+  alias Plug.Conn
   import Plug.Conn
+  import ExUnit.CaptureLog
 
   ## Cowboy setup for testing
   #
@@ -101,6 +102,14 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
 
   test "stores request headers" do
     assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
+  end
+
+  test "fails on large headers" do
+    assert capture_log(fn ->
+      cookie = "bar=" <> String.duplicate("a", 8_000_000)
+      assert {400, _, _} = request :get, "/headers", [{"cookie", cookie}]
+      assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
+    end) =~ "Cowboy returned 400 and there are no headers in the connection"
   end
 
   def send_200(conn) do

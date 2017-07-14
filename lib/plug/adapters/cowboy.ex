@@ -37,6 +37,8 @@ defmodule Plug.Adapters.Cowboy do
   All other options are given to the underlying transport.
   """
 
+  require Logger
+
   # Made public with @doc false for testing.
   @doc false
   def args(scheme, plug, opts, cowboy_options) do
@@ -217,9 +219,48 @@ defmodule Plug.Adapters.Cowboy do
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
-    protocol_options = [env: [dispatch: dispatch]] ++ protocol_options ++ extra_options
+    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(protocol_options) ++ extra_options
 
     [ref, acceptors, non_keyword_opts ++ transport_options, protocol_options]
+  end
+
+  defp add_on_response(protocol_options) do
+    case Keyword.pop(protocol_options, :onresponse) do
+      {nil, _} ->
+        [onresponse: &onresponse/4] ++ protocol_options
+      {onresponse, protocol_options} ->
+        [onresponse: fn status, headers, body, request ->
+          onresponse(status, headers, body, request)
+          onresponse.(status, headers, body, request)
+         end] ++ protocol_options
+    end
+  end
+
+  defp onresponse(status, _headers, _body, request) do
+    if status == 400 and empty_headers?(request) do
+      Logger.error """
+      Cowboy returned 400 and there are no headers in the connection.
+
+      This may happen if Cowboy is unable to parse the request headers,
+      for example, because there are too many headers or the header name
+      or value are too large (such as a large cookie).
+
+      You can customize those values when configuring your http/https
+      server. The configuration option and default values are shown below:
+
+          protocol_options: [
+            max_header_name_length: 64,
+            max_header_value_length: 4096,
+            max_headers: 100
+          ]
+      """
+    end
+    request
+  end
+
+  defp empty_headers?(request) do
+    {headers, _} = :cowboy_req.headers(request)
+    headers == []
   end
 
   defp build_ref(plug, scheme) do
