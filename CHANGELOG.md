@@ -1,20 +1,27 @@
 ## Changelog
 
-## v1.4.0-dev
+## v1.4.0-rc.0
 
 This version requires Elixir v1.3 and deprecates unsafe Plug.Crypto APIs.
 
 * Enhancements
+  * Log error if Cowboy discards headers due to protocol limits
+  * Add `Plug.Conn.read_part_headers/2` and `Plug.Conn.read_part_body/2` for built-in multipart parsing. This also adds support for multipart requests in tests
   * Introduce `Plug.HTML.html_escape_to_iodata/1`
-  * Add HSTS 'preload' flag to `Plug.SSL` options
+  * Add HSTS "preload" flag to `Plug.SSL` options
   * Add support for custom content-types in `Plug.Static`
+  * Support range request queries in `Plug.Static` to support resumable downloads and videos
+  * Allow custom key in `Plug.CSRFProtection`
   * Raise `Plug.AlreadyChunkedError` when setting headers on chunked conn
+  * Perform `Exception.blame/3` and argument listing when possible on Plug.Debugger
+  * Add `:set_file` state in Plug.Conn, used by `send_file/3`
 
 * Bug fixes
   * Fix issue with file uploads containing `;`s in filenames
   * Ensure `plug.init/1` is called in `Plug.Router.forward`
   * Do not send empty iodata chunks
   * Do not convert throws and exits into errors in `Plug.Conn.WrapperError`
+  * Increase randomness in `Plug.Upload.path/0`
 
 ## v1.3.5
 
