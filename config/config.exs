@@ -6,3 +6,5 @@ if Mix.env == :test do
     451 => "Unavailable For Legal Reasons"
   }
 end
+
+config :cowboy, omg: 1

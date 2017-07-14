@@ -107,7 +107,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   test "fails on large headers" do
     assert capture_log(fn ->
       cookie = "bar=" <> String.duplicate("a", 8_000_000)
-      assert {400, _, _} = request :get, "/headers", [{"cookie", cookie}]
+      response = request :get, "/headers", [{"cookie", cookie}]
+      assert match?({400, _, _}, response) or match?({:error, :closed}, response)
       assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
     end) =~ "Cowboy returned 400 and there are no headers in the connection"
   end
