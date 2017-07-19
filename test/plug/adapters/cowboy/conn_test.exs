@@ -329,6 +329,43 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
       ~s("no match of right hand side value: false")
   end
 
+  describe "downcasing headers to cowboy headers overriding work" do
+    # https://github.com/ninenines/cowboy/issues/824
+
+    def check_overriding_header_send_resp(conn) do
+      conn
+      |> put_resp_header("Server", "myserver")
+      |> send_resp(200, "OK")
+    end
+
+    test "send_resp/3" do
+      {200, headers, _} = request :get, "/check_overriding_header_send_resp"
+      assert Enum.count(headers, fn { name, _ } -> String.downcase(name) == "server" end) == 1
+    end
+
+    def check_overriding_header_send_file(conn) do
+      conn
+      |> put_resp_header("Server", "myserver")
+      |> send_file(200, __ENV__.file)
+    end
+
+    test "send_file/5" do
+      {200, headers, _} = request :get, "/check_overriding_header_send_file"
+      assert Enum.count(headers, fn { name, _ } -> String.downcase(name) == "server" end) == 1
+    end
+
+    def check_overriding_header_send_chunked(conn) do
+      conn
+      |> put_resp_header("Server", "myserver")
+      |> send_chunked(200)
+    end
+
+    test "send_chunked/2" do
+      {200, headers, _} = request :get, "/check_overriding_header_send_chunked"
+      assert Enum.count(headers, fn { name, _ } -> String.downcase(name) == "server" end) == 1
+    end
+  end
+
   def https(conn) do
     assert conn.scheme == :https
     send_resp(conn, 200, "OK")
