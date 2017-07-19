@@ -30,7 +30,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   def send_resp(req, status, headers, body) do
     status = Integer.to_string(status) <> " " <> Plug.Conn.Status.reason_phrase(status)
-    {:ok, req} = :cowboy_req.reply(status, headers, body, req)
+    {:ok, req} = :cowboy_req.reply(status, normalize_headers(headers), body, req)
     {:ok, nil, req}
   end
 
@@ -45,12 +45,12 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
     body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
 
-    {:ok, req} = :cowboy_req.reply(status, headers, :cowboy_req.set_resp_body_fun(length, body_fun, req))
+    {:ok, req} = :cowboy_req.reply(status, normalize_headers(headers), :cowboy_req.set_resp_body_fun(length, body_fun, req))
     {:ok, nil, req}
   end
 
   def send_chunked(req, status, headers) do
-    {:ok, req} = :cowboy_req.chunked_reply(status, headers, req)
+    {:ok, req} = :cowboy_req.chunked_reply(status, normalize_headers(headers), req)
     {:ok, nil, req}
   end
 
@@ -92,6 +92,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
     for segment <- segments, segment != "", do: segment
+  end
+
+  defp normalize_headers(headers) do
+    Enum.map(headers, fn { name, val } -> { String.downcase(name), val } end)
   end
 
   ## Multipart
