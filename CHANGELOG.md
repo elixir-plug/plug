@@ -1,6 +1,6 @@
 ## Changelog
 
-## v1.4.0-rc.0
+## v1.4.0
 
 This version requires Elixir v1.3 and deprecates unsafe Plug.Crypto APIs.
 
