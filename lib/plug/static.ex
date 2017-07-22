@@ -14,9 +14,16 @@ defmodule Plug.Static do
       application name and the directory to serve assets from (besides
       `priv/static`).
 
-  The preferred form is to use `:from` with an atom or tuple,
-  since it will make your application independent from the
-  starting directory.
+  The preferred form is to use `:from` with an atom or tuple, since
+  it will make your application independent from the starting directory.
+  For example, if you pass:
+
+      plug Plug.Static, from: "priv/app/path"
+
+  Plug.Static will be unable to serve assets if you build releases
+  or if you change the current directory. Instead do:
+
+      plug Plug.Static, from: {:app_name, "priv/app/path"}
 
   If a static asset cannot be found, `Plug.Static` simply forwards
   the connection to the rest of the pipeline.
