@@ -16,13 +16,20 @@ defmodule Plug.Adapters.Test.ConnTest do
 
   test "custom params" do
     conn = conn(:get, "/", a: "b", c: [%{d: "e"}])
+    assert conn.body_params == %{"a" => "b", "c" => [%{"d" => "e"}]}
     assert conn.params == %{"a" => "b", "c" => [%{"d" => "e"}]}
 
     conn = conn(:get, "/", a: "b", c: [d: "e"])
+    assert conn.body_params == %{"a" => "b", "c" => %{"d" => "e"}}
     assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}}
 
     conn = conn(:post, "/?foo=bar", %{foo: "baz"})
+    assert conn.body_params == %{"foo" => "baz"}
     assert conn.params == %{"foo" => "baz"}
+
+    conn = conn(:post, "/?foo=bar", %{biz: "baz"})
+    assert conn.body_params == %{"biz" => "baz"}
+    assert conn.params == %{"foo" => "bar", "biz" => "baz"}
   end
 
   test "custom struct params" do
