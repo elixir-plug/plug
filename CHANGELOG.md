@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.4.1
+
+* Bug fixes
+  * Ensure body_params is properly filled during test
+
 ## v1.4.0
 
 This version requires Elixir v1.3 and deprecates unsafe Plug.Crypto APIs.
