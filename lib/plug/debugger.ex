@@ -230,8 +230,8 @@ defmodule Plug.Debugger do
     {file, line} = {to_string(location[:file] || "nofile"), location[:line]}
 
     doc = module && get_doc(module, fun, arity, app)
-    source = module && get_source(module, file)
     clauses = module && get_clauses(module, fun, args)
+    source  = get_source(module, file)
     context = get_context(root, app)
     snippet = get_snippet(source, line)
 
@@ -329,7 +329,7 @@ defmodule Plug.Debugger do
     cond do
       File.regular?(file) ->
         file
-      source = Code.ensure_loaded?(module) && module.module_info(:compile)[:source] ->
+      source = module && Code.ensure_loaded?(module) && module.module_info(:compile)[:source] ->
         to_string(source)
       true ->
         file
