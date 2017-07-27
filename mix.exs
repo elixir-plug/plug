@@ -15,7 +15,7 @@ defmodule Plug.Mixfile do
      xref: [exclude: [:ranch, :cowboy, :cowboy_req, :cowboy_router]],
      docs: [extras: ["README.md"], main: "readme",
             source_ref: "v#{@version}",
-            source_url: "https://github.com/elixir-lang/plug"]]
+            source_url: "https://github.com/elixir-plug/plug"]]
   end
 
   # Configuration for the OTP application
@@ -36,6 +36,6 @@ defmodule Plug.Mixfile do
   defp package do
     %{licenses: ["Apache 2"],
       maintainers: ["José Valim"],
-      links: %{"GitHub" => "https://github.com/elixir-lang/plug"}}
+      links: %{"GitHub" => "https://github.com/elixir-plug/plug"}}
   end
 end
