@@ -65,8 +65,8 @@ You can use plug in your projects in two steps:
 
 | Branch | Support                  |
 | ------ | ------------------------ |
-| v1.4   | In development (master)  |
-| v1.3   | Bug fixes                |
+| v1.4   | Bug fixes                |
+| v1.3   | Security patches only    |
 | v1.2   | Security patches only    |
 | v1.1   | Security patches only    |
 | v1.0   | Unsupported from 05/2017 |

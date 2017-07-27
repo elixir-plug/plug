@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.4.2
+
+* Bug fixes
+  * Ensure Plug.Debugger does not fail to handle undefined function errors on nil
+
 ## v1.4.1
 
 * Bug fixes
