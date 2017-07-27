@@ -23,6 +23,11 @@ defmodule Plug.DebuggerTest do
       end
     end
 
+    get "/nil" do
+      _ = conn
+      nil.id
+    end
+
     get "/soft_boom" do
       _ = conn
       raise Exception
@@ -115,6 +120,23 @@ defmodule Plug.DebuggerTest do
     assert List.keyfind(headers, "content-type", 0) ==
            {"content-type", "text/html; charset=utf-8"}
     assert body =~ "<title>Plug.DebuggerTest.Exception at GET /send_and_wrapped</title>"
+  end
+
+  test "call/2 is overridden and handles errors without sources" do
+    conn = put_req_header(conn(:get, "/nil"), "accept", "text/html")
+
+    capture_log fn ->
+      assert_raise UndefinedFunctionError, fn ->
+        Router.call(conn, [])
+      end
+    end
+
+    assert_received {:plug_conn, :sent}
+    {status, headers, body} = sent_resp(conn)
+    assert status == 500
+    assert List.keyfind(headers, "content-type", 0) ==
+           {"content-type", "text/html; charset=utf-8"}
+    assert body =~ "<title>UndefinedFunctionError at GET /nil</title>"
   end
 
   defp render(conn, opts, fun) do
