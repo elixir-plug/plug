@@ -167,9 +167,9 @@ defmodule Plug.Upload do
   end
 
   def terminate(_reason, _state) do
-    :ets.foldl(@table, :ok, fn {_pid, _tmp, paths} ->
+    :ets.foldl(fn({_pid, _tmp, paths}, _) ->
       delete_paths(paths)
-    end)
+    end, :ok, @table)
     :ok
   end
 
