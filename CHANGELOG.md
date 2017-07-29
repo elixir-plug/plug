@@ -1,5 +1,11 @@
 ## Changelog
 
+## v1.4.3
+
+* Bug fixes
+  * Also validate headers on `merge_resp_headers/2`
+  * Ensure `Plug.Upload` does not crash on termination
+
 ## v1.4.2
 
 * Bug fixes
