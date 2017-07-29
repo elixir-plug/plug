@@ -23,4 +23,10 @@ defmodule Plug.UploadTest do
         refute File.exists?(path)
     end
   end
+
+  test "terminate removes all files" do
+    {:ok, path} = Plug.Upload.random_file("sample")
+    :ok = Plug.Upload.terminate(:shutdown, [])
+    refute File.exists?(path)
+  end
 end
