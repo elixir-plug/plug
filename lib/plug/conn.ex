@@ -658,11 +658,12 @@ defmodule Plug.Conn do
     conn
   end
 
-  def merge_resp_headers(%Conn{resp_headers: current} = conn, headers) do
+  def merge_resp_headers(%Conn{resp_headers: current, adapter: adapter} = conn, headers) do
     headers =
-      Enum.reduce headers, current, fn
-        {key, value}, acc when is_binary(key) and is_binary(value) ->
-          List.keystore(acc, key, 0, {key, value})
+      Enum.reduce headers, current, fn {key, value}, acc when is_binary(key) and is_binary(value) ->
+        validate_header_key_if_test!(adapter, key)
+        validate_header_value!(key, value)
+        List.keystore(acc, key, 0, {key, value})
       end
     %{conn | resp_headers: headers}
   end

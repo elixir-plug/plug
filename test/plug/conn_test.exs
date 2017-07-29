@@ -409,6 +409,16 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "merge_resp_header/3 raises when invalid header value given" do
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
+      merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\rBAR"}])
+    end
+
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
+      merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\n\nBAR"}])
+    end
+  end
+
   test "merge_resp_headers/3" do
     conn1 = merge_resp_headers(conn(:head, "/foo"), %{"x-foo" => "bar", "x-bar" => "baz"})
     assert get_resp_header(conn1, "x-foo") == ["bar"]
