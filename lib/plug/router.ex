@@ -221,7 +221,10 @@ defmodule Plug.Router do
   end
 
   @doc false
-  defmacro __before_compile__(_env) do
+  defmacro __before_compile__(env) do
+    unless Module.defines?(env.module, {:do_match, 4}) do
+      raise "no routes defined in module #{inspect env.module} using Plug.Router"
+    end
     quote do
       import Plug.Router, only: []
     end
