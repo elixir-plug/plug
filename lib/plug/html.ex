@@ -17,7 +17,7 @@ defmodule Plug.HTML do
   """
   @spec html_escape(String.t) :: String.t
   def html_escape(data) when is_binary(data) do
-    IO.iodata_to_binary(to_iodata(data, 0, data))
+    IO.iodata_to_binary(to_iodata(data, 0, data, []))
   end
 
   @doc ~S"""
@@ -27,49 +27,50 @@ defmodule Plug.HTML do
       "foo"
 
       iex> Plug.HTML.html_escape_to_iodata("<foo>")
-      ["&lt;", "foo", "&gt;" | ""]
+      [[[] | "&lt;"], "foo" | "&gt;"]
 
       iex> Plug.HTML.html_escape_to_iodata("quotes: \" & \'")
-      ["quotes: ", "&quot;", " ", "&amp;", " ", "&#39;" | ""]
+      [[[[], "quotes: " | "&quot;"], " " | "&amp;"], " " | "&#39;"]
 
   """
   @spec html_escape_to_iodata(String.t) :: iodata
   def html_escape_to_iodata(data) when is_binary(data) do
-    to_iodata(data, 0, data)
+    to_iodata(data, 0, data, [])
   end
 
-  @compile {:inline, escape_char: 1}
-
-  @escapes [
+  escapes = [
     {?<, "&lt;"},
     {?>, "&gt;"},
     {?&, "&amp;"},
     {?", "&quot;"},
     {?', "&#39;"}
   ]
-  @escapable Enum.map(@escapes, &elem(&1, 0))
 
-  defp to_iodata(<<char, rest::binary>>, len, original) when char in @escapable do
-    escape_char(rest, len, original, char)
+  for {match, insert} <- escapes do
+    defp to_iodata(<<unquote(match), rest::bits>>, skip, original, acc) do
+      to_iodata(rest, skip + 1, original, [acc | unquote(insert)])
+    end
+  end
+  defp to_iodata(<<_char, rest::bits>>, skip, original, acc) do
+    to_iodata(rest, skip, original, acc, 1)
+  end
+  defp to_iodata(<<>>, _skip, _original, acc) do
+    acc
   end
 
-  defp to_iodata(<<_, rest::binary>>, len, original) do
-    to_iodata(rest, len + 1, original)
+  for {match, insert} <- escapes do
+    defp to_iodata(<<unquote(match), rest::bits>>, skip, original, acc, len) do
+      part = binary_part(original, skip, len)
+      to_iodata(rest, skip + len + 1, original, [acc, part | unquote(insert)])
+    end
   end
-
-  defp to_iodata(<<>>, _length, original) do
+  defp to_iodata(<<_char, rest::bits>>, skip, original, acc, len) do
+    to_iodata(rest, skip, original, acc, len + 1)
+  end
+  defp to_iodata(<<>>, 0, original, _acc, _len) do
     original
   end
-
-  defp escape_char(<<rest::binary>>, 0, _original, char) do
-    [escape_char(char) | to_iodata(rest, 0, rest)]
-  end
-
-  defp escape_char(<<rest::binary>>, len, original, char) do
-    [binary_part(original, 0, len), escape_char(char) | to_iodata(rest, 0, rest)]
-  end
-
-  for {match, insert} <- @escapes do
-    defp escape_char(unquote(match)), do: unquote(insert)
+  defp to_iodata(<<>>, skip, original, acc, len) do
+    [acc | binary_part(original, skip, len)]
   end
 end
