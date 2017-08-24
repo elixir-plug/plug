@@ -127,6 +127,28 @@ defmodule Plug.ConnTest do
     assert conn(:get, "/foo//bar//").request_path == "/foo//bar//"
   end
 
+  test "request_url/1" do
+    conn = conn(:get, "http://example.com/foo?a=b&c=d")
+    assert request_url(conn) == "http://example.com/foo?a=b&c=d"
+
+    conn = conn(:get, "https://example.com/no_query_string")
+    assert request_url(conn) == "https://example.com/no_query_string"
+  end
+
+  test "request_url/1 hides the default port number" do
+    conn = conn(:get, "http://example.com:80/")
+    assert request_url(conn) == "http://example.com/"
+
+    conn = conn(:get, "http://example.com:1234/")
+    assert request_url(conn) == "http://example.com:1234/"
+
+    conn = conn(:get, "https://example.com:443/")
+    assert request_url(conn) == "https://example.com/"
+
+    conn = conn(:get, "https://example.com:1234/")
+    assert request_url(conn) == "https://example.com:1234/"
+  end
+
   test "status, resp_headers and resp_body" do
     conn = conn(:get, "/foo")
     assert conn.status == nil
