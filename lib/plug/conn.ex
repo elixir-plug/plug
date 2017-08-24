@@ -1222,7 +1222,7 @@ defmodule Plug.Conn do
 
   defp request_url_port(:http, 80), do: ""
   defp request_url_port(:https, 443), do: ""
-  defp request_url_port(_, port), do: [?:, to_string(port)]
+  defp request_url_port(_, port), do: [?:, Integer.to_string(port)]
 
   defp request_url_qs(""), do: ""
   defp request_url_qs(qs), do: [??, qs]
