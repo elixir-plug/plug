@@ -136,6 +136,13 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
+    fallback =
+      case Keyword.get(opts, :fallback) do
+        nil -> nil
+        fallback when is_binary(fallback) -> path(from, [fallback])
+        _ -> raise ArgumentError, ":fallback must be a binary or nil"
+      end
+
     %{
       gzip?: Keyword.get(opts, :gzip, false),
       brotli?: Keyword.get(opts, :brotli, false),
@@ -146,16 +153,17 @@ defmodule Plug.Static do
       et_generation: Keyword.get(opts, :etag_generation, nil),
       headers: Keyword.get(opts, :headers, %{}),
       content_types: Keyword.get(opts, :content_types, %{}),
+      fallback: fallback,
       from: from,
       at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split()
     }
   end
 
-  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?} = options)
+  def call(conn = %Conn{method: meth}, %{at: at, only: only, prefix: prefix, from: from, fallback: fallback, gzip?: gzip?, brotli?: brotli?} = options)
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
-    if allowed?(only, prefix, segments) do
+    if allowed?(only, prefix, segments) || (is_binary(fallback) && List.starts_with?(conn.path_info, at)) do
       segments = Enum.map(segments, &uri_decode/1)
 
       if invalid_path?(segments) do
@@ -164,8 +172,16 @@ defmodule Plug.Static do
 
       path = path(from, segments)
       range = get_req_header(conn, "range")
-      encoding = file_encoding(conn, path, range, gzip?, brotli?)
-      serve_static(encoding, segments, range, options)
+
+      case file_encoding(conn, path, range, gzip?, brotli?) do
+        {:error, conn} when is_binary(fallback) ->
+          case file_encoding(conn, fallback, range, gzip?, brotli?) do
+            {:error, conn} -> conn
+            encoding -> serve_static(encoding, Path.basename(fallback), range, options)
+          end
+        {:error, conn} -> conn
+        encoding -> serve_static(encoding, List.last(segments), range, options)
+      end
     else
       conn
     end
@@ -190,12 +206,11 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, range, options) do
+  defp serve_static({:ok, conn, file_info, path}, filename, range, options) do
     %{qs_cache: qs_cache, et_cache: et_cache, et_generation: et_generation,
       headers: headers, content_types: types} = options
     case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
-        filename = List.last(segments)
         content_type = Map.get(types, filename) || MIME.from_path(filename)
 
         conn
@@ -209,9 +224,6 @@ defmodule Plug.Static do
         |> send_resp(304, "")
         |> halt()
     end
-  end
-  defp serve_static({:error, conn}, _segments, _range, _options) do
-    conn
   end
 
   defp serve_range(conn, file_info, path, [range], options) do

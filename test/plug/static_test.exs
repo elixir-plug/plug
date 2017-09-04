@@ -468,4 +468,43 @@ defmodule Plug.StaticTest do
     conn = FilterPlug.call(conn(:get, "/file-deadbeef.txt"), [])
     assert conn.status == 200
   end
+
+  describe "fallback" do
+    defmodule FallbackPlug do
+      use Plug.Builder
+
+      plug Plug.Static,
+        at: "/public",
+        from: Path.expand("..", __DIR__),
+        fallback: "fixtures/static/file.txt"
+
+      plug :passthrough
+
+      defp passthrough(conn, _), do:
+        Plug.Conn.send_resp(conn, 404, "Passthrough")
+    end
+
+    test "serves existing files" do
+      conn = FallbackPlug.call(conn(:get, "/public/fixtures/static.txt"), [])
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "serves fallback on non existing files" do
+      conn = FallbackPlug.call(conn(:get, "/public/whatever"), [])
+
+      assert conn.status == 200
+      assert conn.resp_body == "GOOD BYE\n"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
+    test "passes through on other paths" do
+      conn = FallbackPlug.call(conn(:get, "/another/whatever"), [])
+
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+  end
 end
