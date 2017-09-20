@@ -140,6 +140,14 @@ defmodule Plug.ParsersTest do
     assert file.filename == "foo.txt"
   end
 
+  test "parses empty multipart body" do
+    %{params: params} =
+      conn(:post, "/", "")
+      |> put_req_header("content-type", "multipart/form-data")
+      |> parse()
+    assert params == %{}
+  end
+
   test "raises on invalid url encoded" do
     assert_raise Plug.Parsers.BadEncodingError,
                  "invalid UTF-8 on urlencoded body, got byte 139", fn ->

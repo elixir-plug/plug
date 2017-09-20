@@ -906,8 +906,11 @@ defmodule Plug.Conn do
   end
   defp init_multipart(%{req_headers: req_headers}) do
     {_, content_type} = List.keyfind(req_headers, "content-type", 0)
-    {:ok, "multipart", _, %{"boundary" => boundary}} = Plug.Conn.Utils.content_type(content_type)
-    {boundary, ""}
+    {:ok, "multipart", _, keys} = Plug.Conn.Utils.content_type(content_type)
+    case keys do
+      %{"boundary" => boundary} -> {boundary, ""}
+      %{} -> :done
+    end
   end
 
   defp next_multipart(adapter, state, opts) do
