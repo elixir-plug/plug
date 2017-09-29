@@ -34,5 +34,9 @@ defmodule Plug.CryptoTest do
     assert_raise ArgumentError, fn ->
       safe_binary_to_term(:erlang.term_to_binary(%{1 => {:foo, [fn -> :bar end]}}))
     end
+
+    assert_raise ArgumentError, fn ->
+      safe_binary_to_term(<<131, 100, 0, 7, 103, 114, 105, 102, 102, 105, 110>>, [:safe])
+    end
   end
 end
