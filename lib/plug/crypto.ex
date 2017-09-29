@@ -9,8 +9,8 @@ defmodule Plug.Crypto do
   A restricted version a `:erlang.binary_to_term/1` that
   forbids possibly unsafe terms.
   """
-  def safe_binary_to_term(binary) when is_binary(binary) do
-    term = :erlang.binary_to_term(binary)
+  def safe_binary_to_term(binary, opts \\ []) when is_binary(binary) do
+    term = :erlang.binary_to_term(binary, opts)
     safe_terms(term)
     term
   end
