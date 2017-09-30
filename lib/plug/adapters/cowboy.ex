@@ -54,7 +54,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc """
-  Run cowboy under http.
+  Runs cowboy under http.
 
   ## Example
 
@@ -72,7 +72,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc """
-  Run cowboy under https.
+  Runs cowboy under https.
 
   Besides the options described in the module documentation,
   this module also accepts all options defined in [the `ssl`
@@ -119,27 +119,8 @@ defmodule Plug.Adapters.Cowboy do
   This function returns the old child specs used by early OTP
   and Elixir versions. See `child_spec/1` for the Elixir v1.5
   based child specifications.
-
-  ## Example
-
-  Presuming your Plug module is named `MyRouter` you can add it to your
-  supervision tree like so using this function:
-
-      defmodule MyApp do
-        use Application
-
-        def start(_type, _args) do
-          import Supervisor.Spec
-
-          children = [
-            Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
-          ]
-
-          opts = [strategy: :one_for_one, name: MyApp.Supervisor]
-          Supervisor.start_link(children, opts)
-        end
-      end
   """
+  # TODO: Remove this once we require Elixir v1.5+
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
     ranch_module = case scheme do
@@ -159,6 +140,9 @@ defmodule Plug.Adapters.Cowboy do
     * `:options` - the server options as specified in the module documentation
 
   ## Examples
+
+  Assuming your Plug module is named `MyApp` you can add it to your
+  supervision tree by using this function:
 
       children = [
         {Plug.Adapters.Cowboy, scheme: :http, plug: MyApp, options: [port: 4040]}
@@ -192,8 +176,7 @@ defmodule Plug.Adapters.Cowboy do
       {:ok, _} ->
         :ok
       {:error, {:cowboy, _}} ->
-        raise "could not start the cowboy application. Please ensure it is listed " <>
-              "as a dependency both in deps and application in your mix.exs"
+        raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
     end
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, cowboy_options))
   end
