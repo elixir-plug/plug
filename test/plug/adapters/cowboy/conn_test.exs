@@ -381,10 +381,13 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     {status, headers, nil}
   end
   defp request(verb, path, headers \\ [], body \\ "") do
-    {:ok, status, headers, client} =
-      :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, [])
-    {:ok, body} = :hackney.body(client)
-    :hackney.close(client)
-    {status, headers, body}
+    case :hackney.request(verb, "http://127.0.0.1:8001" <> path, headers, body, []) do
+      {:ok, status, headers, client} ->
+        {:ok, body} = :hackney.body(client)
+        :hackney.close(client)
+        {status, headers, body}
+      {:error, _} = error ->
+        error
+    end
   end
 end
