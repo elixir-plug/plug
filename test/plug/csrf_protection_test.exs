@@ -240,7 +240,7 @@ defmodule Plug.CSRFProtectionTest do
     refute conn.halted
   end
 
-  test "csrf plug is skipped when plug_skip_csrf_protection is true" do
+  test "is skipped when plug_skip_csrf_protection is true" do
     conn =
       conn(:get, "/?token=get")
       |> put_private(:plug_skip_csrf_protection, true)
@@ -258,6 +258,17 @@ defmodule Plug.CSRFProtectionTest do
       |> put_private(:plug_skip_csrf_protection, true)
       |> assign(:content_type, "text/javascript")
       |> call()
+    assert get_session(conn, "_csrf_token")
+  end
+
+  test "does not delete token if the plug is invoked twice" do
+    conn =
+      conn(:get, "/?token=get")
+      |> recycle_cookies(call(conn(:get, "/?token=get")))
+      |> call_csrf_with_session([])
+      |> CSRFProtection.call(CSRFProtection.init([]))
+      |> handle_token
+
     assert get_session(conn, "_csrf_token")
   end
 end
