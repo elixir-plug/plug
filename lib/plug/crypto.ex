@@ -1,6 +1,9 @@
 defmodule Plug.Crypto do
   @moduledoc """
-  Namespace and module for crypto functionality.
+  Namespace and module for Crypto functionality.
+  
+  Please see `Plug.Crypto.KeyGenerator`, `Plug.Crypto.MessageEncryptor`,
+  and `Plug.Crypto.MessageVerifier` for more functionality.
   """
 
   use Bitwise
