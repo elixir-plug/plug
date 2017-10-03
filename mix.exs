@@ -68,24 +68,12 @@ defmodule Plug.Mixfile do
         Plug.Static,
       ],
 
-      "Parsers": [
-        Plug.Parsers.JSON,
-        Plug.Parsers.MULTIPART,
-        Plug.Parsers.URLENCODED,
-      ],
-
-      "Session": [
-        Plug.Session.COOKIE,
-        Plug.Session.ETS,
-        Plug.Session.Store,
-      ],
-
-      "Adapters": [
+      "Plug.Adapters": [
         Plug.Adapters.Cowboy,
         Plug.Adapters.Translator,
       ],
 
-      "Connection helpers": [
+      "Plug.Conn": [
         Plug.Conn.Adapter,
         Plug.Conn.Cookies,
         Plug.Conn.Query,
@@ -94,10 +82,22 @@ defmodule Plug.Mixfile do
         Plug.Conn.Utils,
       ],
 
-      "Crypto": [
+      "Plug.Crypto": [
         Plug.Crypto.KeyGenerator,
         Plug.Crypto.MessageEncryptor,
         Plug.Crypto.MessageVerifier,
+      ],
+      
+      "Plug.Parsers": [
+        Plug.Parsers.JSON,
+        Plug.Parsers.MULTIPART,
+        Plug.Parsers.URLENCODED,
+      ],
+
+      "Plug.Session": [
+        Plug.Session.COOKIE,
+        Plug.Session.ETS,
+        Plug.Session.Store,
       ],
     ]
   end
