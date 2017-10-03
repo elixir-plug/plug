@@ -43,44 +43,25 @@ defmodule Plug.Mixfile do
   defp groups_for_modules do
     # Ungrouped Modules
     #
+    # Plug
     # Plug.Builder
     # Plug.Conn
-    # Plug.Crypo
+    # Plug.Crypto
     # Plug.Debugger
     # Plug.ErrorHandler
     # Plug.Exception
     # Plug.HTML
-    # Plug.Parsers
     # Plug.Router
     # Plug.Test
     # Plug.Upload
 
     [
-      "Adapters": [
-        Plug.Adapters.Cowboy,
-        Plug.Adapters.Translator,
-      ],
-
-      "Conn": [
-        Plug.Conn.Adapter,
-        Plug.Conn.Cookies,
-        Plug.Conn.Query,
-        Plug.Conn.Status,
-        Plug.Conn.Unfetched,
-        Plug.Conn.Utils,
-      ],
-
-      "Crypto": [
-        Plug.Crypto.KeyGenerator,
-        Plug.Crypto.MessageEncryptor,
-        Plug.Crypto.MessageVerifier,
-      ],
-
       "Plugs": [
         Plug.CSRFProtection,
         Plug.Head,
         Plug.Logger,
         Plug.MethodOverride,
+        Plug.Parsers,
         Plug.RequestId,
         Plug.SSL,
         Plug.Session,
@@ -97,6 +78,26 @@ defmodule Plug.Mixfile do
         Plug.Session.COOKIE,
         Plug.Session.ETS,
         Plug.Session.Store,
+      ],
+
+      "Adapters": [
+        Plug.Adapters.Cowboy,
+        Plug.Adapters.Translator,
+      ],
+
+      "Connection helpers": [
+        Plug.Conn.Adapter,
+        Plug.Conn.Cookies,
+        Plug.Conn.Query,
+        Plug.Conn.Status,
+        Plug.Conn.Unfetched,
+        Plug.Conn.Utils,
+      ],
+
+      "Crypto": [
+        Plug.Crypto.KeyGenerator,
+        Plug.Crypto.MessageEncryptor,
+        Plug.Crypto.MessageVerifier,
       ],
     ]
   end
