@@ -69,6 +69,16 @@ defmodule Plug.Parsers.MULTIPART do
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         {conn, limit, [{name, body} | acc]}
 
+      {:parseable_binary, name} ->
+        {:ok, limit, body, conn} = parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
+        Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+
+        test_conn = Plug.Test.conn(conn.method, "/", body)
+        test_conn = %Plug.Conn{test_conn | req_headers: headers}
+                    |> Plug.Parsers.call(opts)
+
+        {conn, limit, [{name, test_conn.params} | acc]}
+
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
         {:ok, limit, conn} = parse_multipart_file(Plug.Conn.read_part_body(conn, opts), limit, opts, file)
@@ -136,7 +146,12 @@ defmodule Plug.Parsers.MULTIPART do
         upload = %Plug.Upload{filename: filename, path: path, content_type: content_type}
         {:file, name, path, upload}
       :error ->
-        {:binary, name}
+        content_type = get_header(headers, "content-type")
+        if content_type do
+          {:parseable_binary, name}
+        else
+          {:binary, name}
+        end
     end
   end
 

@@ -3,8 +3,15 @@ defmodule Plug.ParsersTest do
 
   use Plug.Test
 
+  defmodule JSON do
+    def decode!("{\"key\": \"value\"}"), do: %{"key" => "value"}
+  end
+
   def parse(conn, opts \\ []) do
-    opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
+    parsers = [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART, Plug.Parsers.JSON]
+    opts = opts
+           |> Keyword.put_new(:parsers, parsers)
+           |> Keyword.put_new(:json_decoder, JSON)
     Plug.Parsers.call(conn, Plug.Parsers.init(opts))
   end
 
@@ -122,6 +129,11 @@ defmodule Plug.ParsersTest do
     Content-Disposition: form-data; name=\"commit\"\r
     \r
     Create User\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"json\"\r
+    Content-Type: application/json\r
+    \r
+    {\"key\": \"value\"}\r
     ------w58EW1cEpjzydSCq--\r
     """
 
@@ -133,6 +145,7 @@ defmodule Plug.ParsersTest do
     assert params["name"] == "hello"
     assert params["status"] == ["choice1", "choice2"]
     assert params["empty"] == nil
+    assert params["json"] == %{"key" => "value"}
 
     assert %Plug.Upload{} = file = params["pic"]
     assert File.read!(file.path) == "hello\n\n"
@@ -180,7 +193,7 @@ defmodule Plug.ParsersTest do
   test "raises when request cannot be processed and if mime range not accepted" do
     exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
       conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/json")
+      |> put_req_header("content-type", "application/java")
       |> parse(pass: ["text/plain", "text/*"])
     end
     assert Plug.Exception.status(exception) == 415
@@ -205,8 +218,8 @@ defmodule Plug.ParsersTest do
 
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/json")
-      |> parse(pass: ["text/plain", "application/json"])
+      |> put_req_header("content-type", "application/java")
+      |> parse(pass: ["text/plain", "application/java"])
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
