@@ -31,6 +31,10 @@ defmodule Plug.Adapters.Cowboy do
     * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
       Defaults to 5000ms.
 
+    * `:log_error_on_incomplete_requests` - An error is logged when the response status code is 400 and
+      no headers are set in the request.
+      Defaults to true.
+
     * `:protocol_options` - Specifies remaining protocol options,
       see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
 
@@ -199,24 +203,29 @@ defmodule Plug.Adapters.Cowboy do
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
     {acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
     {protocol_options, opts} = Keyword.pop(opts, :protocol_options, [])
+    {log_request_errors, opts} = Keyword.pop(opts, :log_error_on_incomplete_requests, true)
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
-    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(protocol_options) ++ extra_options
+    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(log_request_errors, protocol_options) ++ extra_options
 
     [ref, acceptors, non_keyword_opts ++ transport_options, protocol_options]
   end
 
-  defp add_on_response(protocol_options) do
-    case Keyword.pop(protocol_options, :onresponse) do
-      {nil, _} ->
-        [onresponse: &onresponse/4] ++ protocol_options
-      {onresponse, protocol_options} ->
-        [onresponse: fn status, headers, body, request ->
-          onresponse(status, headers, body, request)
-          onresponse.(status, headers, body, request)
-         end] ++ protocol_options
-    end
+  defp add_on_response(log_request_errors, protocol_options) do
+    {provided_onresponse, protocol_options} = Keyword.pop(protocol_options, :onresponse)
+
+    add_on_response(log_request_errors, provided_onresponse, protocol_options)
+  end
+
+  defp add_on_response(false, nil, protocol_options), do: protocol_options
+  defp add_on_response(false, fun, protocol_options), do: [onresponse: fun] ++ protocol_options
+  defp add_on_response(true, nil, protocol_options), do: [onresponse: &onresponse/4] ++ protocol_options
+  defp add_on_response(true, fun, protocol_options) do
+    [onresponse: fn status, headers, body, request ->
+        onresponse(status, headers, body, request)
+        fun.(status, headers, body, request)
+     end] ++ protocol_options
   end
 
   defp onresponse(status, _headers, _body, request) do

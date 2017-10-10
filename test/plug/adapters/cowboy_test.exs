@@ -78,6 +78,56 @@ defmodule Plug.Adapters.CowboyTest do
             [:ranch_listener_sup]} = child_spec(:http, __MODULE__, [], [])
   end
 
+  describe "onresponse handling" do
+    test "includes the default onresponse handler" do
+      assert [Plug.Adapters.CowboyTest.HTTP,
+            _,
+            _,
+            [env: [dispatch: @dispatch], onresponse: on_response]] =
+           args(:http, __MODULE__, [], [])
+      assert is_function(on_response)
+    end
+
+    test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false" do
+      assert [Plug.Adapters.CowboyTest.HTTP,
+            _,
+            _,
+            [env: [dispatch: @dispatch]]] =
+           args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false])
+    end
+
+    test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false and includes the user-provided onresponse handler" do
+      my_onresponse = fn (_, _, _, req) -> req end
+      assert [Plug.Adapters.CowboyTest.HTTP,
+            _,
+            _,
+            [env: [dispatch: @dispatch], onresponse: on_response]] =
+           args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false, protocol_options: [onresponse: my_onresponse]])
+      assert is_function(on_response)
+
+      assert on_response == my_onresponse
+    end
+
+    test "includes the default onresponse handler and the user-provided onresponse handler" do
+      # Grab a ref to the default onresponse handler
+      assert [Plug.Adapters.CowboyTest.HTTP,
+            _,
+            _,
+            [env: [dispatch: @dispatch], onresponse: default_response]] =
+           args(:http, __MODULE__, [], [])
+
+      my_onresponse = fn (_, _, _, req) -> req end
+      assert [Plug.Adapters.CowboyTest.HTTP,
+            _,
+            _,
+            [env: [dispatch: @dispatch], onresponse: on_response]] =
+           args(:http, __MODULE__, [], [protocol_options: [onresponse: my_onresponse]])
+      assert is_function(on_response)
+      assert on_response != default_response
+      assert on_response != my_onresponse
+    end
+  end
+
   defmodule MyPlug do
     def init(opts), do: opts
   end
