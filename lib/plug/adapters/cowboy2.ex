@@ -32,7 +32,7 @@ defmodule Plug.Adapters.Cowboy2 do
       Defaults to 5000ms.
 
     * `:protocol_options` - Specifies remaining protocol options,
-      see [Cowboy2 protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
+      see [Cowboy2 protocol docs](http://ninenines.eu/docs/en/cowboy/2.0/manual/cowboy_protocol/).
 
   All other options are given to the underlying transport.
   """
@@ -120,14 +120,18 @@ defmodule Plug.Adapters.Cowboy2 do
   and Elixir versions. See `child_spec/1` for the Elixir v1.5
   based child specifications.
   """
-  # TODO: Remove this once we require Elixir v1.5+
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
-    [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
-    ranch_module = case scheme do
-      :http  -> :ranch_tcp
-      :https -> :ranch_ssl
+    [ref, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
+    cowboy_function = case scheme do
+      :http  -> :start_clear
+      :https -> :start_tls
     end
-    :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
+    cowboy_args = [ref, trans_opts, proto_opts]
+    {
+      {:ranch_listener_sup, ref},
+      {:cowboy, cowboy_function, cowboy_args},
+      :permanent, :infinity, :supervisor, [:ranch_listener_sup]
+    }
   end
 
   @doc """
@@ -178,7 +182,12 @@ defmodule Plug.Adapters.Cowboy2 do
       {:error, {:cowboy, _}} ->
         raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
     end
-    apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, cowboy_options))
+    start = case scheme do
+      :http  -> :start_clear
+      :https -> :start_tls
+      other  -> :erlang.error({:badarg, [other]})
+    end
+    apply(:cowboy, start, args(scheme, plug, opts, cowboy_options))
   end
 
   defp normalize_cowboy_options(cowboy_options, :http) do
@@ -197,54 +206,21 @@ defmodule Plug.Adapters.Cowboy2 do
     opts = Keyword.delete(opts, :otp_app)
     {ref, opts} = Keyword.pop(opts, :ref)
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
-    {acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
+    {num_acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
     {protocol_options, opts} = Keyword.pop(opts, :protocol_options, [])
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
-    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(protocol_options) ++ extra_options
+    protocol_options = %{
+      env: %{
+        dispatch: dispatch
+      }
+    }
+    |> Map.merge(:maps.from_list(protocol_options ++ extra_options))
 
-    [ref, acceptors, non_keyword_opts ++ transport_options, protocol_options]
-  end
+    transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
 
-  defp add_on_response(protocol_options) do
-    case Keyword.pop(protocol_options, :onresponse) do
-      {nil, _} ->
-        [onresponse: &onresponse/4] ++ protocol_options
-      {onresponse, protocol_options} ->
-        [onresponse: fn status, headers, body, request ->
-          onresponse(status, headers, body, request)
-          onresponse.(status, headers, body, request)
-         end] ++ protocol_options
-    end
-  end
-
-  defp onresponse(status, _headers, _body, request) do
-    if status == 400 and empty_headers?(request) do
-      Logger.error """
-      Cowboy returned 400 and there are no headers in the connection.
-
-      This may happen if Cowboy is unable to parse the request headers,
-      for example, because there are too many headers or the header name
-      or value are too large (such as a large cookie).
-
-      You can customize those values when configuring your http/https
-      server. The configuration option and default values are shown below:
-
-          protocol_options: [
-            max_header_name_length: 64,
-            max_header_value_length: 4096,
-            max_headers: 100,
-            max_request_line_length: 8096
-          ]
-      """
-    end
-    request
-  end
-
-  defp empty_headers?(request) do
-    {headers, _} = :cowboy_req.headers(request)
-    headers == []
+    [ref, non_keyword_opts ++ transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do

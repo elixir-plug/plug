@@ -3,19 +3,19 @@ defmodule Plug.Adapters.Cowboy2.Handler do
   @connection Plug.Adapters.Cowboy2.Conn
   @already_sent {:plug_conn, :sent}
 
-  def init({transport, :http}, req, {plug, opts}) when transport in [:tcp, :ssl] do
-    {:upgrade, :protocol, __MODULE__, req, {transport, plug, opts}}
+  def init(req, {plug, opts}) do
+    {__MODULE__, req, {plug, opts}}
   end
 
-  def upgrade(req, env, __MODULE__, {transport, plug, opts}) do
-    conn = @connection.conn(req, transport)
+  def upgrade(req, env, __MODULE__, {plug, opts}) do
+    conn = @connection.conn(req)
     try do
       %{adapter: {@connection, req}} =
         conn
         |> plug.call(opts)
         |> maybe_send(plug)
 
-      {:ok, req, [{:result, :ok} | env]}
+      {:ok, req, Map.put_new(env, :result, :ok)}
     catch
       :error, value ->
         stack = System.stacktrace()
@@ -46,8 +46,7 @@ defmodule Plug.Adapters.Cowboy2.Handler do
     raise "Cowboy2 adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
   end
 
-  defp terminate(reason, req, stack) do
-    :cowboy_req.maybe_reply(stack, req)
+  defp terminate(reason, _req, _stack) do
     exit(reason)
   end
 end

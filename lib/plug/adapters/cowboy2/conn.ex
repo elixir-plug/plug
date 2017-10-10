@@ -2,15 +2,17 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   @behaviour Plug.Conn.Adapter
   @moduledoc false
 
-  def conn(req, transport) do
-    {path, req} = :cowboy_req.path req
-    {host, req} = :cowboy_req.host req
-    {port, req} = :cowboy_req.port req
-    {meth, req} = :cowboy_req.method req
-    {hdrs, req} = :cowboy_req.headers req
-    {qs, req}   = :cowboy_req.qs req
-    {peer, req} = :cowboy_req.peer req
+  def conn(req) do
+    path = :cowboy_req.path req
+    host = :cowboy_req.host req
+    port = :cowboy_req.port req
+    meth = :cowboy_req.method req
+    hdrs = :cowboy_req.headers req
+    qs   = :cowboy_req.qs req
+    peer = :cowboy_req.peer req
     {remote_ip, _} = peer
+
+    req = Map.put(req, :plug_read_body, false)
 
     %Plug.Conn{
       adapter: {__MODULE__, req},
@@ -22,15 +24,16 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       port: port,
       remote_ip: remote_ip,
       query_string: qs,
-      req_headers: hdrs,
+      req_headers: to_headers_list(hdrs),
       request_path: path,
-      scheme: scheme(transport)
-    }
+      scheme: String.to_atom(:cowboy_req.scheme(req))
+   }
   end
 
   def send_resp(req, status, headers, body) do
+    headers = to_headers_map(headers)
     status = Integer.to_string(status) <> " " <> Plug.Conn.Status.reason_phrase(status)
-    {:ok, req} = :cowboy_req.reply(status, headers, body, req)
+    req = :cowboy_req.reply(status, headers, body, req)
     {:ok, nil, req}
   end
 
@@ -43,29 +46,58 @@ defmodule Plug.Adapters.Cowboy2.Conn do
         is_integer(length) -> length
       end
 
-    body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
+    body = {:sendfile, offset, length, path}
 
-    {:ok, req} = :cowboy_req.reply(status, headers, :cowboy_req.set_resp_body_fun(length, body_fun, req))
+    headers = to_headers_map(headers)
+
+    req = :cowboy_req.reply(status, headers, body, req)
     {:ok, nil, req}
   end
 
   def send_chunked(req, status, headers) do
-    {:ok, req} = :cowboy_req.chunked_reply(status, headers, req)
+    headers = to_headers_map(headers)
+    req = :cowboy_req.stream_reply(status, headers, req)
     {:ok, nil, req}
   end
 
   def chunk(req, body) do
-    :cowboy_req.chunk(body, req)
+    :cowboy_req.stream_body(body, :nofin, req)
   end
 
-  def read_req_body(req, opts \\ []) do
-    :cowboy_req.body(req, opts)
+  def read_req_body(req, opts \\ [])
+  def read_req_body(req = %{plug_read_body: false}, opts) do
+    opts = if is_list(opts), do: :maps.from_list(opts), else: opts
+    :cowboy_req.read_body(%{req | plug_read_body: true}, opts)
+  end
+  def read_req_body(req, _opts) do
+    {:ok, "", req}
   end
 
   ## Helpers
 
-  defp scheme(:tcp), do: :http
-  defp scheme(:ssl), do: :https
+  defp to_headers_list(headers) when is_list(headers) do
+    headers
+  end
+
+  defp to_headers_list(headers) when is_map(headers) do
+    :maps.to_list(headers)
+  end
+
+  defp to_headers_list(headers) when is_map(headers) do
+    :maps.to_list(headers)
+  end
+
+  defp to_headers_map(headers) when is_list(headers) do
+    # Group set-cookie headers into a list for a single `set-cookie
+    # `key since cowboy 2 requires headers as a map.
+    Enum.reduce(headers, %{}, fn
+      ({key = "set-cookie", value}, acc) ->
+        set_cookies = Map.get(acc, key, [])
+        Map.put(acc, to_string(key), [value | set_cookies])
+      ({key, value}, acc) ->
+        Map.put(acc, to_string(key), value)
+    end)
+  end
 
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
