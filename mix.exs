@@ -9,6 +9,7 @@ defmodule Plug.Mixfile do
      elixir: "~> 1.3",
      deps: deps(),
      package: package(),
+     lockfile: lockfile(),
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
@@ -28,10 +29,17 @@ defmodule Plug.Mixfile do
 
   def deps do
     [{:mime, "~> 1.0"},
-     {:cowboy, "~> 1.0.1 or ~> 1.1", optional: true},
+     {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.0", optional: true},
      {:ex_doc, "~> 0.17.1", only: :docs},
      {:inch_ex, ">= 0.0.0", only: :docs},
      {:hackney, "~> 1.2.0", only: :test}]
+  end
+
+  defp lockfile() do
+    case System.get_env("COWBOY_VERSION") do
+      "1" <> _ -> "mix-cowboy1.lock"
+      _ -> "mix.lock"
+    end
   end
 
   defp package do

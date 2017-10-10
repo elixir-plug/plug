@@ -1,5 +1,5 @@
-%{"cowboy": {:hex, :cowboy, "2.0.0", "a3b680bcc1156c6fbcb398cc56adc35177037012d7dc28d8f7e7926d6c243561", [:rebar3], [{:cowlib, "~> 2.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.4.0", [hex: :ranch, optional: false]}]},
-  "cowlib": {:hex, :cowlib, "2.0.0", "c2977105473dfd520ec158edb7fda1aeb3efa323192dd4533481da0ae32950d4", [:rebar3], []},
+%{"cowboy": {:hex, :cowboy, "1.0.4", "a324a8df9f2316c833a470d918aaf73ae894278b8aa6226ce7a9bf699388f878", [:make, :rebar], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
+  "cowlib": {:hex, :cowlib, "1.0.2", "9d769a1d062c9c3ac753096f868ca121e2730b9a377de23dec0f7e08b1df84ee", [:make], []},
   "earmark": {:hex, :earmark, "1.2.3", "206eb2e2ac1a794aa5256f3982de7a76bf4579ff91cb28d0e17ea2c9491e46a4", [:mix], []},
   "ex_doc": {:hex, :ex_doc, "0.17.1", "39f777415e769992e6732d9589dc5846ea587f01412241f4a774664c746affbb", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, optional: false]}]},
   "hackney": {:hex, :hackney, "1.2.0", "41d352d5c272a150127517ab29e00cf5521a04af925f260667bf55161fbee68f", [:rebar], [{:idna, "~> 1.0.2", [hex: :idna, optional: false]}, {:ssl_verify_hostname, "~> 1.0.5", [hex: :ssl_verify_hostname, optional: false]}]},
@@ -8,5 +8,5 @@
   "json": {:hex, :json, "0.3.2", "e40a15993024a0cb4f5e22816d6be34002cc4463c61789ed35ec94c41911ebee", [:mix], []},
   "mime": {:hex, :mime, "1.1.0", "01c1d6f4083d8aa5c7b8c246ade95139620ef8effb009edde934e0ec3b28090a", [:mix], []},
   "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], []},
-  "ranch": {:hex, :ranch, "1.4.0", "10272f95da79340fa7e8774ba7930b901713d272905d0012b06ca6d994f8826b", [:rebar3], []},
+  "ranch": {:hex, :ranch, "1.2.1", "a6fb992c10f2187b46ffd17ce398ddf8a54f691b81768f9ef5f461ea7e28c762", [:make], []},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5", "2e73e068cd6393526f9fa6d399353d7c9477d6886ba005f323b592d389fb47be", [:make], []}}

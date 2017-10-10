@@ -1,6 +1,8 @@
 defmodule Plug.Adapters.TranslatorTest do
   use ExUnit.Case
 
+  @moduletag :cowboy1
+
   import ExUnit.CaptureLog
 
   def init(opts) do

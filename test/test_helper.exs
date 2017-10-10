@@ -1,4 +1,9 @@
-ExUnit.start
+exclude =
+  case System.get_env("COWBOY_VERSION") do
+    "1" <> _ -> [:cowboy2]
+    _ -> [:cowboy1]
+  end
+ExUnit.start(exclude: exclude)
 
 {:ok, _} = Application.ensure_all_started(:hackney)
 Logger.configure_backend(:console, colors: [enabled: false], metadata: [:request_id])

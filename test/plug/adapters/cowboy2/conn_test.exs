@@ -5,6 +5,8 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   import Plug.Conn
   import ExUnit.CaptureLog
 
+  @moduletag :cowboy2
+
   ## Cowboy2 setup for testing
   #
   # We use hackney to perform an HTTP request against the cowboy/plug running
