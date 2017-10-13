@@ -49,6 +49,7 @@ defmodule Plug.Adapters.Cowboy2 do
     |> Keyword.put_new(:max_connections, 16_384)
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
     |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
+    |> set_compress()
     |> normalize_cowboy_options(scheme)
     |> to_args(non_keyword_options)
   end
@@ -173,7 +174,7 @@ defmodule Plug.Adapters.Cowboy2 do
 
   ## Helpers
 
-  @protocol_options [:timeout, :compress]
+  @protocol_options [:timeout, :compress, :stream_handlers]
 
   defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
@@ -188,6 +189,21 @@ defmodule Plug.Adapters.Cowboy2 do
       other  -> :erlang.error({:badarg, [other]})
     end
     apply(:cowboy, start, args(scheme, plug, opts, cowboy_options))
+  end
+
+  defp set_compress(cowboy_options) do
+    compress = Keyword.get(cowboy_options, :compress)
+    stream_handlers = Keyword.get(cowboy_options, :stream_handlers)
+    case {compress, stream_handlers} do
+      {true, nil} ->
+          Keyword.put_new(cowboy_options, :stream_handlers,
+            [:cowboy_compress_h, :cowboy_stream_h])
+      {true, _} ->
+        raise "Cannot set both compress and stream_handlers at once. " <>
+          "If you wish to set compress, please add `:cowboy_compress_h` to your stream handlers."
+      _ ->
+        cowboy_options
+    end
   end
 
   defp normalize_cowboy_options(cowboy_options, :http) do
