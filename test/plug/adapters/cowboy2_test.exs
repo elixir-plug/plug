@@ -69,7 +69,9 @@ defmodule Plug.Adapters.Cowboy2Test do
     assert [Plug.Adapters.Cowboy2Test.HTTP,
             [num_acceptors: 100, max_connections: 16_384, port: 3000],
             %{env: %{dispatch: @dispatch},
-              stream_handlers: [:cowboy_compress_h, :cowboy_stream_h]}] =
+              stream_handlers: [:cowboy_compress_h,
+                                Plug.Adapters.Cowboy2.BadResponseCheck,
+                                :cowboy_stream_h]}] =
       args(:http, __MODULE__, [], [port: 3000, compress: true])
   end
 

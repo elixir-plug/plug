@@ -197,7 +197,7 @@ defmodule Plug.Adapters.Cowboy2 do
     case {compress, stream_handlers} do
       {true, nil} ->
           Keyword.put_new(cowboy_options, :stream_handlers,
-            [:cowboy_compress_h, :cowboy_stream_h])
+            [:cowboy_compress_h, Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h])
       {true, _} ->
         raise "Cannot set both compress and stream_handlers at once. " <>
           "If you wish to set compress, please add `:cowboy_compress_h` to your stream handlers."
@@ -227,6 +227,9 @@ defmodule Plug.Adapters.Cowboy2 do
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
+
+    extra_options = Keyword.put_new(extra_options, :stream_handlers, [Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h])
+
     protocol_options = %{
       env: %{
         dispatch: dispatch
