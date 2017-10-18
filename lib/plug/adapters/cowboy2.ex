@@ -43,7 +43,7 @@ defmodule Plug.Adapters.Cowboy2 do
   @doc false
   def args(scheme, plug, opts, cowboy_options) do
     {cowboy_options, non_keyword_options} =
-      Enum.partition(cowboy_options, &is_tuple(&1) and tuple_size(&1) == 2)
+      Enum.partition(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
     |> Keyword.put_new(:max_connections, 16_384)
@@ -66,8 +66,8 @@ defmodule Plug.Adapters.Cowboy2 do
       Plug.Adapters.Cowboy2.shutdown MyPlug.HTTP
 
   """
-  @spec http(module(), Keyword.t, Keyword.t) ::
-        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
+  @spec http(module(), Keyword.t(), Keyword.t()) ::
+          {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def http(plug, opts, cowboy_options \\ []) do
     run(:http, plug, opts, cowboy_options)
   end
@@ -100,8 +100,8 @@ defmodule Plug.Adapters.Cowboy2 do
       Plug.Adapters.Cowboy2.shutdown MyPlug.HTTPS
 
   """
-  @spec https(module(), Keyword.t, Keyword.t) ::
-        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
+  @spec https(module(), Keyword.t(), Keyword.t()) ::
+          {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def https(plug, opts, cowboy_options \\ []) do
     Application.ensure_all_started(:ssl)
     run(:https, plug, opts, cowboy_options)
@@ -123,15 +123,22 @@ defmodule Plug.Adapters.Cowboy2 do
   """
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
-    cowboy_function = case scheme do
-      :http  -> :start_clear
-      :https -> :start_tls
-    end
+
+    cowboy_function =
+      case scheme do
+        :http -> :start_clear
+        :https -> :start_tls
+      end
+
     cowboy_args = [ref, trans_opts, proto_opts]
+
     {
       {:ranch_listener_sup, ref},
       {:cowboy, cowboy_function, cowboy_args},
-      :permanent, :infinity, :supervisor, [:ranch_listener_sup]
+      :permanent,
+      :infinity,
+      :supervisor,
+      [:ranch_listener_sup]
     }
   end
 
@@ -159,6 +166,7 @@ defmodule Plug.Adapters.Cowboy2 do
   def child_spec(opts) do
     scheme = Keyword.fetch!(opts, :scheme)
     cowboy_opts = Keyword.fetch!(opts, :options)
+
     {plug, plug_opts} =
       case Keyword.fetch!(opts, :plug) do
         {_, _} = tuple -> tuple
@@ -168,8 +176,7 @@ defmodule Plug.Adapters.Cowboy2 do
     {id, start, restart, shutdown, type, modules} =
       child_spec(scheme, plug, plug_opts, cowboy_opts)
 
-    %{id: id, start: start, restart: restart,
-      shutdown: shutdown, type: type, modules: modules}
+    %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}
   end
 
   ## Helpers
@@ -180,41 +187,58 @@ defmodule Plug.Adapters.Cowboy2 do
     case Application.ensure_all_started(:cowboy) do
       {:ok, _} ->
         :ok
+
       {:error, {:cowboy, _}} ->
         raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
     end
-    start = case scheme do
-      :http  -> :start_clear
-      :https -> :start_tls
-      other  -> :erlang.error({:badarg, [other]})
-    end
+
+    start =
+      case scheme do
+        :http -> :start_clear
+        :https -> :start_tls
+        other -> :erlang.error({:badarg, [other]})
+      end
+
     apply(:cowboy, start, args(scheme, plug, opts, cowboy_options))
   end
 
   defp set_compress(cowboy_options) do
     compress = Keyword.get(cowboy_options, :compress)
     stream_handlers = Keyword.get(cowboy_options, :stream_handlers)
+
     case {compress, stream_handlers} do
       {true, nil} ->
-          Keyword.put_new(cowboy_options, :stream_handlers,
-            [:cowboy_compress_h, Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h])
+        Keyword.put_new(cowboy_options, :stream_handlers, [
+          :cowboy_compress_h,
+          Plug.Adapters.Cowboy2.BadResponseCheck,
+          :cowboy_stream_h
+        ])
+
       {true, _} ->
         raise "Cannot set both compress and stream_handlers at once. " <>
-          "If you wish to set compress, please add `:cowboy_compress_h` to your stream handlers."
+                "If you wish to set compress, please add `:cowboy_compress_h` to your stream handlers."
+
       _ ->
         cowboy_options
     end
   end
 
   defp normalize_cowboy_options(cowboy_options, :http) do
-    Keyword.put_new cowboy_options, :port, 4000
+    Keyword.put_new(cowboy_options, :port, 4000)
   end
 
   defp normalize_cowboy_options(cowboy_options, :https) do
     assert_ssl_options(cowboy_options)
-    cowboy_options = Keyword.put_new cowboy_options, :port, 4040
-    cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile, :dhfile], cowboy_options, &normalize_ssl_file(&1, &2)
-    cowboy_options = Enum.reduce [:password], cowboy_options, &to_charlist(&2, &1)
+    cowboy_options = Keyword.put_new(cowboy_options, :port, 4040)
+
+    cowboy_options =
+      Enum.reduce(
+        [:keyfile, :certfile, :cacertfile, :dhfile],
+        cowboy_options,
+        &normalize_ssl_file(&1, &2)
+      )
+
+    cowboy_options = Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
     cowboy_options
   end
 
@@ -228,14 +252,19 @@ defmodule Plug.Adapters.Cowboy2 do
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
 
-    extra_options = Keyword.put_new(extra_options, :stream_handlers, [Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h])
+    extra_options =
+      Keyword.put_new(extra_options, :stream_handlers, [
+        Plug.Adapters.Cowboy2.BadResponseCheck,
+        :cowboy_stream_h
+      ])
 
-    protocol_options = %{
-      env: %{
-        dispatch: dispatch
+    protocol_options =
+      %{
+        env: %{
+          dispatch: dispatch
+        }
       }
-    }
-    |> Map.merge(:maps.from_list(protocol_options ++ extra_options))
+      |> Map.merge(:maps.from_list(protocol_options ++ extra_options))
 
     transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
 
@@ -243,7 +272,7 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   defp build_ref(plug, scheme) do
-    Module.concat(plug, scheme |> to_string |> String.upcase)
+    Module.concat(plug, scheme |> to_string |> String.upcase())
   end
 
   defp dispatch_for(plug, opts) do
@@ -257,29 +286,34 @@ defmodule Plug.Adapters.Cowboy2 do
     cond do
       is_nil(value) ->
         cowboy_options
+
       Path.type(value) == :absolute ->
-        put_ssl_file cowboy_options, key, value
+        put_ssl_file(cowboy_options, key, value)
+
       true ->
-        put_ssl_file cowboy_options, key, Path.expand(value, otp_app(cowboy_options))
+        put_ssl_file(cowboy_options, key, Path.expand(value, otp_app(cowboy_options)))
     end
   end
 
   defp assert_ssl_options(cowboy_options) do
-    unless Keyword.has_key?(cowboy_options, :key) or
-           Keyword.has_key?(cowboy_options, :keyfile) do
-      fail "missing option :key/:keyfile"
+    unless Keyword.has_key?(cowboy_options, :key) or Keyword.has_key?(cowboy_options, :keyfile) do
+      fail("missing option :key/:keyfile")
     end
-    unless Keyword.has_key?(cowboy_options, :cert) or
-           Keyword.has_key?(cowboy_options, :certfile) do
-      fail "missing option :cert/:certfile"
+
+    unless Keyword.has_key?(cowboy_options, :cert) or Keyword.has_key?(cowboy_options, :certfile) do
+      fail("missing option :cert/:certfile")
     end
   end
 
   defp put_ssl_file(cowboy_options, key, value) do
     value = to_charlist(value)
+
     unless File.exists?(value) do
-      fail "the file #{value} required by SSL's #{inspect key} either does not exist, or the application does not have permission to access it"
+      fail(
+        "the file #{value} required by SSL's #{inspect(key)} either does not exist, or the application does not have permission to access it"
+      )
     end
+
     Keyword.put(cowboy_options, key, value)
   end
 
@@ -287,14 +321,16 @@ defmodule Plug.Adapters.Cowboy2 do
     if app = cowboy_options[:otp_app] do
       Application.app_dir(app)
     else
-      fail "to use a relative certificate with https, the :otp_app " <>
-           "option needs to be given to the adapter"
+      fail(
+        "to use a relative certificate with https, the :otp_app " <>
+          "option needs to be given to the adapter"
+      )
     end
   end
 
   defp to_charlist(cowboy_options, key) do
     if value = cowboy_options[key] do
-      Keyword.put cowboy_options, key, to_charlist(value)
+      Keyword.put(cowboy_options, key, to_charlist(value))
     else
       cowboy_options
     end

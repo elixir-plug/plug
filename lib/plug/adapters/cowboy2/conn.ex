@@ -3,13 +3,13 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   @moduledoc false
 
   def conn(req) do
-    path = :cowboy_req.path req
-    host = :cowboy_req.host req
-    port = :cowboy_req.port req
-    meth = :cowboy_req.method req
-    hdrs = :cowboy_req.headers req
-    qs   = :cowboy_req.qs req
-    peer = :cowboy_req.peer req
+    path = :cowboy_req.path(req)
+    host = :cowboy_req.host(req)
+    port = :cowboy_req.port(req)
+    meth = :cowboy_req.method(req)
+    hdrs = :cowboy_req.headers(req)
+    qs = :cowboy_req.qs(req)
+    peer = :cowboy_req.peer(req)
     {remote_ip, _} = peer
 
     req = Map.put(req, :plug_read_body, false)
@@ -27,7 +27,7 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       req_headers: to_headers_list(hdrs),
       request_path: path,
       scheme: String.to_atom(:cowboy_req.scheme(req))
-   }
+    }
   end
 
   def send_resp(req, status, headers, body) do
@@ -65,10 +65,12 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   end
 
   def read_req_body(req, opts \\ [])
+
   def read_req_body(req = %{plug_read_body: false}, opts) do
     opts = if is_list(opts), do: :maps.from_list(opts), else: opts
     :cowboy_req.read_body(%{req | plug_read_body: true}, opts)
   end
+
   def read_req_body(req, _opts) do
     {:ok, "", req}
   end
@@ -91,10 +93,11 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     # Group set-cookie headers into a list for a single `set-cookie
     # `key since cowboy 2 requires headers as a map.
     Enum.reduce(headers, %{}, fn
-      ({key = "set-cookie", value}, acc) ->
+      {key = "set-cookie", value}, acc ->
         set_cookies = Map.get(acc, key, [])
         Map.put(acc, to_string(key), [value | set_cookies])
-      ({key, value}, acc) ->
+
+      {key, value}, acc ->
         Map.put(acc, to_string(key), value)
     end)
   end

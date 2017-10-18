@@ -9,6 +9,7 @@ defmodule Plug.Adapters.Cowboy2.Handler do
 
   def upgrade(req, env, __MODULE__, {plug, opts}) do
     conn = @connection.conn(req)
+
     try do
       %{adapter: {@connection, req}} =
         conn
@@ -22,10 +23,12 @@ defmodule Plug.Adapters.Cowboy2.Handler do
         exception = Exception.normalize(:error, value, stack)
         reason = {{exception, stack}, {plug, :call, [conn, opts]}}
         terminate(reason, req, stack)
+
       :throw, value ->
         stack = System.stacktrace()
         reason = {{{:nocatch, value}, stack}, {plug, :call, [conn, opts]}}
         terminate(reason, req, stack)
+
       :exit, value ->
         stack = System.stacktrace()
         reason = {value, {plug, :call, [conn, opts]}}
@@ -39,11 +42,14 @@ defmodule Plug.Adapters.Cowboy2.Handler do
     end
   end
 
-  defp maybe_send(%Plug.Conn{state: :unset}, _plug),      do: raise Plug.Conn.NotSentError
+  defp maybe_send(%Plug.Conn{state: :unset}, _plug), do: raise(Plug.Conn.NotSentError)
   defp maybe_send(%Plug.Conn{state: :set} = conn, _plug), do: Plug.Conn.send_resp(conn)
-  defp maybe_send(%Plug.Conn{} = conn, _plug),            do: conn
+  defp maybe_send(%Plug.Conn{} = conn, _plug), do: conn
+
   defp maybe_send(other, plug) do
-    raise "Cowboy2 adapter expected #{inspect plug} to return Plug.Conn but got: #{inspect other}"
+    raise "Cowboy2 adapter expected #{inspect(plug)} to return Plug.Conn but got: #{
+            inspect(other)
+          }"
   end
 
   defp terminate(reason, _req, _stack) do

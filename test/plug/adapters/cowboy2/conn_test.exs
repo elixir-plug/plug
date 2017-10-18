@@ -17,11 +17,11 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   # GET http://127.0.0.1:8003/build/foo/bar and Plug will call build/1.
 
   setup_all do
-    {:ok, _pid} = Plug.Adapters.Cowboy2.http __MODULE__, [], port: 8003
+    {:ok, _pid} = Plug.Adapters.Cowboy2.http(__MODULE__, [], port: 8003)
 
-    on_exit fn ->
+    on_exit(fn ->
       :ok = Plug.Adapters.Cowboy2.shutdown(__MODULE__.HTTP)
-    end
+    end)
 
     :ok
   end
@@ -36,17 +36,21 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     # Assert we never have a lingering @already_sent entry in the inbox
     refute_received @already_sent
 
-    function = String.to_atom List.first(conn.path_info) || "root"
-    apply __MODULE__, function, [conn]
+    function = String.to_atom(List.first(conn.path_info) || "root")
+    apply(__MODULE__, function, [conn])
   rescue
     exception ->
       receive do
         {:plug_conn, :sent} ->
-          :erlang.raise(:error, exception, :erlang.get_stacktrace)
+          :erlang.raise(:error, exception, :erlang.get_stacktrace())
       after
         0 ->
-          send_resp(conn, 500, Exception.message(exception) <> "\n" <>
-                    Exception.format_stacktrace(System.stacktrace))
+          send_resp(
+            conn,
+            500,
+            Exception.message(exception) <>
+              "\n" <> Exception.format_stacktrace(System.stacktrace())
+          )
       end
   end
 
@@ -74,9 +78,9 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "builds a connection" do
-    assert {200, _, _} = request :head, "/?foo=bar&baz=bat"
-    assert {200, _, _} = request :get, "/build/foo/bar"
-    assert {200, _, _} = request :get, "//build//foo//bar"
+    assert {200, _, _} = request(:head, "/?foo=bar&baz=bat")
+    assert {200, _, _} = request(:get, "/build/foo/bar")
+    assert {200, _, _} = request(:get, "//build//foo//bar")
   end
 
   def return_request_path(%Conn{} = conn) do
@@ -84,16 +88,19 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "request_path" do
-    assert {200, _, "/return_request_path/foo"} =
-           request :get, "/return_request_path/foo?barbat"
+    assert {200, _, "/return_request_path/foo"} = request(:get, "/return_request_path/foo?barbat")
+
     assert {200, _, "/return_request_path/foo/bar"} =
-           request :get, "/return_request_path/foo/bar?bar=bat"
+             request(:get, "/return_request_path/foo/bar?bar=bat")
+
     assert {200, _, "/return_request_path/foo/bar/"} =
-           request :get, "/return_request_path/foo/bar/?bar=bat"
+             request(:get, "/return_request_path/foo/bar/?bar=bat")
+
     assert {200, _, "/return_request_path/foo//bar"} =
-           request :get, "/return_request_path/foo//bar"
+             request(:get, "/return_request_path/foo//bar")
+
     assert {200, _, "//return_request_path//foo//bar//"} =
-           request :get, "//return_request_path//foo//bar//"
+             request(:get, "//return_request_path//foo//bar//")
   end
 
   def headers(conn) do
@@ -103,16 +110,16 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "stores request headers" do
-    assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
+    assert {200, _, _} = request(:get, "/headers", [{"foo", "bar"}, {"baz", "bat"}])
   end
 
   test "fails on large headers" do
     assert capture_log(fn ->
-      cookie = "bar=" <> String.duplicate("a", 8_000_000)
-      response = request :get, "/headers", [{"cookie", cookie}]
-      assert match?({431, _, _}, response) or match?({:error, :closed}, response)
-      assert {200, _, _} = request :get, "/headers", [{"foo", "bar"}, {"baz", "bat"}]
-    end) =~ "Cowboy returned 431 and there are no headers in the connection"
+             cookie = "bar=" <> String.duplicate("a", 8_000_000)
+             response = request(:get, "/headers", [{"cookie", cookie}])
+             assert match?({431, _, _}, response) or match?({:error, :closed}, response)
+             assert {200, _, _} = request(:get, "/headers", [{"foo", "bar"}, {"baz", "bat"}])
+           end) =~ "Cowboy returned 431 and there are no headers in the connection"
   end
 
   def send_200(conn) do
@@ -140,31 +147,32 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "sends a response with status, headers and body" do
-    assert {200, headers, "OK"} = request :get, "/send_200"
+    assert {200, headers, "OK"} = request(:get, "/send_200")
+
     assert List.keyfind(headers, "cache-control", 0) ==
-           {"cache-control", "max-age=0, private, must-revalidate"}
-    assert {500, headers, "ERROR"} = request :get, "/send_500"
+             {"cache-control", "max-age=0, private, must-revalidate"}
+
+    assert {500, headers, "ERROR"} = request(:get, "/send_500")
     assert List.keyfind(headers, "cache-control", 0) == nil
-    assert List.keyfind(headers, "x-sample", 0) ==
-           {"x-sample", "value"}
+    assert List.keyfind(headers, "x-sample", 0) == {"x-sample", "value"}
   end
 
   test "allows customized statuses based on config" do
-    assert {451, _headers, ""} = request :get, "/send_451"
+    assert {451, _headers, ""} = request(:get, "/send_451")
     {:ok, ref} = :hackney.get("http://127.0.0.1:8003/send_451", [], "", async: :once)
     assert_receive({:hackney_response, ^ref, {:status, 451, "Unavailable For Legal Reasons"}})
     :hackney.close(ref)
   end
 
   test "existing statuses can be customized" do
-    assert {418, _headers, ""} = request :get, "/send_418"
+    assert {418, _headers, ""} = request(:get, "/send_418")
     {:ok, ref} = :hackney.get("http://127.0.0.1:8003/send_418", [], "", async: :once)
     assert_receive({:hackney_response, ^ref, {:status, 418, "Totally not a teapot"}})
     :hackney.close(ref)
   end
 
   test "skips body on head" do
-    assert {200, _, nil} = request :head, "/send_200"
+    assert {200, _, nil} = request(:head, "/send_200")
   end
 
   def send_file(conn) do
@@ -175,16 +183,21 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "sends a file with status and headers" do
-    assert {200, headers, body} = request :get, "/send_file"
+    assert {200, headers, body} = request(:get, "/send_file")
     assert body =~ "sends a file with status and headers"
+
     assert List.keyfind(headers, "cache-control", 0) ==
-           {"cache-control", "max-age=0, private, must-revalidate"}
+             {"cache-control", "max-age=0, private, must-revalidate"}
+
     assert List.keyfind(headers, "content-length", 0) ==
-           {"content-length", __ENV__.file |> File.stat!() |> Map.fetch!(:size) |> Integer.to_string()}
+             {
+               "content-length",
+               __ENV__.file |> File.stat!() |> Map.fetch!(:size) |> Integer.to_string()
+             }
   end
 
   test "skips file on head" do
-    assert {200, _, nil} = request :head, "/send_file"
+    assert {200, _, nil} = request(:head, "/send_file")
   end
 
   def send_chunked(conn) do
@@ -196,11 +209,12 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "sends a chunked response with status and headers" do
-    assert {200, headers, "HELLO\nWORLD\n"} = request :get, "/send_chunked"
+    assert {200, headers, "HELLO\nWORLD\n"} = request(:get, "/send_chunked")
+
     assert List.keyfind(headers, "cache-control", 0) ==
-           {"cache-control", "max-age=0, private, must-revalidate"}
-    assert List.keyfind(headers, "transfer-encoding", 0) ==
-           {"transfer-encoding", "chunked"}
+             {"cache-control", "max-age=0, private, must-revalidate"}
+
+    assert List.keyfind(headers, "transfer-encoding", 0) == {"transfer-encoding", "chunked"}
   end
 
   def read_req_body(conn) do
@@ -270,11 +284,13 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-       {"Content-Length", byte_size(multipart)}]
+      [
+        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+        {"Content-Length", byte_size(multipart)}
+      ]
 
-    assert {200, _, _} = request :post, "/multipart", headers, multipart
-    assert {200, _, _} = request :post, "/multipart?name=overriden", headers, multipart
+    assert {200, _, _} = request(:post, "/multipart", headers, multipart)
+    assert {200, _, _} = request(:post, "/multipart?name=overriden", headers, multipart)
   end
 
   def file_too_big(conn) do
@@ -301,10 +317,12 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-       {"Content-Length", byte_size(multipart)}]
+      [
+        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+        {"Content-Length", byte_size(multipart)}
+      ]
 
-    assert {500, _, body} = request :post, "/file_too_big", headers, multipart
+    assert {500, _, body} = request(:post, "/file_too_big", headers, multipart)
     assert body =~ "the request is too large"
   end
 
@@ -318,10 +336,12 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-       {"Content-Length", byte_size(multipart)}]
+      [
+        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+        {"Content-Length", byte_size(multipart)}
+      ]
 
-    assert {500, _, body} = request :post, "/multipart", headers, multipart
+    assert {500, _, body} = request(:post, "/multipart", headers, multipart)
     assert body =~ "invalid UTF-8 on multipart body, got byte 139"
   end
 
@@ -333,11 +353,15 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-       {"Content-Length", byte_size(multipart)}]
+      [
+        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+        {"Content-Length", byte_size(multipart)}
+      ]
 
-    assert {500, _, body} = request :post, "/multipart", headers, multipart
-    assert body =~ "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
+    assert {500, _, body} = request(:post, "/multipart", headers, multipart)
+
+    assert body =~
+             "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
 
     multipart = """
     ------w58EW1cEpjzydSCq\r
@@ -347,11 +371,15 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     """
 
     headers =
-      [{"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-       {"Content-Length", byte_size(multipart)}]
+      [
+        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+        {"Content-Length", byte_size(multipart)}
+      ]
 
-    assert {500, _, body} = request :post, "/multipart", headers, multipart
-    assert body =~ "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
+    assert {500, _, body} = request(:post, "/multipart", headers, multipart)
+
+    assert body =~
+             "malformed request, a RuntimeError exception was raised with message \"invalid multipart"
   end
 
   def https(conn) do
@@ -360,34 +388,42 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   @https_options [
-    port: 8004, password: "cowboy",
+    port: 8004,
+    password: "cowboy",
     keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
     certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
   ]
 
   test "https" do
-    {:ok, _pid} = Plug.Adapters.Cowboy2.https __MODULE__, [], @https_options
-    ssl_options = [ssl_options: [cacertfile: @https_options[:certfile], server_name_indication: 'localhost']]
-    assert {:ok, 200, _headers, client} = :hackney.get("https://127.0.0.1:8004/https", [], "", ssl_options)
+    {:ok, _pid} = Plug.Adapters.Cowboy2.https(__MODULE__, [], @https_options)
+
+    ssl_options = [
+      ssl_options: [cacertfile: @https_options[:certfile], server_name_indication: 'localhost']
+    ]
+
+    assert {:ok, 200, _headers, client} =
+             :hackney.get("https://127.0.0.1:8004/https", [], "", ssl_options)
+
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
   after
-    :ok = Plug.Adapters.Cowboy2.shutdown __MODULE__.HTTPS
+    :ok = Plug.Adapters.Cowboy2.shutdown(__MODULE__.HTTPS)
   end
 
   ## Helpers
 
   defp request(:head = verb, path) do
-    {:ok, status, headers} =
-      :hackney.request(verb, "http://127.0.0.1:8003" <> path, [], "", [])
+    {:ok, status, headers} = :hackney.request(verb, "http://127.0.0.1:8003" <> path, [], "", [])
     {status, headers, nil}
   end
+
   defp request(verb, path, headers \\ [], body \\ "") do
     case :hackney.request(verb, "http://127.0.0.1:8003" <> path, headers, body, []) do
       {:ok, status, headers, client} ->
         {:ok, body} = :hackney.body(client)
         :hackney.close(client)
         {status, headers, body}
+
       {:error, _} = error ->
         error
     end

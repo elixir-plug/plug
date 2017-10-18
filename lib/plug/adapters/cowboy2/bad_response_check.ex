@@ -20,7 +20,7 @@ defmodule Plug.Adapters.Cowboy2.BadResponseCheck do
   def early_error(_stream_id, reason, _partial_req, resp, _opts) do
     case reason do
       {:connection_error, :limit_reached, _} ->
-        Logger.error """
+        Logger.error("""
         Cowboy returned 431 and there are no headers in the connection.
 
         This may happen if Cowboy is unable to parse the request headers,
@@ -35,10 +35,12 @@ defmodule Plug.Adapters.Cowboy2.BadResponseCheck do
           max_header_value_length: 4096,
           max_headers: 100
         ]
-        """
+        """)
+
       _ ->
         nil
     end
+
     resp
   end
 end
