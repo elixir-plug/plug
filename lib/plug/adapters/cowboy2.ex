@@ -115,34 +115,6 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   @doc """
-  Returns a child spec to be supervised by your application.
-
-  This function returns the old child specs used by early OTP
-  and Elixir versions. See `child_spec/1` for the Elixir v1.5
-  based child specifications.
-  """
-  def child_spec(scheme, plug, opts, cowboy_options \\ []) do
-    [ref, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
-
-    cowboy_function =
-      case scheme do
-        :http -> :start_clear
-        :https -> :start_tls
-      end
-
-    cowboy_args = [ref, trans_opts, proto_opts]
-
-    {
-      {:ranch_listener_sup, ref},
-      {:cowboy, cowboy_function, cowboy_args},
-      :permanent,
-      :infinity,
-      :supervisor,
-      [:ranch_listener_sup]
-    }
-  end
-
-  @doc """
   A function for starting a Cowboy2 server under Elixir v1.5 supervisors.
 
   It expects three options:
@@ -178,6 +150,28 @@ defmodule Plug.Adapters.Cowboy2 do
 
     %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}
   end
+
+  defp child_spec(scheme, plug, opts, cowboy_options) do
+    [ref, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
+
+    cowboy_function =
+      case scheme do
+        :http -> :start_clear
+        :https -> :start_tls
+      end
+
+    cowboy_args = [ref, trans_opts, proto_opts]
+
+    {
+      {:ranch_listener_sup, ref},
+      {:cowboy, cowboy_function, cowboy_args},
+      :permanent,
+      :infinity,
+      :supervisor,
+      [:ranch_listener_sup]
+    }
+  end
+
 
   ## Helpers
 

@@ -110,14 +110,14 @@ defmodule Plug.Adapters.Cowboy2Test do
   end
 
   test "builds child specs" do
-    assert {
-             {:ranch_listener_sup, Plug.Adapters.Cowboy2Test.HTTP},
-             {:cowboy, :start_clear, _},
-             :permanent,
-             :infinity,
-             :supervisor,
-             [:ranch_listener_sup]
-           } = child_spec(:http, __MODULE__, [], [])
+    assert %{
+             id: {:ranch_listener_sup, Plug.Adapters.Cowboy2Test.HTTP},
+             modules: [:ranch_listener_sup],
+             start: {:cowboy, :start_clear, _},
+             restart: :permanent,
+             shutdown: :infinity,
+             type: :supervisor
+           } = child_spec(scheme: :http, plug: __MODULE__, options: [])
   end
 
   defmodule MyPlug do
