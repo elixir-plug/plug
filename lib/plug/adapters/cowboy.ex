@@ -223,7 +223,7 @@ defmodule Plug.Adapters.Cowboy do
   defp add_on_response(false, {mod, fun}, protocol_options) when is_atom(mod) and is_atom(fun) do 
     [onresponse: fn status, headers, body, request -> 
         apply(mod, fun, [status, headers, body, request]) 
-     end ] ++ protocol_options
+     end] ++ protocol_options
   end
   defp add_on_response(true, nil, protocol_options), do: [onresponse: &onresponse/4] ++ protocol_options
   defp add_on_response(true, fun, protocol_options) when is_function(fun) do
