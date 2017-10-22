@@ -81,51 +81,89 @@ defmodule Plug.Adapters.CowboyTest do
   describe "onresponse handling" do
     test "includes the default onresponse handler" do
       assert [Plug.Adapters.CowboyTest.HTTP,
-            _,
-            _,
-            [env: [dispatch: @dispatch], onresponse: on_response]] =
-           args(:http, __MODULE__, [], [])
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: on_response]] =
+             args(:http, __MODULE__, [], [])
       assert is_function(on_response)
     end
 
     test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false" do
       assert [Plug.Adapters.CowboyTest.HTTP,
-            _,
-            _,
-            [env: [dispatch: @dispatch]]] =
-           args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false])
+              _,
+              _,
+              [env: [dispatch: @dispatch]]] =
+             args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false])
     end
 
     test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false and includes the user-provided onresponse handler" do
       my_onresponse = fn (_, _, _, req) -> req end
       assert [Plug.Adapters.CowboyTest.HTTP,
-            _,
-            _,
-            [env: [dispatch: @dispatch], onresponse: on_response]] =
-           args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false, protocol_options: [onresponse: my_onresponse]])
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: on_response]] =
+             args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false, protocol_options: [onresponse: my_onresponse]])
       assert is_function(on_response)
-
       assert on_response == my_onresponse
+    end
+
+    defp my_onresponse_handler(_, _, _, req), do: res
+
+    test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false and handles user-provided onresponse tuple " do
+      my_onresponse = {Plug.Adapters.CowboyTest, :my_onresponse_handler}
+      assert [Plug.Adapters.CowboyTest.HTTP,
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: default_response]] =
+             args(:http, __MODULE__, [], [])
+
+      assert [Plug.Adapters.CowboyTest.HTTP,
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: on_response]] =
+             args(:http, __MODULE__, [], [log_error_on_incomplete_requests: false, protocol_options: [onresponse: my_onresponse]])
+      assert is_function(on_response)
+      assert on_response != default_response
     end
 
     test "includes the default onresponse handler and the user-provided onresponse handler" do
       # Grab a ref to the default onresponse handler
       assert [Plug.Adapters.CowboyTest.HTTP,
-            _,
-            _,
-            [env: [dispatch: @dispatch], onresponse: default_response]] =
-           args(:http, __MODULE__, [], [])
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: default_response]] =
+             args(:http, __MODULE__, [], [])
 
       my_onresponse = fn (_, _, _, req) -> req end
       assert [Plug.Adapters.CowboyTest.HTTP,
-            _,
-            _,
-            [env: [dispatch: @dispatch], onresponse: on_response]] =
-           args(:http, __MODULE__, [], [protocol_options: [onresponse: my_onresponse]])
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: on_response]] =
+             args(:http, __MODULE__, [], [protocol_options: [onresponse: my_onresponse]])
       assert is_function(on_response)
       assert on_response != default_response
       assert on_response != my_onresponse
     end
+
+    test "includes the default onresponse handler and handles the user-provided onresponse handler tuple" do
+      # Grab a ref to the default onresponse handler
+      assert [Plug.Adapters.CowboyTest.HTTP,
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: default_response]] =
+             args(:http, __MODULE__, [], [])
+
+      my_onresponse = {Plug.Adapters.CowboyTest, :my_onresponse_handler}
+      assert [Plug.Adapters.CowboyTest.HTTP,
+              _,
+              _,
+              [env: [dispatch: @dispatch], onresponse: on_response]] =
+             args(:http, __MODULE__, [], [protocol_options: [onresponse: my_onresponse]])
+      assert is_function(on_response)
+      assert on_response != default_response
+      assert on_response != my_onresponse
+    end
+
   end
 
   defmodule MyPlug do
