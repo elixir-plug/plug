@@ -1042,7 +1042,8 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns session value for the given `key`.
+  Returns session value for the given `key`. If `key`
+  is not set, `nil` is returned.
 
   The key can be a string or an atom, where atoms are
   automatically converted to strings.
