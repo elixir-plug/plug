@@ -1203,7 +1203,7 @@ defmodule Plug.Conn do
   end
 
   defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
-    if Application.get_env(:plug, :validate_header_keys_during_test) && not valid_header_key?(key) do
+    if Application.fetch_env!(:plug, :validate_header_keys_during_test) and not valid_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
