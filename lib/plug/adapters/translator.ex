@@ -11,9 +11,17 @@ defmodule Plug.Adapters.Translator do
   @doc """
   The `translate/4` function expected by custom Logger translators.
   """
+
+  # cowboy 1 format
   def translate(min_level, :error, :format,
                 {~c"Ranch listener" ++ _, [ref, protocol, pid, reason]}) do
     translate_ranch(min_level, ref, protocol, pid, reason)
+  end
+
+  # cowboy 2 format
+  def translate(min_level, :error, :format,
+                {~c"Ranch listener" ++ _, [ref, pid, _stream_id, _stream_pid, reason, _]}) do
+    translate_ranch(min_level, ref, :cowboy_protocol, pid, reason)
   end
 
   def translate(_min_level, _level, _kind, _data) do

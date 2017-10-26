@@ -3,6 +3,8 @@ defmodule Plug.Adapters.CowboyTest do
 
   import Plug.Adapters.Cowboy
 
+  @moduletag :cowboy1
+
   def init([]) do
     [foo: :bar]
   end

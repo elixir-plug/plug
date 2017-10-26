@@ -15,13 +15,24 @@ defmodule Plug.Adapters.TranslatorTest do
     raise "oops"
   end
 
-  test "ranch/cowboy 500 logs" do
-    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 9001
-    on_exit fn -> Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP) end
+  setup_all do
+    adapter_module =
+      case Application.spec(:cowboy, :vsn) do
+        [?2 | _] -> Plug.Adapters.Cowboy2
+        _ -> Plug.Adapters.Cowboy
+      end
 
-    output = capture_log fn ->
-      :hackney.get("http://127.0.0.1:9001/error", [], "", [])
-    end
+    {:ok, adapter_module: adapter_module}
+  end
+
+  test "ranch/cowboy 500 logs", %{adapter_module: adapter_module} do
+    {:ok, _pid} = adapter_module.http(__MODULE__, [], port: 9001)
+    on_exit(fn -> adapter_module.shutdown(__MODULE__.HTTP) end)
+
+    output =
+      capture_log(fn ->
+        :hackney.get("http://127.0.0.1:9001/error", [], "", [])
+      end)
 
     assert output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest terminated"
     assert output =~ "Server: 127.0.0.1:9001 (http)"
@@ -30,13 +41,14 @@ defmodule Plug.Adapters.TranslatorTest do
     assert output =~ "** (RuntimeError) oops"
   end
 
-  test "ranch/cowboy non-500 skips" do
-    {:ok, _pid} = Plug.Adapters.Cowboy.http __MODULE__, [], port: 9002
-    on_exit fn -> Plug.Adapters.Cowboy.shutdown(__MODULE__.HTTP) end
+  test "ranch/cowboy non-500 skips", %{adapter_module: adapter_module} do
+    {:ok, _pid} = adapter_module.http(__MODULE__, [], port: 9002)
+    on_exit(fn -> adapter_module.shutdown(__MODULE__.HTTP) end)
 
-    output = capture_log fn ->
-      :hackney.get("http://127.0.0.1:9002/warn", [], "", [])
-    end
+    output =
+      capture_log(fn ->
+        :hackney.get("http://127.0.0.1:9002/warn", [], "", [])
+      end)
 
     refute output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest terminated"
     refute output =~ "Server: 127.0.0.1:9002 (http)"
