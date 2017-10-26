@@ -129,16 +129,16 @@ defmodule Plug.Adapters.Cowboy2Test do
       Plug.Adapters.Cowboy2.https(MyPlug, [], [])
     end
 
-    assert_raise ArgumentError,
-                 ~r/ssl\/key\.pem required by SSL's :keyfile either does not exist/,
-                 fn ->
-                   Plug.Adapters.Cowboy2.https(
-                     MyPlug,
-                     [],
-                     keyfile: "priv/ssl/key.pem",
-                     certfile: "priv/ssl/cert.pem",
-                     otp_app: :plug
-                   )
-                 end
+    ssl_error = ~r/ssl\/key\.pem required by SSL's :keyfile either does not exist/
+
+    assert_raise ArgumentError, ssl_error, fn ->
+      Plug.Adapters.Cowboy2.https(
+        MyPlug,
+        [],
+        keyfile: "priv/ssl/key.pem",
+        certfile: "priv/ssl/cert.pem",
+        otp_app: :plug
+      )
+    end
   end
 end

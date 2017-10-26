@@ -145,14 +145,8 @@ defmodule Plug.Adapters.Cowboy2 do
         plug -> {plug, []}
       end
 
-    {id, start, restart, shutdown, type, modules} =
-      child_spec(scheme, plug, plug_opts, cowboy_opts)
-
-    %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}
-  end
-
-  defp child_spec(scheme, plug, opts, cowboy_options) do
-    [ref, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
+    cowboy_args = args(scheme, plug, plug_opts, cowboy_opts)
+    [ref | _] = cowboy_args
 
     cowboy_function =
       case scheme do
@@ -160,18 +154,15 @@ defmodule Plug.Adapters.Cowboy2 do
         :https -> :start_tls
       end
 
-    cowboy_args = [ref, trans_opts, proto_opts]
-
-    {
-      {:ranch_listener_sup, ref},
-      {:cowboy, cowboy_function, cowboy_args},
-      :permanent,
-      :infinity,
-      :supervisor,
-      [:ranch_listener_sup]
+    %{
+      id: {:ranch_listener_sup, ref},
+      start: {:cowboy, cowboy_function, cowboy_args},
+      restart: :permanent,
+      shutdown: :infinity,
+      type: :supervisor,
+      modules: [:ranch_listener_sup]
     }
   end
-
 
   ## Helpers
 
@@ -196,6 +187,8 @@ defmodule Plug.Adapters.Cowboy2 do
     apply(:cowboy, start, args(scheme, plug, opts, cowboy_options))
   end
 
+  @default_stream_handlers [Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h]
+
   defp set_compress(cowboy_options) do
     compress = Keyword.get(cowboy_options, :compress)
     stream_handlers = Keyword.get(cowboy_options, :stream_handlers)
@@ -203,13 +196,11 @@ defmodule Plug.Adapters.Cowboy2 do
     case {compress, stream_handlers} do
       {true, nil} ->
         Keyword.put_new(cowboy_options, :stream_handlers, [
-          :cowboy_compress_h,
-          Plug.Adapters.Cowboy2.BadResponseCheck,
-          :cowboy_stream_h
+          :cowboy_compress_h | @default_stream_handlers
         ])
 
       {true, _} ->
-        raise "Cannot set both compress and stream_handlers at once. " <>
+        raise "cannot set both compress and stream_handlers at once. " <>
                 "If you wish to set compress, please add `:cowboy_compress_h` to your stream handlers."
 
       _ ->
@@ -224,16 +215,10 @@ defmodule Plug.Adapters.Cowboy2 do
   defp normalize_cowboy_options(cowboy_options, :https) do
     assert_ssl_options(cowboy_options)
     cowboy_options = Keyword.put_new(cowboy_options, :port, 4040)
+    ssl_opts = [:keyfile, :certfile, :cacertfile, :dhfile]
 
-    cowboy_options =
-      Enum.reduce(
-        [:keyfile, :certfile, :cacertfile, :dhfile],
-        cowboy_options,
-        &normalize_ssl_file(&1, &2)
-      )
-
-    cowboy_options = Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
-    cowboy_options
+    cowboy_options = Enum.reduce(ssl_opts, cowboy_options, &normalize_ssl_file(&1, &2))
+    Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
   end
 
   defp to_args(opts, non_keyword_opts) do
@@ -246,20 +231,9 @@ defmodule Plug.Adapters.Cowboy2 do
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
 
-    extra_options =
-      Keyword.put_new(extra_options, :stream_handlers, [
-        Plug.Adapters.Cowboy2.BadResponseCheck,
-        :cowboy_stream_h
-      ])
-
-    protocol_options =
-      %{
-        env: %{
-          dispatch: dispatch
-        }
-      }
-      |> Map.merge(:maps.from_list(protocol_options ++ extra_options))
-
+    extra_options = Keyword.put_new(extra_options, :stream_handlers, @default_stream_handlers)
+    protocol_and_extra_options = :maps.from_list(protocol_options ++ extra_options)
+    protocol_options = Map.merge(%{env: %{dispatch: dispatch}}, protocol_and_extra_options)
     transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
 
     [ref, non_keyword_opts ++ transport_options, protocol_options]
@@ -304,7 +278,8 @@ defmodule Plug.Adapters.Cowboy2 do
 
     unless File.exists?(value) do
       fail(
-        "the file #{value} required by SSL's #{inspect(key)} either does not exist, or the application does not have permission to access it"
+        "the file #{value} required by SSL's #{inspect(key)} either does not exist, " <>
+          "or the application does not have permission to access it"
       )
     end
 

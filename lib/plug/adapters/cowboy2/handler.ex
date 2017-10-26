@@ -47,9 +47,8 @@ defmodule Plug.Adapters.Cowboy2.Handler do
   defp maybe_send(%Plug.Conn{} = conn, _plug), do: conn
 
   defp maybe_send(other, plug) do
-    raise "Cowboy2 adapter expected #{inspect(plug)} to return Plug.Conn but got: #{
+    raise "Cowboy2 adapter expected #{inspect(plug)} to return Plug.Conn but got: " <>
             inspect(other)
-          }"
   end
 
   defp terminate(reason, _req, _stack) do
