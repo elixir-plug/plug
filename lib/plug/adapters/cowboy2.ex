@@ -32,7 +32,7 @@ defmodule Plug.Adapters.Cowboy2 do
       Defaults to 5000ms.
 
     * `:protocol_options` - Specifies remaining protocol options,
-      see [Cowboy2 protocol docs](http://ninenines.eu/docs/en/cowboy/2.0/manual/cowboy_protocol/).
+      see [Cowboy docs](https://ninenines.eu/docs/en/cowboy/2.0/manual/cowboy_http/).
 
   All other options are given to the underlying transport.
   """
