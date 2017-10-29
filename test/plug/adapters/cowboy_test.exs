@@ -109,8 +109,6 @@ defmodule Plug.Adapters.CowboyTest do
       assert on_response == my_onresponse
     end
 
-    defp my_onresponse_handler(_, _, _, req), do: res
-
     test "elides the default onresponse handler if log_error_on_incomplete_requests is set to false and handles user-provided onresponse tuple " do
       my_onresponse = {Plug.Adapters.CowboyTest, :my_onresponse_handler}
       assert [Plug.Adapters.CowboyTest.HTTP,
