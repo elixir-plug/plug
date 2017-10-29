@@ -82,13 +82,13 @@ defmodule Plug.ErrorHandler do
     __catch__(conn, kind, reason, reason, System.stacktrace, handle_errors)
   end
 
-  defp __catch__(conn, kind, reason, wrapped_reason, stack, handle_errors) do
+  defp __catch__(conn, kind, reason, unwrapped_reason, stack, handle_errors) do
     receive do
       @already_sent ->
         send self(), @already_sent
     after
       0 ->
-        normalized_reason = Exception.normalize(kind, wrapped_reason, stack)
+        normalized_reason = Exception.normalize(kind, unwrapped_reason, stack)
         conn
         |> Plug.Conn.put_status(status(kind, normalized_reason))
         |> handle_errors.(%{kind: kind, reason: normalized_reason, stack: stack})
