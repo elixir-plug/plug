@@ -57,10 +57,10 @@ defmodule Plug.ErrorHandlerTest do
   test "call/2 normalizes the error" do
     conn = conn(:get, "/send_undef")
 
-    expected_error = %UndefinedFunctionError{arity: 0, exports: nil,
+    expected_error = %UndefinedFunctionError{arity: 0,
                       function: :nonexistant_function, module: String, reason: nil}
 
-    assert catch_error(Router.call(conn, [])) ==  expected_error
+    assert ^expected_error = catch_error(Router.call(conn, []))
 
 
     assert_received {:plug_conn, :sent}
