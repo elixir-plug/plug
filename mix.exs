@@ -13,7 +13,7 @@ defmodule Plug.Mixfile do
      description: "A specification and conveniences for composable " <>
                   "modules between web applications",
      name: "Plug",
-     xref: [exclude: [:ranch, :cowboy, :cowboy_req, :cowboy_router]],
+     xref: [exclude: [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream]],
      docs: [extras: ["README.md"], main: "readme",
             groups_for_modules: groups_for_modules(),
             source_ref: "v#{@version}",
