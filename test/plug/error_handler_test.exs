@@ -87,19 +87,20 @@ defmodule Plug.ErrorHandlerTest do
     end
 
     assert_received {:plug_conn, :sent}
-    assert {500, _headers, "Something went wrong"} = sent_resp(conn)
+    assert {403, _headers, "Something went wrong"} = sent_resp(conn)
   end
 
-  test "call/2 raises wrapped errors" do
+  test "call/2 sends unwrapped errors to handle_errors" do
     conn = conn(:get, "/send_and_wrapped")
 
-    raised_error = assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.Exception) oops", fn ->
+    assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.Exception) oops", fn ->
       Router.call(conn, [])
     end
 
-    {_, _, %{reason: handle_error_reason}} = assert_received {:handle_error, _, _}
-    assert handle_error_reason == raised_error
+    {_, _, %{reason: handle_errors_reason}} = assert_received {:handle_error, _, _}
+    expected_error =  %Plug.ErrorHandlerTest.Exception{message: "oops", plug_status: 403}
+    assert handle_errors_reason == expected_error
     assert_received {:plug_conn, :sent}
-    assert {500, _headers, "Something went wrong"} = sent_resp(conn)
+    assert {403, _headers, "Something went wrong"} = sent_resp(conn)
   end
 end
