@@ -137,7 +137,7 @@ defmodule Plug.Adapters.Cowboy2 do
   """
   def child_spec(opts) do
     scheme = Keyword.fetch!(opts, :scheme)
-    cowboy_opts = Keyword.fetch!(opts, :options)
+    cowboy_opts = Keyword.get(opts, :options, [])
 
     {plug, plug_opts} =
       case Keyword.fetch!(opts, :plug) do
