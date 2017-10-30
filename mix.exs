@@ -79,6 +79,7 @@ defmodule Plug.Mixfile do
 
       "Plug.Adapters": [
         Plug.Adapters.Cowboy,
+        Plug.Adapters.Cowboy2,
         Plug.Adapters.Translator,
       ],
 
