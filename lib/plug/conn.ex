@@ -857,11 +857,12 @@ defmodule Plug.Conn do
   Reads the body of a multipart request.
 
   Returns `{:ok, body, conn}` if all body has been read,
-  `{:more, binary, conn}` otherwise.
+  `{:more, binary, conn}` otherwise, and `{:done, conn}`
+  if there is no more body.
 
   It accepts the same options as `read_body/2`.
   """
-  @spec read_part_body(t, Keyword.t) :: {:ok, binary, t} | {:more, binary, t}
+  @spec read_part_body(t, Keyword.t) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
   def read_part_body(%{adapter: {adapter, state}} = conn, opts) do
     case init_multipart(conn) do
       {boundary, buffer} ->
