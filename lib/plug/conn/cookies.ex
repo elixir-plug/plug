@@ -88,8 +88,7 @@ defmodule Plug.Conn.Cookies do
     end
   end
 
-  defp pad(number) when number in 0..9, do: <<?0, ?0 + number>>
-  defp pad(number), do: Integer.to_string(number)
+  defp pad(number), do: Integer.to_string(number) |> String.pad_leading(2, "0")
 
   defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
     weekday_name  = weekday_name(:calendar.day_of_the_week(date))
