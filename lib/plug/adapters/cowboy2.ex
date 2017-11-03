@@ -146,17 +146,27 @@ defmodule Plug.Adapters.Cowboy2 do
       end
 
     cowboy_args = args(scheme, plug, plug_opts, cowboy_opts)
-    [ref | _] = cowboy_args
+    [ref, transport_opts, proto_opts] = cowboy_args
 
-    cowboy_function =
+    {ranch_module, cowboy_protocol} =
       case scheme do
-        :http -> :start_clear
-        :https -> :start_tls
+        :http -> {:ranch_tcp, :cowboy_clear}
+        :https -> {:ranch_ssl, :cowboy_tls}
       end
+
+    num_acceptors = Keyword.get(transport_opts, :num_acceptors, 100)
 
     %{
       id: {:ranch_listener_sup, ref},
-      start: {:cowboy, cowboy_function, cowboy_args},
+      start:
+        {:ranch_listener_sup, :start_link, [
+          ref,
+          num_acceptors,
+          ranch_module,
+          transport_opts,
+          cowboy_protocol,
+          proto_opts
+        ]},
       restart: :permanent,
       shutdown: :infinity,
       type: :supervisor,
