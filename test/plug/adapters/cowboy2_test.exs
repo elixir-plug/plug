@@ -21,7 +21,7 @@ defmodule Plug.Adapters.Cowboy2Test do
                modules: [:ranch_listener_sup],
                restart: :permanent,
                shutdown: :infinity,
-               start: {:cowboy, :start_clear, _},
+               start: {:ranch_listener_sup, :start_link, _},
                type: :supervisor
              } = Supervisor.child_spec(spec, [])
     end
@@ -113,7 +113,7 @@ defmodule Plug.Adapters.Cowboy2Test do
     assert %{
              id: {:ranch_listener_sup, Plug.Adapters.Cowboy2Test.HTTP},
              modules: [:ranch_listener_sup],
-             start: {:cowboy, :start_clear, _},
+             start: {:ranch_listener_sup, :start_link, _},
              restart: :permanent,
              shutdown: :infinity,
              type: :supervisor
