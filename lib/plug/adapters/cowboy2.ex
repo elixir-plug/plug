@@ -148,10 +148,18 @@ defmodule Plug.Adapters.Cowboy2 do
     cowboy_args = args(scheme, plug, plug_opts, cowboy_opts)
     [ref, transport_opts, proto_opts] = cowboy_args
 
-    {ranch_module, cowboy_protocol} =
+    {ranch_module, cowboy_protocol, transport_opts} =
       case scheme do
-        :http -> {:ranch_tcp, :cowboy_clear}
-        :https -> {:ranch_ssl, :cowboy_tls}
+        :http ->
+          {:ranch_tcp, :cowboy_clear, transport_opts}
+
+        :https ->
+          transport_opts =
+            transport_opts
+            |> Keyword.put_new(:next_protocols_advertised, ["h2", "http/1.1"])
+            |> Keyword.put_new(:alpn_preferred_protocols, ["h2", "http/1.1"])
+
+          {:ranch_ssl, :cowboy_tls, transport_opts}
       end
 
     num_acceptors = Keyword.get(transport_opts, :num_acceptors, 100)
