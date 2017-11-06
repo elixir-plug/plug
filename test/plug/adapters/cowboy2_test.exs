@@ -25,6 +25,31 @@ defmodule Plug.Adapters.Cowboy2Test do
                type: :supervisor
              } = Supervisor.child_spec(spec, [])
     end
+
+    test "the h2 alpn settings are added when using https" do
+      options = [
+        port: 4040,
+        password: "cowboy",
+        keyfile: Path.expand("../../fixtures/ssl/key.pem", __DIR__),
+        certfile: Path.expand("../../fixtures/ssl/cert.pem", __DIR__)
+      ]
+
+      spec = {Plug.Adapters.Cowboy2, [scheme: :https, plug: __MODULE__, options: options]}
+
+      %{start: {:ranch_listener_sup, :start_link, opts}} = Supervisor.child_spec(spec, [])
+
+      assert [
+               Plug.Adapters.Cowboy2Test.HTTPS,
+               100,
+               :ranch_ssl,
+               transport_opts,
+               :cowboy_tls,
+               _proto_opts
+             ] = opts
+
+      assert Keyword.get(transport_opts, :alpn_preferred_protocols) == ["h2", "http/1.1"]
+      assert Keyword.get(transport_opts, :next_protocols_advertised) == ["h2", "http/1.1"]
+    end
   end
 
   test "builds args for cowboy dispatch" do
