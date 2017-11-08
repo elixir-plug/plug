@@ -32,7 +32,8 @@ defmodule Plug.Mixfile do
      {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.0", optional: true},
      {:ex_doc, "~> 0.17.1", only: :docs},
      {:inch_ex, ">= 0.0.0", only: :docs},
-     {:hackney, "~> 1.2.0", only: :test}]
+     {:hackney, "~> 1.2.0", only: :test},
+     {:kadabra, "~> 0.3.4", only: :test}]
   end
 
   defp lockfile() do
@@ -95,7 +96,7 @@ defmodule Plug.Mixfile do
         Plug.Crypto.MessageEncryptor,
         Plug.Crypto.MessageVerifier,
       ],
-      
+
       "Plug.Parsers": [
         Plug.Parsers.JSON,
         Plug.Parsers.MULTIPART,

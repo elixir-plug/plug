@@ -16,11 +16,20 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   # e.g. `assert {204, _, _} = request :get, "/build/foo/bar"` will perform a
   # GET http://127.0.0.1:8003/build/foo/bar and Plug will call build/1.
 
+  @https_options [
+    port: 8004,
+    password: "cowboy",
+    keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
+    certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
+  ]
+
   setup_all do
     {:ok, _pid} = Plug.Adapters.Cowboy2.http(__MODULE__, [], port: 8003)
+    {:ok, _pid} = Plug.Adapters.Cowboy2.https(__MODULE__, [], @https_options)
 
     on_exit(fn ->
       :ok = Plug.Adapters.Cowboy2.shutdown(__MODULE__.HTTP)
+      :ok = Plug.Adapters.Cowboy2.shutdown(__MODULE__.HTTPS)
     end)
 
     :ok
@@ -387,16 +396,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     send_resp(conn, 200, "OK")
   end
 
-  @https_options [
-    port: 8004,
-    password: "cowboy",
-    keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
-    certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
-  ]
-
   test "https" do
-    {:ok, _pid} = Plug.Adapters.Cowboy2.https(__MODULE__, [], @https_options)
-
     ssl_options = [
       ssl_options: [cacertfile: @https_options[:certfile], server_name_indication: 'localhost']
     ]
@@ -406,8 +406,23 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
 
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
-  after
-    :ok = Plug.Adapters.Cowboy2.shutdown(__MODULE__.HTTPS)
+  end
+
+  def http2(conn) do
+    %{adapter: {Plug.Adapters.Cowboy2.Conn, %{version: version}}} = conn
+    send_resp(conn, 200, Atom.to_string(version))
+  end
+
+  test "http2" do
+    opts = [
+      cacertfile: @https_options[:certfile], server_name_indication: 'localhost', port: 8004
+    ]
+
+    {:ok, _} = Application.ensure_all_started(:kadabra)
+    {:ok, pid} = Kadabra.open('localhost', :https, opts)
+    Kadabra.get(pid, "/http2")
+
+    assert_receive({:end_stream, %Kadabra.Stream.Response{body: "HTTP/2", status: 200}}, 1_000)
   end
 
   ## Helpers
