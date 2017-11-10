@@ -87,6 +87,11 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
+  def push(%{owner: owner, ref: ref}, path, headers) do
+    send owner, {ref, {:push, path, headers}}
+    :ok
+  end
+
   ## Private helpers
 
   defp body_or_params(nil, _query, headers),

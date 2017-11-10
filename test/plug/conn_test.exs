@@ -377,6 +377,22 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
+  test "push/3 performs a server push" do
+    conn(:get, "/foo") |> push("/static/application.css", [{"accept", "text/plain"}])
+    assert_receive({_, {:push, "/static/application.css", [{"accept", "text/plain"}]}})
+  end
+
+  test "push/3 works out the MIME type if not set" do
+    conn(:get, "/foo") |> push("/static/application.css")
+    assert_receive({_, {:push, "/static/application.css", [{"accept", "text/css"}]}})
+  end
+
+  test "push/3 will raise if the response is sent before pushing" do
+    assert_raise(Plug.Conn.AlreadySentError, fn ->
+      conn(:get, "/foo") |> send_chunked(200) |> push("/static/application.css")
+    end)
+  end
+
   test "chunk/2 raises if send_chunked/3 hasn't been called yet" do
     conn = conn(:get, "/")
     assert_raise ArgumentError, fn ->

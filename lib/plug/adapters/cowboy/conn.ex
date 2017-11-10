@@ -62,6 +62,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
     :cowboy_req.body(req, opts)
   end
 
+  def push(_req, _path, _headers) do
+    {:error, :not_supported}
+  end
+
   ## Helpers
 
   defp scheme(:tcp), do: :http
