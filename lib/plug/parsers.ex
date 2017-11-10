@@ -199,8 +199,10 @@ defmodule Plug.Parsers do
   def call(%{req_headers: req_headers, method: method,
              body_params: %Plug.Conn.Unfetched{}} = conn, options) when method in @methods do
     conn = Conn.fetch_query_params(conn)
-    case List.keyfind(req_headers, "content-type", 0) do
-      {"content-type", ct} ->
+    case get_header(req_headers, "content-type") do
+      nil ->
+        merge_params(conn, %{})
+      ct ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, params} ->
             content_type = %{type: type, subtype: subtype, params: params}
@@ -208,13 +210,18 @@ defmodule Plug.Parsers do
           :error ->
             merge_params(conn, %{})
         end
-      nil ->
-        merge_params(conn, %{})
     end
   end
 
   def call(%{body_params: body_params} = conn, _options) do
     merge_params(conn, make_empty_if_unfetched(body_params))
+  end
+
+  defp get_header(headers, key) do
+    case List.keyfind(headers, key, 0) do
+      {^key, value} -> value
+      nil -> nil
+    end
   end
 
   defp reduce(conn, [parser | rest], %{type: type, subtype: subtype, params: params} = content_type, options) do
@@ -250,4 +257,39 @@ defmodule Plug.Parsers do
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}
   defp make_empty_if_unfetched(params), do: params
+
+  def parse_body(headers, body, opts) do
+    case get_header(headers, "content-type") do
+      nil ->
+        # do we really want to do this, or return an error?
+        body
+      ct ->
+        case Conn.Utils.content_type(ct) do
+          {:ok, type, subtype, _params} ->
+            parse_body(body, type, subtype, headers, opts)
+          :error ->
+            body
+        end
+    end
+  end
+
+  defp parse_body(body, type, subtype, headers, opts) do
+    parsers = Keyword.fetch!(opts, :parsers)
+    reduce_body(parsers, body, type, subtype, headers, opts)
+  end
+
+  defp reduce_body([parser | rest], body, type, subtype, headers, opts) do
+    # This is the point where we need to decide whether we introduce
+    # a breaking change or not.
+    if Keyword.has_key?(parser.__info__(:functions), :parse_body) do
+      case parser.parse_body(body, type, subtype, headers, opts) do
+        {:ok, params} -> params
+        :next -> reduce_body(rest, body, type, subtype, headers, opts)
+      end
+    else
+      reduce_body(rest, body, type, subtype, headers, opts)
+    end
+  end
+
+  defp reduce_body([], body, _type, _subtype, _headers, _opts), do: body
 end

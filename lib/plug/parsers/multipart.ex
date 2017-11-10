@@ -42,6 +42,7 @@ defmodule Plug.Parsers.MULTIPART do
     {:ok, limit, acc, conn} =
       parse_multipart(Plug.Conn.read_part_headers(conn, headers_opts), limit, opts, headers_opts, [])
 
+
     if limit > 0 do
       {:ok, Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2), conn}
     else
@@ -50,7 +51,7 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart({:ok, headers, conn}, limit, opts, headers_opts, acc) when limit >= 0 do
-    {conn, limit, acc} = parse_multipart_headers(headers, conn, limit, opts, acc)
+    {conn, limit, acc} = parse_multipart_part(headers, conn, limit, opts, acc)
     parse_multipart(Plug.Conn.read_part_headers(conn, headers_opts), limit, opts, headers_opts, acc)
   end
 
@@ -62,7 +63,7 @@ defmodule Plug.Parsers.MULTIPART do
     {:ok, limit, acc, conn}
   end
 
-  defp parse_multipart_headers(headers, conn, limit, opts, acc) do
+  defp parse_multipart_part(headers, conn, limit, opts, acc) do
     case multipart_type(headers) do
       {:binary, name} ->
         {:ok, limit, body, conn} = parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
@@ -72,12 +73,8 @@ defmodule Plug.Parsers.MULTIPART do
       {:parseable_binary, name} ->
         {:ok, limit, body, conn} = parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
-
-        test_conn = Plug.Test.conn(conn.method, "/", body)
-        test_conn = %Plug.Conn{test_conn | req_headers: headers}
-                    |> Plug.Parsers.call(opts)
-
-        {conn, limit, [{name, test_conn.params} | acc]}
+        params = Plug.Parsers.parse_body(headers, body, opts)
+        {conn, limit, [{name, params} | acc]}
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])

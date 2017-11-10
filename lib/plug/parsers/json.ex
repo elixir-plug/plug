@@ -11,10 +11,9 @@ defmodule Plug.Parsers.JSON do
   @behaviour Plug.Parsers
   import Plug.Conn
 
-  def parse(conn, "application", subtype, _headers, opts) do
-    if subtype == "json" || String.ends_with?(subtype, "+json") do
-      decoder = Keyword.get(opts, :json_decoder) ||
-                  raise ArgumentError, "JSON parser expects a :json_decoder option"
+  def parse(conn, type, subtype, _headers, opts) do
+    if content_type_json?(type, subtype) do
+      decoder = json_decoder!(opts)
       conn
       |> read_body(opts)
       |> decode(decoder)
@@ -23,8 +22,29 @@ defmodule Plug.Parsers.JSON do
     end
   end
 
-  def parse(conn, _type, _subtype, _headers, _opts) do
-    {:next, conn}
+  def parse_body(body, type, subtype, _headers, opts) do
+    if content_type_json?(type, subtype) do
+      decoder = json_decoder!(opts)
+      case decoder.decode!(body) do
+        terms when is_map(terms) ->
+          {:ok, terms}
+        terms ->
+          {:ok, %{"_json" => terms}}
+      end
+    else
+      :next
+    end
+  end
+
+  defp content_type_json?("application", subtype) do
+    subtype == "json" || String.ends_with?(subtype, "+json")
+  end
+
+  defp content_type_json?(_type, _subtype), do: false
+
+  defp json_decoder!(opts) do
+    Keyword.get(opts, :json_decoder) ||
+      raise ArgumentError, "JSON parser expects a :json_decoder option"
   end
 
   defp decode({:more, _, conn}, _decoder) do
