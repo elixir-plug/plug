@@ -87,9 +87,9 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
-  def push(%{owner: owner, ref: ref}, path, headers) do
+  def push(%{owner: owner, ref: ref} = state, path, headers) do
     send owner, {ref, {:push, path, headers}}
-    :ok
+    {:ok, state}
   end
 
   ## Private helpers

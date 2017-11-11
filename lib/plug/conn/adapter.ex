@@ -80,5 +80,5 @@ defmodule Plug.Conn.Adapter do
   should be returned.
   """
   @callback push(payload, path :: String.t, headers :: Keyword.t) ::
-              :ok | {:error, term}
+              {:ok, payload} | {:error, term}
 end

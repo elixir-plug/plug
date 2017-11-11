@@ -941,9 +941,11 @@ defmodule Plug.Conn do
   If the adapter does not support server push then this is a noop.
   """
   @spec push(t, String.t, Keyword.t) :: t
-  def push(conn, path, headers \\ []) do
-    adapter_push(conn, path, headers)
-    conn
+  def push(%Conn{adapter: {adapter, _}} = conn, path, headers \\ []) do
+    case adapter_push(conn, path, headers) do
+      {:ok, payload} -> %{conn | adapter: {adapter, payload}}
+      _ -> conn
+    end
   end
 
   @doc """
@@ -953,8 +955,8 @@ defmodule Plug.Conn do
   @spec push!(t, String.t, Keyword.t) :: t
   def push!(%Conn{adapter: {adapter, _}} = conn, path, headers \\ []) do
     case adapter_push(conn, path, headers) do
-      :ok ->
-        conn
+      {:ok, payload} ->
+        %{conn | adapter: {adapter, payload}}
 
       _ ->
         raise "server push not supported by #{inspect(adapter)}." <>
