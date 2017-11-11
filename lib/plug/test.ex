@@ -92,6 +92,13 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Return the assets that have been pushed.
+  """
+  def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{pushes: pushes}}}) do
+    Enum.reverse(pushes)
+  end
+
+  @doc """
   Puts a request cookie.
   """
   @spec put_req_cookie(Conn.t, binary, binary) :: Conn.t

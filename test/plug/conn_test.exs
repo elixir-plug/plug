@@ -378,13 +378,13 @@ defmodule Plug.ConnTest do
   end
 
   test "push/3 performs a server push" do
-    conn(:get, "/foo") |> push("/static/application.css", [{"accept", "text/plain"}])
-    assert_receive({_, {:push, "/static/application.css", [{"accept", "text/plain"}]}})
+    conn = conn(:get, "/foo") |> push("/static/application.css", [{"accept", "text/plain"}])
+    assert {"/static/application.css", [{"accept", "text/plain"}]} in sent_pushes(conn)
   end
 
   test "push/3 works out the MIME type if not set" do
-    conn(:get, "/foo") |> push("/static/application.css")
-    assert_receive({_, {:push, "/static/application.css", [{"accept", "text/css"}]}})
+    conn = conn(:get, "/foo") |> push("/static/application.css")
+    assert {"/static/application.css", [{"accept", "text/css"}]} in sent_pushes(conn)
   end
 
   test "push/3 will raise if the response is sent before pushing" do

@@ -14,7 +14,7 @@ defmodule Plug.Adapters.Test.Conn do
 
     {body, body_params, params, req_headers} = body_or_params(body_or_params, query, conn.req_headers)
     state = %{method: method, params: params, req_body: body,
-              chunks: nil, ref: make_ref(), owner: owner}
+              pushes: [], chunks: nil, ref: make_ref(), owner: owner}
 
     %Plug.Conn{conn |
       adapter: {__MODULE__, state},
@@ -87,9 +87,8 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
-  def push(%{owner: owner, ref: ref} = state, path, headers) do
-    send owner, {ref, {:push, path, headers}}
-    {:ok, state}
+  def push(%{pushes: pushes} = state, path, headers) do
+    {:ok, %{state | pushes: [{path, headers} | pushes]}}
   end
 
   ## Private helpers
