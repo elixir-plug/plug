@@ -4,10 +4,6 @@ defmodule Plug.Adapters.Cowboy2.Handler do
   @already_sent {:plug_conn, :sent}
 
   def init(req, {plug, opts}) do
-    {__MODULE__, req, {plug, opts}}
-  end
-
-  def upgrade(req, env, __MODULE__, {plug, opts}) do
     conn = @connection.conn(req)
 
     try do
@@ -16,7 +12,7 @@ defmodule Plug.Adapters.Cowboy2.Handler do
         |> plug.call(opts)
         |> maybe_send(plug)
 
-      {:ok, req, Map.put_new(env, :result, :ok)}
+      {:ok, req, {plug, opts}}
     catch
       :error, value ->
         stack = System.stacktrace()
