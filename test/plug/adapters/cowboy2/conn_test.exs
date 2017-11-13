@@ -24,6 +24,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   ]
 
   setup_all do
+    {:ok, _} = Application.ensure_all_started(:kadabra)
     {:ok, _pid} = Plug.Adapters.Cowboy2.http(__MODULE__, [], port: 8003)
     {:ok, _pid} = Plug.Adapters.Cowboy2.https(__MODULE__, [], @https_options)
 
@@ -226,6 +227,27 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert List.keyfind(headers, "transfer-encoding", 0) == {"transfer-encoding", "chunked"}
   end
 
+  def push(conn) do
+    conn
+    |> push("/static/assets.css")
+    |> send_resp(200, "push")
+  end
+
+  test "push will not raise even though the adapter doesn't implement it" do
+    assert {200, _headers, "push"} = request :get, "/push"
+  end
+
+  def push_or_raise(conn) do
+    conn
+    |> push!("/static/assets.css")
+    |> send_resp(200, "push or raise")
+  end
+
+  test "push will raise because it is not implemented" do
+    assert {200, _headers, "push or raise"} = request :get, "/push_or_raise"
+  end
+
+
   def read_req_body(conn) do
     expected = :binary.copy("abcdefghij", 100_000)
     assert {:ok, ^expected, conn} = read_body(conn)
@@ -408,21 +430,48 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     :hackney.close(client)
   end
 
+  @http2_opts [
+    cacertfile: @https_options[:certfile], server_name_indication: 'localhost', port: 8004
+  ]
+
+
   def http2(conn) do
     %{adapter: {Plug.Adapters.Cowboy2.Conn, %{version: version}}} = conn
-    send_resp(conn, 200, Atom.to_string(version))
+
+    case conn.query_string do
+      "noinfer" <> _ ->
+        conn
+        |> push("/static/assets.css", [{"accept", "text/plain"}])
+        |> send_resp(200, Atom.to_string(version))
+
+      _ ->
+        conn
+        |> push("/static/assets.css")
+        |> send_resp(200, Atom.to_string(version))
+    end
   end
 
-  test "http2" do
-    opts = [
-      cacertfile: @https_options[:certfile], server_name_indication: 'localhost', port: 8004
-    ]
-
-    {:ok, _} = Application.ensure_all_started(:kadabra)
-    {:ok, pid} = Kadabra.open('localhost', :https, opts)
+  test "http2 response" do
+    {:ok, pid} = Kadabra.open('localhost', :https, @http2_opts)
     Kadabra.get(pid, "/http2")
 
     assert_receive({:end_stream, %Kadabra.Stream.Response{body: "HTTP/2", status: 200}}, 1_000)
+  end
+
+  test "http2 server push" do
+    {:ok, pid} = Kadabra.open('localhost', :https, @http2_opts)
+    Kadabra.get(pid, "/http2")
+    assert_receive({:push_promise, %Kadabra.Stream.Response{headers: headers}})
+    assert {"accept", "text/css"} in headers
+    assert {":path", "/static/assets.css"} in headers
+  end
+
+  test "http2 server push without automatic mime type" do
+    {:ok, pid} = Kadabra.open('localhost', :https, @http2_opts)
+    Kadabra.get(pid, "/http2?noinfer=true")
+    assert_receive({:push_promise, %Kadabra.Stream.Response{headers: headers}})
+    assert {"accept", "text/plain"} in headers
+    assert {":path", "/static/assets.css"} in headers
   end
 
   ## Helpers

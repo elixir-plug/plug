@@ -72,4 +72,13 @@ defmodule Plug.Conn.Adapter do
               {:ok, data :: binary, payload} |
               {:more, data :: binary, payload} |
               {:error, term}
+
+  @doc """
+  Push a resource to the client.
+
+  If the adapter does not support server push then `{:error, :not_supported}`
+  should be returned.
+  """
+  @callback push(payload, path :: String.t, headers :: Keyword.t) ::
+              {:ok, payload} | {:error, term}
 end

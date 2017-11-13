@@ -934,6 +934,52 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Push a resource to the client. Server pushes must happen prior to a response
+  being sent. If a server push is attempted after a response is sent then a
+  `Plug.Conn.AlreadySentError` will be raised.
+
+  If the adapter does not support server push then this is a noop.
+  """
+  @spec push(t, String.t, Keyword.t) :: t
+  def push(%Conn{adapter: {adapter, _}} = conn, path, headers \\ []) do
+    case adapter_push(conn, path, headers) do
+      {:ok, payload} -> %{conn | adapter: {adapter, payload}}
+      _ -> conn
+    end
+  end
+
+  @doc """
+  This function is the same as `push/3` except it will raise If the adapter
+  does not support server push.
+  """
+  @spec push!(t, String.t, Keyword.t) :: t
+  def push!(%Conn{adapter: {adapter, _}} = conn, path, headers \\ []) do
+    case adapter_push(conn, path, headers) do
+      {:ok, payload} ->
+        %{conn | adapter: {adapter, payload}}
+
+      _ ->
+        raise "server push not supported by #{inspect(adapter)}." <>
+        "You should either delete the call to `push!/3` or switch to an " <>
+        "adapter that does support server push such as Plug.Adapters.Cowboy2."
+    end
+  end
+
+  defp adapter_push(%Conn{state: state}, _path, _headers)
+  when not state in @unsent do
+    raise AlreadySentError
+  end
+
+  defp adapter_push(%Conn{adapter: {adapter, payload}}, path, headers) do
+    headers =
+      case List.keyfind(headers, "accept", 0) do
+        nil -> [{"accept", MIME.from_path(path)} | headers]
+        _ -> headers
+      end
+    adapter.push(payload, path, headers)
+  end
+
+  @doc """
   Fetches cookies from the request headers.
   """
   @spec fetch_cookies(t, Keyword.t) :: t

@@ -203,6 +203,27 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
            {"transfer-encoding", "chunked"}
   end
 
+  def push(conn) do
+    conn
+    |> push("/static/assets.css")
+    |> send_resp(200, "push")
+  end
+
+  test "push will not raise even though the adapter doesn't implement it" do
+    assert {200, _headers, "push"} = request :get, "/push"
+  end
+
+  def push_or_raise(conn) do
+    conn
+    |> push!("/static/assets.css")
+    |> send_resp(200, "push or raise")
+  end
+
+  test "push will raise because it is not implemented" do
+    assert {500, _headers, exception} = request :get, "/push_or_raise"
+    assert exception =~ "server push not supported"
+  end
+
   def read_req_body(conn) do
     expected = :binary.copy("abcdefghij", 100_000)
     assert {:ok, ^expected, conn} = read_body(conn)

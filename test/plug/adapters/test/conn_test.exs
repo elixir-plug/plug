@@ -68,6 +68,18 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.host == "www.elixir-lang.org"
   end
 
+  test "push adds to the pushes list" do
+    conn =
+      conn(:get, "/")
+      |> Plug.Conn.push("/static/application.css", [{"accept", "text/css"}])
+      |> Plug.Conn.push("/static/application.js", [{"accept", "application/javascript"}])
+
+    pushes = Plug.Test.sent_pushes(conn)
+
+    assert {"/static/application.css", [{"accept", "text/css"}]} in pushes
+    assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
+  end
+
   test "full URL overrides existing conn.host" do
     conn_with_host = conn(:get, "http://www.elixir-lang.org/")
     assert conn_with_host.host == "www.elixir-lang.org"

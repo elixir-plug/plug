@@ -75,6 +75,19 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     {:ok, "", req}
   end
 
+  def push(req, path, headers) do
+    opts =
+      case {req.port, req.sock} do
+        {:undefined, {_, port}} when port in [80, 443] -> %{}
+        {:undefined, {_, port}} -> %{port: port}
+        {port, _} when port in [80, 443] -> %{}
+        {port, _} -> %{port: port}
+      end
+
+    :cowboy_req.push(path, to_headers_map(headers), req, opts)
+    {:ok, req}
+  end
+
   ## Helpers
 
   defp to_headers_list(headers) when is_list(headers) do
