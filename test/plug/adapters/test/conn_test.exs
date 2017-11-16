@@ -47,6 +47,11 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, "", _state} = adapter.read_req_body(state, length: 10)
   end
 
+  test "no path" do
+    conn = conn(:get, "http://www.elixir-lang.org")
+    assert conn.path_info == []
+  end
+
   test "custom params sets content-type to multipart/mixed when content-type is not set" do
     conn = conn(:get, "/", foo: "bar")
     assert conn.req_headers == [{"content-type", "multipart/mixed; boundary=plug_conn_test"}]

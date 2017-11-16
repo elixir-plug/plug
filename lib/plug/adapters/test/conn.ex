@@ -127,6 +127,7 @@ defmodule Plug.Adapters.Test.Conn do
   defp stringify_kv({k, v}),
     do: {to_string(k), stringify_params(v)}
 
+  defp split_path(nil), do: []
   defp split_path(path) do
     segments = :binary.split(path, "/", [:global])
     for segment <- segments, segment != "", do: segment
