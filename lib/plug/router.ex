@@ -213,7 +213,8 @@ defmodule Plug.Router do
 
       @doc false
       def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
-        Map.get(conn.private, :plug_route).(conn)
+        {_path, fun} = Map.fetch!(conn.private, :plug_route)
+        fun.(conn)
       end
 
       defoverridable [match: 2, dispatch: 2]
@@ -228,6 +229,15 @@ defmodule Plug.Router do
     quote do
       import Plug.Router, only: []
     end
+  end
+
+  @doc """
+  Returns the path of the route that the request was matched to.
+  """
+  @spec match_path(Plug.Conn.t) :: String.t
+  def match_path(%Plug.Conn{} = conn) do
+    {path, _fun} = Map.fetch!(conn.private, :plug_route)
+    path
   end
 
   ## Match
@@ -452,7 +462,7 @@ defmodule Plug.Router do
         conn = update_in unquote(conn).params, merge_params
         conn = update_in conn.path_params, merge_params
 
-        Plug.Conn.put_private(conn, :plug_route, fn var!(conn) -> unquote(body) end)
+        Plug.Conn.put_private(conn, :plug_route, {unquote(path), fn var!(conn) -> unquote(body) end})
       end
     end
   end
