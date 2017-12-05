@@ -64,15 +64,9 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     :cowboy_req.stream_body(body, :nofin, req)
   end
 
-  def read_req_body(req, opts \\ [])
-
-  def read_req_body(req = %{plug_read_body: false}, opts) do
+  def read_req_body(req, opts \\ []) do
     opts = if is_list(opts), do: :maps.from_list(opts), else: opts
-    :cowboy_req.read_body(%{req | plug_read_body: true}, opts)
-  end
-
-  def read_req_body(req, _opts) do
-    {:ok, "", req}
+    :cowboy_req.read_body(req, opts)
   end
 
   def push(req, path, headers) do
