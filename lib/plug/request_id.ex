@@ -45,8 +45,8 @@ defmodule Plug.RequestId do
 
   defp get_request_id(conn, header) do
     case Conn.get_req_header(conn, header) do
-      []      -> {conn, generate_request_id()}
-      [val|_] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
+      [] -> {conn, generate_request_id()}
+      [val | _] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
     end
   end
 
@@ -56,7 +56,13 @@ defmodule Plug.RequestId do
   end
 
   defp generate_request_id do
-    Base.hex_encode32(:crypto.strong_rand_bytes(20), case: :lower)
+    binary = <<
+      :erlang.system_time(:nanosecond)::64,
+      :erlang.phash2({node(), self()}, 16_777_216)::24,
+      :erlang.unique_integer()::32
+    >>
+
+    Base.hex_encode32(binary, case: :lower)
   end
 
   defp valid_request_id?(s), do: byte_size(s) in 20..200
