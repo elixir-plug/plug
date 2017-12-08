@@ -63,7 +63,10 @@ defmodule Plug.Conn.Query do
   end
 
   def decode(query, initial) do
-    parts = :binary.split(query, "&", [:global])
+    parts = query
+    |> String.trim_trailing("&")
+    |> :binary.split("&", [:global])
+
     Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
   end
 
