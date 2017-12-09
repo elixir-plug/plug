@@ -63,14 +63,16 @@ defmodule Plug.Conn.Query do
   end
 
   def decode(query, initial) do
-    parts = query
-    |> String.trim_trailing("&")
-    |> :binary.split("&", [:global])
+    parts = :binary.split(query, "&", [:global])
 
-    Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
+    Enum.reduce(Enum.reverse(parts), initial, &decode_www_pair(&1, &2))
   end
 
-  defp decode_string_pair(binary, acc) do
+  defp decode_www_pair("", acc) do
+    acc
+  end
+
+  defp decode_www_pair(binary, acc) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->

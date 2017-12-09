@@ -38,6 +38,10 @@ defmodule Plug.Conn.QueryTest do
     assert (Enum.at(decode("x[y][][z][]=1")["x"]["y"], 0))["z"] |> Enum.at(0) == "1"
   end
 
+  test "empty pairs" do
+    assert decode("&x=1&&y=2&") == %{"x" => "1", "y" => "2"}
+  end
+
   test "last always wins on bad queries" do
     assert decode("x[]=1&x[y]=1")["x"]["y"] == "1"
     assert decode("x[y][][w]=2&x[y]=1")["x"]["y"] == "1"

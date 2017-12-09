@@ -21,11 +21,6 @@ defmodule Plug.ParsersTest do
     assert conn.query_params["foo"] == "bar"
   end
 
-  test "don't add an empty query param if there is a trailing &" do
-    conn = parse(conn(:post, "/?foo=bar&"))
-    assert Map.has_key?(conn.query_params, "") == false
-  end
-
   test "keeps existing params" do
     conn = %{conn(:post, "/?query=foo", "body=bar") | params: %{"params" => "baz"}}
     conn = conn
