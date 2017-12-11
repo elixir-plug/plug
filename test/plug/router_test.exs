@@ -368,6 +368,11 @@ defmodule Plug.RouterTest do
     assert Plug.Router.match_path(conn) == "/params/get/:param"
   end
 
+  test "match_path/1 on forward to router" do
+    conn = call(Sample, conn(:get, "/step1/step2/fancy_id/abc123"))
+    assert Plug.Router.match_path(conn) == "/step1/*glob/step2/*glob/fancy_id/:id"
+  end
+
   test "assigns path params to conn params and path_params" do
     conn = call(Sample, conn(:get, "/params/get/a_value"))
     assert conn.params["param"] == "a_value"
