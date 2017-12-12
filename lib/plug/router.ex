@@ -413,6 +413,18 @@ defmodule Plug.Router do
     {quote(do: conn), method, match, params_match, host_match, guards, private, assigns}
   end
 
+  @doc false
+  def __put_route__(conn, path, fun) do
+    Plug.Conn.put_private(conn, :plug_route, {append_match_path(conn, path), fun})
+  end
+
+  defp append_match_path(%Plug.Conn{private: %{plug_route: {base_path, _}}}, path) do
+    base_path <> path
+  end
+  defp append_match_path(%Plug.Conn{}, path) do
+    path
+  end
+
   # Entry point for both forward and match that is actually
   # responsible to compile the route.
   defp compile(method, expr, options, contents) do
@@ -462,7 +474,7 @@ defmodule Plug.Router do
         conn = update_in unquote(conn).params, merge_params
         conn = update_in conn.path_params, merge_params
 
-        Plug.Conn.put_private(conn, :plug_route, {unquote(path), fn var!(conn) -> unquote(body) end})
+        Plug.Router.__put_route__(conn, unquote(path), fn var!(conn) -> unquote(body) end)
       end
     end
   end
