@@ -365,7 +365,7 @@ defmodule Plug.Router do
       forward "/foo/:bar/qux", to: FooPlug
 
   Here, a request to `/foo/BAZ/qux` will be forwarded to the `FooPlug`
-  plug, which will receive what it will see as a request to `/qux`,
+  plug, which will receive what it will see as a request to `/`,
   and `conn.params["bar"]` will be set to `"BAZ"`.
 
   Some other examples:
