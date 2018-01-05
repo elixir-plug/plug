@@ -47,6 +47,11 @@ defmodule Plug.Parsers.JSONTest do
     assert conn.params["id"] == 1
   end
 
+  test "parses with decoder as a function" do
+    conn = "{id: 1}" |> json_conn() |> parse([json_decoder: &JSON.decode!/1])
+    assert conn.params["id"] == 1
+  end
+
   test "expects a json encoder" do
     assert_raise ArgumentError, "JSON parser expects a :json_decoder option", fn ->
       nil |> json_conn() |> parse(json_decoder: nil)
