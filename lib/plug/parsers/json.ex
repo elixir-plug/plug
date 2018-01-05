@@ -43,6 +43,17 @@ defmodule Plug.Parsers.JSON do
     {:ok, %{}, conn}
   end
 
+  defp decode({:ok, body, conn}, decoding_fun) when is_function(decoding_fun) do
+    case decoding_fun.(body) do
+      terms when is_map(terms) ->
+        {:ok, terms, conn}
+      terms ->
+        {:ok, %{"_json" => terms}, conn}
+    end
+  rescue
+    e -> raise Plug.Parsers.ParseError, exception: e
+  end
+
   defp decode({:ok, body, conn}, decoder) do
     case decoder.decode!(body) do
       terms when is_map(terms) ->
