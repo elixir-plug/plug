@@ -43,8 +43,8 @@ defmodule Plug.Parsers.JSON do
     {:ok, %{}, conn}
   end
 
-  defp decode({:ok, body, conn}, decoding_fun) when is_function(decoding_fun) do
-    case decoding_fun.(body) do
+  defp decode({:ok, body, conn}, {module_name, function_name, extra_args}) do
+    case apply(module_name, function_name, [body, extra_args]) do
       terms when is_map(terms) ->
         {:ok, terms, conn}
       terms ->
