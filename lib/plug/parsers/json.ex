@@ -43,8 +43,8 @@ defmodule Plug.Parsers.JSON do
     {:ok, %{}, conn}
   end
 
-  defp decode({:ok, body, conn}, {module_name, function_name, extra_args}) do
-    case apply(module_name, function_name, [body | extra_args]) do
+  defp decode({:ok, body, conn}, decoder) do
+    case apply_mfa_or_module(body, decoder) do
       terms when is_map(terms) ->
         {:ok, terms, conn}
       terms ->
@@ -54,14 +54,11 @@ defmodule Plug.Parsers.JSON do
     e -> raise Plug.Parsers.ParseError, exception: e
   end
 
-  defp decode({:ok, body, conn}, decoder) do
-    case decoder.decode!(body) do
-      terms when is_map(terms) ->
-        {:ok, terms, conn}
-      terms ->
-        {:ok, %{"_json" => terms}, conn}
-    end
-  rescue
-    e -> raise Plug.Parsers.ParseError, exception: e
+  defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
+    apply(module_name, function_name, [body | extra_args])
+  end
+
+  defp apply_mfa_or_module(body, decoder) do
+    decoder.decode!(body)
   end
 end
