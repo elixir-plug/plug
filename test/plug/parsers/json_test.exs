@@ -14,6 +14,10 @@ defmodule Plug.Parsers.JSONTest do
     def decode!(_) do
       raise "oops"
     end
+
+    def decode!("{id: 1}", capitalize_keys: true) do
+      %{"ID" => 1}
+    end
   end
 
   def json_conn(body, content_type \\ "application/json") do
@@ -45,6 +49,11 @@ defmodule Plug.Parsers.JSONTest do
   test "parses json-parseable content types" do
     conn = "{id: 1}" |> json_conn("application/vnd.api+json") |> parse()
     assert conn.params["id"] == 1
+  end
+
+  test "parses with decoder as a MFA argument" do
+    conn = "{id: 1}" |> json_conn() |> parse([json_decoder: {JSON, :decode!, [[capitalize_keys: true]]}])
+    assert conn.params["ID"] == 1
   end
 
   test "expects a json encoder" do
