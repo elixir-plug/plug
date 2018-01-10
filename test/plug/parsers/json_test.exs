@@ -52,7 +52,7 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   test "parses with decoder as a MFA argument" do
-    conn = "{id: 1}" |> json_conn() |> parse([json_decoder: {JSON, :decode!, [capitalize_keys: true]}])
+    conn = "{id: 1}" |> json_conn() |> parse([json_decoder: {JSON, :decode!, [[capitalize_keys: true]]}])
     assert conn.params["ID"] == 1
   end
 
