@@ -108,6 +108,9 @@ defmodule Plug.Parsers do
       plug Plug.Parsers, parsers: [:urlencoded, :json],
                          pass:  ["text/*"],
                          json_decoder: Poison
+      plug Plug.Parsers, parsers: [:urlencoded, :json],
+                         pass:  ["text/*"],
+                         json_decoder: {Poison, :decode!, [[as: %User{}]]}
 
   ## Built-in parsers
 
