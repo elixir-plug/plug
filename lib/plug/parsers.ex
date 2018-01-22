@@ -48,24 +48,6 @@ defmodule Plug.Parsers do
   This module also specifies a behaviour that all the parsers to be used with
   Plug should adopt.
 
-  ## Options
-
-    * `:parsers` - a list of modules to be invoked for parsing.
-      These modules need to implement the behaviour outlined in
-      this module.
-
-    * `:pass` - an optional list of MIME type strings that are allowed
-      to pass through. Any mime not handled by a parser and not explicitly
-      listed in `:pass` will `raise UnsupportedMediaTypeError`. For example:
-
-        * `["*/*"]` - never raises
-        * `["text/html", "application/*"]` - doesn't raise for those values
-        * `[]` - always raises (default)
-
-  All options supported by `Plug.Conn.read_body/2` are also supported here (for
-  example the `:length` option which specifies the max body length to read) and
-  are passed to the underlying call to `Plug.Conn.read_body/1`.
-
   This plug also fetches query params in the connection through
   `Plug.Conn.fetch_query_params/2`.
 
@@ -93,12 +75,39 @@ defmodule Plug.Parsers do
   For requests with a different request method, this plug will only fetch the
   query params.
 
+  ## Options
+
+    * `:parsers` - a list of modules to be invoked for parsing.
+      These modules need to implement the behaviour outlined in
+      this module.
+
+    * `:pass` - an optional list of MIME type strings that are allowed
+      to pass through. Any mime not handled by a parser and not explicitly
+      listed in `:pass` will `raise UnsupportedMediaTypeError`. For example:
+
+        * `["*/*"]` - never raises
+        * `["text/html", "application/*"]` - doesn't raise for those values
+        * `[]` - always raises (default)
+
+    * `:query_string_length` - the maximum allowed size for query strings
+
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+
       plug Plug.Parsers, parsers: [:urlencoded, :json],
                          pass:  ["text/*"],
                          json_decoder: Poison
+
+  Each parser also accepts options to be given directly to it by using tuples.
+  For example, to support file uploads it is common pass the `:length`,
+  `:read_length` and `:read_timeout` option to the multipart parser:
+
+      plug Plug.Parsers,
+           parsers: [
+             :url_encoded,
+             {:multipart, length: 20_000_000} # Increase to 20MB max upload
+           ]
 
   ## Built-in parsers
 
@@ -134,6 +143,8 @@ defmodule Plug.Parsers do
 
   alias Plug.Conn
 
+  @callback init(opts :: Keyword.t) :: Plug.opts
+
   @doc """
   Attempts to parse the connection's request body given the content-type type,
   subtype, and its parameters.
@@ -157,70 +168,89 @@ defmodule Plug.Parsers do
 
   """
   @callback parse(conn :: Conn.t, type :: binary, subtype :: binary,
-                  params :: Keyword.t, opts :: Keyword.t) ::
+                  params :: Keyword.t, state :: term) ::
                   {:ok, Conn.params, Conn.t} |
                   {:error, :too_large, Conn.t} |
                   {:next, Conn.t}
+
+  # TODO: Remove me
+  @optional_callbacks [init: 1]
 
   @behaviour Plug
   @methods ~w(POST PUT PATCH DELETE)
 
   def init(opts) do
-    parsers = Keyword.get(opts, :parsers) || raise_missing_parsers()
+    {parsers, opts} = Keyword.pop(opts, :parsers)
+    {pass, opts} = Keyword.pop(opts, :pass, [])
+    {query_string_length, opts} = Keyword.pop(opts, :query_string_length, 1_000_000)
 
-    opts
-    |> Keyword.put(:parsers, convert_parsers(parsers))
-    |> Keyword.put_new(:length, 8_000_000)
-    |> Keyword.put_new(:pass, [])
+    unless parsers do
+      raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
+    end
+
+    {convert_parsers(parsers, opts), pass, query_string_length}
   end
 
-  defp raise_missing_parsers do
-    raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
-  end
-
-  defp convert_parsers(parsers) do
+  defp convert_parsers(parsers, root_opts) do
     for parser <- parsers do
-      case Atom.to_string(parser) do
-        "Elixir." <> _ -> parser
-        reference      -> Module.concat(Plug.Parsers, String.upcase(reference))
+      {parser, opts} =
+        case parser do
+          {parser, opts} when is_atom(parser) and is_list(opts) ->
+            {parser, Keyword.merge(root_opts, opts)}
+          parser when is_atom(parser) ->
+            {parser, root_opts}
+        end
+
+      module =
+        case Atom.to_string(parser) do
+          "Elixir." <> _ -> parser
+          reference -> Module.concat(Plug.Parsers, String.upcase(reference))
+        end
+
+      if Code.ensure_compiled?(module) and function_exported?(module, :init, 1) do
+        {module, module.init(opts)}
+      else
+        {module, opts}
       end
     end
   end
 
-  def call(%{req_headers: req_headers, method: method,
-             body_params: %Plug.Conn.Unfetched{}} = conn, options) when method in @methods do
-    conn = Conn.fetch_query_params(conn)
+  def call(%{method: method, body_params: %Plug.Conn.Unfetched{}} = conn, options)
+      when method in @methods do
+    {parsers, pass, query_string_length} = options
+    %{req_headers: req_headers} = conn
+    conn = Conn.fetch_query_params(conn, length: query_string_length)
+
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, params} ->
-            content_type = %{type: type, subtype: subtype, params: params}
-            reduce(conn, Keyword.fetch!(options, :parsers), content_type, options)
+            reduce(conn, parsers, type, subtype, params, pass, query_string_length)
           :error ->
-            merge_params(conn, %{})
+            merge_params(conn, %{}, query_string_length)
         end
       nil ->
-        merge_params(conn, %{})
+        merge_params(conn, %{}, query_string_length)
     end
   end
 
-  def call(%{body_params: body_params} = conn, _options) do
-    merge_params(conn, make_empty_if_unfetched(body_params))
+  def call(%{body_params: body_params} = conn, {_, _, query_string_length}) do
+    merge_params(conn, make_empty_if_unfetched(body_params), query_string_length)
   end
 
-  defp reduce(conn, [parser | rest], %{type: type, subtype: subtype, params: params} = content_type, options) do
+  defp reduce(conn, [{parser, options} | rest], type, subtype, params, pass, query_string_length) do
     case parser.parse(conn, type, subtype, params, options) do
       {:ok, body, conn} ->
-        merge_params(conn, body)
+        merge_params(conn, body, query_string_length)
       {:next, conn} ->
-        reduce(conn, rest, content_type, options)
+        reduce(conn, rest, type, subtype, params, pass, query_string_length)
       {:error, :too_large, _conn} ->
         raise RequestTooLargeError
     end
   end
 
-  defp reduce(conn, [], %{type: type, subtype: subtype}, options) do
-    ensure_accepted_mimes(conn, type, subtype, Keyword.fetch!(options, :pass))
+  defp reduce(conn, [], type, subtype, _params, pass, _query_string_length) do
+    ensure_accepted_mimes(conn, type, subtype, pass)
   end
 
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
@@ -232,19 +262,16 @@ defmodule Plug.Parsers do
     end
   end
 
-  defp merge_params(%{params: params, path_params: path_params} = conn, body_params) do
+  defp merge_params(conn, body_params, query_string_length) do
+    %{params: params, path_params: path_params} = conn
     params = make_empty_if_unfetched(params)
-    query_params = fetch_query_params(conn)
-    params = query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
-    %{conn | params: params, query_params: query_params, body_params: body_params}
-  end
-
-  defp fetch_query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}) do
-    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
-    Plug.Conn.Query.decode(query_string)
-  end
-  defp fetch_query_params(%{query_params: query_params}) do
-    query_params
+    conn = Plug.Conn.fetch_query_params(conn, length: query_string_length)
+    params =
+      conn.query_params
+      |> Map.merge(params)
+      |> Map.merge(body_params)
+      |> Map.merge(path_params)
+    %{conn | params: params, body_params: body_params}
   end
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}

@@ -38,6 +38,10 @@ defmodule Plug.Conn.QueryTest do
     assert (Enum.at(decode("x[y][][z][]=1")["x"]["y"], 0))["z"] |> Enum.at(0) == "1"
   end
 
+  test "decode nested lists" do
+    assert decode("x[][][]=1") == %{"x" => [[["1"]]]}
+  end
+
   test "last always wins on bad queries" do
     assert decode("x[]=1&x[y]=1")["x"]["y"] == "1"
     assert decode("x[y][][w]=2&x[y]=1")["x"]["y"] == "1"
@@ -113,6 +117,10 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{x: %{y: %{z: [1, 2]}}}) == "x[y][z][]=1&x[y][z][]=2"
     assert encode(%{x: %{y: [%{z: 1}]}}) == "x[y][][z]=1"
     assert encode(%{x: %{y: [%{z: [1]}]}}) == "x[y][][z][]=1"
+  end
+
+  test "encode nested lists" do
+    assert encode(%{"x" => [[[1]]]}) == "x[][][]=1"
   end
 
   test "encode with custom encoder" do

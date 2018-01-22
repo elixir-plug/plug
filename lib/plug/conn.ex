@@ -695,13 +695,25 @@ defmodule Plug.Conn do
 
   This function does not fetch parameters from the body. To fetch
   parameters from the body, use the `Plug.Parsers` plug.
+
+  ## Options
+
+    * `:length` - the maximum query string length. Defaults to 1_000_000 bytes.
+
   """
   @spec fetch_query_params(t, Keyword.t) :: t
   def fetch_query_params(conn, opts \\ [])
 
   def fetch_query_params(%Conn{query_params: %Unfetched{}, params: params,
-                               query_string: query_string} = conn, _opts) do
+                               query_string: query_string} = conn, opts) do
     Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
+    length = Keyword.get(opts, :length, 1_000_000)
+
+    if byte_size(query_string) > length do
+      raise InvalidQueryError,
+            "maximum query string length is #{length}, got a query with #{byte_size(query_string)} bytes"
+    end
+
     query_params = Plug.Conn.Query.decode(query_string)
 
     case params do
