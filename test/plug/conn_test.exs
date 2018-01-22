@@ -621,6 +621,14 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "fetch_query_params/1 with low length" do
+    conn = conn(:get, "/foo?abc=123")
+    assert_raise Plug.Conn.InvalidQueryError,
+                 "maximum query string length is 5, got a query with 7 bytes", fn ->
+      fetch_query_params(conn, length: 5)
+    end
+  end
+
   test "req_cookies/1 && fetch_cookies/1" do
     conn = put_req_header(conn(:get, "/"), "cookie", "foo=bar; baz=bat")
     assert conn.req_cookies == %Plug.Conn.Unfetched{aspect: :cookies}

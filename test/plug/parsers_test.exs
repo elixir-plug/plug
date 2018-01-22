@@ -21,6 +21,12 @@ defmodule Plug.ParsersTest do
     assert conn.query_params["foo"] == "bar"
   end
 
+  test "parses query string information with limit" do
+    assert_raise Plug.Conn.InvalidQueryError, fn ->
+      parse(conn(:post, "/?foo=bar"), query_string_length: 5)
+    end
+  end
+
   test "keeps existing params" do
     conn = %{conn(:post, "/?query=foo", "body=bar") | params: %{"params" => "baz"}}
     conn = conn
@@ -149,12 +155,32 @@ defmodule Plug.ParsersTest do
     end
   end
 
-  test "raises on too large bodies" do
+  test "raises on too large bodies with root option" do
     exception = assert_raise Plug.Parsers.RequestTooLargeError,
                              ~r/the request is too large/, fn ->
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
       |> parse(length: 5)
+    end
+    assert Plug.Exception.status(exception) == 413
+  end
+
+  test "raises on too large bodies with parser option" do
+    exception = assert_raise Plug.Parsers.RequestTooLargeError,
+                             ~r/the request is too large/, fn ->
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(parsers: [urlencoded: [length: 5]])
+    end
+    assert Plug.Exception.status(exception) == 413
+  end
+
+  test "raises on too large bodies with parser specific defaults" do
+    exception = assert_raise Plug.Parsers.RequestTooLargeError,
+                             ~r/the request is too large/, fn ->
+      conn(:post, "/?foo=bar", String.duplicate("foo=baz", 200_000))
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
     end
     assert Plug.Exception.status(exception) == 413
   end
