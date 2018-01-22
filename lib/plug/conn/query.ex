@@ -98,69 +98,69 @@ defmodule Plug.Conn.Query do
   order, so be sure to pass the parameters in reverse order.
   """
   def decode_pair({key, value}, acc) do
-    parts =
-      if key != "" and :binary.last(key) == ?] do
-        # Remove trailing ]
-        subkey = :binary.part(key, 0, byte_size(key) - 1)
+    if key != "" and :binary.last(key) == ?] do
+      # Remove trailing ]
+      subkey = :binary.part(key, 0, byte_size(key) - 1)
 
-        # Split the first [ then split remaining ][.
-        #
-        #     users[address][street #=> [ "users", "address][street" ]
-        #
-        case :binary.split(subkey, "[") do
-          [key, subpart] ->
-            [key|:binary.split(subpart, "][", [:global])]
-          _ ->
-            [key]
-        end
-      else
-        [key]
-      end
-
-    assign_parts parts, value, acc
-  end
-
-  # We always assign the value in the last segment.
-  # `age=17` would match here.
-  defp assign_parts([key], value, acc) do
-    Map.put_new(acc, key, value)
-  end
-
-  # The current segment is a list. We simply prepend
-  # the item to the list or create a new one if it does
-  # not yet. This assumes that items are iterated in
-  # reverse order.
-  defp assign_parts([key,""|t], value, acc) do
-    case Map.fetch(acc, key) do
-      {:ok, current} when is_list(current) ->
-        Map.put(acc, key, assign_list(t, current, value))
-      :error ->
-        Map.put(acc, key, assign_list(t, [], value))
-      _ ->
-        acc
+      # Split the first [ then we will split on remaining ][.
+      #
+      #     users[address][street #=> [ "users", "address][street" ]
+      #
+      assign_split(:binary.split(subkey, "["), value, acc, :binary.compile_pattern("]["))
+    else
+      assign_map(acc, key, value)
     end
   end
 
-  # The current segment is a parent segment of a
-  # map. We need to create a map and then
-  # continue looping.
-  defp assign_parts([key|t], value, acc) do
-    case Map.fetch(acc, key) do
-      {:ok, %{} = current} ->
-        Map.put(acc, key, assign_parts(t, value, current))
-      :error ->
-        Map.put(acc, key, assign_parts(t, value, %{}))
-      _ ->
-        acc
+  defp assign_split(["", rest], value, acc, pattern) do
+    parts = :binary.split(rest, pattern)
+
+    case acc do
+      [_ | _] -> [assign_split(parts, value, :none, pattern) | acc]
+      :none -> [assign_split(parts, value, :none, pattern)]
+      _ -> acc
     end
   end
 
-  defp assign_list(t, current, value) do
-    if value = assign_list(t, value), do: [value|current], else: current
+  defp assign_split([key, rest], value, acc, pattern) do
+    parts = :binary.split(rest, pattern)
+
+    case acc do
+      %{^key => current} ->
+        Map.put(acc, key, assign_split(parts, value, current, pattern))
+      %{} ->
+        Map.put(acc, key, assign_split(parts, value, :none, pattern))
+      _ ->
+        %{key => assign_split(parts, value, :none, pattern)}
+    end
   end
 
-  defp assign_list([], value), do: value
-  defp assign_list(t, value),  do: assign_parts(t, value, %{})
+  defp assign_split([""], nil, acc, _pattern) do
+    case acc do
+      [_ | _] -> acc
+      _ -> []
+    end
+  end
+
+  defp assign_split([""], value, acc, _pattern) do
+    case acc do
+      [_ | _] -> [value | acc]
+      :none -> [value]
+      _ -> acc
+    end
+  end
+
+  defp assign_split([key], value, acc, _pattern) do
+    assign_map(acc, key, value)
+  end
+
+  defp assign_map(acc, key, value) do
+    case acc do
+      %{^key => _} -> acc
+      %{} -> Map.put(acc, key, value)
+      _ -> %{key => value}
+    end
+  end
 
   @doc """
   Encodes the given map or list of tuples.
@@ -171,7 +171,7 @@ defmodule Plug.Conn.Query do
 
   # covers structs
   defp encode_pair(field, %{__struct__: struct} = map, encoder) when is_atom(struct) do
-    [field, ?=|encode_value(map, encoder)]
+    [field, ?= | encode_value(map, encoder)]
   end
 
   # covers maps
