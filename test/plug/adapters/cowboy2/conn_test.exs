@@ -268,7 +268,8 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   def multipart(conn) do
-    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], length: 8_000_000)
+    opts = Plug.Parsers.init(parsers: [Plug.Parsers.MULTIPART], length: 8_000_000)
+    conn = Plug.Parsers.call(conn, opts)
     assert conn.params["name"] == "hello"
     assert conn.params["status"] == ["choice1", "choice2"]
     assert conn.params["empty"] == nil
@@ -325,7 +326,8 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   def file_too_big(conn) do
-    conn = Plug.Parsers.call(conn, parsers: [Plug.Parsers.MULTIPART], length: 5)
+    opts = Plug.Parsers.init(parsers: [Plug.Parsers.MULTIPART], length: 5)
+    conn = Plug.Parsers.call(conn, opts)
 
     assert %Plug.Upload{} = file = conn.params["pic"]
     assert File.read!(file.path) == "hello\n\n"
