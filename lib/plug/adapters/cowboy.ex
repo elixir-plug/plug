@@ -178,7 +178,13 @@ defmodule Plug.Adapters.Cowboy do
   defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
       {:ok, _} ->
-        :ok
+        case Application.spec(:cowboy, :vsn) do
+          '1.' ++ _ ->
+            :ok
+          vsn ->
+            raise "you are using Plug.Adapters.Cowboy (for Cowboy 1) but your current Cowboy " <>
+                  "version is #{vsn}. Please update your mix.exs file accordingly"
+        end
       {:error, {:cowboy, _}} ->
         raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
     end
