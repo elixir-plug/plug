@@ -97,7 +97,7 @@ defmodule Plug.Parsers do
 
       plug Plug.Parsers, parsers: [:urlencoded, :json],
                          pass:  ["text/*"],
-                         json_decoder: {Poison, :decode!, [[as: %User{}]]}
+                         json_decoder: Jason
 
   Each parser also accepts options to be given directly to it by using tuples.
   For example, to support file uploads it is common pass the `:length`,
