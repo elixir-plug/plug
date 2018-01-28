@@ -105,8 +105,8 @@ defmodule Plug.Parsers do
 
       plug Plug.Parsers,
            parsers: [
-            :url_encoded,
-            {:multipart, length: 20_000_000} # Increase to 20MB max upload
+             :url_encoded,
+             {:multipart, length: 20_000_000} # Increase to 20MB max upload
            ]
 
   ## Built-in parsers
