@@ -46,7 +46,7 @@ defmodule Plug.Adapters.Cowboy2 do
       Enum.partition(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
-    |> Keyword.put_new(:max_connections, 16_384)
+    |> Keyword.put_new(:max_connections, 16384)
     |> Keyword.put_new(:ref, build_ref(plug, scheme))
     |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
     |> set_compress()
@@ -126,15 +126,30 @@ defmodule Plug.Adapters.Cowboy2 do
   ## Examples
 
   Assuming your Plug module is named `MyApp` you can add it to your
-  supervision tree by using this function:
+  supervision tree by using this function
+
 
       children = [
-        {Plug.Adapters.Cowboy2, scheme: :http, plug: MyApp, options: [port: 4040]}
+        Plug.Adapters.Cowboy2.child_spec(scheme: :http, plug: MyApp, options: [port: 4040])
       ]
 
       Supervisor.start_link(children, strategy: :one_for_one)
 
+  You can also provide options to the init function of your Plug 
+  module if we replace `plug: MyApp` with a tuple of the form 
+  `{plug: myApp, passed}`.  Again, let's assume that your Plug 
+  module is named MyApp and that you want to pass the two keyword 
+  args shown below to your init method. You can do so in the 
+  following manner 
+
+      children = [
+        Plug.Adapters.Cowboy2.child_spec(scheme: :http, {plug: MyApp, [arg1: value1, arg2: value2]}, options: [port: 4040])
+      ]
+
+  In the above example `[arg1: value1, arg2: value2]` is passed to the `MyApp.init/1`.
+
   """
+
   def child_spec(opts) do
     scheme = Keyword.fetch!(opts, :scheme)
     cowboy_opts = Keyword.get(opts, :options, [])
@@ -166,15 +181,18 @@ defmodule Plug.Adapters.Cowboy2 do
 
     %{
       id: {:ranch_listener_sup, ref},
-      start:
-        {:ranch_listener_sup, :start_link, [
+      start: {
+        :ranch_listener_sup,
+        :start_link,
+        [
           ref,
           num_acceptors,
           ranch_module,
           transport_opts,
           cowboy_protocol,
           proto_opts
-        ]},
+        ]
+      },
       restart: :permanent,
       shutdown: :infinity,
       type: :supervisor,
