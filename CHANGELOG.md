@@ -1,5 +1,14 @@
 ## Changelog
 
+## v1.5.0-rc.1
+
+* Enhancements
+  * Optimize query decoding and limit query string size to 1MB by default
+  * Provide per parser limit in Plug.Parsers
+  * Add a `.formatter.exs` file that exports formatter configuration
+  * Allow passing MFA tuple to JSON decoder
+  * Provide better error messages when using incompatible Cowboy/Adapter pairs
+
 ## v1.5.0-rc.0
 
 * Enhancements
