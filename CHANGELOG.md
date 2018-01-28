@@ -1,5 +1,11 @@
 ## Changelog
 
+## v1.3.6
+
+* Enhancements
+  * Optimize query decoding and limit query string size to 1MB by default
+  * Provide per parser limit in Plug.Parsers
+
 ## v1.3.5
 
 * Bug fixes
