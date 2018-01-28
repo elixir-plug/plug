@@ -173,9 +173,6 @@ defmodule Plug.Parsers do
                   {:error, :too_large, Conn.t} |
                   {:next, Conn.t}
 
-  # TODO: Remove me
-  @optional_callbacks [init: 1]
-
   @behaviour Plug
   @methods ~w(POST PUT PATCH DELETE)
 
