@@ -4,7 +4,21 @@ export_locals_without_parens = [
   plug: 2,
   forward: 2,
   forward: 3,
-  forward: 4
+  forward: 4,
+  match: 2,
+  match: 3,
+  get: 2,
+  get: 3,
+  post: 2,
+  post: 3,
+  put: 2,
+  put: 3,
+  patch: 2,
+  patch: 3,
+  delete: 2,
+  delete: 3,
+  options: 2,
+  options: 3
 ]
 
 [
