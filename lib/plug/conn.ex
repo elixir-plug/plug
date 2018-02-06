@@ -80,7 +80,7 @@ defmodule Plug.Conn do
   The connection state is used to track the connection lifecycle. It starts as
   `:unset` but is changed to `:set` (via `resp/3`) or `:set_chunked`
   (used only for `before_send` callbacks by `send_chunked/2`) or `:file`
-  (when invoked via `send_file/3`). Its final result is `:sent` or
+  (when invoked via `send_file/3`). Its final result is `:sent`, `:file` or
   `:chunked` depending on the response model.
 
   ## Private fields
