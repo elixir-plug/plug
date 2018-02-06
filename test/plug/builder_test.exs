@@ -145,13 +145,15 @@ defmodule Plug.BuilderTest do
     defmodule CompileInit do
       use Plug.Builder
 
-      plug Assigner, :plug_init
+      var = :plug_init
+      plug Assigner, var
     end
 
     defmodule RuntimeInit do
       use Plug.Builder, init_mode: :runtime
 
-      plug Assigner, :plug_init
+      var = :plug_init
+      plug Assigner, var
     end
 
     :ok = Agent.update(:plug_init, fn :compile -> :runtime end)
