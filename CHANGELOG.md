@@ -3,8 +3,9 @@
 ## v1.4.4
 
 * Enhancements
-  * Optimize query decoding and limit query string size to 1MB by default
+  * Optimize query decoding
   * Provide per parser limit in Plug.Parsers
+  * Limit query string size and urlencoded POST body to 1MB by default
 
 ## v1.4.3
 
