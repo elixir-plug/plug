@@ -205,7 +205,7 @@ defmodule Plug.Builder do
   defp init_plug({plug, opts, guards}, init_mode) do
     case Atom.to_charlist(plug) do
       ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards, init_mode)
-      _                -> init_fun_plug(plug, opts, guards, init_mode)
+      _ -> init_fun_plug(plug, opts, guards)
     end
   end
 
@@ -213,17 +213,17 @@ defmodule Plug.Builder do
     initialized_opts = plug.init(opts)
 
     if function_exported?(plug, :call, 2) do
-      {:module, plug, {:compile, initialized_opts}, guards}
+      {:module, plug, Macro.escape(initialized_opts), guards}
     else
       raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
   end
   defp init_module_plug(plug, opts, guards, :runtime) do
-    {:module, plug, {:runtime, opts}, guards}
+    {:module, plug, quote(do: unquote(plug).init(unquote(Macro.escape(opts)))), guards}
   end
 
-  defp init_fun_plug(plug, opts, guards, init_mode) do
-    {:function, plug, {init_mode, opts}, guards}
+  defp init_fun_plug(plug, opts, guards) do
+    {:function, plug, Macro.escape(opts), guards}
   end
 
   # `acc` is a series of nested plug calls in the form of
@@ -264,17 +264,12 @@ defmodule Plug.Builder do
     {fun, meta, [arg, [do: clauses]]}
   end
 
-  defp quote_plug_call(:function, plug, {_compile_or_runtime, opts}) do
-    quote do: unquote(plug)(conn, unquote(Macro.escape(opts)))
+  defp quote_plug_call(:function, plug, opts) do
+    quote do: unquote(plug)(conn, unquote(opts))
   end
 
-  defp quote_plug_call(:module, plug, {:compile, opts}) do
-    quote do: unquote(plug).call(conn, unquote(Macro.escape(opts)))
-  end
-  defp quote_plug_call(:module, plug, {:runtime, opts}) do
-    quote do
-      unquote(plug).call(conn, unquote(plug).init(unquote(Macro.escape(opts))))
-    end
+  defp quote_plug_call(:module, plug, opts) do
+    quote do: unquote(plug).call(conn, unquote(opts))
   end
 
   defp compile_guards(call, true) do
