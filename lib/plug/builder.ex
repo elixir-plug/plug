@@ -36,6 +36,8 @@ defmodule Plug.Builder do
   When used, the following options are accepted by `Plug.Builder`:
 
     * `:log_on_halt` - accepts the level to log whenever the request is halted
+    * `:init_mode` - the environment to initialize the plug's options, one of
+      `:compile` or `:runtime`. Defaults `:compile`.
 
   ## Plug behaviour
 
@@ -179,29 +181,49 @@ defmodule Plug.Builder do
   @spec compile(Macro.Env.t, [{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
   def compile(env, pipeline, builder_opts) do
     conn = quote do: conn
-    {conn, Enum.reduce(pipeline, conn, &quote_plug(init_plug(&1), &2, env, builder_opts))}
+    init_mode = builder_opts[:init_mode] || :compile
+
+    unless init_mode in [:compile, :runtime] do
+      raise ArgumentError, """
+      invalid :init_mode when compiling #{inspect env.module}.
+
+      Supported values include :compile or :runtime. Got: #{inspect init_mode}
+      """
+    end
+
+    ast =
+      Enum.reduce(pipeline, conn, fn {plug, opts, guards}, acc ->
+        {plug, opts, guards}
+        |> init_plug(init_mode)
+        |> quote_plug(acc, env, builder_opts)
+      end)
+
+    {conn, ast}
   end
 
   # Initializes the options of a plug at compile time.
-  defp init_plug({plug, opts, guards}) do
+  defp init_plug({plug, opts, guards}, init_mode) do
     case Atom.to_charlist(plug) do
-      ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards)
-      _                -> init_fun_plug(plug, opts, guards)
+      ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards, init_mode)
+      _                -> init_fun_plug(plug, opts, guards, init_mode)
     end
   end
 
-  defp init_module_plug(plug, opts, guards) do
+  defp init_module_plug(plug, opts, guards, :compile) do
     initialized_opts = plug.init(opts)
 
     if function_exported?(plug, :call, 2) do
-      {:module, plug, initialized_opts, guards}
+      {:module, plug, {:compile, initialized_opts}, guards}
     else
       raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
     end
   end
+  defp init_module_plug(plug, opts, guards, :runtime) do
+    {:module, plug, {:runtime, opts}, guards}
+  end
 
-  defp init_fun_plug(plug, opts, guards) do
-    {:function, plug, opts, guards}
+  defp init_fun_plug(plug, opts, guards, init_mode) do
+    {:function, plug, {init_mode, opts}, guards}
   end
 
   # `acc` is a series of nested plug calls in the form of
@@ -242,12 +264,17 @@ defmodule Plug.Builder do
     {fun, meta, [arg, [do: clauses]]}
   end
 
-  defp quote_plug_call(:function, plug, opts) do
+  defp quote_plug_call(:function, plug, {_compile_or_runtime, opts}) do
     quote do: unquote(plug)(conn, unquote(Macro.escape(opts)))
   end
 
-  defp quote_plug_call(:module, plug, opts) do
+  defp quote_plug_call(:module, plug, {:compile, opts}) do
     quote do: unquote(plug).call(conn, unquote(Macro.escape(opts)))
+  end
+  defp quote_plug_call(:module, plug, {:runtime, opts}) do
+    quote do
+      unquote(plug).call(conn, unquote(plug).init(unquote(Macro.escape(opts))))
+    end
   end
 
   defp compile_guards(call, true) do
