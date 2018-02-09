@@ -201,7 +201,7 @@ defmodule Plug.Builder do
     {conn, ast}
   end
 
-  # Initializes the options of a plug at compile time.
+  # Initializes the options of a plug in the configured init_mode.
   defp init_plug({plug, opts, guards}, init_mode) do
     case Atom.to_charlist(plug) do
       ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards, init_mode)
