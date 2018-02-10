@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.5.0-rc.2
+
+* Enhancements
+  * Add `init_mode` to `Plug.Builder` for runtime initialization
+
 ## v1.5.0-rc.1
 
 * Enhancements
