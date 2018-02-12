@@ -46,7 +46,7 @@ defmodule Plug.MethodOverrideTest do
     assert conn.method == "PUT"
   end
 
-  @parsers  Plug.Parsers.init(parsers: [Plug.Parsers.URLENCODED])
+  @parsers Plug.Parsers.init(parsers: [Plug.Parsers.URLENCODED])
   @override Plug.MethodOverride.init([])
 
   defp call(conn) do

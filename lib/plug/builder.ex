@@ -115,7 +115,7 @@ defmodule Plug.Builder do
         plug_builder_call(conn, opts)
       end
 
-      defoverridable [init: 1, call: 2]
+      defoverridable init: 1, call: 2
 
       import Plug.Conn
       import Plug.Builder, only: [plug: 1, plug: 2]
@@ -127,7 +127,7 @@ defmodule Plug.Builder do
 
   @doc false
   defmacro __before_compile__(env) do
-    plugs        = Module.get_attribute(env.module, :plugs)
+    plugs = Module.get_attribute(env.module, :plugs)
     builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
 
     {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
@@ -178,16 +178,17 @@ defmodule Plug.Builder do
       ], [])
 
   """
-  @spec compile(Macro.Env.t, [{plug, Plug.opts, Macro.t}], Keyword.t) :: {Macro.t, Macro.t}
+  @spec compile(Macro.Env.t(), [{plug, Plug.opts(), Macro.t()}], Keyword.t()) ::
+          {Macro.t(), Macro.t()}
   def compile(env, pipeline, builder_opts) do
     conn = quote do: conn
     init_mode = builder_opts[:init_mode] || :compile
 
     unless init_mode in [:compile, :runtime] do
       raise ArgumentError, """
-      invalid :init_mode when compiling #{inspect env.module}.
+      invalid :init_mode when compiling #{inspect(env.module)}.
 
-      Supported values include :compile or :runtime. Got: #{inspect init_mode}
+      Supported values include :compile or :runtime. Got: #{inspect(init_mode)}
       """
     end
 
@@ -215,9 +216,10 @@ defmodule Plug.Builder do
     if function_exported?(plug, :call, 2) do
       {:module, plug, Macro.escape(initialized_opts), guards}
     else
-      raise ArgumentError, message: "#{inspect plug} plug must implement call/2"
+      raise ArgumentError, message: "#{inspect(plug)} plug must implement call/2"
     end
   end
+
   defp init_module_plug(plug, opts, guards, :runtime) do
     {:module, plug, quote(do: unquote(plug).init(unquote(Macro.escape(opts)))), guards}
   end
@@ -232,10 +234,11 @@ defmodule Plug.Builder do
   defp quote_plug({plug_type, plug, opts, guards}, acc, env, builder_opts) do
     call = quote_plug_call(plug_type, plug, opts)
 
-    error_message = case plug_type do
-      :module   -> "expected #{inspect plug}.call/2 to return a Plug.Conn"
-      :function -> "expected #{plug}/2 to return a Plug.Conn"
-    end <> ", all plugs must receive a connection (conn) and return a connection"
+    error_message =
+      case plug_type do
+        :module -> "expected #{inspect(plug)}.call/2 to return a Plug.Conn"
+        :function -> "expected #{plug}/2 to return a Plug.Conn"
+      end <> ", all plugs must receive a connection (conn) and return a connection"
 
     {fun, meta, [arg, [do: clauses]]} =
       quote do
@@ -243,8 +246,10 @@ defmodule Plug.Builder do
           %Plug.Conn{halted: true} = conn ->
             unquote(log_halt(plug_type, plug, env, builder_opts))
             conn
+
           %Plug.Conn{} = conn ->
             unquote(acc)
+
           _ ->
             raise unquote(error_message)
         end
@@ -287,10 +292,11 @@ defmodule Plug.Builder do
 
   defp log_halt(plug_type, plug, env, builder_opts) do
     if level = builder_opts[:log_on_halt] do
-      message = case plug_type do
-        :module   -> "#{inspect env.module} halted in #{inspect plug}.call/2"
-        :function -> "#{inspect env.module} halted in #{inspect plug}/2"
-      end
+      message =
+        case plug_type do
+          :module -> "#{inspect(env.module)} halted in #{inspect(plug)}.call/2"
+          :function -> "#{inspect(env.module)} halted in #{inspect(plug)}/2"
+        end
 
       quote do
         require Logger

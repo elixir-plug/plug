@@ -4,8 +4,11 @@ defmodule Plug.Conn.WrapperErrorTest do
 
   test "reraise/3" do
     conn = conn(:get, "/")
-    err  = RuntimeError.exception("hello")
-    {wrap, stacktrace} = catch_error_stacktrace(fn -> Plug.Conn.WrapperError.reraise(conn, :error, err) end)
+    err = RuntimeError.exception("hello")
+
+    {wrap, stacktrace} =
+      catch_error_stacktrace(fn -> Plug.Conn.WrapperError.reraise(conn, :error, err) end)
+
     assert wrap.conn == conn
     assert wrap.kind == :error
     assert wrap.reason == err
@@ -20,7 +23,7 @@ defmodule Plug.Conn.WrapperErrorTest do
 
   defp catch_error_stacktrace(fun) do
     fun.()
-    flunk "Expected to catch error, got nothing"
+    flunk("Expected to catch error, got nothing")
   catch
     :error, error ->
       {error, System.stacktrace()}

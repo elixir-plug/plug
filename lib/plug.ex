@@ -59,11 +59,11 @@ defmodule Plug do
   use Application
 
   @callback init(opts) :: opts
-  @callback call(Plug.Conn.t, opts) :: Plug.Conn.t
+  @callback call(Plug.Conn.t(), opts) :: Plug.Conn.t()
 
   @doc false
   def start(_type, _args) do
-    Logger.add_translator {Plug.Adapters.Translator, :translate}
+    Logger.add_translator({Plug.Adapters.Translator, :translate})
     Plug.Supervisor.start_link()
   end
 end

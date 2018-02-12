@@ -26,7 +26,7 @@ defmodule Plug.RouterTest do
 
     match "/throw", via: [:get, :post] do
       _ = conn
-      throw :oops
+      throw(:oops)
     end
 
     match "/raise" do
@@ -69,7 +69,7 @@ defmodule Plug.RouterTest do
     def init(options), do: options
 
     def call(conn, options) do
-      send_resp(conn, 200, "#{inspect options}")
+      send_resp(conn, 200, "#{inspect(options)}")
     end
   end
 
@@ -82,7 +82,7 @@ defmodule Plug.RouterTest do
     plug :dispatch
 
     get "/", host: "foo.bar", do: resp(conn, 200, "foo.bar root")
-    get "/", host: "foo.",    do: resp(conn, 200, "foo.* root")
+    get "/", host: "foo.", do: resp(conn, 200, "foo.* root")
     forward "/", to: Forward, host: "foo."
 
     get "/" do
@@ -144,7 +144,9 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(conn.assigns))
     end
 
-    forward "/options/forward", to: Forward, private: %{an_option: :a_value},
+    forward "/options/forward",
+      to: Forward,
+      private: %{an_option: :a_value},
       assigns: %{another_option: :another_value}
 
     plug = SamplePlug
@@ -160,6 +162,7 @@ defmodule Plug.RouterTest do
       if conn.path_info == ["options", "map"] and is_nil(conn.private[:an_option]) do
         raise "should be able to read option after match"
       end
+
       conn
     end
   end
@@ -325,41 +328,41 @@ defmodule Plug.RouterTest do
   test "handle errors" do
     try do
       call(Sample, conn(:get, "/forward/throw"))
-      flunk "oops"
+      flunk("oops")
     catch
       :throw, :oops ->
         assert_received @already_sent
         assigns = Process.get(:plug_handle_errors)
         assert assigns.status == 500
-        assert assigns.kind   == :throw
+        assert assigns.kind == :throw
         assert assigns.reason == :oops
-        assert is_list assigns.stack
+        assert is_list(assigns.stack)
     end
   end
 
   test "handle errors translates exceptions to status code" do
     try do
       call(Sample, conn(:get, "/forward/raise"))
-      flunk "oops"
+      flunk("oops")
     rescue
       Plug.Parsers.RequestTooLargeError ->
         assert_received @already_sent
         assigns = Process.get(:plug_handle_errors)
         assert assigns.status == 413
-        assert assigns.kind   == :error
+        assert assigns.kind == :error
         assert assigns.reason.__struct__ == Plug.Parsers.RequestTooLargeError
-        assert is_list assigns.stack
+        assert is_list(assigns.stack)
     end
   end
 
   test "handle errors when response was sent" do
     try do
       call(Sample, conn(:get, "/forward/send_and_exit"))
-      flunk "oops"
+      flunk("oops")
     catch
       :exit, :oops ->
         assert_received @already_sent
-        assert is_nil Process.get(:plug_handle_errors)
+        assert is_nil(Process.get(:plug_handle_errors))
     end
   end
 
@@ -388,9 +391,10 @@ defmodule Plug.RouterTest do
   end
 
   test "path params have priority over body and query params" do
-    conn = conn(:post, "/params/get/p_value", "param=b_value")
-    |> put_req_header("content-type", "application/x-www-form-urlencoded")
-    |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
+    conn =
+      conn(:post, "/params/get/p_value", "param=b_value")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> Plug.Parsers.call(Plug.Parsers.init(parsers: [:urlencoded]))
 
     conn = call(Sample, conn)
     assert conn.resp_body == "p_value"

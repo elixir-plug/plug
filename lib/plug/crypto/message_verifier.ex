@@ -14,13 +14,19 @@ defmodule Plug.Crypto.MessageVerifier do
   Signs a message according to the given secret.
   """
   def sign(message, secret, digest_type \\ :sha256)
+
   def sign(message, secret, digest_type)
       when is_binary(message) and is_binary(secret) and digest_type in [:sha256, :sha384, :sha512] do
     hmac_sha2_sign(message, secret, digest_type)
   end
+
   def sign(message, secret, :sha) when is_binary(message) and is_binary(secret) do
-    IO.puts :stderr, "warning: using Plug.Crypto.MessageVerifier with :sha is deprecated and unsafe, " <>
-                     "use :sha256 instead\n" <> Exception.format_stacktrace
+    IO.puts(
+      :stderr,
+      "warning: using Plug.Crypto.MessageVerifier with :sha is deprecated and unsafe, " <>
+        "use :sha256 instead\n" <> Exception.format_stacktrace()
+    )
+
     hmac_sha1_sign(message, secret)
   end
 
@@ -39,22 +45,24 @@ defmodule Plug.Crypto.MessageVerifier do
   ## Signature Algorithms
 
   defp hmac_sha1_sign(payload, key)
-      when is_binary(payload) and is_binary(key) do
+       when is_binary(payload) and is_binary(key) do
     plain_text = Base.url_encode64(payload)
-    signature  = :crypto.hmac(:sha, key, plain_text)
+    signature = :crypto.hmac(:sha, key, plain_text)
     plain_text <> "##" <> Base.url_encode64(signature)
   end
 
   defp hmac_sha1_verify(signed, key)
-      when is_binary(signed) and is_binary(key) do
+       when is_binary(signed) and is_binary(key) do
     case decode_legacy_token(signed) do
       {"HS1", payload, plain_text, signature} ->
         challenge = :crypto.hmac(:sha, key, plain_text)
+
         if Plug.Crypto.secure_compare(challenge, signature) do
           {:ok, payload}
         else
           :error
         end
+
       _ ->
         :error
     end
@@ -69,9 +77,9 @@ defmodule Plug.Crypto.MessageVerifier do
   defp hmac_sha2_to_digest_type("HS512"), do: :sha512
 
   defp hmac_sha2_sign(payload, key, digest_type) do
-    protected  = hmac_sha2_to_protected(digest_type)
+    protected = hmac_sha2_to_protected(digest_type)
     plain_text = signing_input(protected, payload)
-    signature  = :crypto.hmac(digest_type, key, plain_text)
+    signature = :crypto.hmac(digest_type, key, plain_text)
     encode_token(plain_text, signature)
   end
 
@@ -80,11 +88,13 @@ defmodule Plug.Crypto.MessageVerifier do
       {protected, payload, plain_text, signature} when protected in ["HS256", "HS384", "HS512"] ->
         digest_type = hmac_sha2_to_digest_type(protected)
         challenge = :crypto.hmac(digest_type, key, plain_text)
+
         if Plug.Crypto.secure_compare(challenge, signature) do
           {:ok, payload}
         else
           :error
         end
+
       _ ->
         :error
     end
@@ -93,7 +103,7 @@ defmodule Plug.Crypto.MessageVerifier do
   ## Helpers
 
   defp encode_token(plain_text, signature)
-      when is_binary(plain_text) and is_binary(signature) do
+       when is_binary(plain_text) and is_binary(signature) do
     plain_text <> "." <> Base.url_encode64(signature, padding: false)
   end
 
@@ -101,7 +111,7 @@ defmodule Plug.Crypto.MessageVerifier do
     with [protected, payload, signature] <- String.split(token, ".", parts: 3),
          plain_text = protected <> "." <> payload,
          {:ok, protected} <- Base.url_decode64(protected, padding: false),
-         {:ok, payload}   <- Base.url_decode64(payload, padding: false),
+         {:ok, payload} <- Base.url_decode64(payload, padding: false),
          {:ok, signature} <- Base.url_decode64(signature, padding: false) do
       {protected, payload, plain_text, signature}
     else
@@ -127,9 +137,10 @@ defmodule Plug.Crypto.MessageVerifier do
         _ -> String.split(token, "--", parts: 2)
       end
 
-    with  [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 <- split,
-          {:ok, payload}   <- decode_legacy_base64(plain_text),
-          {:ok, signature} <- decode_legacy_base64(signature) do
+    with [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 <-
+           split,
+         {:ok, payload} <- decode_legacy_base64(plain_text),
+         {:ok, signature} <- decode_legacy_base64(signature) do
       {"HS1", payload, plain_text, signature}
     else
       _ -> :error

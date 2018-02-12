@@ -43,16 +43,18 @@ defmodule Plug.Session do
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra]
 
   def init(opts) do
-    store        = convert_store(Keyword.fetch!(opts, :store))
-    key          = Keyword.fetch!(opts, :key)
-    cookie_opts  = Keyword.take(opts, @cookie_opts)
-    store_opts   = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
+    store = convert_store(Keyword.fetch!(opts, :store))
+    key = Keyword.fetch!(opts, :key)
+    cookie_opts = Keyword.take(opts, @cookie_opts)
+    store_opts = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
     store_config = store.init(store_opts)
 
-    %{store: store,
+    %{
+      store: store,
       store_config: store_config,
       key: key,
-      cookie_opts: cookie_opts}
+      cookie_opts: cookie_opts
+    }
   end
 
   def call(conn, config) do
@@ -62,7 +64,7 @@ defmodule Plug.Session do
   defp convert_store(store) do
     case Atom.to_string(store) do
       "Elixir." <> _ -> store
-      reference      -> Module.concat(Plug.Session, String.upcase(reference))
+      reference -> Module.concat(Plug.Session, String.upcase(reference))
     end
   end
 
@@ -92,12 +94,16 @@ defmodule Plug.Session do
         :write ->
           value = put_session(sid, conn, config)
           put_cookie(value, conn, config)
+
         :drop ->
           drop_session(sid, conn, config)
+
         :renew ->
           renew_session(sid, conn, config)
+
         :ignore ->
           conn
+
         nil ->
           conn
       end

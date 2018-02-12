@@ -167,14 +167,15 @@ defmodule Plug.Adapters.Cowboy2 do
     %{
       id: {:ranch_listener_sup, ref},
       start:
-        {:ranch_listener_sup, :start_link, [
-          ref,
-          num_acceptors,
-          ranch_module,
-          transport_opts,
-          cowboy_protocol,
-          proto_opts
-        ]},
+        {:ranch_listener_sup, :start_link,
+         [
+           ref,
+           num_acceptors,
+           ranch_module,
+           transport_opts,
+           cowboy_protocol,
+           proto_opts
+         ]},
       restart: :permanent,
       shutdown: :infinity,
       type: :supervisor,
@@ -192,9 +193,10 @@ defmodule Plug.Adapters.Cowboy2 do
         case Application.spec(:cowboy, :vsn) do
           '2.' ++ _ ->
             :ok
+
           vsn ->
             raise "you are using Plug.Adapters.Cowboy2 but your current Cowboy version is #{vsn}. " <>
-                  "Please update your mix.exs file accordingly"
+                    "Please update your mix.exs file accordingly"
         end
 
       {:error, {:cowboy, _}} ->

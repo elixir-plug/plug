@@ -50,14 +50,14 @@ defmodule Plug.ErrorHandler do
         Plug.Conn.send_resp(conn, conn.status, "Something went wrong")
       end
 
-      defoverridable [handle_errors: 2]
+      defoverridable handle_errors: 2
     end
   end
 
   @doc false
   defmacro __before_compile__(_env) do
     quote location: :keep do
-      defoverridable [call: 2]
+      defoverridable call: 2
 
       def call(conn, opts) do
         try do
@@ -79,16 +79,17 @@ defmodule Plug.ErrorHandler do
   end
 
   def __catch__(conn, kind, reason, handle_errors) do
-    __catch__(conn, kind, reason, reason, System.stacktrace, handle_errors)
+    __catch__(conn, kind, reason, reason, System.stacktrace(), handle_errors)
   end
 
   defp __catch__(conn, kind, reason, wrapped_reason, stack, handle_errors) do
     receive do
       @already_sent ->
-        send self(), @already_sent
+        send(self(), @already_sent)
     after
       0 ->
         normalized_reason = Exception.normalize(kind, wrapped_reason, stack)
+
         conn
         |> Plug.Conn.put_status(status(kind, normalized_reason))
         |> handle_errors.(%{kind: kind, reason: normalized_reason, stack: stack})
@@ -97,7 +98,7 @@ defmodule Plug.ErrorHandler do
     :erlang.raise(kind, reason, stack)
   end
 
-  defp status(:error, error),  do: Plug.Exception.status(error)
+  defp status(:error, error), do: Plug.Exception.status(error)
   defp status(:throw, _throw), do: 500
-  defp status(:exit, _exit),   do: 500
+  defp status(:exit, _exit), do: 500
 end

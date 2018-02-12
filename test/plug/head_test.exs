@@ -10,10 +10,11 @@ defmodule Plug.HeadTest do
   end
 
   test "HEAD responses have headers but do not have a body" do
-    conn = conn(:head, "/")
-           |> Plug.Head.call(@opts)
-           |> put_resp_content_type("text/plain")
-           |> send_resp(200, "Hello world")
+    conn =
+      conn(:head, "/")
+      |> Plug.Head.call(@opts)
+      |> put_resp_content_type("text/plain")
+      |> send_resp(200, "Hello world")
 
     assert conn.status == 200
     assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
@@ -21,9 +22,10 @@ defmodule Plug.HeadTest do
   end
 
   test "if the request is different from HEAD, conn must be returned as is" do
-    conn = conn(:get, "/")
-           |> Plug.Head.call(@opts)
-           |> send_resp(200, "Hello world")
+    conn =
+      conn(:get, "/")
+      |> Plug.Head.call(@opts)
+      |> send_resp(200, "Hello world")
 
     assert conn.status == 200
     assert conn.method == "GET"

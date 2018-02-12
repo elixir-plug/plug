@@ -25,7 +25,7 @@ defmodule Plug.DebuggerTest do
 
     get "/nil" do
       _ = conn
-      nil.id
+      nil.id()
     end
 
     get "/soft_boom" do
@@ -34,13 +34,15 @@ defmodule Plug.DebuggerTest do
     end
 
     get "/send_and_boom" do
-      send_resp conn, 200, "oops"
+      send_resp(conn, 200, "oops")
       raise "oops"
     end
 
     get "/send_and_wrapped" do
-      raise Plug.Conn.WrapperError, conn: conn,
-        kind: :error, stack: System.stacktrace,
+      raise Plug.Conn.WrapperError,
+        conn: conn,
+        kind: :error,
+        stack: System.stacktrace(),
         reason: Exception.exception([])
     end
   end
@@ -68,8 +70,10 @@ defmodule Plug.DebuggerTest do
     assert_received {:plug_conn, :sent}
     {status, headers, body} = sent_resp(conn)
     assert status == 500
+
     assert List.keyfind(headers, "content-type", 0) ==
-           {"content-type", "text/html; charset=utf-8"}
+             {"content-type", "text/html; charset=utf-8"}
+
     assert body =~ "<title>RuntimeError at GET /boom</title>"
     assert body =~ "&lt;oops&gt;"
   end
@@ -77,17 +81,19 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden and warns on non-500 errors" do
     conn = put_req_header(conn(:get, "/soft_boom"), "accept", "text/html")
 
-    capture_log fn ->
+    capture_log(fn ->
       assert_raise Exception, fn ->
         Router.call(conn, [])
       end
-    end
+    end)
 
     assert_received {:plug_conn, :sent}
     {status, headers, body} = sent_resp(conn)
     assert status == 403
+
     assert List.keyfind(headers, "content-type", 0) ==
-           {"content-type", "text/html; charset=utf-8"}
+             {"content-type", "text/html; charset=utf-8"}
+
     assert body =~ "<title>Plug.DebuggerTest.Exception at GET /soft_boom</title>"
     assert body =~ "oops"
   end
@@ -95,11 +101,11 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden but is a no-op when response is already sent" do
     conn = put_req_header(conn(:get, "/send_and_boom"), "accept", "text/html")
 
-    capture_log fn ->
+    capture_log(fn ->
       assert_raise RuntimeError, "oops", fn ->
         Router.call(conn, [])
       end
-    end
+    end)
 
     assert_received {:plug_conn, :sent}
     assert {200, _headers, "oops"} = sent_resp(conn)
@@ -108,34 +114,38 @@ defmodule Plug.DebuggerTest do
   test "call/2 is overridden and unwrapps wrapped errors" do
     conn = put_req_header(conn(:get, "/send_and_wrapped"), "accept", "text/html")
 
-    capture_log fn ->
+    capture_log(fn ->
       assert_raise Exception, "oops", fn ->
         Router.call(conn, [])
       end
-    end
+    end)
 
     assert_received {:plug_conn, :sent}
     {status, headers, body} = sent_resp(conn)
     assert status == 403
+
     assert List.keyfind(headers, "content-type", 0) ==
-           {"content-type", "text/html; charset=utf-8"}
+             {"content-type", "text/html; charset=utf-8"}
+
     assert body =~ "<title>Plug.DebuggerTest.Exception at GET /send_and_wrapped</title>"
   end
 
   test "call/2 is overridden and handles errors without sources" do
     conn = put_req_header(conn(:get, "/nil"), "accept", "text/html")
 
-    capture_log fn ->
+    capture_log(fn ->
       assert_raise UndefinedFunctionError, fn ->
         Router.call(conn, [])
       end
-    end
+    end)
 
     assert_received {:plug_conn, :sent}
     {status, headers, body} = sent_resp(conn)
     assert status == 500
+
     assert List.keyfind(headers, "content-type", 0) ==
-           {"content-type", "text/html; charset=utf-8"}
+             {"content-type", "text/html; charset=utf-8"}
+
     assert body =~ "<title>UndefinedFunctionError at GET /nil</title>"
   end
 
@@ -151,14 +161,12 @@ defmodule Plug.DebuggerTest do
       kind, reason ->
         Plug.Debugger.render(conn, 500, kind, reason, opts[:stack], opts)
     else
-      _ -> flunk "function should have failed"
+      _ -> flunk("function should have failed")
     end
   end
 
   test "exception page for throws" do
-    conn = render(conn(:get, "/"), [], fn ->
-      throw :hello
-    end)
+    conn = render(conn(:get, "/"), [], fn -> throw(:hello) end)
 
     assert conn.status == 500
     assert conn.resp_body =~ "unhandled throw at GET /"
@@ -166,9 +174,10 @@ defmodule Plug.DebuggerTest do
   end
 
   test "exception page for exceptions" do
-    conn = render(conn(:get, "/"), [], fn ->
-      raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
-    end)
+    conn =
+      render(conn(:get, "/"), [], fn ->
+        raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
+      end)
 
     assert conn.resp_body =~ "Plug.Parsers.UnsupportedMediaTypeError"
     assert conn.resp_body =~ "at GET /"
@@ -176,9 +185,10 @@ defmodule Plug.DebuggerTest do
   end
 
   test "exception page for exits" do
-    conn = render(conn(:get, "/"), [], fn ->
-      exit {:timedout, {GenServer, :call, [:foo, :bar]}}
-    end)
+    conn =
+      render(conn(:get, "/"), [], fn ->
+        exit({:timedout, {GenServer, :call, [:foo, :bar]}})
+      end)
 
     assert conn.resp_body =~ "unhandled exit at GET /"
     assert conn.resp_body =~ "exited in: GenServer.call(:foo, :bar)"
@@ -269,20 +279,22 @@ defmodule Plug.DebuggerTest do
   test "uses PLUG_EDITOR" do
     System.put_env("PLUG_EDITOR", "hello://open?file=__FILE__&line=__LINE__")
 
-    conn = stack [{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}]
+    conn = stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
     file = Path.expand("lib/plug/conn.ex")
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=1"
 
-    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
+    conn = stack([{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}])
     file = Path.expand(GenServer.__info__(:compile)[:source])
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=10000"
   end
 
   test "styles can be overridden" do
     conn = put_req_header(conn(:get, "/boom"), "accept", "text/html")
+
     assert_raise RuntimeError, fn ->
       StyledRouter.call(conn, [])
     end
+
     {_status, _headers, body} = sent_resp(conn)
     assert body =~ "color: #c0ffee"
     refute body =~ ~r(\.exception-logo {\s*position: absolute)
@@ -290,9 +302,11 @@ defmodule Plug.DebuggerTest do
 
   test "if the Accept header is something else than text/html, Markdown is rendered" do
     conn = put_req_header(conn(:get, "/"), "accept", "application/json")
-    conn = render(conn, [], fn ->
-      raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
-    end)
+
+    conn =
+      render(conn, [], fn ->
+        raise Plug.Parsers.UnsupportedMediaTypeError, media_type: "foo/bar"
+      end)
 
     assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
 
@@ -301,7 +315,7 @@ defmodule Plug.DebuggerTest do
   end
 
   test "stacktrace from otp_app" do
-    conn = stack [{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}]
+    conn = stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
     assert conn.resp_body =~ "Plug.Conn.unknown/1"
     assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
     assert conn.resp_body =~ "<span class=\"line\">:1</span>"
@@ -311,15 +325,17 @@ defmodule Plug.DebuggerTest do
   end
 
   test "stacktrace from elixir" do
-    conn = stack [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
+    conn = stack([{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}])
     assert conn.resp_body =~ "<span class=\"info\">GenServer.call/2</span>"
     assert conn.resp_body =~ "<span class=\"line\">:10000</span>"
     assert conn.resp_body =~ "lib/gen_server.ex"
   end
 
   test "stacktrace from test" do
-    conn = stack [{__MODULE__, :unknown, 1,
-                   file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
+    conn =
+      stack([
+        {__MODULE__, :unknown, 1, file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}
+      ])
 
     assert conn.resp_body =~ "<span class=\"info\">Plug.DebuggerTest.unknown/1</span>"
     assert conn.resp_body =~ ~r(<span class=\"filename\">\s*test/plug/debugger_test.exs)
@@ -329,8 +345,11 @@ defmodule Plug.DebuggerTest do
 
   # This should always be the last test as we are checking for end of line.
   test "stacktrace at the end of file" do
-    conn = stack [{__MODULE__, :unknown, 1,
-                   file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}]
+    conn =
+      stack([
+        {__MODULE__, :unknown, 1, file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}
+      ])
+
     assert conn.resp_body =~ "<span class=\"code\">  end</span>"
   end
 end
