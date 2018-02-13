@@ -50,6 +50,10 @@ defmodule Plug.CSRFProtectionTest do
     case conn.params["token"] do
       "get" ->
         send_resp(conn, 200, CSRFProtection.get_csrf_token())
+      "get_for" ->
+        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("www.example.com"))
+      "get_for_invalid" ->
+        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("www.evil.com"))
       "delete" ->
         CSRFProtection.delete_csrf_token()
         send_resp(conn, 200, "")
@@ -181,6 +185,37 @@ defmodule Plug.CSRFProtectionTest do
     assert byte_size(conn2.resp_body) == 56
 
     assert conn1.resp_body != conn2.resp_body
+  end
+
+  test "protected requests with valid host token in params are allowed" do
+    old_conn = call(conn(:get, "/?token=get_for"))
+    params = %{_csrf_token: old_conn.resp_body}
+
+    conn = call_with_old_conn(conn(:post, "/", params), old_conn)
+    refute conn.halted
+
+    conn = call_with_old_conn(conn(:put, "/", params), old_conn)
+    refute conn.halted
+
+    conn = call_with_old_conn(conn(:patch, "/", params), old_conn)
+    refute conn.halted
+  end
+
+  test "protected requests with invalid host token in params are not allowed" do
+    old_conn = call(conn(:get, "/?token=get_for_invalid"))
+    params = %{_csrf_token: old_conn.resp_body}
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:post, "/", params), old_conn)
+    end
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:put, "/", params), old_conn)
+    end
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:patch, "/", params), old_conn)
+    end
   end
 
   test "protected requests with valid token in params are allowed" do
