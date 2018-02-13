@@ -43,7 +43,7 @@ defmodule Plug.Adapters.Cowboy2 do
   @doc false
   def args(scheme, plug, opts, cowboy_options) do
     {cowboy_options, non_keyword_options} =
-      Enum.partition(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
+      enum_split_with(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
     |> Keyword.put_new(:max_connections, 16_384)
@@ -332,4 +332,9 @@ defmodule Plug.Adapters.Cowboy2 do
   defp fail(message) do
     raise ArgumentError, message: "could not start Cowboy2 adapter, " <> message
   end
+
+  # TODO: Remove once we depend on Elixir ~> 1.4.
+  Code.ensure_loaded(Enum)
+  split_with = if function_exported?(Enum, :split_with, 2), do: :split_with, else: :partition
+  defp enum_split_with(enum, fun), do: apply(Enum, unquote(split_with), [enum, fun])
 end
