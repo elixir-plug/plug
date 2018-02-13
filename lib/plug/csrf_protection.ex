@@ -118,8 +118,8 @@ defmodule Plug.CSRFProtection do
   Gets the CSRF token with an associated host.
   """
   def get_csrf_token_for(host) do
-    {token, mask} = get_token_and_mask(get_csrf_token())
-    message = hash(token <> host) <> mask
+    token = unmasked_csrf_token()
+    message = generate_token() <> host
 
     if secret = Process.get(:secret_key_base) do
       key = KeyGenerator.generate(secret, token)
@@ -184,22 +184,15 @@ defmodule Plug.CSRFProtection do
     end
   end
 
-  defp get_user_token(conn) do
-    case conn.params["_csrf_token"] do
-      nil -> List.first(get_req_header(conn, "x-csrf-token"))
-      token -> token
-    end
-  end
-
   defp verified_request?(conn, csrf_token) do
-    user_token = get_user_token(conn)
     conn.method in @unprotected_methods
-      || valid_signed_csrf_token?(conn, csrf_token, user_token)
-      || valid_csrf_token?(csrf_token, user_token)
+      || valid_csrf_token?(conn, csrf_token, conn.params["_csrf_token"])
+      || valid_csrf_token?(conn, csrf_token, List.first(get_req_header(conn, "x-csrf-token")))
       || skip_csrf_protection?(conn)
   end
 
-  defp valid_csrf_token?(<<csrf_token::@encoded_token_size-binary>>,
+  defp valid_csrf_token?(_conn,
+                         <<csrf_token::@encoded_token_size-binary>>,
                          <<user_token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>) do
     case Base.decode64(user_token) do
       {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
@@ -207,21 +200,18 @@ defmodule Plug.CSRFProtection do
     end
   end
 
-  defp valid_csrf_token?(_csrf_token, _user_token), do: false
-
-  defp valid_signed_csrf_token?(conn,
-                                <<csrf_token::@encoded_token_size-binary>>,
-                                <<@digest, _::binary>> = signed_user_token) do
+  defp valid_csrf_token?(conn,
+                         <<csrf_token::@encoded_token_size-binary>>,
+                         <<@digest, _::binary>> = signed_user_token) do
     key = KeyGenerator.generate(conn.secret_key_base, csrf_token)
     case MessageVerifier.verify(signed_user_token, key) do
-      {:ok, <<user_token::32-binary, _::binary>>} ->
-        hash(csrf_token <> conn.host)
-        |> Plug.Crypto.secure_compare(user_token)
+      {:ok, <<_::@encoded_token_size-binary, host::binary>>} ->
+        host == conn.host
       :error -> false
     end
   end
 
-  defp valid_signed_csrf_token?(_conn, _csrf_token, _signed_user_token), do: false
+  defp valid_csrf_token?(_conn, _csrf_token, _user_token), do: false
 
   ## Before send
 
@@ -268,11 +258,6 @@ defmodule Plug.CSRFProtection do
     Base.encode64(Plug.Crypto.mask(token, mask)) <> mask
   end
 
-  defp get_token_and_mask(<<token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>) do
-    {:ok, token} = Base.decode64(token)
-    {Plug.Crypto.mask(token, mask), mask}
-  end
-
   defp unmasked_csrf_token do
     case Process.get(:plug_unmasked_csrf_token) do
       token when is_binary(token) ->
@@ -287,9 +272,5 @@ defmodule Plug.CSRFProtection do
 
   defp generate_token do
     Base.encode64(:crypto.strong_rand_bytes(@token_size))
-  end
-
-  defp hash(message) do
-    :crypto.hash(:sha256, message)
   end
 end
