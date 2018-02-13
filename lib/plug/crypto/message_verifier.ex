@@ -137,8 +137,7 @@ defmodule Plug.Crypto.MessageVerifier do
         _ -> String.split(token, "--", parts: 2)
       end
 
-    with [plain_text, signature] when byte_size(plain_text) > 0 and byte_size(signature) > 0 <-
-           split,
+    with [plain_text, signature] when plain_text != "" and signature != "" <- split,
          {:ok, payload} <- decode_legacy_base64(plain_text),
          {:ok, signature} <- decode_legacy_base64(signature) do
       {"HS1", payload, plain_text, signature}

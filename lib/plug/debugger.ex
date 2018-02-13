@@ -135,7 +135,7 @@ defmodule Plug.Debugger do
     end
   end
 
-  # We don't log status >=500 because those are treated as errors and logged later.
+  # We don't log status >= 500 because those are treated as errors and logged later.
   defp log(status, kind, reason, stack) when status < 500,
     do: Logger.debug(Exception.format(kind, reason, stack))
 
@@ -308,8 +308,7 @@ defmodule Plug.Debugger do
 
   defp get_clauses(module, fun, args) do
     # TODO: Remove exported check once we depend on Elixir v1.5 only
-    with true <- is_list(args),
-         true <- function_exported?(Exception, :blame_mfa, 3),
+    with true <- is_list(args) and function_exported?(Exception, :blame_mfa, 3),
          {:ok, kind, clauses} <- apply(Exception, :blame_mfa, [module, fun, args]) do
       top_10 =
         clauses

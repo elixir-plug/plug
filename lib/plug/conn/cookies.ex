@@ -56,30 +56,32 @@ defmodule Plug.Conn.Cookies do
     value = Map.get(opts, :value)
     path = Map.get(opts, :path, "/")
 
-    "#{key}=#{value}; path=#{path}"
-    |> concat_if(opts[:domain], &"; domain=#{&1}")
-    |> concat_if(opts[:max_age], &encode_max_age(&1, opts))
-    |> concat_if(Map.get(opts, :secure, false), "; secure")
-    |> concat_if(Map.get(opts, :http_only, true), "; HttpOnly")
-    |> concat_if(opts[:extra], &"; #{&1}")
+    IO.iodata_to_binary([
+      "#{key}=#{value}; path=#{path}",
+      emit_if(opts[:domain], &["; domain=", &1]),
+      emit_if(opts[:max_age], &encode_max_age(&1, opts)),
+      emit_if(Map.get(opts, :secure, false), "; secure"),
+      emit_if(Map.get(opts, :http_only, true), "; HttpOnly"),
+      emit_if(opts[:extra], &["; ", &1])
+    ])
   end
 
   defp encode_max_age(max_age, opts) do
     time = Map.get(opts, :universal_time) || :calendar.universal_time()
     time = add_seconds(time, max_age)
-    "; expires=" <> rfc2822(time) <> "; max-age=" <> Integer.to_string(max_age)
+    ["; expires=", rfc2822(time), "; max-age=", Integer.to_string(max_age)]
   end
 
-  defp concat_if(acc, value, fun_or_string) do
+  defp emit_if(value, fun_or_string) do
     cond do
       !value ->
-        acc
+        []
 
       is_function(fun_or_string) ->
-        acc <> fun_or_string.(value)
+        fun_or_string.(value)
 
       is_binary(fun_or_string) ->
-        acc <> fun_or_string
+        fun_or_string
     end
   end
 
@@ -87,21 +89,24 @@ defmodule Plug.Conn.Cookies do
   defp pad(number), do: Integer.to_string(number)
 
   defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
-    weekday_name = weekday_name(:calendar.day_of_the_week(date))
-    month_name = month_name(month)
-    padded_day = pad(day)
-    padded_hour = pad(hour)
-    padded_minute = pad(minute)
-    padded_second = pad(second)
-    binary_year = Integer.to_string(year)
-
-    weekday_name <>
-      ", " <>
-      padded_day <>
-      " " <>
-      month_name <>
-      " " <>
-      binary_year <> " " <> padded_hour <> ":" <> padded_minute <> ":" <> padded_second <> " GMT"
+    # Sat, 17 Apr 2010 14:00:00 GMT
+    [
+      weekday_name(:calendar.day_of_the_week(date)),
+      ?,,
+      ?\s,
+      pad(day),
+      ?\s,
+      month_name(month),
+      ?\s,
+      Integer.to_string(year),
+      ?\s,
+      pad(hour),
+      ?:,
+      pad(minute),
+      ?:,
+      pad(second),
+      " GMT"
+    ]
   end
 
   defp weekday_name(1), do: "Mon"

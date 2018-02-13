@@ -462,12 +462,8 @@ defmodule Plug.Conn do
   end
 
   def send_chunked(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status) do
-    conn =
-      run_before_send(
-        %{conn | status: Plug.Conn.Status.code(status), resp_body: nil},
-        :set_chunked
-      )
-
+    conn = %{conn | status: Plug.Conn.Status.code(status), resp_body: nil}
+    conn = run_before_send(conn, :set_chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :chunked, resp_body: body}
@@ -679,7 +675,8 @@ defmodule Plug.Conn do
 
   def merge_resp_headers(%Conn{resp_headers: current, adapter: adapter} = conn, headers) do
     headers =
-      Enum.reduce(headers, current, fn {key, value}, acc when is_binary(key) and is_binary(value) ->
+      Enum.reduce(headers, current, fn {key, value}, acc
+                                       when is_binary(key) and is_binary(value) ->
         validate_header_key_if_test!(adapter, key)
         validate_header_value!(key, value)
         List.keystore(acc, key, 0, {key, value})
@@ -762,10 +759,8 @@ defmodule Plug.Conn do
   @spec fetch_query_params(t, Keyword.t()) :: t
   def fetch_query_params(conn, opts \\ [])
 
-  def fetch_query_params(
-        %Conn{query_params: %Unfetched{}, params: params, query_string: query_string} = conn,
-        opts
-      ) do
+  def fetch_query_params(%Conn{query_params: %Unfetched{}} = conn, opts) do
+    %{params: params, query_string: query_string} = conn
     Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
     length = Keyword.get(opts, :length, 1_000_000)
 
@@ -928,31 +923,14 @@ defmodule Plug.Conn do
     case :plug_multipart.parse_body(data, boundary) do
       {:ok, body} ->
         {_, next, state} = next_multipart(adapter, state, opts)
-
-        read_part_body(
-          conn,
-          next,
-          prepend_unless_empty(acc, body),
-          length,
-          boundary,
-          adapter,
-          state,
-          opts
-        )
+        acc = prepend_unless_empty(acc, body)
+        read_part_body(conn, next, acc, length, boundary, adapter, state, opts)
 
       {:ok, body, rest} ->
         {_, next, state} = next_multipart(adapter, state, opts)
-
-        read_part_body(
-          conn,
-          prepend_unless_empty(rest, next),
-          prepend_unless_empty(acc, body),
-          length,
-          boundary,
-          adapter,
-          state,
-          opts
-        )
+        next = prepend_unless_empty(rest, next)
+        acc = prepend_unless_empty(acc, body)
+        read_part_body(conn, next, acc, length, boundary, adapter, state, opts)
 
       :done ->
         {:ok, acc, store_multipart(conn, {boundary, ""}, adapter, state)}
@@ -1056,11 +1034,9 @@ defmodule Plug.Conn do
   @spec fetch_cookies(t, Keyword.t()) :: t
   def fetch_cookies(conn, opts \\ [])
 
-  def fetch_cookies(
-        %Conn{req_cookies: %Unfetched{}, resp_cookies: resp_cookies, req_headers: req_headers} =
-          conn,
-        _opts
-      ) do
+  def fetch_cookies(%Conn{req_cookies: %Unfetched{}} = conn, _opts) do
+    %{resp_cookies: resp_cookies, req_headers: req_headers} = conn
+
     req_cookies =
       for {"cookie", cookie} <- req_headers,
           kv <- Plug.Conn.Cookies.decode(cookie),
@@ -1107,13 +1083,9 @@ defmodule Plug.Conn do
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t()) :: t
-  def put_resp_cookie(
-        %Conn{resp_cookies: resp_cookies, scheme: scheme} = conn,
-        key,
-        value,
-        opts \\ []
-      )
+  def put_resp_cookie(%Conn{} = conn, key, value, opts \\ [])
       when is_binary(key) and is_binary(value) and is_list(opts) do
+    %{resp_cookies: resp_cookies, scheme: scheme} = conn
     cookie = [{:value, value} | opts] |> :maps.from_list() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
     update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
