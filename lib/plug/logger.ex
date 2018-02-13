@@ -24,25 +24,26 @@ defmodule Plug.Logger do
   end
 
   def call(conn, level) do
-    Logger.log level, fn ->
+    Logger.log(level, fn ->
       [conn.method, ?\s, conn.request_path]
-    end
+    end)
 
     start = System.monotonic_time()
 
     Conn.register_before_send(conn, fn conn ->
-      Logger.log level, fn ->
+      Logger.log(level, fn ->
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :micro_seconds)
+        status = Integer.to_string(conn.status)
 
-        [connection_type(conn), ?\s, Integer.to_string(conn.status),
-         " in ", formatted_diff(diff)]
-      end
+        [connection_type(conn), ?\s, status, " in ", formatted_diff(diff)]
+      end)
+
       conn
     end)
   end
 
-  defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string, "ms"]
+  defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string(), "ms"]
   defp formatted_diff(diff), do: [Integer.to_string(diff), "µs"]
 
   defp connection_type(%{state: :set_chunked}), do: "Chunked"

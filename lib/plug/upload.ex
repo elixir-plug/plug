@@ -26,10 +26,10 @@ defmodule Plug.Upload do
   defstruct [:path, :content_type, :filename]
 
   @type t :: %__MODULE__{
-    path: Path.t,
-    filename: binary,
-    content_type: binary | nil
-  }
+          path: Path.t(),
+          filename: binary,
+          content_type: binary | nil
+        }
 
   @table __MODULE__
   @max_attempts 10
@@ -40,13 +40,14 @@ defmodule Plug.Upload do
   with the given prefix.
   """
   @spec random_file(binary) ::
-        {:ok, binary} |
-        {:too_many_attempts, binary, pos_integer} |
-        {:no_tmp, [binary]}
+          {:ok, binary}
+          | {:too_many_attempts, binary, pos_integer}
+          | {:no_tmp, [binary]}
   def random_file(prefix) do
     case ensure_tmp() do
       {:ok, tmp, paths} ->
         open_random_file(prefix, tmp, 0, paths)
+
       {:no_tmp, tmps} ->
         {:no_tmp, tmps}
     end
@@ -59,9 +60,10 @@ defmodule Plug.Upload do
     case :ets.lookup(@table, pid) do
       [{^pid, tmp, paths}] ->
         {:ok, tmp, paths}
+
       [] ->
         {:ok, tmps} = GenServer.call(server, :upload)
-        {mega, _, _} = :os.timestamp
+        {mega, _, _} = :os.timestamp()
         subdir = "/plug-" <> i(mega)
 
         if tmp = Enum.find_value(tmps, &make_tmp_dir(&1 <> subdir)) do
@@ -85,8 +87,9 @@ defmodule Plug.Upload do
 
     case :file.write_file(path, "", [:write, :raw, :exclusive, :binary]) do
       :ok ->
-        :ets.update_element(@table, self(), {3, [path|paths]})
+        :ets.update_element(@table, self(), {3, [path | paths]})
         {:ok, path}
+
       {:error, reason} when reason in [:eexist, :eacces] ->
         open_random_file(prefix, tmp, attempts + 1, paths)
     end
@@ -115,33 +118,38 @@ defmodule Plug.Upload do
     case random_file(prefix) do
       {:ok, path} ->
         path
+
       {:too_many_attempts, tmp, attempts} ->
-        raise Plug.UploadError, "tried #{attempts} times to create an uploaded file at #{tmp} but failed. " <>
-                                "Set PLUG_TMPDIR to a directory with write permission"
+        raise Plug.UploadError,
+              "tried #{attempts} times to create an uploaded file at #{tmp} but failed. " <>
+                "Set PLUG_TMPDIR to a directory with write permission"
+
       {:no_tmp, _tmps} ->
-        raise Plug.UploadError, "could not create a tmp directory to store uploads. " <>
-                                "Set PLUG_TMPDIR to a directory with write permission"
+        raise Plug.UploadError,
+              "could not create a tmp directory to store uploads. " <>
+                "Set PLUG_TMPDIR to a directory with write permission"
     end
   end
 
   defp plug_server do
     Process.whereis(__MODULE__) ||
-      raise Plug.UploadError, "could not find process Plug.Upload. Have you started the :plug application?"
+      raise Plug.UploadError,
+            "could not find process Plug.Upload. Have you started the :plug application?"
   end
 
   @doc """
   Starts the upload handling server.
   """
   def start_link() do
-    GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   ## Callbacks
 
   def init(:ok) do
     Process.flag(:trap_exit, true)
-    tmp = Enum.find_value @temp_env_vars, "/tmp", &System.get_env/1
-    cwd = Path.join(File.cwd!, "tmp")
+    tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1)
+    cwd = Path.join(File.cwd!(), "tmp")
     :ets.new(@table, [:named_table, :public, :set])
     {:ok, [tmp, cwd]}
   end
@@ -156,9 +164,11 @@ defmodule Plug.Upload do
       [{pid, _tmp, paths}] ->
         :ets.delete(@table, pid)
         delete_paths(paths)
+
       [] ->
         :ok
     end
+
     {:noreply, state}
   end
 
@@ -167,9 +177,8 @@ defmodule Plug.Upload do
   end
 
   def terminate(_reason, _state) do
-    :ets.foldl(fn({_pid, _tmp, paths}, _) ->
-      delete_paths(paths)
-    end, :ok, @table)
+    folder = fn {_pid, _tmp, paths}, _ -> delete_paths(paths) end
+    :ets.foldl(folder, :ok, @table)
     :ok
   end
 

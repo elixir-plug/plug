@@ -7,12 +7,12 @@ defmodule Plug.CSRFProtectionTest do
   alias Plug.CSRFProtection.InvalidCrossOriginRequestError
 
   @default_opts Plug.Session.init(
-    store: :cookie,
-    key: "foobar",
-    encryption_salt: "cookie store encryption salt",
-    signing_salt: "cookie store signing salt",
-    encrypt: true
-  )
+                  store: :cookie,
+                  key: "foobar",
+                  encryption_salt: "cookie store encryption salt",
+                  signing_salt: "cookie store signing salt",
+                  encrypt: true
+                )
 
   @secret String.duplicate("abcdef0123456789", 8)
 
@@ -50,21 +50,22 @@ defmodule Plug.CSRFProtectionTest do
     case conn.params["token"] do
       "get" ->
         send_resp(conn, 200, CSRFProtection.get_csrf_token())
+
       "delete" ->
         CSRFProtection.delete_csrf_token()
         send_resp(conn, 200, "")
+
       _ ->
         send_resp(conn, 200, "")
     end
   end
 
   test "token is stored in process dictionary" do
-    assert CSRFProtection.get_csrf_token() ==
-           CSRFProtection.get_csrf_token()
+    assert CSRFProtection.get_csrf_token() == CSRFProtection.get_csrf_token()
 
-    t1 = CSRFProtection.get_csrf_token
-    CSRFProtection.delete_csrf_token
-    assert t1 != CSRFProtection.get_csrf_token
+    t1 = CSRFProtection.get_csrf_token()
+    CSRFProtection.delete_csrf_token()
+    assert t1 != CSRFProtection.get_csrf_token()
   end
 
   test "raise error for missing authenticity token in session" do
@@ -205,18 +206,21 @@ defmodule Plug.CSRFProtectionTest do
       conn(:post, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
+
     refute conn.halted
 
     conn =
       conn(:put, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
+
     refute conn.halted
 
     conn =
       conn(:patch, "/")
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
+
     refute conn.halted
   end
 
@@ -245,12 +249,14 @@ defmodule Plug.CSRFProtectionTest do
       conn(:get, "/?token=get")
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
+
     assert get_session(conn, "_csrf_token")
 
     conn =
       conn(:post, "/?token=get", %{})
       |> put_private(:plug_skip_csrf_protection, true)
       |> call()
+
     assert get_session(conn, "_csrf_token")
 
     conn =
@@ -258,6 +264,7 @@ defmodule Plug.CSRFProtectionTest do
       |> put_private(:plug_skip_csrf_protection, true)
       |> assign(:content_type, "text/javascript")
       |> call()
+
     assert get_session(conn, "_csrf_token")
   end
 

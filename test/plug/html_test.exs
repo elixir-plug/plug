@@ -19,6 +19,6 @@ defmodule Plug.HTMlTest do
   end
 
   defp iodata_escape(data) do
-    data |> Plug.HTML.html_escape_to_iodata |> IO.iodata_to_binary
+    data |> Plug.HTML.html_escape_to_iodata() |> IO.iodata_to_binary()
   end
 end

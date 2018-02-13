@@ -34,7 +34,11 @@ defmodule Plug.Adapters.Test.ConnTest do
 
   test "custom struct params" do
     conn = conn(:get, "/", a: "b", file: %Plug.Upload{})
-    assert conn.params == %{"a" => "b", "file" => %Plug.Upload{content_type: nil, filename: nil, path: nil}}
+
+    assert conn.params == %{
+             "a" => "b",
+             "file" => %Plug.Upload{content_type: nil, filename: nil, path: nil}
+           }
 
     conn = conn(:get, "/", a: "b", file: %{__struct__: "Foo"})
     assert conn.params == %{"a" => "b", "file" => %{"__struct__" => "Foo"}}
@@ -62,6 +66,7 @@ defmodule Plug.Adapters.Test.ConnTest do
       conn(:get, "/", foo: "bar")
       |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
       |> Plug.Adapters.Test.Conn.conn(:get, "/", foo: "bar")
+
     assert conn.req_headers == [{"content-type", "application/vnd.api+json"}]
   end
 
@@ -89,7 +94,9 @@ defmodule Plug.Adapters.Test.ConnTest do
     conn_with_host = conn(:get, "http://www.elixir-lang.org/")
     assert conn_with_host.host == "www.elixir-lang.org"
 
-    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
+    child_conn =
+      Plug.Adapters.Test.Conn.conn(conn_with_host, :get, "http://www.example.org/", nil)
+
     assert child_conn.host == "www.example.org"
   end
 

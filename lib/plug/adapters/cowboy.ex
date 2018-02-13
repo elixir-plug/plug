@@ -69,8 +69,8 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTP
 
   """
-  @spec http(module(), Keyword.t, Keyword.t) ::
-        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
+  @spec http(module(), Keyword.t(), Keyword.t()) ::
+          {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def http(plug, opts, cowboy_options \\ []) do
     run(:http, plug, opts, cowboy_options)
   end
@@ -103,8 +103,8 @@ defmodule Plug.Adapters.Cowboy do
       Plug.Adapters.Cowboy.shutdown MyPlug.HTTPS
 
   """
-  @spec https(module(), Keyword.t, Keyword.t) ::
-        {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
+  @spec https(module(), Keyword.t(), Keyword.t()) ::
+          {:ok, pid} | {:error, :eaddrinuse} | {:error, term}
   def https(plug, opts, cowboy_options \\ []) do
     Application.ensure_all_started(:ssl)
     run(:https, plug, opts, cowboy_options)
@@ -127,10 +127,13 @@ defmodule Plug.Adapters.Cowboy do
   # TODO: Remove this once we require Elixir v1.5+
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
-    ranch_module = case scheme do
-      :http  -> :ranch_tcp
-      :https -> :ranch_ssl
-    end
+
+    ranch_module =
+      case scheme do
+        :http -> :ranch_tcp
+        :https -> :ranch_ssl
+      end
+
     :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
   end
 
@@ -158,6 +161,7 @@ defmodule Plug.Adapters.Cowboy do
   def child_spec(opts) do
     scheme = Keyword.fetch!(opts, :scheme)
     cowboy_opts = Keyword.get(opts, :options, [])
+
     {plug, plug_opts} =
       case Keyword.fetch!(opts, :plug) do
         {_, _} = tuple -> tuple
@@ -167,8 +171,7 @@ defmodule Plug.Adapters.Cowboy do
     {id, start, restart, shutdown, type, modules} =
       child_spec(scheme, plug, plug_opts, cowboy_opts)
 
-    %{id: id, start: start, restart: restart,
-      shutdown: shutdown, type: type, modules: modules}
+    %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}
   end
 
   ## Helpers
@@ -181,25 +184,29 @@ defmodule Plug.Adapters.Cowboy do
         case Application.spec(:cowboy, :vsn) do
           '1.' ++ _ ->
             :ok
+
           vsn ->
             raise "you are using Plug.Adapters.Cowboy (for Cowboy 1) but your current Cowboy " <>
-                  "version is #{vsn}. Please update your mix.exs file accordingly"
+                    "version is #{vsn}. Please update your mix.exs file accordingly"
         end
+
       {:error, {:cowboy, _}} ->
         raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
     end
+
     apply(:cowboy, :"start_#{scheme}", args(scheme, plug, opts, cowboy_options))
   end
 
   defp normalize_cowboy_options(cowboy_options, :http) do
-    Keyword.put_new cowboy_options, :port, 4000
+    Keyword.put_new(cowboy_options, :port, 4000)
   end
 
   defp normalize_cowboy_options(cowboy_options, :https) do
     assert_ssl_options(cowboy_options)
-    cowboy_options = Keyword.put_new cowboy_options, :port, 4040
-    cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile, :dhfile], cowboy_options, &normalize_ssl_file(&1, &2)
-    cowboy_options = Enum.reduce [:password], cowboy_options, &to_charlist(&2, &1)
+    ssl_file_opts = [:keyfile, :certfile, :cacertfile, :dhfile]
+    cowboy_options = Keyword.put_new(cowboy_options, :port, 4040)
+    cowboy_options = Enum.reduce(ssl_file_opts, cowboy_options, &normalize_ssl_file(&1, &2))
+    cowboy_options = Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
     cowboy_options
   end
 
@@ -213,7 +220,10 @@ defmodule Plug.Adapters.Cowboy do
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
-    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(log_request_errors, protocol_options) ++ extra_options
+
+    protocol_options =
+      [env: [dispatch: dispatch]] ++
+        add_on_response(log_request_errors, protocol_options) ++ extra_options
 
     [ref, acceptors, non_keyword_opts ++ transport_options, protocol_options]
   end
@@ -224,30 +234,47 @@ defmodule Plug.Adapters.Cowboy do
     add_on_response(log_request_errors, provided_onresponse, protocol_options)
   end
 
-  defp add_on_response(false, nil, protocol_options), do: protocol_options
-  defp add_on_response(false, fun, protocol_options) when is_function(fun), do: [onresponse: fun] ++ protocol_options
-  defp add_on_response(false, {mod, fun}, protocol_options) when is_atom(mod) and is_atom(fun) do 
-    [onresponse: fn status, headers, body, request -> 
-        apply(mod, fun, [status, headers, body, request]) 
-     end] ++ protocol_options
+  defp add_on_response(false, nil, protocol_options) do
+    protocol_options
   end
-  defp add_on_response(true, nil, protocol_options), do: [onresponse: &onresponse/4] ++ protocol_options
+
+  defp add_on_response(false, fun, protocol_options) when is_function(fun) do
+    [onresponse: fun] ++ protocol_options
+  end
+
+  defp add_on_response(false, {mod, fun}, protocol_options) when is_atom(mod) and is_atom(fun) do
+    onresponse = fn status, headers, body, request ->
+      apply(mod, fun, [status, headers, body, request])
+    end
+
+    [onresponse: onresponse] ++ protocol_options
+  end
+
+  defp add_on_response(true, nil, protocol_options) do
+    [onresponse: &onresponse/4] ++ protocol_options
+  end
+
   defp add_on_response(true, fun, protocol_options) when is_function(fun) do
-    [onresponse: fn status, headers, body, request ->
-        onresponse(status, headers, body, request)
-        fun.(status, headers, body, request)
-     end] ++ protocol_options
+    onresponse = fn status, headers, body, request ->
+      onresponse(status, headers, body, request)
+      fun.(status, headers, body, request)
+    end
+
+    [onresponse: onresponse] ++ protocol_options
   end
+
   defp add_on_response(true, {mod, fun}, protocol_options) when is_atom(mod) and is_atom(fun) do
-    [onresponse: fn status, headers, body, request ->
-        onresponse(status, headers, body, request)
-        apply(mod, fun, [status, headers, body, request]) 
-     end] ++ protocol_options
+    onresponse = fn status, headers, body, request ->
+      onresponse(status, headers, body, request)
+      apply(mod, fun, [status, headers, body, request])
+    end
+
+    [onresponse: onresponse] ++ protocol_options
   end
 
   defp onresponse(status, _headers, _body, request) do
     if status == 400 and empty_headers?(request) do
-      Logger.error """
+      Logger.error("""
       Cowboy returned 400 and there are no headers in the connection.
 
       This may happen if Cowboy is unable to parse the request headers,
@@ -263,8 +290,9 @@ defmodule Plug.Adapters.Cowboy do
             max_headers: 100,
             max_request_line_length: 8096
           ]
-      """
+      """)
     end
+
     request
   end
 
@@ -274,7 +302,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp build_ref(plug, scheme) do
-    Module.concat(plug, scheme |> to_string |> String.upcase)
+    Module.concat(plug, scheme |> to_string |> String.upcase())
   end
 
   defp dispatch_for(plug, opts) do
@@ -288,29 +316,34 @@ defmodule Plug.Adapters.Cowboy do
     cond do
       is_nil(value) ->
         cowboy_options
+
       Path.type(value) == :absolute ->
-        put_ssl_file cowboy_options, key, value
+        put_ssl_file(cowboy_options, key, value)
+
       true ->
-        put_ssl_file cowboy_options, key, Path.expand(value, otp_app(cowboy_options))
+        put_ssl_file(cowboy_options, key, Path.expand(value, otp_app(cowboy_options)))
     end
   end
 
   defp assert_ssl_options(cowboy_options) do
-    unless Keyword.has_key?(cowboy_options, :key) or
-           Keyword.has_key?(cowboy_options, :keyfile) do
-      fail "missing option :key/:keyfile"
+    unless Keyword.has_key?(cowboy_options, :key) or Keyword.has_key?(cowboy_options, :keyfile) do
+      fail("missing option :key/:keyfile")
     end
-    unless Keyword.has_key?(cowboy_options, :cert) or
-           Keyword.has_key?(cowboy_options, :certfile) do
-      fail "missing option :cert/:certfile"
+
+    unless Keyword.has_key?(cowboy_options, :cert) or Keyword.has_key?(cowboy_options, :certfile) do
+      fail("missing option :cert/:certfile")
     end
   end
 
   defp put_ssl_file(cowboy_options, key, value) do
     value = to_charlist(value)
+
     unless File.exists?(value) do
-      fail "the file #{value} required by SSL's #{inspect key} either does not exist, or the application does not have permission to access it"
+      fail(
+        "the file #{value} required by SSL's #{inspect(key)} either does not exist, or the application does not have permission to access it"
+      )
     end
+
     Keyword.put(cowboy_options, key, value)
   end
 
@@ -318,14 +351,16 @@ defmodule Plug.Adapters.Cowboy do
     if app = cowboy_options[:otp_app] do
       Application.app_dir(app)
     else
-      fail "to use a relative certificate with https, the :otp_app " <>
-           "option needs to be given to the adapter"
+      fail(
+        "to use a relative certificate with https, the :otp_app " <>
+          "option needs to be given to the adapter"
+      )
     end
   end
 
   defp to_charlist(cowboy_options, key) do
     if value = cowboy_options[key] do
-      Keyword.put cowboy_options, key, to_charlist(value)
+      Keyword.put(cowboy_options, key, to_charlist(value))
     else
       cowboy_options
     end

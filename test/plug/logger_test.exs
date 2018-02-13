@@ -51,44 +51,56 @@ defmodule Plug.LoggerTest do
   end
 
   test "logs proper message to console" do
-    [first_message, second_message] = capture_log_lines fn ->
-      call(conn(:get, "/"))
-    end
+    [first_message, second_message] =
+      capture_log_lines(fn ->
+        call(conn(:get, "/"))
+      end)
+
     assert first_message =~ ~r"\[info\]  GET /"u
     assert second_message =~ ~r"Sent 200 in [0-9]+[µm]s"u
 
-    [first_message, second_message] = capture_log_lines fn ->
-      call(conn(:get, "/hello/world"))
-    end
+    [first_message, second_message] =
+      capture_log_lines(fn ->
+        call(conn(:get, "/hello/world"))
+      end)
+
     assert first_message =~ ~r"\[info\]  GET /hello/world"u
     assert second_message =~ ~r"Sent 200 in [0-9]+[µm]s"u
   end
 
   test "logs paths with double slashes and trailing slash" do
-    [first_message, _] = capture_log_lines fn ->
-      call(conn(:get, "/hello//world/"))
-    end
+    [first_message, _] =
+      capture_log_lines(fn ->
+        call(conn(:get, "/hello//world/"))
+      end)
+
     assert first_message =~ ~r"/hello//world/"u
   end
 
   test "logs chunked if chunked reply" do
-    [_, second_message] = capture_log_lines fn ->
-      MyChunkedPlug.call(conn(:get, "/hello/world"), [])
-    end
+    [_, second_message] =
+      capture_log_lines(fn ->
+        MyChunkedPlug.call(conn(:get, "/hello/world"), [])
+      end)
+
     assert second_message =~ ~r"Chunked 200 in [0-9]+[µm]s"u
   end
 
   test "logs halted connections if :log_on_halt is true" do
-    [output] = capture_log_lines fn ->
-      MyHaltingPlug.call(conn(:get, "/foo"), [])
-    end
+    [output] =
+      capture_log_lines(fn ->
+        MyHaltingPlug.call(conn(:get, "/foo"), [])
+      end)
+
     assert output =~ "Plug.LoggerTest.MyHaltingPlug halted in :halter/2"
   end
 
   test "logs proper log level to console" do
-    [first_message, second_message] = capture_log_lines fn ->
-      MyDebugLevelPlug.call(conn(:get, "/"), [])
-    end
+    [first_message, second_message] =
+      capture_log_lines(fn ->
+        MyDebugLevelPlug.call(conn(:get, "/"), [])
+      end)
+
     assert first_message =~ ~r"\[debug\] GET /"u
     assert second_message =~ ~r"Sent 200 in [0-9]+[µm]s"u
   end

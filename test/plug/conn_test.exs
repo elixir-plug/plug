@@ -6,7 +6,9 @@ defmodule Plug.ConnTest do
   alias Plug.ProcessStore
 
   test "test adapter builds on connection" do
-    conn = Plug.Adapters.Test.Conn.conn(%Plug.Conn{private: %{hello: :world}}, :post, "/hello", nil)
+    conn =
+      Plug.Adapters.Test.Conn.conn(%Plug.Conn{private: %{hello: :world}}, :post, "/hello", nil)
+
     assert conn.method == "POST"
     assert conn.path_info == ["hello"]
     assert conn.private.hello == :world
@@ -172,6 +174,7 @@ defmodule Plug.ConnTest do
 
   test "resp/3 raises when connection was already sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "HELLO")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       resp(conn, 200, "OTHER")
     end
@@ -179,6 +182,7 @@ defmodule Plug.ConnTest do
 
   test "resp/3 raises when body is nil" do
     conn = conn(:head, "/foo")
+
     assert_raise ArgumentError, fn ->
       resp(conn, 200, nil)
     end
@@ -209,6 +213,7 @@ defmodule Plug.ConnTest do
 
   test "send_resp/3 raises when connection was already sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "HELLO")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       send_resp(conn, 200, "OTHER")
     end
@@ -222,40 +227,45 @@ defmodule Plug.ConnTest do
   end
 
   test "send_resp/3 runs before_send callbacks" do
-    conn = conn(:get, "/foo")
-           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body))
-           |> register_before_send(&put_resp_header(&1, "x-body", "default"))
-           |> send_resp(200, "body")
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body))
+      |> register_before_send(&put_resp_header(&1, "x-body", "default"))
+      |> send_resp(200, "body")
 
     assert get_resp_header(conn, "x-body") == ["body"]
   end
 
   test "send_resp/3 uses the before_send status and body" do
-    conn = conn(:get, "/foo")
-           |> register_before_send(&resp(&1, 200, "new body"))
-           |> send_resp(204, "")
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&resp(&1, 200, "new body"))
+      |> send_resp(204, "")
 
     assert conn.status == 200
     assert conn.resp_body == "new body"
   end
 
   test "send_resp/3 uses the before_send cookies" do
-    conn = conn(:get, "/foo")
-           |> register_before_send(&put_resp_cookie(&1, "hello", "world"))
-           |> send_resp(200, "")
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&put_resp_cookie(&1, "hello", "world"))
+      |> send_resp(200, "")
 
     assert conn.resp_cookies["hello"] == %{value: "world"}
   end
 
   test "send_resp/1 raises if the connection was unset" do
     conn = conn(:get, "/goo")
+
     assert_raise ArgumentError, fn ->
       send_resp(conn)
     end
   end
 
   test "send_resp/1 raises if the connection was already sent" do
-    conn = send_resp(conn(:get, "/boo") , 200, "ok")
+    conn = send_resp(conn(:get, "/boo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       send_resp(conn)
     end
@@ -287,15 +297,17 @@ defmodule Plug.ConnTest do
 
   test "send_file/3 raises when connection was already sent" do
     conn = send_file(conn(:head, "/foo"), 200, __ENV__.file)
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       send_file(conn, 200, __ENV__.file)
     end
   end
 
   test "send_file/3 runs before_send callbacks" do
-    conn = conn(:get, "/foo")
-           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "FILE"))
-           |> send_file(200, __ENV__.file)
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "FILE"))
+      |> send_file(200, __ENV__.file)
 
     assert get_resp_header(conn, "x-body") == ["FILE"]
   end
@@ -304,9 +316,10 @@ defmodule Plug.ConnTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
-    conn = conn
-           |> register_before_send(&put_session(&1, "foo", "bar"))
-           |> send_file(200, __ENV__.file)
+    conn =
+      conn
+      |> register_before_send(&put_session(&1, "foo", "bar"))
+      |> send_file(200, __ENV__.file)
 
     assert conn.status == 200
     assert conn.resp_body =~ "send_file/3"
@@ -321,7 +334,7 @@ defmodule Plug.ConnTest do
     conn = send_file(conn(:get, "/foo"), 206, __ENV__.file, offset)
     assert conn.status == 206
     assert conn.state == :file
-    assert byte_size(conn.resp_body) == (size - offset)
+    assert byte_size(conn.resp_body) == size - offset
   end
 
   test "send_file/5 limits on offset and length" do
@@ -364,15 +377,17 @@ defmodule Plug.ConnTest do
 
   test "send_chunked/3 raises when connection was already sent" do
     conn = send_chunked(conn(:head, "/foo"), 200)
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       send_chunked(conn, 200)
     end
   end
 
   test "send_chunked/3 runs before_send callbacks" do
-    conn = conn(:get, "/foo")
-           |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "CHUNK"))
-           |> send_chunked(200)
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&put_resp_header(&1, "x-body", &1.resp_body || "CHUNK"))
+      |> send_chunked(200)
 
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
@@ -395,6 +410,7 @@ defmodule Plug.ConnTest do
 
   test "chunk/2 raises if send_chunked/3 hasn't been called yet" do
     conn = conn(:get, "/")
+
     assert_raise ArgumentError, fn ->
       chunk(conn, "foobar")
     end
@@ -405,12 +421,12 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn1, "x-foo") == ["bar"]
     conn2 = put_resp_header(conn1, "x-foo", "baz")
     assert get_resp_header(conn2, "x-foo") == ["baz"]
-    assert length(conn1.resp_headers) ==
-           length(conn2.resp_headers)
+    assert length(conn1.resp_headers) == length(conn2.resp_headers)
   end
 
   test "put_resp_header/3 raises when the conn was already been sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_header(conn, "x-foo", "bar")
     end
@@ -418,6 +434,7 @@ defmodule Plug.ConnTest do
 
   test "put_resp_header/3 raises when the conn is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_header(conn, "x-foo", "bar")
     end
@@ -426,6 +443,7 @@ defmodule Plug.ConnTest do
   test "put_resp_header/3 raises when invalid header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
+
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_resp_header(conn, "X-Foo", "bar")
     end
@@ -438,21 +456,33 @@ defmodule Plug.ConnTest do
   end
 
   test "put_resp_header/3 raises when invalid header value given" do
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
+    message =
+      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       put_resp_header(conn(:get, "foo"), "x-sample", "value\rBAR")
     end
 
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
+    message =
+      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       put_resp_header(conn(:get, "foo"), "x-sample", "value\n\nBAR")
     end
   end
 
   test "merge_resp_header/3 raises when invalid header value given" do
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"], fn ->
+    message =
+      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\rBAR"}])
     end
 
-    assert_raise Plug.Conn.InvalidHeaderError, ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"], fn ->
+    message =
+      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\n\nBAR"}])
     end
   end
@@ -464,8 +494,7 @@ defmodule Plug.ConnTest do
     conn2 = merge_resp_headers(conn1, %{"x-foo" => "new"})
     assert get_resp_header(conn2, "x-foo") == ["new"]
     assert get_resp_header(conn2, "x-bar") == ["baz"]
-    assert length(conn1.resp_headers) ==
-           length(conn2.resp_headers)
+    assert length(conn1.resp_headers) == length(conn2.resp_headers)
   end
 
   test "delete_resp_header/2" do
@@ -477,6 +506,7 @@ defmodule Plug.ConnTest do
 
   test "delete_resp_header/2 raises when the conn was already been sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_resp_header(conn, "x-foo")
     end
@@ -492,37 +522,38 @@ defmodule Plug.ConnTest do
     conn2 = update_resp_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
     assert get_resp_header(conn2, "x-foo") == ["bong"]
 
-    conn1 = %{conn(:head, "/foo") | resp_headers:
-      [{"x-foo", "foo"}, {"x-foo", "bar"}]}
+    conn1 = %{conn(:head, "/foo") | resp_headers: [{"x-foo", "foo"}, {"x-foo", "bar"}]}
     conn2 = update_resp_header(conn1, "x-foo", "in", &String.upcase/1)
     assert get_resp_header(conn2, "x-foo") == ["FOO", "bar"]
   end
 
   test "update_resp_header/4 raises when the conn was already been sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_resp_header(conn, "x-foo", "init", &(&1))
+      update_resp_header(conn, "x-foo", "init", & &1)
     end
   end
 
   test "update_resp_header/4 raises when the conn is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_resp_header(conn, "x-foo", "init", &(&1))
+      update_resp_header(conn, "x-foo", "init", & &1)
     end
   end
 
   test "put_resp_content_type/3" do
     conn = conn(:head, "/foo")
 
-    assert {"content-type", "text/html; charset=utf-8"} in
-           put_resp_content_type(conn, "text/html").resp_headers
+    resp_headers = put_resp_content_type(conn, "text/html").resp_headers
+    assert {"content-type", "text/html; charset=utf-8"} in resp_headers
 
-    assert {"content-type", "text/html; charset=iso"} in
-           put_resp_content_type(conn, "text/html", "iso").resp_headers
+    resp_headers = put_resp_content_type(conn, "text/html", "iso").resp_headers
+    assert {"content-type", "text/html; charset=iso"} in resp_headers
 
-    assert {"content-type", "text/html"} in
-           put_resp_content_type(conn, "text/html", nil).resp_headers
+    resp_headers = put_resp_content_type(conn, "text/html", nil).resp_headers
+    assert {"content-type", "text/html"} in resp_headers
   end
 
   test "resp/3 and send_resp/1" do
@@ -554,12 +585,12 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn1, "x-foo") == ["bar"]
     conn2 = put_req_header(conn1, "x-foo", "baz")
     assert get_req_header(conn2, "x-foo") == ["baz"]
-    assert length(conn1.req_headers) ==
-           length(conn2.req_headers)
+    assert length(conn1.req_headers) == length(conn2.req_headers)
   end
 
   test "put_req_header/3 raises when the conn was already been sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_req_header(conn, "x-foo", "bar")
     end
@@ -568,6 +599,7 @@ defmodule Plug.ConnTest do
   test "put_req_header/3 raises when invalid header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
+
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
     end
@@ -588,6 +620,7 @@ defmodule Plug.ConnTest do
 
   test "delete_req_header/2 raises when the conn was already been sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_req_header(conn, "x-foo")
     end
@@ -603,16 +636,16 @@ defmodule Plug.ConnTest do
     conn2 = update_req_header(conn1, "x-foo", "bong", &(&1 <> ", baz"))
     assert get_req_header(conn2, "x-foo") == ["bong"]
 
-    conn1 = %{conn(:head, "/foo") | req_headers:
-      [{"x-foo", "foo"}, {"x-foo", "bar"}]}
+    conn1 = %{conn(:head, "/foo") | req_headers: [{"x-foo", "foo"}, {"x-foo", "bar"}]}
     conn2 = update_req_header(conn1, "x-foo", "in", &String.upcase/1)
     assert get_req_header(conn2, "x-foo") == ["FOO", "bar"]
   end
 
   test "update_req_header/4 raises when the conn was already been sent" do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_req_header(conn, "x-foo", "init", &(&1))
+      update_req_header(conn, "x-foo", "init", & &1)
     end
   end
 
@@ -635,7 +668,8 @@ defmodule Plug.ConnTest do
     conn = fetch_query_params(conn)
     assert conn.query_params == %{"a" => "b", "c" => "d"}
 
-    conn = fetch_query_params(conn(:get, "/foo"), []) # Pluggable
+    # Pluggable
+    conn = fetch_query_params(conn(:get, "/foo"), [])
     assert conn.query_params == %{}
   end
 
@@ -646,25 +680,27 @@ defmodule Plug.ConnTest do
     assert conn.params == %{"a" => "b", "c" => "d"}
 
     conn = conn(:get, "/foo?a=b&c=d")
-    conn = put_in conn.params, %{"a" => "z"}
+    conn = put_in(conn.params, %{"a" => "z"})
     conn = fetch_query_params(conn)
     assert conn.params == %{"a" => "z", "c" => "d"}
   end
 
   test "fetch_query_params/1 with invalid utf-8" do
     conn = conn(:get, "/foo?a=" <> <<139>>)
-    assert_raise Plug.Conn.InvalidQueryError,
-                 "invalid UTF-8 on query string, got byte 139", fn ->
+
+    assert_raise Plug.Conn.InvalidQueryError, "invalid UTF-8 on query string, got byte 139", fn ->
       fetch_query_params(conn)
     end
   end
 
   test "fetch_query_params/1 with low length" do
     conn = conn(:get, "/foo?abc=123")
+
     assert_raise Plug.Conn.InvalidQueryError,
-                 "maximum query string length is 5, got a query with 7 bytes", fn ->
-      fetch_query_params(conn, length: 5)
-    end
+                 "maximum query string length is 5, got a query with 7 bytes",
+                 fn ->
+                   fetch_query_params(conn, length: 5)
+                 end
   end
 
   test "req_cookies/1 && fetch_cookies/1" do
@@ -673,7 +709,8 @@ defmodule Plug.ConnTest do
     conn = fetch_cookies(conn)
     assert conn.req_cookies == %{"foo" => "bar", "baz" => "bat"}
 
-    conn = fetch_cookies(conn(:get, "/foo"), []) # Pluggable
+    # Pluggable
+    conn = fetch_cookies(conn(:get, "/foo"), [])
     assert conn.req_cookies == %{}
   end
 
@@ -682,17 +719,20 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "set-cookie") == []
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
-    assert conn.resp_cookies["foo"] ==
-           %{value: "baz", path: "/baz"}
-    assert get_resp_header(conn, "set-cookie") ==
-           ["foo=baz; path=/baz; HttpOnly"]
+    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz"}
+    assert get_resp_header(conn, "set-cookie") == ["foo=baz; path=/baz; HttpOnly"]
 
-    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz") |>
-           delete_resp_cookie("foo", path: "/baz") |> send_resp(200, "ok")
+    conn =
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "baz")
+      |> delete_resp_cookie("foo", path: "/baz")
+      |> send_resp(200, "ok")
+
     assert conn.resp_cookies["foo"] ==
-           %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"}
+             %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"}
+
     assert get_resp_header(conn, "set-cookie") ==
-           ["foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"]
+             ["foo=; path=/baz; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; HttpOnly"]
   end
 
   test "put_resp_cookie/4 raises when over 4096 bytes" do
@@ -712,17 +752,19 @@ defmodule Plug.ConnTest do
   end
 
   test "put_resp_cookie/4 is secure on https" do
-    conn = conn(:get, "https://example.com/")
-           |> put_resp_cookie("foo", "baz", path: "/baz")
-           |> send_resp(200, "ok")
-    assert conn.resp_cookies["foo"] ==
-           %{value: "baz", path: "/baz", secure: true}
+    conn =
+      conn(:get, "https://example.com/")
+      |> put_resp_cookie("foo", "baz", path: "/baz")
+      |> send_resp(200, "ok")
 
-    conn = conn(:get, "https://example.com/")
-           |> put_resp_cookie("foo", "baz", path: "/baz", secure: false)
-           |> send_resp(200, "ok")
-    assert conn.resp_cookies["foo"] ==
-           %{value: "baz", path: "/baz", secure: false}
+    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", secure: true}
+
+    conn =
+      conn(:get, "https://example.com/")
+      |> put_resp_cookie("foo", "baz", path: "/baz", secure: false)
+      |> send_resp(200, "ok")
+
+    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", secure: false}
   end
 
   test "put_req_cookie/3 and delete_req_cookie/2" do
@@ -746,9 +788,11 @@ defmodule Plug.ConnTest do
 
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection was already sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_cookie(conn, "foo", "bar")
     end
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_resp_cookie(conn, "foo")
     end
@@ -756,27 +800,33 @@ defmodule Plug.ConnTest do
 
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_resp_cookie(conn, "foo", "bar")
     end
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_resp_cookie(conn, "foo")
     end
   end
 
   test "recycle_cookies/2" do
-    conn = conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"])
-           |> put_req_cookie("req_cookie", "req_cookie")
-           |> put_req_cookie("del_cookie", "del_cookie")
-           |> put_req_cookie("over_cookie", "pre_cookie")
-           |> put_resp_cookie("over_cookie", "pos_cookie")
-           |> put_resp_cookie("resp_cookie", "resp_cookie")
-           |> delete_resp_cookie("del_cookie")
+    conn =
+      conn(:get, "/foo", a: "b", c: [%{d: "e"}, "f"])
+      |> put_req_cookie("req_cookie", "req_cookie")
+      |> put_req_cookie("del_cookie", "del_cookie")
+      |> put_req_cookie("over_cookie", "pre_cookie")
+      |> put_resp_cookie("over_cookie", "pos_cookie")
+      |> put_resp_cookie("resp_cookie", "resp_cookie")
+      |> delete_resp_cookie("del_cookie")
 
     conn = conn(:get, "/") |> recycle_cookies(conn) |> fetch_cookies()
-    assert conn.cookies == %{"req_cookie"  => "req_cookie",
-                             "over_cookie" => "pos_cookie",
-                             "resp_cookie" => "resp_cookie"}
+
+    assert conn.cookies == %{
+             "req_cookie" => "req_cookie",
+             "over_cookie" => "pos_cookie",
+             "resp_cookie" => "resp_cookie"
+           }
   end
 
   test "cookies/1 loaded early" do
@@ -800,8 +850,12 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar") |> put_req_cookie("bar", "baz")
     assert conn.cookies == %Plug.Conn.Unfetched{aspect: :cookies}
 
-    conn = conn |> put_resp_cookie("foo", "baz") |> put_resp_cookie("baz", "bat") |>
-           delete_resp_cookie("bar") |> fetch_cookies
+    conn =
+      conn
+      |> put_resp_cookie("foo", "baz")
+      |> put_resp_cookie("baz", "bat")
+      |> delete_resp_cookie("bar")
+      |> fetch_cookies
 
     assert conn.cookies["foo"] == "baz"
     assert conn.cookies["baz"] == "bat"
@@ -833,7 +887,8 @@ defmodule Plug.ConnTest do
       get_session(conn, :foo)
     end
 
-    conn = fetch_session(conn, []) # Pluggable
+    # Pluggable
+    conn = fetch_session(conn, [])
     get_session(conn, :foo)
   end
 
@@ -853,17 +908,20 @@ defmodule Plug.ConnTest do
     assert get_session(conn, "key") == 42
     assert get_session(conn, "unknown") == nil
 
-    conn = %{conn|state: :sent}
+    conn = %{conn | state: :sent}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_session(conn, :key, 42)
     end
 
-    conn = %{conn|state: :file}
+    conn = %{conn | state: :file}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_session(conn, :key, 42)
     end
 
-    conn = %{conn|state: :chunked}
+    conn = %{conn | state: :chunked}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       put_session(conn, :key, 42)
     end
@@ -885,17 +943,20 @@ defmodule Plug.ConnTest do
     conn = put_session(conn, "foo", "bar")
     assert conn.private[:plug_session_info] == :renew
 
-    conn = %{conn|state: :sent}
+    conn = %{conn | state: :sent}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       configure_session(conn, renew: true)
     end
 
-    conn = %{conn|state: :file}
+    conn = %{conn | state: :file}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       configure_session(conn, renew: true)
     end
 
-    conn = %{conn|state: :chunked}
+    conn = %{conn | state: :chunked}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       configure_session(conn, renew: true)
     end
@@ -903,6 +964,7 @@ defmodule Plug.ConnTest do
 
   test "configure_session/2 fails when there is no session" do
     conn = conn(:get, "/")
+
     assert_raise ArgumentError, fn ->
       configure_session(conn, drop: true)
     end
@@ -912,25 +974,29 @@ defmodule Plug.ConnTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
-    conn = conn
-            |> put_session("foo", "bar")
-            |> put_session("baz", "boom")
-            |> delete_session("baz")
+    conn =
+      conn
+      |> put_session("foo", "bar")
+      |> put_session("baz", "boom")
+      |> delete_session("baz")
 
     assert get_session(conn, "foo") == "bar"
     assert get_session(conn, "baz") == nil
 
-    conn = %{conn|state: :sent}
+    conn = %{conn | state: :sent}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_session(conn, "baz")
     end
 
-    conn = %{conn|state: :file}
+    conn = %{conn | state: :file}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_session(conn, "baz")
     end
 
-    conn = %{conn|state: :chunked}
+    conn = %{conn | state: :chunked}
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
       delete_session(conn, "baz")
     end
@@ -940,10 +1006,11 @@ defmodule Plug.ConnTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()
 
-    conn = conn
-            |> put_session("foo", "bar")
-            |> put_session("baz", "boom")
-            |> clear_session
+    conn =
+      conn
+      |> put_session("foo", "bar")
+      |> put_session("baz", "boom")
+      |> clear_session
 
     assert get_session(conn, "foo") == nil
     assert get_session(conn, "baz") == nil
@@ -958,8 +1025,9 @@ defmodule Plug.ConnTest do
 
   test "register_before_send/2 raises when a response has already been sent" do
     conn = send_resp(conn(:get, "/"), 200, "ok")
+
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      register_before_send(conn, fn(_) -> nil end)
+      register_before_send(conn, fn _ -> nil end)
     end
   end
 
@@ -969,7 +1037,7 @@ defmodule Plug.ConnTest do
 
       def chunk(payload, chunk) do
         if IO.iodata_length(chunk) == 0 do
-          flunk "empty chunk #{inspect chunk} was unexpectedly sent"
+          flunk("empty chunk #{inspect(chunk)} was unexpectedly sent")
         else
           Plug.Adapters.Test.Conn.chunk(payload, chunk)
         end
@@ -981,6 +1049,7 @@ defmodule Plug.ConnTest do
       owner: self(),
       state: :unset
     }
+
     conn = Plug.Conn.send_chunked(conn, 200)
 
     assert {:ok, conn} == Plug.Conn.chunk(conn, "")

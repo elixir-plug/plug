@@ -32,8 +32,10 @@ defmodule Plug.Parsers.JSON do
 
   def parse(conn, "application", subtype, _headers, opts) do
     if subtype == "json" || String.ends_with?(subtype, "+json") do
-      decoder = Keyword.get(opts, :json_decoder) ||
-                  raise ArgumentError, "JSON parser expects a :json_decoder option"
+      decoder =
+        Keyword.get(opts, :json_decoder) ||
+          raise ArgumentError, "JSON parser expects a :json_decoder option"
+
       conn
       |> read_body(opts)
       |> decode(decoder)
@@ -66,6 +68,7 @@ defmodule Plug.Parsers.JSON do
     case apply_mfa_or_module(body, decoder) do
       terms when is_map(terms) ->
         {:ok, terms, conn}
+
       terms ->
         {:ok, %{"_json" => terms}, conn}
     end

@@ -82,7 +82,7 @@ defmodule Plug.Conn.Status do
     |> Enum.sort_by(&elem(&1, 0))
     |> Enum.map(fn {code, reason_phrase} ->
       atom = reason_phrase_to_atom.(reason_phrase)
-      "  * `#{inspect atom}` - #{code}\n"
+      "  * `#{inspect(atom)}` - #{code}\n"
     end)
   end
 
@@ -124,7 +124,7 @@ defmodule Plug.Conn.Status do
     def code(unquote(atom)), do: unquote(code)
   end
 
-  @spec reason_phrase(integer) :: String.t
+  @spec reason_phrase(integer) :: String.t()
   def reason_phrase(integer)
 
   for {code, phrase} <- Map.merge(statuses, custom_statuses) do
@@ -133,7 +133,7 @@ defmodule Plug.Conn.Status do
 
   def reason_phrase(code) do
     raise ArgumentError, """
-    unknown status code #{inspect code}
+    unknown status code #{inspect(code)}
 
     Custom codes can be defined in the configuration for the :plug application,
     under the :statuses key (which contains a map of status codes as keys and

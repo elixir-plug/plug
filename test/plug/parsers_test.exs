@@ -29,28 +29,35 @@ defmodule Plug.ParsersTest do
 
   test "keeps existing params" do
     conn = %{conn(:post, "/?query=foo", "body=bar") | params: %{"params" => "baz"}}
-    conn = conn
-           |> put_req_header("content-type", "application/x-www-form-urlencoded")
-           |> parse()
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
     assert conn.params["query"] == "foo"
     assert conn.params["body"] == "bar"
     assert conn.params["params"] == "baz"
   end
 
   test "parsing prefers path params over body params" do
-    conn = %{conn(:post, "/", "foo=body") | params: %{"foo" => "bar"},
-             path_params: %{"foo" => "path"}}
-    conn = conn
-           |> put_req_header("content-type", "application/x-www-form-urlencoded")
-           |> parse()
+    conn =
+      conn(:post, "/", "foo=body")
+      |> Map.put(:params, %{"foo" => "bar"})
+      |> Map.put(:path_params, %{"foo" => "path"})
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
     assert conn.params["foo"] == "path"
   end
 
   test "parsing prefers body params over query params with existing params" do
-    conn = %{conn(:post, "/?foo=query", "foo=body") | params: %{"foo" => "params"}}
-    conn = conn
-           |> put_req_header("content-type", "application/x-www-form-urlencoded")
-           |> parse()
+    conn =
+      conn(:post, "/?foo=query", "foo=body")
+      |> Map.put(:params, %{"foo" => "params"})
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
     assert conn.params["foo"] == "body"
   end
 
@@ -63,9 +70,11 @@ defmodule Plug.ParsersTest do
   end
 
   test "ignore bodies unless post/put/match/delete" do
-    conn = conn(:get, "/?foo=bar", "foo=baz")
-           |> put_req_header("content-type", "application/x-www-form-urlencoded")
-           |> parse()
+    conn =
+      conn(:get, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %{}
     assert conn.query_params["foo"] == "bar"
@@ -73,16 +82,18 @@ defmodule Plug.ParsersTest do
 
   test "error on invalid utf-8 in query params when merging params" do
     conn = conn(:post, "/?foo=#{<<139>>}")
-    assert_raise Plug.Conn.InvalidQueryError,
-                 "invalid UTF-8 on query string, got byte 139", fn ->
+
+    assert_raise Plug.Conn.InvalidQueryError, "invalid UTF-8 on query string, got byte 139", fn ->
       parse(%{conn | body_params: %{"foo" => "baz"}, params: %{"foo" => "baz"}})
     end
   end
 
   test "parses url encoded bodies" do
-    conn = conn(:post, "/?foo=bar", "foo=baz")
-           |> put_req_header("content-type", "application/x-www-form-urlencoded")
-           |> parse()
+    conn =
+      conn(:post, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
     assert conn.params["foo"] == "baz"
   end
 
@@ -90,7 +101,7 @@ defmodule Plug.ParsersTest do
     conn = parse(conn(:post, "/?foo=bar"))
     assert conn.params == %{"foo" => "bar"}
 
-    conn = parse(conn(:post, "/?foo=bar", [foo: "baz"]))
+    conn = parse(conn(:post, "/?foo=bar", foo: "baz"))
     assert conn.params == %{"foo" => "baz"}
   end
 
@@ -151,12 +162,14 @@ defmodule Plug.ParsersTest do
       conn(:post, "/", "")
       |> put_req_header("content-type", "multipart/form-data")
       |> parse()
+
     assert params == %{}
   end
 
   test "raises on invalid url encoded" do
-    assert_raise Plug.Parsers.BadEncodingError,
-                 "invalid UTF-8 on urlencoded body, got byte 139", fn ->
+    message = "invalid UTF-8 on urlencoded body, got byte 139"
+
+    assert_raise Plug.Parsers.BadEncodingError, message, fn ->
       conn(:post, "/foo", "a=" <> <<139>>)
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
       |> parse()
@@ -164,51 +177,59 @@ defmodule Plug.ParsersTest do
   end
 
   test "raises on too large bodies with root option" do
-    exception = assert_raise Plug.Parsers.RequestTooLargeError,
-                             ~r/the request is too large/, fn ->
-      conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/x-www-form-urlencoded")
-      |> parse(length: 5)
-    end
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/?foo=bar", "foo=baz")
+        |> put_req_header("content-type", "application/x-www-form-urlencoded")
+        |> parse(length: 5)
+      end
+
     assert Plug.Exception.status(exception) == 413
   end
 
   test "raises on too large bodies with parser option" do
-    exception = assert_raise Plug.Parsers.RequestTooLargeError,
-                             ~r/the request is too large/, fn ->
-      conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/x-www-form-urlencoded")
-      |> parse(parsers: [urlencoded: [length: 5]])
-    end
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/?foo=bar", "foo=baz")
+        |> put_req_header("content-type", "application/x-www-form-urlencoded")
+        |> parse(parsers: [urlencoded: [length: 5]])
+      end
+
     assert Plug.Exception.status(exception) == 413
   end
 
   test "raises on too large bodies with parser specific defaults" do
-    exception = assert_raise Plug.Parsers.RequestTooLargeError,
-                             ~r/the request is too large/, fn ->
-      conn(:post, "/?foo=bar", String.duplicate("foo=baz", 200_000))
-      |> put_req_header("content-type", "application/x-www-form-urlencoded")
-      |> parse()
-    end
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/?foo=bar", String.duplicate("foo=baz", 200_000))
+        |> put_req_header("content-type", "application/x-www-form-urlencoded")
+        |> parse()
+      end
+
     assert Plug.Exception.status(exception) == 413
   end
 
   test "raises when request cannot be processed" do
-    exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError,
-                             "unsupported media type text/plain", fn ->
-      conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "text/plain")
-      |> parse()
-    end
+    message = "unsupported media type text/plain"
+
+    exception =
+      assert_raise Plug.Parsers.UnsupportedMediaTypeError, message, fn ->
+        conn(:post, "/?foo=bar", "foo=baz")
+        |> put_req_header("content-type", "text/plain")
+        |> parse()
+      end
+
     assert Plug.Exception.status(exception) == 415
   end
 
   test "raises when request cannot be processed and if mime range not accepted" do
-    exception = assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
-      conn(:post, "/?foo=bar", "foo=baz")
-      |> put_req_header("content-type", "application/json")
-      |> parse(pass: ["text/plain", "text/*"])
-    end
+    exception =
+      assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
+        conn(:post, "/?foo=bar", "foo=baz")
+        |> put_req_header("content-type", "application/json")
+        |> parse(pass: ["text/plain", "text/*"])
+      end
+
     assert Plug.Exception.status(exception) == 415
   end
 
@@ -217,6 +238,7 @@ defmodule Plug.ParsersTest do
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["*/*"])
+
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
@@ -226,6 +248,7 @@ defmodule Plug.ParsersTest do
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["text/plain", "application/json"])
+
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
 
@@ -233,6 +256,7 @@ defmodule Plug.ParsersTest do
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "application/json")
       |> parse(pass: ["text/plain", "application/json"])
+
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
@@ -242,6 +266,7 @@ defmodule Plug.ParsersTest do
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "text/plain")
       |> parse(pass: ["text/plain", "text/*"])
+
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end

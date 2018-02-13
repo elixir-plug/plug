@@ -22,13 +22,15 @@ defmodule Plug.ErrorHandlerTest do
     end
 
     get "/send_and_boom" do
-      send_resp conn, 200, "oops"
+      send_resp(conn, 200, "oops")
       raise "oops"
     end
 
     get "/send_and_wrapped" do
-      raise Plug.Conn.WrapperError, conn: conn,
-        kind: :error, stack: System.stacktrace,
+      raise Plug.Conn.WrapperError,
+        conn: conn,
+        kind: :error,
+        stack: System.stacktrace(),
         reason: Exception.exception([])
     end
   end

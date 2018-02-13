@@ -30,10 +30,13 @@ defmodule Plug.Parsers.URLENCODED do
       {:ok, body, conn} ->
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "urlencoded body")
         {:ok, Plug.Conn.Query.decode(body), conn}
+
       {:more, _data, conn} ->
         {:error, :too_large, conn}
+
       {:error, :timeout} ->
         raise Plug.TimeoutError
+
       {:error, _} ->
         raise Plug.BadRequestError
     end

@@ -13,14 +13,22 @@ defmodule Plug.Adapters.Translator do
   """
 
   # cowboy 1 format
-  def translate(min_level, :error, :format,
-                {~c"Ranch listener" ++ _, [ref, protocol, pid, reason]}) do
+  def translate(
+        min_level,
+        :error,
+        :format,
+        {~c"Ranch listener" ++ _, [ref, protocol, pid, reason]}
+      ) do
     translate_ranch(min_level, ref, protocol, pid, reason)
   end
 
   # cowboy 2 format
-  def translate(min_level, :error, :format,
-                {~c"Ranch listener" ++ _, [ref, pid, _stream_id, _stream_pid, reason, _]}) do
+  def translate(
+        min_level,
+        :error,
+        :format,
+        {~c"Ranch listener" ++ _, [ref, pid, _stream_id, _stream_pid, reason, _]}
+      ) do
     translate_ranch(min_level, ref, :cowboy_protocol, pid, reason)
   end
 
@@ -30,28 +38,46 @@ defmodule Plug.Adapters.Translator do
 
   ## Ranch/Cowboy
 
-  defp translate_ranch(min_level, _ref, :cowboy_protocol, pid,
-                       {reason, {mod, :call, [%Plug.Conn{} = conn, _opts]}}) do
-
+  defp translate_ranch(
+         min_level,
+         _ref,
+         :cowboy_protocol,
+         pid,
+         {reason, {mod, :call, [%Plug.Conn{} = conn, _opts]}}
+       ) do
     if non_500_exception?(reason) do
       :skip
     else
-      {:ok, [inspect(pid), " running ", inspect(mod), " terminated\n",
-             conn_info(min_level, conn) |
-             Exception.format(:exit, reason, [])]}
+      {:ok,
+       [
+         inspect(pid),
+         " running ",
+         inspect(mod),
+         " terminated\n",
+         conn_info(min_level, conn)
+         | Exception.format(:exit, reason, [])
+       ]}
     end
   end
 
   defp translate_ranch(_min_level, ref, protocol, pid, reason) do
-    {:ok, ["Ranch protocol ", inspect(pid), " (", inspect(protocol),
-           ") of listener ", inspect(ref), " terminated\n" |
-           Exception.format(:exit, reason, [])]}
+    {:ok,
+     [
+       "Ranch protocol ",
+       inspect(pid),
+       " (",
+       inspect(protocol),
+       ") of listener ",
+       inspect(ref),
+       " terminated\n"
+       | Exception.format(:exit, reason, [])
+     ]}
   end
 
   defp non_500_exception?({%{__exception__: true} = exception, _}),
     do: Plug.Exception.status(exception) < 500
-  defp non_500_exception?(_),
-    do: false
+
+  defp non_500_exception?(_), do: false
 
   ## Helpers
 

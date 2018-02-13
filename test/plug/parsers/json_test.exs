@@ -25,9 +25,11 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   def parse(conn, opts \\ []) do
-    opts = opts
-           |> Keyword.put_new(:parsers, [:json])
-           |> Keyword.put_new(:json_decoder, JSON)
+    opts =
+      opts
+      |> Keyword.put_new(:parsers, [:json])
+      |> Keyword.put_new(:json_decoder, JSON)
+
     Plug.Parsers.call(conn, Plug.Parsers.init(opts))
   end
 
@@ -52,7 +54,11 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   test "parses with decoder as a MFA argument" do
-    conn = "{id: 1}" |> json_conn() |> parse([json_decoder: {JSON, :decode!, [[capitalize_keys: true]]}])
+    conn =
+      "{id: 1}"
+      |> json_conn()
+      |> parse(json_decoder: {JSON, :decode!, [[capitalize_keys: true]]})
+
     assert conn.params["ID"] == 1
   end
 
@@ -63,17 +69,22 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   test "raises on too large bodies" do
-    exception = assert_raise Plug.Parsers.RequestTooLargeError, fn ->
-      "foo=baz" |> json_conn() |> parse(length: 5)
-    end
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, fn ->
+        "foo=baz" |> json_conn() |> parse(length: 5)
+      end
+
     assert Plug.Exception.status(exception) == 413
   end
 
   test "raises ParseError with malformed JSON" do
     message = ~s(malformed request, a RuntimeError exception was raised with message "oops")
-    exception = assert_raise Plug.Parsers.ParseError, message, fn ->
-      "invalid json" |> json_conn() |> parse()
-    end
+
+    exception =
+      assert_raise Plug.Parsers.ParseError, message, fn ->
+        "invalid json" |> json_conn() |> parse()
+      end
+
     assert Plug.Exception.status(exception) == 400
   end
 end

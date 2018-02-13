@@ -234,7 +234,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "push will not raise even though the adapter doesn't implement it" do
-    assert {200, _headers, "push"} = request :get, "/push"
+    assert {200, _headers, "push"} = request(:get, "/push")
   end
 
   def push_or_raise(conn) do
@@ -244,9 +244,8 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "push will raise because it is not implemented" do
-    assert {200, _headers, "push or raise"} = request :get, "/push_or_raise"
+    assert {200, _headers, "push or raise"} = request(:get, "/push_or_raise")
   end
-
 
   def read_req_body(conn) do
     expected = :binary.copy("abcdefghij", 100_000)
@@ -315,11 +314,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     ------w58EW1cEpjzydSCq--\r
     """
 
-    headers =
-      [
-        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-        {"Content-Length", byte_size(multipart)}
-      ]
+    headers = [
+      {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+      {"Content-Length", byte_size(multipart)}
+    ]
 
     assert {200, _, _} = request(:post, "/multipart", headers, multipart)
     assert {200, _, _} = request(:post, "/multipart?name=overriden", headers, multipart)
@@ -349,11 +347,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     ------w58EW1cEpjzydSCq--\r
     """
 
-    headers =
-      [
-        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-        {"Content-Length", byte_size(multipart)}
-      ]
+    headers = [
+      {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+      {"Content-Length", byte_size(multipart)}
+    ]
 
     assert {500, _, body} = request(:post, "/file_too_big", headers, multipart)
     assert body =~ "the request is too large"
@@ -368,11 +365,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     ------w58EW1cEpjzydSCq\r
     """
 
-    headers =
-      [
-        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-        {"Content-Length", byte_size(multipart)}
-      ]
+    headers = [
+      {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+      {"Content-Length", byte_size(multipart)}
+    ]
 
     assert {500, _, body} = request(:post, "/multipart", headers, multipart)
     assert body =~ "invalid UTF-8 on multipart body, got byte 139"
@@ -385,11 +381,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     ------w58EW1cEpjzydSCq\r
     """
 
-    headers =
-      [
-        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-        {"Content-Length", byte_size(multipart)}
-      ]
+    headers = [
+      {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+      {"Content-Length", byte_size(multipart)}
+    ]
 
     assert {500, _, body} = request(:post, "/multipart", headers, multipart)
 
@@ -403,11 +398,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     hello
     """
 
-    headers =
-      [
-        {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
-        {"Content-Length", byte_size(multipart)}
-      ]
+    headers = [
+      {"Content-Type", "multipart/form-data; boundary=----w58EW1cEpjzydSCq"},
+      {"Content-Length", byte_size(multipart)}
+    ]
 
     assert {500, _, body} = request(:post, "/multipart", headers, multipart)
 
@@ -433,9 +427,10 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   @http2_opts [
-    cacertfile: @https_options[:certfile], server_name_indication: 'localhost', port: 8004
+    cacertfile: @https_options[:certfile],
+    server_name_indication: 'localhost',
+    port: 8004
   ]
-
 
   def http2(conn) do
     %{adapter: {Plug.Adapters.Cowboy2.Conn, %{version: version}}} = conn

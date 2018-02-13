@@ -7,7 +7,7 @@ defmodule Plug.BuilderTest do
     end
 
     def call(conn, opts) do
-      stack = [{:call, opts}|conn.assigns[:stack]]
+      stack = [{:call, opts} | conn.assigns[:stack]]
       assign(conn, :stack, stack)
     end
   end
@@ -19,7 +19,7 @@ defmodule Plug.BuilderTest do
     plug Module, :opts
 
     def fun(conn, opts) do
-      stack = [{:fun, opts}|conn.assigns[:stack]]
+      stack = [{:fun, opts} | conn.assigns[:stack]]
       assign(conn, :stack, stack)
     end
   end
@@ -39,7 +39,7 @@ defmodule Plug.BuilderTest do
 
     def boom(conn, _opts) do
       conn = assign(conn, :entered_stack, true)
-      throw {:not_found, conn}
+      throw({:not_found, conn})
     end
   end
 
@@ -89,8 +89,7 @@ defmodule Plug.BuilderTest do
 
   test "builds plug stack in the order" do
     conn = assign(conn(:get, "/"), :stack, [])
-    assert Sample.call(conn, []).assigns[:stack] ==
-           [call: {:init, :opts}, fun: []]
+    assert Sample.call(conn, []).assigns[:stack] == [call: {:init, :opts}, fun: []]
   end
 
   test "allows call/2 to be overridden with super" do
@@ -118,8 +117,7 @@ defmodule Plug.BuilderTest do
     end
   end
 
-  test "an exception is raised at compile time if a plug with no call/2 " <>
-      "function is plugged" do
+  test "an exception is raised at compile time if a plug with no call/2 function is plugged" do
     assert_raise ArgumentError, fn ->
       defmodule BadPlug do
         defmodule Bad do
@@ -138,7 +136,7 @@ defmodule Plug.BuilderTest do
     defmodule Assigner do
       use Plug.Builder
 
-      def init(agent), do: {:init, Agent.get(agent, &(&1))}
+      def init(agent), do: {:init, Agent.get(agent, & &1)}
       def call(conn, opts), do: Plug.Conn.assign(conn, :opts, opts)
     end
 
@@ -158,10 +156,7 @@ defmodule Plug.BuilderTest do
 
     :ok = Agent.update(:plug_init, fn :compile -> :runtime end)
 
-    assert CompileInit.call(%Plug.Conn{}, :plug_init).assigns.opts ==
-      {:init, :compile}
-
-    assert RuntimeInit.call(%Plug.Conn{}, :plug_init).assigns.opts ==
-      {:init, :runtime}
+    assert CompileInit.call(%Plug.Conn{}, :plug_init).assigns.opts == {:init, :compile}
+    assert RuntimeInit.call(%Plug.Conn{}, :plug_init).assigns.opts == {:init, :runtime}
   end
 end

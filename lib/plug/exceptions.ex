@@ -15,7 +15,7 @@ defprotocol Plug.Exception do
   @doc """
   Receives an exception and returns its HTTP status code.
   """
-  @spec status(t) :: Plug.Conn.status
+  @spec status(t) :: Plug.Conn.status()
   def status(exception)
 end
 
