@@ -18,6 +18,26 @@ defmodule Plug.Conn.StatusTest do
     assert Status.code(:totally_not_a_teapot) == 418
   end
 
+  test "reason_atom returns the atom for built-in statuses" do
+    assert Status.reason_atom(200) == :ok
+    assert Status.reason_atom(203) == :non_authoritative_information
+    assert Status.reason_atom(404) == :not_found
+  end
+
+  test "reason_atom returns the atom for custom statuses" do
+    assert Status.reason_atom(451) == :unavailable_for_legal_reasons
+  end
+
+  test "reason_atom with both a built_in and custom status always returns the custom atom" do
+    assert Status.reason_atom(418) == :totally_not_a_teapot
+  end
+
+  test "reason_atom with an unknown code raises an error" do
+    assert_raise(ArgumentError, "unknown status code 999", fn ->
+      Status.reason_atom(999)
+    end)
+  end
+
   test "reason_phrase returns the phrase for built_in statuses" do
     assert Status.reason_phrase(200) == "OK"
     assert Status.reason_phrase(203) == "Non-Authoritative Information"

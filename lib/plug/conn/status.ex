@@ -124,6 +124,23 @@ defmodule Plug.Conn.Status do
     def code(unquote(atom)), do: unquote(code)
   end
 
+  @doc """
+  Returns the atom for given integer.
+
+  See `code/1` for the mapping.
+  """
+  @spec reason_atom(integer) :: atom
+  def reason_atom(code)
+
+  for {code, reason_phrase} <- Map.merge(statuses, custom_statuses) do
+    atom = reason_phrase_to_atom.(reason_phrase)
+    def reason_atom(unquote(code)), do: unquote(atom)
+  end
+
+  def reason_atom(code) do
+    raise ArgumentError, "unknown status code #{inspect(code)}"
+  end
+
   @spec reason_phrase(integer) :: String.t()
   def reason_phrase(integer)
 
