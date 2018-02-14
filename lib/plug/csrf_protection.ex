@@ -26,16 +26,16 @@ defmodule Plug.CSRFProtection do
 
   ## Token generation
 
-  This plug won't generate tokens automatically. Instead,
-  tokens will be generated only when required by calling
-  `Plug.CSRFProtection.get_csrf_token/0`. The token is then
-  stored in the process dictionary to be set in the request.
+  This plug won't generate tokens automatically. Instead, tokens
+  will be generated only when required by calling `get_csrf_token/0`.
+  In case you are generating the token for certain specific URL,
+  you should use `get_csrf_token_for/1` as that will avoid tokens
+  from being leaked to other applications.
 
-  One may wonder: why the process dictionary?
-
-  The CSRF token is usually generated inside forms which may
-  be isolated from the connection. Storing them in the process
-  dictionary allows them to be generated as a side-effect,
+  Once a token is generated, it is cached in the process dictionary.
+  The CSRF token is usually generated inside forms which may be
+  isolated from `Plug.Conn`. Storing them in the process dictionary
+  allows them to be generated as a side-effect only when necessary,
   becoming one of those rare situations where using the process
   dictionary is useful.
 
@@ -72,6 +72,7 @@ defmodule Plug.CSRFProtection do
 
   alias Plug.Crypto.KeyGenerator
   alias Plug.Crypto.MessageVerifier
+
   @unprotected_methods ~w(HEAD GET OPTIONS)
 
   defmodule InvalidCSRFTokenError do
@@ -96,6 +97,7 @@ defmodule Plug.CSRFProtection do
   end
 
   ## API
+
   @doc """
   Gets the CSRF token.
 
@@ -113,17 +115,40 @@ defmodule Plug.CSRFProtection do
   end
 
   @doc """
-  Gets the CSRF token with an associated host.
-  """
-  def get_csrf_token_for(host) do
-    token = unmasked_csrf_token()
-    message = generate_token() <> host
+  Gets the CSRF token for the associated URL (as a string or a URI struct).
 
-    if secret = Process.get(:secret_key_base) do
-      key = KeyGenerator.generate(secret, token)
-      MessageVerifier.sign(message, key)
-    else
-      raise "process dictionary must contain :secret_key_base"
+  If the URL has a host, a CSRF token that is tied to that
+  host will be generated. If it is a relative path URL, a
+  simple token emitted with `get_csrf_token/0` will be used.
+  """
+  def get_csrf_token_for(url) when is_binary(url) do
+    case url do
+      <<"/">> -> get_csrf_token()
+      <<"/", not_slash, _::binary>> when not_slash != ?/ -> get_csrf_token()
+      _ -> get_csrf_token_for(URI.parse(url))
+    end
+  end
+
+  def get_csrf_token_for(%URI{host: nil}) do
+    get_csrf_token()
+  end
+
+  def get_csrf_token_for(%URI{host: host}) do
+    case Process.get(:plug_csrf_token_per_host) do
+      %{^host => token} ->
+        token
+
+      %{secret_key_base: secret} = secrets ->
+        unmasked = unmasked_csrf_token()
+        message = generate_token() <> host
+        key = KeyGenerator.generate(secret, unmasked)
+        token = MessageVerifier.sign(message, key)
+        Process.put(:plug_csrf_token_per_host, Map.put(secrets, host, token))
+        token
+
+      _ ->
+        raise "cannot generate CSRF token for a host because get_csrf_token_for/1 is invoked " <>
+                "in a separate process than the one that started the request"
     end
   end
 
@@ -133,7 +158,15 @@ defmodule Plug.CSRFProtection do
   This will force the token to be deleted once the response is sent.
   """
   def delete_csrf_token do
-    Process.put(:plug_unmasked_csrf_token, :delete)
+    case Process.get(:plug_csrf_token_per_host) do
+      %{secret_key_base: secret_key_base} ->
+        Process.put(:plug_csrf_token_per_host, %{secret_key_base: secret_key_base})
+        Process.put(:plug_unmasked_csrf_token, :delete)
+
+      _ ->
+        :ok
+    end
+
     Process.delete(:plug_masked_csrf_token)
   end
 
@@ -152,7 +185,7 @@ defmodule Plug.CSRFProtection do
   def call(conn, {session_key, mode}) do
     csrf_token = get_csrf_from_session(conn, session_key)
     Process.put(:plug_unmasked_csrf_token, csrf_token)
-    Process.put(:secret_key_base, conn.secret_key_base)
+    Process.put(:plug_csrf_token_per_host, %{secret_key_base: conn.secret_key_base})
 
     conn =
       cond do

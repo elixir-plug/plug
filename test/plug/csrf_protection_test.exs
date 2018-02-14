@@ -52,10 +52,10 @@ defmodule Plug.CSRFProtectionTest do
         send_resp(conn, 200, CSRFProtection.get_csrf_token())
 
       "get_for" ->
-        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("www.example.com"))
+        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("//www.example.com"))
 
       "get_for_invalid" ->
-        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("www.evil.com"))
+        send_resp(conn, 200, CSRFProtection.get_csrf_token_for("//www.evil.com"))
 
       "delete" ->
         CSRFProtection.delete_csrf_token()
@@ -69,9 +69,26 @@ defmodule Plug.CSRFProtectionTest do
   test "token is stored in process dictionary" do
     assert CSRFProtection.get_csrf_token() == CSRFProtection.get_csrf_token()
 
-    t1 = CSRFProtection.get_csrf_token()
+    token = CSRFProtection.get_csrf_token()
     CSRFProtection.delete_csrf_token()
-    assert t1 != CSRFProtection.get_csrf_token()
+    assert token != CSRFProtection.get_csrf_token()
+  end
+
+  test "token is stored in process dictionary per host" do
+    Process.put(:plug_csrf_token_per_host, %{secret_key_base: @secret})
+    token = CSRFProtection.get_csrf_token()
+
+    assert CSRFProtection.get_csrf_token() == token
+    assert CSRFProtection.get_csrf_token_for("/") == token
+    assert CSRFProtection.get_csrf_token_for("/foo") == token
+    assert CSRFProtection.get_csrf_token_for("//www.example.com") != token
+    assert CSRFProtection.get_csrf_token_for("http://www.example.com") != token
+    assert CSRFProtection.get_csrf_token_for(%URI{host: "www.example.com"}) != token
+
+    host_token = CSRFProtection.get_csrf_token_for("http://www.example.com")
+    assert CSRFProtection.get_csrf_token_for(%URI{host: "www.example.com"}) == host_token
+    CSRFProtection.delete_csrf_token()
+    assert CSRFProtection.get_csrf_token_for("http://www.example.com") != host_token
   end
 
   test "raise error for missing authenticity token in session" do
