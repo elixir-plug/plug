@@ -123,7 +123,7 @@ defmodule Plug.CSRFProtection do
       key = KeyGenerator.generate(secret, token)
       MessageVerifier.sign(message, key)
     else
-      raise "Process dictionary must contain :secret_key_base."
+      raise "process dictionary must contain :secret_key_base"
     end
   end
 
