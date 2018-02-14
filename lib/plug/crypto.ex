@@ -1,7 +1,7 @@
 defmodule Plug.Crypto do
   @moduledoc """
   Namespace and module for Crypto functionality.
-  
+
   Please see `Plug.Crypto.KeyGenerator`, `Plug.Crypto.MessageEncryptor`,
   and `Plug.Crypto.MessageVerifier` for more functionality.
   """
@@ -21,35 +21,46 @@ defmodule Plug.Crypto do
   defp safe_terms(list) when is_list(list) do
     safe_list(list)
   end
+
   defp safe_terms(tuple) when is_tuple(tuple) do
     safe_tuple(tuple, tuple_size(tuple))
   end
+
   defp safe_terms(map) when is_map(map) do
-    :maps.fold(fn key, value, acc ->
+    folder = fn key, value, acc ->
       safe_terms(key)
       safe_terms(value)
       acc
-    end, map, map)
+    end
+
+    :maps.fold(folder, map, map)
   end
-  defp safe_terms(other) when is_atom(other) or is_number(other) or is_bitstring(other) or
-                              is_pid(other) or is_reference(other) do
+
+  defp safe_terms(other)
+       when is_atom(other) or is_number(other) or is_bitstring(other) or is_pid(other) or
+              is_reference(other) do
     other
   end
+
   defp safe_terms(other) do
-    raise ArgumentError, "cannot deserialize #{inspect other}, the term is not safe for deserialization"
+    raise ArgumentError,
+          "cannot deserialize #{inspect(other)}, the term is not safe for deserialization"
   end
 
   defp safe_list([]), do: :ok
+
   defp safe_list([h | t]) when is_list(t) do
     safe_terms(h)
     safe_list(t)
   end
+
   defp safe_list([h | t]) do
     safe_terms(h)
     safe_terms(t)
   end
 
   defp safe_tuple(_tuple, 0), do: :ok
+
   defp safe_tuple(tuple, n) do
     safe_terms(:erlang.element(n, tuple))
     safe_tuple(tuple, n - 1)
@@ -87,7 +98,8 @@ defmodule Plug.Crypto do
   end
 
   defp masked_compare(<<x, left::binary>>, <<y, right::binary>>, <<z, mask::binary>>, acc) do
-    masked_compare(left, right, mask, acc ||| (x ^^^ (y ^^^ z)))
+    xorred = x ^^^ (y ^^^ z)
+    masked_compare(left, right, mask, acc ||| xorred)
   end
 
   defp masked_compare(<<>>, <<>>, <<>>, acc) do
@@ -107,8 +119,9 @@ defmodule Plug.Crypto do
     end
   end
 
-  defp secure_compare(<<x, left :: binary>>, <<y, right :: binary>>, acc) do
-    secure_compare(left, right, acc ||| (x ^^^ y))
+  defp secure_compare(<<x, left::binary>>, <<y, right::binary>>, acc) do
+    xorred = x ^^^ y
+    secure_compare(left, right, acc ||| xorred)
   end
 
   defp secure_compare(<<>>, <<>>, acc) do

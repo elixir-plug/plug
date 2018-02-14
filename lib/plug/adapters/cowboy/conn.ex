@@ -3,13 +3,13 @@ defmodule Plug.Adapters.Cowboy.Conn do
   @moduledoc false
 
   def conn(req, transport) do
-    {path, req} = :cowboy_req.path req
-    {host, req} = :cowboy_req.host req
-    {port, req} = :cowboy_req.port req
-    {meth, req} = :cowboy_req.method req
-    {hdrs, req} = :cowboy_req.headers req
-    {qs, req}   = :cowboy_req.qs req
-    {peer, req} = :cowboy_req.peer req
+    {path, req} = :cowboy_req.path(req)
+    {host, req} = :cowboy_req.host(req)
+    {port, req} = :cowboy_req.port(req)
+    {meth, req} = :cowboy_req.method(req)
+    {hdrs, req} = :cowboy_req.headers(req)
+    {qs, req} = :cowboy_req.qs(req)
+    {peer, req} = :cowboy_req.peer(req)
     {remote_ip, _} = peer
 
     %Plug.Conn{
@@ -43,9 +43,11 @@ defmodule Plug.Adapters.Cowboy.Conn do
         is_integer(length) -> length
       end
 
-    body_fun = fn(socket, transport) -> transport.sendfile(socket, path, offset, length) end
+    body_fun = fn socket, transport -> transport.sendfile(socket, path, offset, length) end
 
-    {:ok, req} = :cowboy_req.reply(status, headers, :cowboy_req.set_resp_body_fun(length, body_fun, req))
+    {:ok, req} =
+      :cowboy_req.reply(status, headers, :cowboy_req.set_resp_body_fun(length, body_fun, req))
+
     {:ok, nil, req}
   end
 

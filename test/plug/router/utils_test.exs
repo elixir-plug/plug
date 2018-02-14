@@ -42,7 +42,9 @@ defmodule Plug.Router.UtilsTest do
 
   test "build match with literal plus identifier" do
     assert quote(@opts, do: {[:id], ["foo", "bar-" <> id]}) == build_path_match("/foo/bar-:id")
-    assert quote(@opts, do: {[:username], ["foo", "bar" <> username]}) == build_path_match("foo/bar:username")
+
+    assert quote(@opts, do: {[:username], ["foo", "bar" <> username]}) ==
+             build_path_match("foo/bar:username")
   end
 
   test "build match only with glob" do
@@ -59,8 +61,11 @@ defmodule Plug.Router.UtilsTest do
   end
 
   test "build match with literal plus glob" do
-    assert quote(@opts, do: {[:bar], ["foo" | ["id-" <> _ | _] = bar]}) == build_path_match("/foo/id-*bar")
-    assert quote(@opts, do: {[:glob], ["foo" | ["id-" <> _ | _] = glob]}) == build_path_match("foo/id-*glob")
+    assert quote(@opts, do: {[:bar], ["foo" | ["id-" <> _ | _] = bar]}) ==
+             build_path_match("/foo/id-*bar")
+
+    assert quote(@opts, do: {[:glob], ["foo" | ["id-" <> _ | _] = glob]}) ==
+             build_path_match("foo/id-*glob")
   end
 
   test "build invalid match with empty matches" do

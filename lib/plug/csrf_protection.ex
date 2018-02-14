@@ -78,8 +78,8 @@ defmodule Plug.CSRFProtection do
     @moduledoc "Error raised when CSRF token is invalid."
 
     message =
-      "invalid CSRF (Cross Site Request Forgery) token, make sure all "
-      <> "requests include a valid '_csrf_token' param or 'x-csrf-token' header"
+      "invalid CSRF (Cross Site Request Forgery) token, make sure all " <>
+        "requests include a valid '_csrf_token' param or 'x-csrf-token' header"
 
     defexception message: message, plug_status: 403
   end
@@ -88,16 +88,14 @@ defmodule Plug.CSRFProtection do
     @moduledoc "Error raised when non-XHR requests are used for Javascript responses."
 
     message =
-      "security warning: an embedded <script> tag on another site requested "
-      <> "protected JavaScript (if you know what you're doing, disable forgery "
-      <> "protection for this route)"
+      "security warning: an embedded <script> tag on another site requested " <>
+        "protected JavaScript (if you know what you're doing, disable forgery " <>
+        "protection for this route)"
 
     defexception message: message, plug_status: 403
   end
 
   ## API
-  @secret_size 64
-
   @doc """
   Gets the CSRF token.
 
@@ -125,10 +123,7 @@ defmodule Plug.CSRFProtection do
       key = KeyGenerator.generate(secret, token)
       MessageVerifier.sign(message, key)
     else
-      secret = :crypto.strong_rand_bytes(@secret_size)
-      Process.put(:secret_key_base, secret)
-      key = KeyGenerator.generate(secret, token)
-      MessageVerifier.sign(message, key)
+      raise "Process dictionary must contain :secret_key_base."
     end
   end
 
@@ -151,8 +146,7 @@ defmodule Plug.CSRFProtection do
   @double_encoded_token_size 32
 
   def init(opts) do
-    {Keyword.get(opts, :session_key, "_csrf_token"),
-     Keyword.get(opts, :with, :exception)}
+    {Keyword.get(opts, :session_key, "_csrf_token"), Keyword.get(opts, :with, :exception)}
   end
 
   def call(conn, {session_key, mode}) do
@@ -164,12 +158,16 @@ defmodule Plug.CSRFProtection do
       cond do
         verified_request?(conn, csrf_token) ->
           conn
+
         mode == :clear_session ->
           conn |> configure_session(ignore: true) |> clear_session()
+
         mode == :exception ->
           raise InvalidCSRFTokenError
+
         true ->
-          raise ArgumentError, "option :with should be one of :exception or :clear_session, got #{inspect mode}"
+          raise ArgumentError,
+                "option :with should be one of :exception or :clear_session, got #{inspect(mode)}"
       end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, session_key, csrf_token))
@@ -179,35 +177,43 @@ defmodule Plug.CSRFProtection do
 
   defp get_csrf_from_session(conn, session_key) do
     csrf_token = get_session(conn, session_key)
+
     if is_binary(csrf_token) and byte_size(csrf_token) == @encoded_token_size do
       csrf_token
     end
   end
 
   defp verified_request?(conn, csrf_token) do
-    conn.method in @unprotected_methods
-      || valid_csrf_token?(conn, csrf_token, conn.params["_csrf_token"])
-      || valid_csrf_token?(conn, csrf_token, List.first(get_req_header(conn, "x-csrf-token")))
-      || skip_csrf_protection?(conn)
+    conn.method in @unprotected_methods ||
+      valid_csrf_token?(conn, csrf_token, conn.params["_csrf_token"]) ||
+      valid_csrf_token?(conn, csrf_token, List.first(get_req_header(conn, "x-csrf-token"))) ||
+      skip_csrf_protection?(conn)
   end
 
-  defp valid_csrf_token?(_conn,
-                         <<csrf_token::@encoded_token_size-binary>>,
-                         <<user_token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>) do
+  defp valid_csrf_token?(
+         _conn,
+         <<csrf_token::@encoded_token_size-binary>>,
+         <<user_token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>
+       ) do
     case Base.decode64(user_token) do
       {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
       :error -> false
     end
   end
 
-  defp valid_csrf_token?(conn,
-                         <<csrf_token::@encoded_token_size-binary>>,
-                         <<@digest, _::binary>> = signed_user_token) do
+  defp valid_csrf_token?(
+         conn,
+         <<csrf_token::@encoded_token_size-binary>>,
+         <<@digest, _::binary>> = signed_user_token
+       ) do
     key = KeyGenerator.generate(conn.secret_key_base, csrf_token)
+
     case MessageVerifier.verify(signed_user_token, key) do
       {:ok, <<_::@encoded_token_size-binary, host::binary>>} ->
         host == conn.host
-      :error -> false
+
+      :error ->
+        false
     end
   end
 
@@ -225,8 +231,8 @@ defmodule Plug.CSRFProtection do
 
   defp cross_origin_js?(%Plug.Conn{method: "GET"} = conn),
     do: not skip_csrf_protection?(conn) and not xhr?(conn) and js_content_type?(conn)
-  defp cross_origin_js?(%Plug.Conn{}),
-    do: false
+
+  defp cross_origin_js?(%Plug.Conn{}), do: false
 
   defp js_content_type?(conn) do
     conn
@@ -240,6 +246,7 @@ defmodule Plug.CSRFProtection do
 
   defp ensure_csrf_token(conn, session_key, csrf_token) do
     Process.delete(:plug_masked_csrf_token)
+
     case Process.delete(:plug_unmasked_csrf_token) do
       ^csrf_token -> conn
       nil -> conn

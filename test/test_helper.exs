@@ -3,6 +3,7 @@ exclude =
     "1" <> _ -> [:cowboy2]
     _ -> [:cowboy1]
   end
+
 ExUnit.start(exclude: exclude)
 
 {:ok, _} = Application.ensure_all_started(:cowboy)

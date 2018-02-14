@@ -27,8 +27,8 @@ defmodule Plug.MethodOverride do
 
   def call(%Plug.Conn{method: "POST", body_params: body_params} = conn, []),
     do: override_method(conn, body_params)
-  def call(%Plug.Conn{} = conn, []),
-    do: conn
+
+  def call(%Plug.Conn{} = conn, []), do: conn
 
   defp override_method(conn, %Plug.Conn.Unfetched{}) do
     # Just skip it because maybe it is a content-type that

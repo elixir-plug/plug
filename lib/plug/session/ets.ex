@@ -57,6 +57,7 @@ defmodule Plug.Session.ETS do
       [{^sid, data, _timestamp}] ->
         :ets.update_element(table, sid, {3, now()})
         {sid, data}
+
       [] ->
         {nil, %{}}
     end
@@ -77,7 +78,7 @@ defmodule Plug.Session.ETS do
   end
 
   defp put_new(data, table, counter \\ 0)
-      when counter < @max_tries do
+       when counter < @max_tries do
     sid = Base.encode64(:crypto.strong_rand_bytes(96))
 
     if :ets.insert_new(table, {sid, data, now()}) do

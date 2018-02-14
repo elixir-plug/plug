@@ -61,6 +61,7 @@ defmodule Plug.SSL do
 
   def call(conn, {hsts, host, rewrites}) do
     conn = rewrite_on(conn, rewrites)
+
     if conn.scheme == :https do
       put_hsts_header(conn, hsts)
     else
@@ -69,16 +70,17 @@ defmodule Plug.SSL do
   end
 
   defp rewrite_on(conn, rewrites) do
-    Enum.reduce rewrites, conn, fn
+    Enum.reduce(rewrites, conn, fn
       :x_forwarded_proto, acc ->
         if get_req_header(acc, "x-forwarded-proto") == ["https"] do
           %{acc | scheme: :https}
         else
           acc
         end
+
       other, _acc ->
-        raise "unknown rewrite: #{inspect other}"
-    end
+        raise "unknown rewrite: #{inspect(other)}"
+    end)
   end
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
@@ -97,13 +99,13 @@ defmodule Plug.SSL do
   defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
     put_resp_header(conn, "strict-transport-security", hsts_header)
   end
+
   defp put_hsts_header(conn, _), do: conn
 
   defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    location = "https://" <> host(custom_host, host) <>
-                             conn.request_path <> qs(conn.query_string)
+    location = "https://" <> host(custom_host, host) <> conn.request_path <> qs(conn.query_string)
 
     conn
     |> put_resp_header("location", location)

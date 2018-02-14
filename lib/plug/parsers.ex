@@ -4,8 +4,9 @@ defmodule Plug.Parsers do
     Error raised when the request is too large.
     """
 
-    defexception message: "the request is too large. If you are willing to process " <>
-                          "larger requests, please give a :length to Plug.Parsers",
+    defexception message:
+                   "the request is too large. If you are willing to process " <>
+                     "larger requests, please give a :length to Plug.Parsers",
                  plug_status: 413
   end
 
@@ -37,7 +38,7 @@ defmodule Plug.Parsers do
     defexception exception: nil, plug_status: 400
 
     def message(%{exception: exception}) do
-      "malformed request, a #{inspect exception.__struct__} exception was raised " <>
+      "malformed request, a #{inspect(exception.__struct__)} exception was raised " <>
         "with message #{inspect(Exception.message(exception))}"
     end
   end
@@ -143,7 +144,7 @@ defmodule Plug.Parsers do
 
   alias Plug.Conn
 
-  @callback init(opts :: Keyword.t) :: Plug.opts
+  @callback init(opts :: Keyword.t()) :: Plug.opts()
 
   @doc """
   Attempts to parse the connection's request body given the content-type type,
@@ -167,11 +168,16 @@ defmodule Plug.Parsers do
     * `{:error, :too_large, conn}` if the request goes over the given limit
 
   """
-  @callback parse(conn :: Conn.t, type :: binary, subtype :: binary,
-                  params :: Keyword.t, state :: term) ::
-                  {:ok, Conn.params, Conn.t} |
-                  {:error, :too_large, Conn.t} |
-                  {:next, Conn.t}
+  @callback parse(
+              conn :: Conn.t(),
+              type :: binary,
+              subtype :: binary,
+              params :: Keyword.t(),
+              state :: term
+            ) ::
+              {:ok, Conn.params(), Conn.t()}
+              | {:error, :too_large, Conn.t()}
+              | {:next, Conn.t()}
 
   @behaviour Plug
   @methods ~w(POST PUT PATCH DELETE)
@@ -194,6 +200,7 @@ defmodule Plug.Parsers do
         case parser do
           {parser, opts} when is_atom(parser) and is_list(opts) ->
             {parser, Keyword.merge(root_opts, opts)}
+
           parser when is_atom(parser) ->
             {parser, root_opts}
         end
@@ -223,9 +230,11 @@ defmodule Plug.Parsers do
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, params} ->
             reduce(conn, parsers, type, subtype, params, pass, query_string_length)
+
           :error ->
             merge_params(conn, %{}, query_string_length)
         end
+
       nil ->
         merge_params(conn, %{}, query_string_length)
     end
@@ -239,8 +248,10 @@ defmodule Plug.Parsers do
     case parser.parse(conn, type, subtype, params, options) do
       {:ok, body, conn} ->
         merge_params(conn, body, query_string_length)
+
       {:next, conn} ->
         reduce(conn, rest, type, subtype, params, pass, query_string_length)
+
       {:error, :too_large, _conn} ->
         raise RequestTooLargeError
     end
@@ -251,6 +262,7 @@ defmodule Plug.Parsers do
   end
 
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
+
   defp ensure_accepted_mimes(conn, type, subtype, pass) do
     if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
       conn
@@ -263,11 +275,13 @@ defmodule Plug.Parsers do
     %{params: params, path_params: path_params} = conn
     params = make_empty_if_unfetched(params)
     conn = Plug.Conn.fetch_query_params(conn, length: query_string_length)
+
     params =
       conn.query_params
       |> Map.merge(params)
       |> Map.merge(body_params)
       |> Map.merge(path_params)
+
     %{conn | params: params, body_params: body_params}
   end
 

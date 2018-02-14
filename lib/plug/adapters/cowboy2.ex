@@ -43,7 +43,7 @@ defmodule Plug.Adapters.Cowboy2 do
   @doc false
   def args(scheme, plug, opts, cowboy_options) do
     {cowboy_options, non_keyword_options} =
-      Enum.partition(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
+      enum_split_with(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
     |> Keyword.put_new(:max_connections, 16_384)
@@ -167,14 +167,15 @@ defmodule Plug.Adapters.Cowboy2 do
     %{
       id: {:ranch_listener_sup, ref},
       start:
-        {:ranch_listener_sup, :start_link, [
-          ref,
-          num_acceptors,
-          ranch_module,
-          transport_opts,
-          cowboy_protocol,
-          proto_opts
-        ]},
+        {:ranch_listener_sup, :start_link,
+         [
+           ref,
+           num_acceptors,
+           ranch_module,
+           transport_opts,
+           cowboy_protocol,
+           proto_opts
+         ]},
       restart: :permanent,
       shutdown: :infinity,
       type: :supervisor,
@@ -192,9 +193,10 @@ defmodule Plug.Adapters.Cowboy2 do
         case Application.spec(:cowboy, :vsn) do
           '2.' ++ _ ->
             :ok
+
           vsn ->
             raise "you are using Plug.Adapters.Cowboy2 but your current Cowboy version is #{vsn}. " <>
-                  "Please update your mix.exs file accordingly"
+                    "Please update your mix.exs file accordingly"
         end
 
       {:error, {:cowboy, _}} ->
@@ -332,4 +334,9 @@ defmodule Plug.Adapters.Cowboy2 do
   defp fail(message) do
     raise ArgumentError, message: "could not start Cowboy2 adapter, " <> message
   end
+
+  # TODO: Remove once we depend on Elixir ~> 1.4.
+  Code.ensure_loaded(Enum)
+  split_with = if function_exported?(Enum, :split_with, 2), do: :split_with, else: :partition
+  defp enum_split_with(enum, fun), do: apply(Enum, unquote(split_with), [enum, fun])
 end

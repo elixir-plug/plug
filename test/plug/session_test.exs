@@ -12,19 +12,41 @@ defmodule Plug.SessionTest do
     assert conn.resp_cookies == %{}
 
     conn = fetch_cookies(conn(:get, "/"))
-    opts = Plug.Session.init(store: ProcessStore, key: "foobar", secure: true, path: "some/path", extra: "extra")
+
+    opts =
+      Plug.Session.init(
+        store: ProcessStore,
+        key: "foobar",
+        secure: true,
+        path: "some/path",
+        extra: "extra"
+      )
+
     conn = conn |> Plug.Session.call(opts) |> fetch_session()
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
-    assert %{"foobar" => %{value: _, secure: true, path: "some/path", extra: "extra"}} = conn.resp_cookies
+
+    assert %{"foobar" => %{value: _, secure: true, path: "some/path", extra: "extra"}} =
+             conn.resp_cookies
+
     refute Map.has_key?(conn.resp_cookies["foobar"], :http_only)
 
     conn = fetch_cookies(conn(:get, "/"))
-    opts = Plug.Session.init(store: ProcessStore, key: "unsafe_foobar", http_only: false, path: "some/path")
+
+    opts =
+      Plug.Session.init(
+        store: ProcessStore,
+        key: "unsafe_foobar",
+        http_only: false,
+        path: "some/path"
+      )
+
     conn = conn |> Plug.Session.call(opts) |> fetch_session()
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
-    assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} = conn.resp_cookies
+
+    assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} =
+             conn.resp_cookies
   end
 
   test "put session" do
@@ -61,7 +83,7 @@ defmodule Plug.SessionTest do
     conn = send_resp(conn, 200, "")
 
     assert conn.resp_cookies ==
-           %{"foobar" => %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}}}
+             %{"foobar" => %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}}}
   end
 
   test "drop session without cookie when there is no sid" do
@@ -84,8 +106,8 @@ defmodule Plug.SessionTest do
     conn = configure_session(conn, renew: true)
     conn = send_resp(conn, 200, "")
 
-    assert match? %{"foobar" => %{value: _}}, conn.resp_cookies
-    refute match? %{"foobar" => %{value: "sid"}}, conn.resp_cookies
+    assert match?(%{"foobar" => %{value: _}}, conn.resp_cookies)
+    refute match?(%{"foobar" => %{value: "sid"}}, conn.resp_cookies)
   end
 
   test "ignore changes to session" do
