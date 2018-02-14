@@ -71,7 +71,7 @@ You can use plug in your projects in two steps:
 | v1.1   | Unsupported from 01/2018 |
 | v1.0   | Unsupported from 05/2017 |
 
-## The Plug.Conn
+## The `Plug.Conn` struct
 
 In the hello world example, we defined our first plug. What is a plug after all?
 
@@ -114,9 +114,9 @@ conn
 
 Finally, keep in mind that a connection is a **direct interface to the underlying web server**. When you call `send_resp/3` above, it will immediately send the given status and body back to the client. This makes features like streaming a breeze to work with.
 
-## The Plug Router
+## `Plug.Router`
 
-In practice, developers rarely write their own plugs. For example, Plug ships with a router that allows developers to quickly match on incoming requests and perform some action:
+To write a "router" plug that dispatches based on the path and method of incoming requests, Plug provides `Plug.Router`:
 
 ```elixir
 defmodule MyRouter do
@@ -137,7 +137,7 @@ defmodule MyRouter do
 end
 ```
 
-The router is a plug and, not only that, it contains its own plug pipeline too. The example above says that when the router is invoked, it will invoke the `:match` plug, represented by a local `match/2` function, and then call the `:dispatch` plug which will execute the matched code.
+The router is a plug. Not only that: it contains its own plug pipeline too. The example above says that when the router is invoked, it will invoke the `:match` plug, represented by a local (imported) `match/2` function, and then call the `:dispatch` plug which will execute the matched code.
 
 Plug ships with many plugs that you can add to the router plug pipeline, allowing you to plug something before a route matches or before a route is dispatched to. For example, if you want to add logging to the router, just do:
 
@@ -149,13 +149,13 @@ plug :dispatch
 
 Note `Plug.Router` compiles all of your routes into a single function and relies on the Erlang VM to optimize the underlying routes into a tree lookup, instead of a linear lookup that would instead match route-per-route. This means route lookups are extremely fast in Plug!
 
-This also means that a catch all `match` is recommended to be defined, as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
+This also means that a catch all `match` block is recommended to be defined as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
 
-Each route needs to return the connection as per the Plug specification. See `Plug.Router` docs for more information.
+Each route needs to return the connection as per the Plug specification. See the `Plug.Router` docs for more information.
 
 ## Supervised handlers
 
-On a production system, you likely want to start your Plug application under your application's supervision tree. Plug provides the `child_spec/3` function to do just that. Start a new Elixir project with the `--sup` flag:
+On a production system, you likely want to start your Plug pipeline under your application's supervision tree. Plug provides the `child_spec/3` function to do just that. Start a new Elixir project with the `--sup` flag:
 
 ```elixir
 $ mix new my_app --sup
@@ -170,8 +170,6 @@ defmodule MyApp do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec
-
     children = [
       # Define workers and child supervisors to be supervised
       Plug.Adapters.Cowboy.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001])
@@ -211,7 +209,7 @@ defmodule MyPlugTest do
 end
 ```
 
-### Available Plugs
+### Available plugs
 
 This project aims to ship with different plugs that can be re-used across applications:
 
