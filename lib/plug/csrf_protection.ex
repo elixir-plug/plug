@@ -173,6 +173,7 @@ defmodule Plug.CSRFProtection do
   ## Plug
 
   @behaviour Plug
+  # "HS256" (HMAC using SHA-256 hash algorithm) encoded in Base64.
   @digest "SFMyNTY."
   @token_size 16
   @encoded_token_size 24
