@@ -69,6 +69,9 @@ defmodule Plug.CSRFProtection do
 
   import Plug.Conn
   require Bitwise
+
+  alias Plug.Crypto.KeyGenerator
+  alias Plug.Crypto.MessageVerifier
   @unprotected_methods ~w(HEAD GET OPTIONS)
 
   defmodule InvalidCSRFTokenError do
@@ -93,7 +96,6 @@ defmodule Plug.CSRFProtection do
   end
 
   ## API
-
   @doc """
   Gets the CSRF token.
 
@@ -111,6 +113,21 @@ defmodule Plug.CSRFProtection do
   end
 
   @doc """
+  Gets the CSRF token with an associated host.
+  """
+  def get_csrf_token_for(host) do
+    token = unmasked_csrf_token()
+    message = generate_token() <> host
+
+    if secret = Process.get(:secret_key_base) do
+      key = KeyGenerator.generate(secret, token)
+      MessageVerifier.sign(message, key)
+    else
+      raise "process dictionary must contain :secret_key_base"
+    end
+  end
+
+  @doc """
   Deletes the CSRF token from the process dictionary.
 
   This will force the token to be deleted once the response is sent.
@@ -123,6 +140,7 @@ defmodule Plug.CSRFProtection do
   ## Plug
 
   @behaviour Plug
+  @digest "SFMyNTY."
   @token_size 16
   @encoded_token_size 24
   @double_encoded_token_size 32
@@ -134,6 +152,7 @@ defmodule Plug.CSRFProtection do
   def call(conn, {session_key, mode}) do
     csrf_token = get_csrf_from_session(conn, session_key)
     Process.put(:plug_unmasked_csrf_token, csrf_token)
+    Process.put(:secret_key_base, conn.secret_key_base)
 
     conn =
       cond do
@@ -166,12 +185,13 @@ defmodule Plug.CSRFProtection do
 
   defp verified_request?(conn, csrf_token) do
     conn.method in @unprotected_methods ||
-      valid_csrf_token?(csrf_token, conn.params["_csrf_token"]) ||
-      valid_csrf_token?(csrf_token, List.first(get_req_header(conn, "x-csrf-token"))) ||
+      valid_csrf_token?(conn, csrf_token, conn.params["_csrf_token"]) ||
+      valid_csrf_token?(conn, csrf_token, List.first(get_req_header(conn, "x-csrf-token"))) ||
       skip_csrf_protection?(conn)
   end
 
   defp valid_csrf_token?(
+         _conn,
          <<csrf_token::@encoded_token_size-binary>>,
          <<user_token::@double_encoded_token_size-binary, mask::@encoded_token_size-binary>>
        ) do
@@ -181,7 +201,23 @@ defmodule Plug.CSRFProtection do
     end
   end
 
-  defp valid_csrf_token?(_csrf_token, _user_token), do: false
+  defp valid_csrf_token?(
+         conn,
+         <<csrf_token::@encoded_token_size-binary>>,
+         <<@digest, _::binary>> = signed_user_token
+       ) do
+    key = KeyGenerator.generate(conn.secret_key_base, csrf_token)
+
+    case MessageVerifier.verify(signed_user_token, key) do
+      {:ok, <<_::@encoded_token_size-binary, host::binary>>} ->
+        host == conn.host
+
+      :error ->
+        false
+    end
+  end
+
+  defp valid_csrf_token?(_conn, _csrf_token, _user_token), do: false
 
   ## Before send
 
