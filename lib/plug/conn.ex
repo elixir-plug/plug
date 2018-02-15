@@ -653,6 +653,37 @@ defmodule Plug.Conn do
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
+  @doc ~S"""
+  Similar to `put_resp_header` this functions adds a new response header (`key`)
+  if not present, otherwise it wont replace the existing header with `key` but
+  rather add another header with the same `key`.
+
+  It is recommended for header keys to be in lower-case, to avoid sending
+  duplicate keys in a request. As a convenience, this is validated during
+  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
+  is not lowercase.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent` or `:chunked`.
+
+  Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
+  feed (\r) or newline (\n) characters.
+  """
+  def prepend_resp_headers(%Conn{state: :sent}, _key, _value) do
+    raise AlreadySentError
+  end
+
+  def prepend_resp_headers(%Conn{state: :chunked}, _key, _value) do
+    raise AlreadySentError
+  end
+
+  def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value)
+      when is_binary(key) and is_binary(value) do
+    validate_header_key_if_test!(adapter, key)
+    validate_header_value!(key, value)
+    %{conn | resp_headers: [ {key, value} | headers]}
+  end
+
   @doc """
   Merges a series of response headers into the connection.
 
