@@ -57,7 +57,8 @@ defmodule Plug.Mixfile do
     %{
       licenses: ["Apache 2"],
       maintainers: ["José Valim"],
-      links: %{"GitHub" => "https://github.com/elixir-plug/plug"}
+      links: %{"GitHub" => "https://github.com/elixir-plug/plug"},
+      files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "src", ".formatter.exs"]
     }
   end
 
