@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.4.5
+
+* Enhancements
+  * Add more entries to .formatter.exs
+
 ## v1.4.4
 
 * Enhancements
