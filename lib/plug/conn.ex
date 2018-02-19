@@ -635,7 +635,7 @@ defmodule Plug.Conn do
   `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
-  feed (\r) or newline (\n) characters.
+  feed (`\r`) or newline (`\n`) characters.
   """
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{state: :sent}, _key, _value) do
@@ -667,7 +667,7 @@ defmodule Plug.Conn do
   `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
-  feed (\r) or newline (\n) characters.
+  feed (`\r`) or newline (`\n`) characters.
   """
   def prepend_resp_headers(%Conn{state: :sent}, _key, _value) do
     raise AlreadySentError
