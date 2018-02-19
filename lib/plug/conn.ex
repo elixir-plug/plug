@@ -681,7 +681,7 @@ defmodule Plug.Conn do
       when is_binary(key) and is_binary(value) do
     validate_header_key_if_test!(adapter, key)
     validate_header_value!(key, value)
-    %{conn | resp_headers: [ {key, value} | headers]}
+    %{conn | resp_headers: [{key, value} | headers]}
   end
 
   @doc """
