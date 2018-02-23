@@ -4,7 +4,7 @@ exclude =
     _ -> [:cowboy1]
   end
 
-ExUnit.start(exclude: exclude)
+ExUnit.start(exclude: exclude, assert_receive_timeout: 200)
 
 {:ok, _} = Application.ensure_all_started(:cowboy)
 {:ok, _} = Application.ensure_all_started(:hackney)
