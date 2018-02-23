@@ -29,7 +29,7 @@ defmodule Plug.BadRequestError do
   The request will not be processed due to a client error.
   """
 
-  defexception message: nil, plug_status: 400
+  defexception message: "could not process the request due to client error", plug_status: 400
 end
 
 defmodule Plug.TimeoutError do
@@ -37,5 +37,5 @@ defmodule Plug.TimeoutError do
   Timeout while waiting for the request.
   """
 
-  defexception message: nil, plug_status: 408
+  defexception message: "timeout while waiting for request data", plug_status: 408
 end
