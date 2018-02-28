@@ -471,57 +471,57 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "prepend_resp_headers/3" do
-    conn1 = prepend_resp_headers(conn(:head, "/foo"), "x-foo", "bar")
+  test "prepend_resp_headers/2" do
+    conn1 = prepend_resp_headers(conn(:head, "/foo"), [{"x-foo", "bar"}])
     assert get_resp_header(conn1, "x-foo") == ["bar"]
-    conn2 = prepend_resp_headers(conn1, "x-foo", "baz")
+    conn2 = prepend_resp_headers(conn1, [{"x-foo", "baz"}])
     assert get_resp_header(conn2, "x-foo") == ["baz", "bar"]
   end
 
-  test "prepend_resp_headers/3 raises when the conn was already been sent" do
+  test "prepend_resp_headers/2 raises when the conn was already been sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_resp_headers(conn, "x-foo", "bar")
+      prepend_resp_headers(conn, [{"x-foo", "bar"}])
     end
   end
 
-  test "prepend_resp_headers/3 raises when the conn is chunked" do
+  test "prepend_resp_headers/2 raises when the conn is chunked" do
     conn = send_chunked(conn(:get, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_resp_headers(conn, "x-foo", "bar")
+      prepend_resp_headers(conn, [{"x-foo", "bar"}])
     end
   end
 
-  test "prepend_resp_headers/3 raises when invalid header key given" do
+  test "prepend_resp_headers/2 raises when invalid header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
-      prepend_resp_headers(conn, "X-Foo", "bar")
+      prepend_resp_headers(conn, [{"X-Foo", "bar"}])
     end
   end
 
-  test "prepend_resp_headers/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+  test "prepend_resp_headers/2 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
-    prepend_resp_headers(conn, "X-Foo", "bar")
+    prepend_resp_headers(conn, [{"X-Foo", "bar"}])
   end
 
-  test "prepend_resp_headers/3 raises when invalid header value given" do
+  test "prepend_resp_headers/2 raises when invalid header value given" do
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      prepend_resp_headers(conn(:get, "foo"), "x-sample", "value\rBAR")
+      prepend_resp_headers(conn(:get, "foo"), [{"x-sample", "value\rBAR"}])
     end
 
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      prepend_resp_headers(conn(:get, "foo"), "x-sample", "value\n\nBAR")
+      prepend_resp_headers(conn(:get, "foo"), [{"x-sample", "value\n\nBAR"}])
     end
   end
 

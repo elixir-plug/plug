@@ -668,19 +668,22 @@ defmodule Plug.Conn do
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
   """
-  def prepend_resp_headers(%Conn{state: :sent}, _key, _value) do
+  def prepend_resp_headers(%Conn{state: :sent}, _headers) do
     raise AlreadySentError
   end
 
-  def prepend_resp_headers(%Conn{state: :chunked}, _key, _value) do
+  def prepend_resp_headers(%Conn{state: :chunked}, _headers) do
     raise AlreadySentError
   end
 
-  def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value)
-      when is_binary(key) and is_binary(value) do
-    validate_header_key_if_test!(adapter, key)
-    validate_header_value!(key, value)
-    %{conn | resp_headers: [{key, value} | headers]}
+  def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: resp_headers} = conn, headers)
+      when is_list(headers) do
+    for {key, value} <- headers do
+      validate_header_key_if_test!(adapter, key)
+      validate_header_value!(key, value)
+    end
+
+    %{conn | resp_headers: headers ++ resp_headers}
   end
 
   @doc """
