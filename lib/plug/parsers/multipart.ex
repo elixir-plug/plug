@@ -177,9 +177,6 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp get_header(headers, key) do
-    case List.keyfind(headers, key, 0) do
-      {^key, value} -> value
-      nil -> nil
-    end
+    with {^key, value} <- List.keyfind(headers, key, 0), do: value
   end
 end
