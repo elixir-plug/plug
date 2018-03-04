@@ -1373,7 +1373,7 @@ end
 
 defimpl Collectable, for: Plug.Conn do
   def into(conn) do
-    IO.puts(:stderr, """
+    IO.warn("""
     warning: using Enum.into/2 for conn is deprecated, use Enum.reduce_while/3 instead:
 
     To stream data use `Enum.reduce_while/3` instead of `Enum.into/2`.
