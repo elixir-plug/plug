@@ -1382,7 +1382,7 @@ defimpl Collectable, for: Plug.Conn do
       `Enum.reduce_while/3` allows aborting the execution if `chunk/2` fails to
       deliver the chunk of data.
 
-      ## Example
+      Example
 
           ~w(each chunk as a word)
           |> Enum.reduce_while(conn, fn (chunk, conn) ->
