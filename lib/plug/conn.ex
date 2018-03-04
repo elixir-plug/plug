@@ -475,6 +475,23 @@ defmodule Plug.Conn do
   It expects a connection with state `:chunked` as set by
   `send_chunked/2`. It returns `{:ok, conn}` in case of success,
   otherwise `{:error, reason}`.
+
+  To stream data use `Enum.reduce_while/3` instead of `Enum.into/2`.
+  `Enum.reduce_while/3` allows aborting the execution if `chunk/2` fails to
+  deliver the chunk of data.
+
+  ## Example
+
+      ~w(each chunk as a word)
+      |> Enum.reduce_while(conn, fn (chunk, conn) ->
+        case Plug.Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
+
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
@@ -1356,6 +1373,27 @@ end
 
 defimpl Collectable, for: Plug.Conn do
   def into(conn) do
+    IO.puts(:stderr, """
+    warning: using Enum.into/2 for conn is deprecated, use Enum.reduce_while/3 instead:
+
+    To stream data use `Enum.reduce_while/3` instead of `Enum.into/2`.
+    `Enum.reduce_while/3` allows aborting the execution if `chunk/2` fails to
+    deliver the chunk of data.
+
+    Example
+
+        ~w(each chunk as a word)
+        |> Enum.reduce_while(conn, fn (chunk, conn) ->
+          case Plug.Conn.chunk(conn, chunk) do
+            {:ok, conn} ->
+              {:cont, conn}
+            {:error, :closed} ->
+              {:halt, conn}
+          end
+        end)
+
+    """)
+
     fun = fn
       conn, {:cont, x} ->
         {:ok, conn} = Plug.Conn.chunk(conn, x)
