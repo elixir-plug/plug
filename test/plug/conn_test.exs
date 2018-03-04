@@ -362,6 +362,7 @@ defmodule Plug.ConnTest do
 
   test "send_chunked/3 with collectable" do
     conn = send_chunked(conn(:get, "/foo"), 200)
+
     capture_io(:stderr, fn ->
       conn = Enum.into(~w(hello world), conn)
       assert conn.resp_body == "helloworld"
