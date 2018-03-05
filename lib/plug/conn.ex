@@ -654,8 +654,11 @@ defmodule Plug.Conn do
   end
 
   @doc ~S"""
-  Similar to `put_resp_header` this functions adds a new response header (`key`)
-  but rather then replacing the exising one it appends another header with the same `key`.
+  Prepends the list of headers to the connection response headers.
+
+  Similar to `put_resp_header` this functions adds a new response header
+  (`key`) but rather then replacing the exising one it prepends another header
+  with the same `key`.
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
