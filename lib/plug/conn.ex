@@ -668,6 +668,7 @@ defmodule Plug.Conn do
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
   """
+  @spec prepend_resp_headers(t, headers) :: t
   def prepend_resp_headers(%Conn{state: :sent}, _headers) do
     raise AlreadySentError
   end
