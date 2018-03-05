@@ -42,6 +42,8 @@ defmodule Plug.SSL do
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
+    * `:log` - The log level at which this plug should log its request info.
+      Default is `:info`.
 
   ## Port
 
@@ -52,20 +54,22 @@ defmodule Plug.SSL do
   """
   @behaviour Plug
 
+  require Logger
   import Plug.Conn
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, [])}
+    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, []),
+     Keyword.get(opts, :log, :info)}
   end
 
-  def call(conn, {hsts, host, rewrites}) do
+  def call(conn, {hsts, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
     if conn.scheme == :https do
       put_hsts_header(conn, hsts)
     else
-      redirect_to_https(conn, host)
+      redirect_to_https(conn, host, log_level)
     end
   end
 
@@ -102,10 +106,23 @@ defmodule Plug.SSL do
 
   defp put_hsts_header(conn, _), do: conn
 
-  defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
+  defp redirect_to_https(%Conn{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
     location = "https://" <> host(custom_host, host) <> conn.request_path <> qs(conn.query_string)
+
+    Logger.log(log_level, fn ->
+      [
+        "Plug.SSL is redirecting ",
+        conn.method,
+        ?\s,
+        conn.request_path,
+        " to ",
+        location,
+        " with status ",
+        Integer.to_string(status)
+      ]
+    end)
 
     conn
     |> put_resp_header("location", location)
