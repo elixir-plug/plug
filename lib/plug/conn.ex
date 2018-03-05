@@ -652,7 +652,7 @@ defmodule Plug.Conn do
   `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
-  feed (\r) or newline (\n) characters.
+  feed (`\r`) or newline (`\n`) characters.
   """
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{state: :sent}, _key, _value) do
@@ -668,6 +668,43 @@ defmodule Plug.Conn do
     validate_header_key_if_test!(adapter, key)
     validate_header_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
+  end
+
+  @doc ~S"""
+  Prepends the list of headers to the connection response headers.
+
+  Similar to `put_resp_header` this functions adds a new response header
+  (`key`) but rather then replacing the exising one it prepends another header
+  with the same `key`.
+
+  It is recommended for header keys to be in lower-case, to avoid sending
+  duplicate keys in a request. As a convenience, this is validated during
+  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
+  is not lowercase.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent` or `:chunked`.
+
+  Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
+  feed (`\r`) or newline (`\n`) characters.
+  """
+  @spec prepend_resp_headers(t, headers) :: t
+  def prepend_resp_headers(%Conn{state: :sent}, _headers) do
+    raise AlreadySentError
+  end
+
+  def prepend_resp_headers(%Conn{state: :chunked}, _headers) do
+    raise AlreadySentError
+  end
+
+  def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: resp_headers} = conn, headers)
+      when is_list(headers) do
+    for {key, value} <- headers do
+      validate_header_key_if_test!(adapter, key)
+      validate_header_value!(key, value)
+    end
+
+    %{conn | resp_headers: headers ++ resp_headers}
   end
 
   @doc """
