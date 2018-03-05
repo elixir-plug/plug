@@ -72,10 +72,10 @@ defmodule Plug.SSL do
   defp rewrite_on(conn, rewrites) do
     Enum.reduce(rewrites, conn, fn
       :x_forwarded_proto, acc ->
-        if get_req_header(acc, "x-forwarded-proto") == ["https"] do
-          %{acc | scheme: :https}
-        else
-          acc
+        case get_req_header(acc, "x-forwarded-proto") do
+          ["https"] -> %{acc | scheme: :https}
+          ["http"] -> %{acc | scheme: :http}
+          _ -> acc
         end
 
       other, _acc ->
