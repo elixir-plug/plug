@@ -74,6 +74,24 @@ defmodule Plug.SSLTest do
     assert conn.halted
   end
 
+  test "redirects to host when secure" do
+    conn =
+      conn(:get, "https://example.com/")
+      |> put_req_header("x-forwarded-proto", "http")
+      |> call(rewrite_on: [:x_forwarded_proto])
+
+    assert get_resp_header(conn, "location") == ["https://example.com/"]
+    assert conn.halted
+
+    conn =
+      conn(:get, "https://example.com/foo?bar=baz")
+      |> put_req_header("x-forwarded-proto", "http")
+      |> call(rewrite_on: [:x_forwarded_proto])
+
+    assert get_resp_header(conn, "location") == ["https://example.com/foo?bar=baz"]
+    assert conn.halted
+  end
+
   test "redirects to custom host on get" do
     conn = call(conn(:get, "http://example.com/"), host: "ssl.example.com:443")
     assert get_resp_header(conn, "location") == ["https://ssl.example.com:443/"]
