@@ -2,6 +2,8 @@ defmodule Plug.SSLTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  import ExUnit.CaptureLog
+
   defp call(conn, opts \\ []) do
     Plug.SSL.call(conn, Plug.SSL.init(opts))
   end
@@ -119,5 +121,16 @@ defmodule Plug.SSLTest do
       assert conn.status == 307
       assert conn.halted
     end
+  end
+
+  test "logs on redirect" do
+    message =
+      capture_log(fn ->
+        conn = call(conn(:get, "http://example.com/"))
+        assert get_resp_header(conn, "location") == ["https://example.com/"]
+        assert conn.halted
+      end)
+
+    assert message =~ ~r"Plug.SSL is redirecting GET / to https://example.com/ with status 301"u
   end
 end
