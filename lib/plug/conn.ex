@@ -1036,9 +1036,11 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Push a resource to the client. Server pushes must happen prior to a response
-  being sent. If a server push is attempted after a response is sent then a
-  `Plug.Conn.AlreadySentError` will be raised.
+  Pushes a resource to the client.
+
+  Server pushes must happen prior to a response being sent. If a server
+  push is attempted after a response is sent then a `Plug.Conn.AlreadySentError`
+  will be raised.
 
   If the adapter does not support server push then this is a noop.
   """
@@ -1051,7 +1053,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  This function is the same as `push/3` except it will raise If the adapter
+  Pushes a resource to the client but raises if the adapter
   does not support server push.
   """
   @spec push!(t, String.t(), Keyword.t()) :: t
