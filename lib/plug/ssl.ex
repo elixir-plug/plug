@@ -43,7 +43,7 @@ defmodule Plug.SSL do
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
     * `:log` - The log level at which this plug should log its request info.
-      Default is `:info`.
+      Default is `:info`. Can be `false` to disable logging.
 
   ## Port
 
@@ -59,17 +59,18 @@ defmodule Plug.SSL do
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, []),
-     Keyword.get(opts, :log, :info)}
+    host = Keyword.get(opts, :host)
+    rewrite_on = Keyword.get(opts, :rewrite_on, [])
+    log = Keyword.get(opts, :log, :info)
+    {hsts_header(opts), host, rewrite_on, log}
   end
 
   def call(conn, {hsts, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
-    if conn.scheme == :https do
-      put_hsts_header(conn, hsts)
-    else
-      redirect_to_https(conn, host, log_level)
+    case conn do
+      %{scheme: :https} -> put_hsts_header(conn, hsts)
+      %{} -> redirect_to_https(conn, host, log_level)
     end
   end
 
@@ -109,20 +110,22 @@ defmodule Plug.SSL do
   defp redirect_to_https(%Conn{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    location = "https://" <> host(custom_host, host) <> conn.request_path <> qs(conn.query_string)
+    scheme_and_host = "https://" <> host(custom_host, host)
+    location = scheme_and_host <> conn.request_path <> qs(conn.query_string)
 
-    Logger.log(log_level, fn ->
-      [
-        "Plug.SSL is redirecting ",
-        conn.method,
-        ?\s,
-        conn.request_path,
-        " to ",
-        location,
-        " with status ",
-        Integer.to_string(status)
-      ]
-    end)
+    log_level &&
+      Logger.log(log_level, fn ->
+        [
+          "Plug.SSL is redirecting ",
+          conn.method,
+          ?\s,
+          conn.request_path,
+          " to ",
+          scheme_and_host,
+          " with status ",
+          Integer.to_string(status)
+        ]
+      end)
 
     conn
     |> put_resp_header("location", location)
