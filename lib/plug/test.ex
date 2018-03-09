@@ -96,8 +96,17 @@ defmodule Plug.Test do
   @doc """
   Return the assets that have been pushed.
   """
-  def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{pushes: pushes}}}) do
-    Enum.reverse(pushes)
+  def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    Enum.reverse(receive_pushes(ref, []))
+  end
+
+  defp receive_pushes(ref, pushes) do
+    receive do
+      {^ref, :push, response} ->
+        receive_pushes(ref, [response | pushes])
+    after
+      0 -> pushes
+    end
   end
 
   @doc """

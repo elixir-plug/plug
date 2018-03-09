@@ -84,6 +84,5 @@ defmodule Plug.Conn.Adapter do
   If the adapter does not support server push then `{:error, :not_supported}`
   should be returned.
   """
-  @callback push(payload, path :: String.t(), headers :: Keyword.t()) ::
-              {:ok, payload} | {:error, term}
+  @callback push(payload, path :: String.t(), headers :: Keyword.t()) :: :ok | {:error, term}
 end
