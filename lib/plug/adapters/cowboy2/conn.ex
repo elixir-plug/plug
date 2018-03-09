@@ -79,7 +79,6 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       end
 
     :cowboy_req.push(path, to_headers_map(headers), req, opts)
-    {:ok, req}
   end
 
   ## Helpers

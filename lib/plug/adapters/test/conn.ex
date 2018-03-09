@@ -19,7 +19,6 @@ defmodule Plug.Adapters.Test.Conn do
       method: method,
       params: params,
       req_body: body,
-      pushes: [],
       chunks: nil,
       ref: make_ref(),
       owner: owner
@@ -103,8 +102,9 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
-  def push(%{pushes: pushes} = state, path, headers) do
-    {:ok, %{state | pushes: [{path, headers} | pushes]}}
+  def push(%{owner: owner, ref: ref}, path, headers) do
+    send(owner, {ref, :push, {path, headers}})
+    :ok
   end
 
   ## Private helpers
