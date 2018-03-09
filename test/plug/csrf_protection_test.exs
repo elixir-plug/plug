@@ -221,6 +221,7 @@ defmodule Plug.CSRFProtectionTest do
     refute conn.halted
   end
 
+  @tag :capture_log
   test "protected requests with invalid host token in params are not allowed" do
     old_conn = call(conn(:get, "/?token=get_for_invalid"))
     params = %{_csrf_token: old_conn.resp_body}
@@ -236,6 +237,21 @@ defmodule Plug.CSRFProtectionTest do
     assert_raise InvalidCSRFTokenError, fn ->
       call_with_old_conn(conn(:patch, "/", params), old_conn)
     end
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:patch, "/", params), old_conn, allow_hosts: [".another.com"])
+    end
+  end
+
+  test "protected requests with invalid host token when explicitly allowed" do
+    old_conn = call(conn(:get, "/?token=get_for_invalid"))
+    params = %{_csrf_token: old_conn.resp_body}
+
+    conn = call_with_old_conn(conn(:post, "/", params), old_conn, allow_hosts: [".evil.com"])
+    refute conn.halted
+
+    conn = call_with_old_conn(conn(:post, "/", params), old_conn, allow_hosts: ["www.evil.com"])
+    refute conn.halted
   end
 
   test "protected requests with valid token in params are allowed" do
