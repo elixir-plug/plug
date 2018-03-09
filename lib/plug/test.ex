@@ -95,6 +95,18 @@ defmodule Plug.Test do
 
   @doc """
   Return the assets that have been pushed.
+
+  This function depends on gathering the messages sent by the test adapter
+  when assets are pushed. Calling this function will clear the pushed message
+  from the inbox for the process. To assert on multiple pushes, the result
+  of the function should be stored in a variable.
+
+  ## Examples
+
+      conn = conn(:get, "/foo", "bar=10")
+      pushes = Plug.Test.sent_pushes(conn)
+      assert {"/static/application.css", [{"accept", "text/css"}]} in pushes
+      assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
   """
   def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     Enum.reverse(receive_pushes(ref, []))
