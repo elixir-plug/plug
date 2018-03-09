@@ -1,7 +1,7 @@
 defmodule Plug.Mixfile do
   use Mix.Project
 
-  @version "1.5.0-rc.2"
+  @version "1.5.0"
 
   @description "A specification and conveniences for composable modules between web applications"
 
