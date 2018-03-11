@@ -58,7 +58,7 @@ defmodule Plug.Parsers.MULTIPART do
     {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
     opts = [length: read_length, read_length: read_length] ++ opts
 
-    # The header options are handled indidually.
+    # The header options are handled individually.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
 
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)

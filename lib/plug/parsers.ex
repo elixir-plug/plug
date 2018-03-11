@@ -58,7 +58,7 @@ defmodule Plug.Parsers do
 
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
   the request cannot be parsed by any of the given types and the MIME type has
-  not been explicity accepted with the `:pass` option.
+  not been explicitly accepted with the `:pass` option.
 
   `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
   the given limit.
