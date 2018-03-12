@@ -55,7 +55,7 @@ defmodule Plug.CSRFProtection do
   For example, if you are running your application behind a proxy, the browser
   will send a request to the proxy with `www.example.com` but the proxy will
   request you using an internal IP. In such cases, it is common for proxies
-  to attach information such as `"x-forwarded-host" that contains the original
+  to attach information such as `"x-forwarded-host"` that contains the original
   host.
 
   This may also happen on redirects. If you have a POST request to `foo.example.com`
