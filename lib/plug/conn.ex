@@ -843,6 +843,9 @@ defmodule Plug.Conn do
   returned. Otherwise `{:ok, body, conn}` is returned. In case of an error
   reading the socket, `{:error, reason}` is returned as per `:gen_tcp.recv/2`.
 
+  Like all functions in this module, the `conn` returned by `read_body` must
+  be passed to the next stage of your pipeline and should not be ignored.
+
   In order to, for instance, support slower clients you can tune the
   `:read_length` and `:read_timeout` options. These specify how much time should
   be allowed to pass for each read from the underlying socket.
