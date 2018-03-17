@@ -129,7 +129,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
              response = request(:get, "/headers", [{"cookie", cookie}])
              assert match?({431, _, _}, response) or match?({:error, :closed}, response)
              assert {200, _, _} = request(:get, "/headers", [{"foo", "bar"}, {"baz", "bat"}])
-           end) =~ "Cowboy returned 431 and there are no headers in the connection"
+           end) =~ "Cowboy returned 431 because it was unable to parse the request headers"
   end
 
   def send_200(conn) do

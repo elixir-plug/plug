@@ -275,11 +275,10 @@ defmodule Plug.Adapters.Cowboy do
   defp onresponse(status, _headers, _body, request) do
     if status == 400 and empty_headers?(request) do
       Logger.error("""
-      Cowboy returned 400 and there are no headers in the connection.
+      Cowboy returned 400 because it was unable to parse the request headers.
 
-      This may happen if Cowboy is unable to parse the request headers,
-      for example, because there are too many headers or the header name
-      or value are too large (such as a large cookie).
+      This may happen because there are no headers, or there are too many headers
+      or the header name or value are too large (such as a large cookie).
 
       You can customize those values when configuring your http/https
       server. The configuration option and default values are shown below:

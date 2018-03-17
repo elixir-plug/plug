@@ -121,7 +121,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
         assert {200, _, _} = request(:get, "/headers", [{"foo", "bar"}, {"baz", "bat"}])
       end)
 
-    assert log =~ "Cowboy returned 400 and there are no headers in the connection"
+    assert log =~ "Cowboy returned 400 because it was unable to parse the request headers"
   end
 
   def send_200(conn) do

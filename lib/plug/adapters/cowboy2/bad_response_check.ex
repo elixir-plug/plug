@@ -21,20 +21,19 @@ defmodule Plug.Adapters.Cowboy2.BadResponseCheck do
     case reason do
       {:connection_error, :limit_reached, _} ->
         Logger.error("""
-        Cowboy returned 431 and there are no headers in the connection.
+        Cowboy returned 431 because it was unable to parse the request headers.
 
-        This may happen if Cowboy is unable to parse the request headers,
-        for example, because there are too many headers or the header name
-        or value are too large (such as a large cookie).
+        This may happen because there are no headers, or there are too many headers
+        or the header name or value are too large (such as a large cookie).
 
         You can customize those values when configuring your http/https
         server. The configuration option and default values are shown below:
 
-        protocol_options: [
-          max_header_name_length: 64,
-          max_header_value_length: 4096,
-          max_headers: 100
-        ]
+            protocol_options: [
+              max_header_name_length: 64,
+              max_header_value_length: 4096,
+              max_headers: 100
+            ]
         """)
 
       _ ->
