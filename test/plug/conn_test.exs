@@ -1123,4 +1123,10 @@ defmodule Plug.ConnTest do
       Conn.send_resp(%Plug.Conn{}, 200, "Hello World")
     end
   end
+
+  test "dynamic access on unfetched fields" do
+    assert_raise ArgumentError, ~r/cannot fetch key \"bar\"/, fn ->
+      conn(:get, "/foo?bar=baz").query_params["bar"]
+    end
+  end
 end
