@@ -13,15 +13,30 @@ defmodule Plug.Conn.Unfetched do
   defstruct [:aspect]
   @type t :: %__MODULE__{aspect: atom()}
 
-  @doc false
-  def get(%{aspect: aspect}, key, _value) do
-    raise ArgumentError,
-          "cannot get key #{inspect(key)} from conn.#{aspect} because they were not fetched"
+  @behaviour Access
+
+  @impl true
+  def fetch(%{aspect: aspect}, key) do
+    raise_unfetched(__ENV__.function, aspect, key)
   end
 
-  @doc false
+  @impl true
+  def get(%{aspect: aspect}, key, _value) do
+    raise_unfetched(__ENV__.function, aspect, key)
+  end
+
+  @impl true
   def get_and_update(%{aspect: aspect}, key, _fun) do
+    raise_unfetched(__ENV__.function, aspect, key)
+  end
+
+  @impl true
+  def pop(%{aspect: aspect}, key) do
+    raise_unfetched(__ENV__.function, aspect, key)
+  end
+
+  defp raise_unfetched({access, _}, aspect, key) do
     raise ArgumentError,
-          "cannot get_and_update key #{inspect(key)} from conn.#{aspect} because they were not fetched"
+          "cannot #{access} key #{inspect(key)} from conn.#{aspect} because they were not fetched"
   end
 end
