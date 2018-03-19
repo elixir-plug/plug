@@ -136,6 +136,8 @@ defmodule Plug.Adapters.Cowboy2 do
 
   """
   def child_spec(opts) do
+    :ok = verify_cowboy_version()
+
     scheme = Keyword.fetch!(opts, :scheme)
     cowboy_opts = Keyword.get(opts, :options, [])
 
@@ -190,14 +192,7 @@ defmodule Plug.Adapters.Cowboy2 do
   defp run(scheme, plug, opts, cowboy_options) do
     case Application.ensure_all_started(:cowboy) do
       {:ok, _} ->
-        case Application.spec(:cowboy, :vsn) do
-          '2.' ++ _ ->
-            :ok
-
-          vsn ->
-            raise "you are using Plug.Adapters.Cowboy2 but your current Cowboy version is #{vsn}. " <>
-                    "Please update your mix.exs file accordingly"
-        end
+        verify_cowboy_version()
 
       {:error, {:cowboy, _}} ->
         raise "could not start the Cowboy application. Please ensure it is listed as a dependency in your mix.exs"
@@ -333,6 +328,17 @@ defmodule Plug.Adapters.Cowboy2 do
 
   defp fail(message) do
     raise ArgumentError, message: "could not start Cowboy2 adapter, " <> message
+  end
+
+  defp verify_cowboy_version do
+    case Application.spec(:cowboy, :vsn) do
+      '2.' ++ _ ->
+        :ok
+
+      vsn ->
+        raise "you are using Plug.Adapters.Cowboy (for Cowboy 1) but your current Cowboy " <>
+                "version is #{vsn}. Please update your mix.exs file accordingly"
+    end
   end
 
   # TODO: Remove once we depend on Elixir ~> 1.4.
