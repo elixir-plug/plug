@@ -47,9 +47,7 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       end
 
     body = {:sendfile, offset, length, path}
-
     headers = to_headers_map(headers)
-
     req = :cowboy_req.reply(status, headers, body, req)
     {:ok, nil, req}
   end
@@ -96,15 +94,20 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   end
 
   defp to_headers_map(headers) when is_list(headers) do
-    # Group set-cookie headers into a list for a single `set-cookie
-    # `key since cowboy 2 requires headers as a map.
+    # Group set-cookie headers into a list for a single `set-cookie`
+    # key since cowboy 2 requires headers as a map.
     Enum.reduce(headers, %{}, fn
       {key = "set-cookie", value}, acc ->
-        set_cookies = Map.get(acc, key, [])
-        Map.put(acc, to_string(key), [value | set_cookies])
+        case acc do
+          %{^key => existing} -> %{acc | key => [value | existing]}
+          %{} -> Map.put(acc, key, [value])
+        end
 
       {key, value}, acc ->
-        Map.put(acc, to_string(key), value)
+        case acc do
+          %{^key => existing} -> %{acc | key => existing <> ", " <> value}
+          %{} -> Map.put(acc, key, value)
+        end
     end)
   end
 
