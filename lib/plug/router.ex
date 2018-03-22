@@ -377,8 +377,14 @@ defmodule Plug.Router do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
       end
 
+      {target, target_opts} =
+        case Atom.to_string(target) do
+          "Elixir." <> _ -> {target, target.init(plug_options)}
+          _ -> {{__MODULE__, target}, plug_options}
+        end
+
       @plug_forward_target target
-      @plug_forward_opts target.init(plug_options)
+      @plug_forward_opts target_opts
 
       # Delegate the matching to the match/3 macro along with the options
       # specified by Keyword.split/2.
