@@ -802,6 +802,9 @@ defmodule Plug.Conn do
   @doc """
   Fetches query parameters from the query string.
 
+  Params are decoded as "x-www-form-urlencoded" in which key/value pairs
+  are separated by `&` and keys are separated from values by `=`.
+
   This function does not fetch parameters from the body. To fetch
   parameters from the body, use the `Plug.Parsers` plug.
 
