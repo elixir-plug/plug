@@ -1,20 +1,25 @@
-defmodule Plug.Adapters.Cowboy2.BadResponseCheck do
+defmodule Plug.Adapters.Cowboy2.Stream do
   require Logger
 
   def init(stream_id, req, opts) do
-    :cowboy_stream.init(stream_id, req, opts)
+    :cowboy_stream_h.init(stream_id, req, opts)
   end
 
   def data(stream_id, is_fin, data, state) do
-    :cowboy_stream.data(stream_id, is_fin, data, state)
+    :cowboy_stream_h.data(stream_id, is_fin, data, state)
   end
 
   def info(stream_id, info, state) do
-    :cowboy_stream.info(stream_id, info, state)
+    :cowboy_stream_h.info(stream_id, info, state)
   end
 
-  def terminate(_stream_id, reason, _state) do
-    {:exit, reason}
+  def terminate(_stream_id, _reason, :undefined) do
+    :ok
+  end
+
+  def terminate(stream_id, reason, state) do
+    :cowboy_stream_h.info(stream_id, reason, state)
+    :ok
   end
 
   def early_error(_stream_id, reason, _partial_req, resp, _opts) do
@@ -37,7 +42,7 @@ defmodule Plug.Adapters.Cowboy2.BadResponseCheck do
         """)
 
       _ ->
-        nil
+        :ok
     end
 
     resp

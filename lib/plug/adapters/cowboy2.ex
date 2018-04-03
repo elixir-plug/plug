@@ -208,7 +208,7 @@ defmodule Plug.Adapters.Cowboy2 do
     apply(:cowboy, start, args(scheme, plug, opts, cowboy_options))
   end
 
-  @default_stream_handlers [Plug.Adapters.Cowboy2.BadResponseCheck, :cowboy_stream_h]
+  @default_stream_handlers [Plug.Adapters.Cowboy2.Stream]
 
   defp set_compress(cowboy_options) do
     compress = Keyword.get(cowboy_options, :compress)
