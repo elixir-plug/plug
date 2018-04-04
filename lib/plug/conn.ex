@@ -289,48 +289,20 @@ defmodule Plug.Conn do
     %{conn | assigns: Map.put(assigns, key, value)}
   end
 
-  @doc """
-  Starts a task to assign a value to a key in the connection.
-
-  `await_assign/2` can be used to wait for the async task to complete and
-  retrieve the resulting value.
-
-  Behind the scenes, it uses `Task.async/1`.
-
-  ## Examples
-
-      iex> conn.assigns[:hello]
-      nil
-      iex> conn = async_assign(conn, :hello, fn -> :world end)
-      iex> conn.assigns[:hello]
-      %Task{...}
-
-  """
+  @doc false
   @spec async_assign(t, atom, (() -> term)) :: t
   def async_assign(%Conn{} = conn, key, fun) when is_atom(key) and is_function(fun, 0) do
+    IO.warn("Plug.Conn.async_assign/3 is deprecated, please call assign + Task.async instead")
     assign(conn, key, Task.async(fun))
   end
 
-  @doc """
-  Awaits the completion of an async assign.
-
-  Returns a connection with the value resulting from the async assignment placed
-  under `key` in the `:assigns` field.
-
-  Behind the scenes, it uses `Task.await/2`.
-
-  ## Examples
-
-      iex> conn.assigns[:hello]
-      nil
-      iex> conn = async_assign(conn, :hello, fn -> :world end)
-      iex> conn = await_assign(conn, :hello) # blocks until `conn.assigns[:hello]` is available
-      iex> conn.assigns[:hello]
-      :world
-
-  """
+  @doc false
   @spec await_assign(t, atom, timeout) :: t
   def await_assign(%Conn{} = conn, key, timeout \\ 5000) when is_atom(key) do
+    IO.warn(
+      "Plug.Conn.await_assign/3 is deprecated, please fetch the assign and call Task.await instead"
+    )
+
     task = Map.fetch!(conn.assigns, key)
     assign(conn, key, Task.await(task, timeout))
   end
