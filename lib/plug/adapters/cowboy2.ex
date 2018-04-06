@@ -285,12 +285,20 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   defp assert_ssl_options(cowboy_options) do
-    unless Keyword.has_key?(cowboy_options, :key) or Keyword.has_key?(cowboy_options, :keyfile) do
-      fail("missing option :key/:keyfile")
-    end
+    has_sni? =
+      Keyword.has_key?(cowboy_options, :sni_hosts) or Keyword.has_key?(cowboy_options, :sni_fun)
 
-    unless Keyword.has_key?(cowboy_options, :cert) or Keyword.has_key?(cowboy_options, :certfile) do
-      fail("missing option :cert/:certfile")
+    has_key? =
+      Keyword.has_key?(cowboy_options, :key) or Keyword.has_key?(cowboy_options, :keyfile)
+
+    has_cert? =
+      Keyword.has_key?(cowboy_options, :cert) or Keyword.has_key?(cowboy_options, :certfile)
+
+    cond do
+      has_sni? -> :ok
+      !has_key? -> fail("missing option :key/:keyfile")
+      !has_cert? -> fail("missing option :cert/:certfile")
+      true -> :ok
     end
   end
 
