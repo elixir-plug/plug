@@ -38,7 +38,7 @@ defmodule Plug.Mixfile do
   def deps do
     [
       {:mime, "~> 1.0"},
-      {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.1", optional: true},
+      {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.3", optional: true},
       {:ex_doc, "~> 0.17.1", only: :docs},
       {:inch_ex, ">= 0.0.0", only: :docs},
       {:hackney, "~> 1.2.0", only: :test},
