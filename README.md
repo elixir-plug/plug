@@ -209,7 +209,7 @@ defmodule MyPlugTest do
 end
 ```
 
-### Available plugs
+## Available plugs
 
 This project aims to ship with different plugs that can be re-used across applications:
 
@@ -225,7 +225,7 @@ This project aims to ship with different plugs that can be re-used across applic
 
 You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
 
-### Helper modules
+## Helper modules
 
 Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help development:
 
