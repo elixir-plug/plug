@@ -64,6 +64,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
     :cowboy_req.body(req, opts)
   end
 
+  def inform(_req, _path, _headers) do
+    {:error, :not_supported}
+  end
+
   def push(_req, _path, _headers) do
     {:error, :not_supported}
   end

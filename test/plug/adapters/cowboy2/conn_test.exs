@@ -227,6 +227,31 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert List.keyfind(headers, "transfer-encoding", 0) == {"transfer-encoding", "chunked"}
   end
 
+  # These tests make cow_http explode because it doesn't think 103 is a valid response code.
+  # I am not sure if this is a bug in cow_http or if we should no-op in HTTP/1.1 mode.
+  # If we no-op, then we need these tests. Otherwise we need to open a bug report on cowlib to
+  # get 103 added as a response code, and then fix these to work with it.
+
+  #   def inform(conn) do
+  #     conn
+  #     |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+  #     |> send_resp(200, "inform")
+  #   end
+  # 
+  #   test "inform will not raise even though the adapter doesn't implement it" do
+  #     assert {200, _headers, "inform"} = request(:get, "/inform")
+  #   end
+  # 
+  #   def inform_or_raise(conn) do
+  #     conn
+  #     |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+  #     |> send_resp(200, "inform or raise")
+  #   end
+  #
+  #   test "inform will raise because it is not implemented" do
+  #     assert {200, _headers, "inform or raise"} = request(:get, "/inform_or_raise")
+  #   end
+
   def push(conn) do
     conn
     |> push("/static/assets.css")
@@ -441,6 +466,11 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
         |> push("/static/assets.css", [{"accept", "text/plain"}])
         |> send_resp(200, Atom.to_string(version))
 
+      "earlyhints" <> _ ->
+        conn
+        |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+        |> send_resp(200, Atom.to_string(version))
+
       _ ->
         conn
         |> push("/static/assets.css")
@@ -453,6 +483,13 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     Kadabra.get(pid, "/http2")
 
     assert_receive({:end_stream, %Kadabra.Stream.Response{body: "HTTP/2", status: 200}}, 1_000)
+  end
+
+  test "http2 early hints" do
+    {:ok, pid} = Kadabra.open('localhost', :https, @http2_opts)
+    Kadabra.get(pid, "/http2?earlyhints=true")
+    assert_receive({:end_stream, %Kadabra.Stream.Response{headers: headers}})
+    assert {"link", "</style.css>; rel=preload; as=style"} in headers
   end
 
   test "http2 server push" do

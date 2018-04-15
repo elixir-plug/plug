@@ -67,6 +67,10 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     :cowboy_req.read_body(req, opts)
   end
 
+  def inform(req, status, headers) do
+    :cowboy_req.inform(status, to_headers_map(headers), req)
+  end
+
   def push(req, path, headers) do
     opts =
       case {req.port, req.sock} do

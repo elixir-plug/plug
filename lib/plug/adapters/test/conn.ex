@@ -102,6 +102,11 @@ defmodule Plug.Adapters.Test.Conn do
     {tag, data, %{state | req_body: rest}}
   end
 
+  def inform(%{owner: owner, ref: ref}, status, headers) do
+    send(owner, {ref, :inform, {status, headers}})
+    :ok
+  end
+
   def push(%{owner: owner, ref: ref}, path, headers) do
     send(owner, {ref, :push, {path, headers}})
     :ok

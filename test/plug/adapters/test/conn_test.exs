@@ -78,6 +78,18 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.host == "www.elixir-lang.org"
   end
 
+  test "inform adds to the informational responses to the list" do
+    conn =
+      conn(:get, "/")
+      |> Plug.Conn.inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+      |> Plug.Conn.inform(:early_hints, [{"link", "</script.js>; rel=preload; as=script"}])
+
+    informational_requests = Plug.Test.sent_informs(conn)
+
+    assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in informational_requests
+    assert {103, [{"link", "</script.js>; rel=preload; as=script"}]} in informational_requests
+  end
+
   test "push adds to the pushes list" do
     conn =
       conn(:get, "/")
