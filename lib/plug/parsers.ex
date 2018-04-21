@@ -92,12 +92,18 @@ defmodule Plug.Parsers do
 
     * `:query_string_length` - the maximum allowed size for query strings
 
+    * `:body_reader` - an optional replacement (or wrapper) for
+      `Plug.Conn.read_body/2` to provide a function that gives access to the
+      raw body before it is parsed and discarded. It is in the standard format
+      of `{Module, :function, [args]}` (MFA) and defaults to
+      `{Plug.Conn, :read_body, []}`.
+
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
 
       plug Plug.Parsers, parsers: [:urlencoded, :json],
-                         pass:  ["text/*"],
+                         pass: ["text/*"],
                          json_decoder: Jason
 
   Each parser also accepts options to be given directly to it by using tuples.
@@ -140,6 +146,30 @@ defmodule Plug.Parsers do
   variables which usually hold the value of the system's temporary directory
   (like `TMPDIR` or `TMP`). If no value is found in any of those variables,
   `/tmp` is used as a default.
+
+  ## Custom body reader
+
+  Sometimes you may want to customize how a parser reads the body from the
+  connection. For example, you may want to cache the body to perform verification
+  later, such as HTTP Signature Verification. This can be achieved with a custom
+  body reader that would read the body and store it in the connection, such as:
+
+      defmodule CacheBodyReader do
+        def read_body(conn, opts, verified_providers, verifiers) do
+          {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+          conn = update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
+          {:ok, body, conn}
+        end
+      end
+
+  which could then be set as:
+
+      plug Plug.Parsers,
+        parsers: [:urlencoded, :json],
+        pass: ["text/*"],
+        body_reader: {CacheBodyReader, :read_body, []},
+        json_decoder: Jason
+
   """
 
   alias Plug.Conn
