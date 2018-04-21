@@ -149,30 +149,26 @@ defmodule Plug.Parsers do
 
   ## Custom body reader
 
-  A common reason (but not necessarily, the only one) for requiring a custom
-  `:body_reader` would be for implementing HTTP Signature Verification, where
-  you need to compare a hash of the request body with a signature sent with the
-  request. Contrived example:
+  Sometimes you may want to customize how a parser reads the body from the
+  connection. For example, you may want to cache the body to perform verification
+  later, such as HTTP Signature Verification. This can be achieved with a custom
+  body reader that would read the body and store it in the connection, such as:
 
-      plug Plug.Parsers, parsers: [:urlencoded, :json],
-                         pass: ["text/*"],
-                         body_reader: {BodyReader, :read_body, [~w(github stripe), verifiers]},
-                         json_decoder: Jason
-
-
-      # body_reader.ex
-      defmodule BodyReader do
+      defmodule CacheBodyReader do
         def read_body(conn, opts, verified_providers, verifiers) do
           {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
-
-          # For example, could check `conn.path_info` for "webhooks/:provider"
-          # and apply the verifiers here, or add something like a `:raw_body`
-          # field to `conn.assigns` for checking in a plug later.
-          # ...
-
+          conn = update_in(conn.assigns[:raw_body], &[body | (&1 || [])])
           {:ok, body, conn}
         end
       end
+
+  which could then be set as:
+
+      plug Plug.Parsers,
+        parsers: [:urlencoded, :json],
+        pass: ["text/*"],
+        body_reader: {CacheBodyReader, :read_body, []},
+        json_decoder: Jason
 
   """
 
