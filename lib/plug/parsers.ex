@@ -97,7 +97,7 @@ defmodule Plug.Parsers do
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
 
       plug Plug.Parsers, parsers: [:urlencoded, :json],
-                         pass:  ["text/*"],
+                         pass: ["text/*"],
                          json_decoder: Jason
 
   Each parser also accepts options to be given directly to it by using tuples.

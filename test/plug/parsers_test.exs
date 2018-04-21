@@ -3,6 +3,18 @@ defmodule Plug.ParsersTest do
 
   use Plug.Test
 
+  defmodule BodyReader do
+    def read_body(conn, opts) do
+      {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+      {:ok, body <> "BAR", conn}
+    end
+
+    def read_body(conn, opts, "test", "read body") do
+      {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+      {:ok, body <> "BAZ", conn}
+    end
+  end
+
   def parse(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
     Plug.Parsers.call(conn, Plug.Parsers.init(opts))
@@ -164,6 +176,30 @@ defmodule Plug.ParsersTest do
       |> parse()
 
     assert params == %{}
+  end
+
+  test "parses with custom body reader" do
+    conn = conn(:post, "/?query=elixir", "body=foo")
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(body_reader: {BodyReader, :read_body, []})
+
+    assert conn.params["query"] == "elixir"
+    assert conn.params["body"] == "fooBAR"
+  end
+
+  test "parses with custom body reader and extra args" do
+    conn = conn(:post, "/?query=elixir", "body=foo")
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(body_reader: {BodyReader, :read_body, ["test", "read body"]})
+
+    assert conn.params["query"] == "elixir"
+    assert conn.params["body"] == "fooBAZ"
   end
 
   test "raises on invalid url encoded" do

@@ -11,12 +11,32 @@ defmodule Plug.Parsers.JSONTest do
       %{"id" => 1}
     end
 
+    def decode!(~s({query: "fooBAR"})) do
+      %{"query" => "fooBAR"}
+    end
+
+    def decode!(~s({query: "fooBAZ"})) do
+      %{"query" => "fooBAZ"}
+    end
+
     def decode!(_) do
       raise "oops"
     end
 
     def decode!("{id: 1}", capitalize_keys: true) do
       %{"ID" => 1}
+    end
+  end
+
+  defmodule BodyReader do
+    def read_body(conn, opts) do
+      {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+      {:ok, String.replace(body, "foo", "fooBAR"), conn}
+    end
+
+    def read_body(conn, opts, "test", "read body") do
+      {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+      {:ok, String.replace(body, "foo", "fooBAZ"), conn}
     end
   end
 
@@ -60,6 +80,24 @@ defmodule Plug.Parsers.JSONTest do
       |> parse(json_decoder: {JSON, :decode!, [[capitalize_keys: true]]})
 
     assert conn.params["ID"] == 1
+  end
+
+  test "parses with custom body reader" do
+    conn =
+      ~s({query: "foo"})
+      |> json_conn()
+      |> parse(body_reader: {BodyReader, :read_body, []})
+
+    assert conn.params["query"] == "fooBAR"
+  end
+
+  test "parses with custom body reader and extra args" do
+    conn =
+      ~s({query: "foo"})
+      |> json_conn()
+      |> parse(body_reader: {BodyReader, :read_body, ["test", "read body"]})
+
+    assert conn.params["query"] == "fooBAZ"
   end
 
   test "expects a json encoder" do

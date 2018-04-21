@@ -19,14 +19,14 @@ defmodule Plug.Parsers.URLENCODED do
   """
 
   @behaviour Plug.Parsers
-  alias Plug.Conn
 
   def init(opts) do
-    Keyword.put_new(opts, :length, 1_000_000)
+    opts = Keyword.put_new(opts, :length, 1_000_000)
+    Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
   end
 
-  def parse(conn, "application", "x-www-form-urlencoded", _headers, opts) do
-    case Conn.read_body(conn, opts) do
+  def parse(conn, "application", "x-www-form-urlencoded", _headers, {{mod, fun, args}, opts}) do
+    case apply(mod, fun, [conn, opts | args]) do
       {:ok, body, conn} ->
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "urlencoded body")
         {:ok, Plug.Conn.Query.decode(body), conn}
