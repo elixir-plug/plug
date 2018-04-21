@@ -78,11 +78,11 @@ defmodule Plug.Parsers.JSON do
     raise Plug.BadRequestError
   end
 
-  defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
-    apply(module_name, function_name, [body | extra_args])
+  defp apply_mfa_or_module(body, decoder) when is_atom(decoder) do
+    decoder.decode!(body)
   end
 
-  defp apply_mfa_or_module(body, decoder) do
-    decoder.decode!(body)
+  defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
+    apply(module_name, function_name, [body | extra_args])
   end
 end
