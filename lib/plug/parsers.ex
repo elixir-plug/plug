@@ -92,6 +92,12 @@ defmodule Plug.Parsers do
 
     * `:query_string_length` - the maximum allowed size for query strings
 
+    * `:body_reader` - an optional replacement (or wrapper) for
+      `Plug.Conn.read_body/2` to provide a function that gives access to the
+      raw body before it is parsed and discarded. It is in the standard format
+      of `{Module, :function, [args]}` (MFA) and defaults to
+      `{Plug.Conn, :read_body, []}`.
+
   ## Examples
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
@@ -140,6 +146,34 @@ defmodule Plug.Parsers do
   variables which usually hold the value of the system's temporary directory
   (like `TMPDIR` or `TMP`). If no value is found in any of those variables,
   `/tmp` is used as a default.
+
+  ## Custom body reader
+
+  A common reason (but not necessarily, the only one) for requiring a custom
+  `:body_reader` would be for implementing HTTP Signature Verification, where
+  you need to compare a hash of the request body with a signature sent with the
+  request. Contrived example:
+
+      plug Plug.Parsers, parsers: [:urlencoded, :json],
+                         pass: ["text/*"],
+                         body_reader: {BodyReader, :read_body, [~w(github stripe), verifiers]},
+                         json_decoder: Jason
+
+
+      # body_reader.ex
+      defmodule BodyReader do
+        def read_body(conn, opts, verified_providers, verifiers) do
+          {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+
+          # For example, could check `conn.path_info` for "webhooks/:provider"
+          # and apply the verifiers here, or add something like a `:raw_body`
+          # field to `conn.assigns` for checking in a plug later.
+          # ...
+
+          {:ok, body, conn}
+        end
+      end
+
   """
 
   alias Plug.Conn
