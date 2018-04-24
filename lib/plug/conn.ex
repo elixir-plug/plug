@@ -273,7 +273,7 @@ defmodule Plug.Conn do
   @unsent [:unset, :set, :set_chunked, :set_file]
 
   @doc """
-  Assigns a value to a key in the connection
+  Assigns a value to a key in the connection.
 
   ## Examples
 
@@ -287,6 +287,25 @@ defmodule Plug.Conn do
   @spec assign(t, atom, term) :: t
   def assign(%Conn{assigns: assigns} = conn, key, value) when is_atom(key) do
     %{conn | assigns: Map.put(assigns, key, value)}
+  end
+
+  @doc """
+  Assigns multiple values to keys in the connection.
+
+  Equivalent to multiple calls to `assign/3`.
+
+  ## Examples
+
+      iex> conn.assigns[:hello]
+      nil
+      iex> conn = merge_assigns(conn, hello: :world)
+      iex> conn.assigns[:hello]
+      :world
+
+  """
+  @spec merge_assigns(t, Keyword.t()) :: t
+  def merge_assigns(%Conn{assigns: assigns} = conn, keyword) when is_list(keyword) do
+    %{conn | assigns: Enum.into(keyword, assigns)}
   end
 
   @doc false
@@ -327,6 +346,24 @@ defmodule Plug.Conn do
   @spec put_private(t, atom, term) :: t
   def put_private(%Conn{private: private} = conn, key, value) when is_atom(key) do
     %{conn | private: Map.put(private, key, value)}
+  end
+
+  @doc """
+  Assigns multiple **private** keys and values in the connection.
+
+  Equivalent to multiple `put_private/3` calls.
+
+  ## Examples
+
+      iex> conn.private[:plug_hello]
+      nil
+      iex> conn = merge_private(conn, plug_hello: :world)
+      iex> conn.private[:plug_hello]
+      :world
+  """
+  @spec merge_private(t, Keyword.t()) :: t
+  def merge_private(%Conn{private: private} = conn, keyword) when is_list(keyword) do
+    %{conn | private: Enum.into(keyword, private)}
   end
 
   @doc """

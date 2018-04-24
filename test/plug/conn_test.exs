@@ -53,6 +53,13 @@ defmodule Plug.ConnTest do
     assert conn.assigns[:hello] == :world
   end
 
+  test "merge_assigns/2" do
+    conn = conn(:get, "/")
+    assert conn.assigns[:hello] == nil
+    conn = merge_assigns(conn, hello: :world)
+    assert conn.assigns[:hello] == :world
+  end
+
   test "put_status/2" do
     conn = conn(:get, "/")
     assert put_status(conn, nil).status == nil
@@ -76,6 +83,13 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/")
     assert conn.private[:hello] == nil
     conn = put_private(conn, :hello, :world)
+    assert conn.private[:hello] == :world
+  end
+
+  test "merge_private/2" do
+    conn = conn(:get, "/")
+    assert conn.private[:hello] == nil
+    conn = merge_private(conn, hello: :world)
     assert conn.private[:hello] == :world
   end
 
