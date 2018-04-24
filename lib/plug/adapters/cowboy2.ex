@@ -41,17 +41,15 @@ defmodule Plug.Adapters.Cowboy2 do
 
   # Made public with @doc false for testing.
   @doc false
-  def args(scheme, plug, opts, cowboy_options) do
+  def args(scheme, plug, plug_opts, cowboy_options) do
     {cowboy_options, non_keyword_options} =
       enum_split_with(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
     |> Keyword.put_new(:max_connections, 16_384)
-    |> Keyword.put_new(:ref, build_ref(plug, scheme))
-    |> Keyword.put_new(:dispatch, cowboy_options[:dispatch] || dispatch_for(plug, opts))
     |> set_compress()
     |> normalize_cowboy_options(scheme)
-    |> to_args(non_keyword_options)
+    |> to_args(scheme, plug, plug_opts, non_keyword_options)
   end
 
   @doc """
@@ -242,14 +240,14 @@ defmodule Plug.Adapters.Cowboy2 do
     Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
   end
 
-  defp to_args(opts, non_keyword_opts) do
+  defp to_args(opts, scheme, plug, plug_opts, non_keyword_opts) do
     opts = Keyword.delete(opts, :otp_app)
     {ref, opts} = Keyword.pop(opts, :ref)
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
     {num_acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
     {protocol_options, opts} = Keyword.pop(opts, :protocol_options, [])
 
-    dispatch = :cowboy_router.compile(dispatch)
+    dispatch = :cowboy_router.compile(dispatch || dispatch_for(plug, plug_opts))
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
 
     extra_options = Keyword.put_new(extra_options, :stream_handlers, @default_stream_handlers)
@@ -257,7 +255,7 @@ defmodule Plug.Adapters.Cowboy2 do
     protocol_options = Map.merge(%{env: %{dispatch: dispatch}}, protocol_and_extra_options)
     transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
 
-    [ref, non_keyword_opts ++ transport_options, protocol_options]
+    [ref || build_ref(plug, scheme), non_keyword_opts ++ transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do
