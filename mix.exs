@@ -1,4 +1,4 @@
-defmodule Plug.Mixfile do
+defmodule Plug.MixProject do
   use Mix.Project
 
   @version "1.5.0"
