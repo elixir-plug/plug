@@ -13,7 +13,7 @@ defmodule Plug.HTML do
       "&lt;foo&gt;"
 
       iex> Plug.HTML.html_escape("quotes: \" & \'")
-      "quotes: &quot; &amp; &#39;"
+      "quotes: &quot; &amp; &apos;"
   """
   @spec html_escape(String.t()) :: String.t()
   def html_escape(data) when is_binary(data) do
@@ -30,7 +30,7 @@ defmodule Plug.HTML do
       [[[] | "&lt;"], "foo" | "&gt;"]
 
       iex> Plug.HTML.html_escape_to_iodata("quotes: \" & \'")
-      [[[[], "quotes: " | "&quot;"], " " | "&amp;"], " " | "&#39;"]
+      [[[[], "quotes: " | "&quot;"], " " | "&amp;"], " " | "&apos;"]
 
   """
   @spec html_escape_to_iodata(String.t()) :: iodata
@@ -43,7 +43,7 @@ defmodule Plug.HTML do
     {?>, "&gt;"},
     {?&, "&amp;"},
     {?", "&quot;"},
-    {?', "&#39;"}
+    {?', "&apos;"}
   ]
 
   for {match, insert} <- escapes do
