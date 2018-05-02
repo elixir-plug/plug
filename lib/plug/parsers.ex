@@ -255,18 +255,11 @@ defmodule Plug.Parsers do
     %{req_headers: req_headers} = conn
     conn = Conn.fetch_query_params(conn, length: query_string_length)
 
-    case List.keyfind(req_headers, "content-type", 0) do
-      {"content-type", ct} ->
-        case Conn.Utils.content_type(ct) do
-          {:ok, type, subtype, params} ->
-            reduce(conn, parsers, type, subtype, params, pass, query_string_length)
-
-          :error ->
-            merge_params(conn, %{}, query_string_length)
-        end
-
-      nil ->
-        merge_params(conn, %{}, query_string_length)
+    with {"content-type", ct} <- List.keyfind(req_headers, "content-type", 0),
+         {:ok, type, subtype, params} <- Conn.Utils.content_type(ct) do
+      reduce(conn, parsers, type, subtype, params, pass, query_string_length)
+    else
+      _ -> merge_params(conn, %{}, query_string_length)
     end
   end
 
