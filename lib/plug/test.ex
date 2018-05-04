@@ -50,7 +50,8 @@ defmodule Plug.Test do
 
   ## Examples
 
-      conn(:get, "/foo", "bar=10")
+      conn(:get, "/foo?bar=10")
+      conn(:get, "/foo", %{bar: 10})
       conn(:post, "/")
       conn("patch", "/", "") |> put_req_header("content-type", "application/json")
 
@@ -103,7 +104,7 @@ defmodule Plug.Test do
 
   ## Examples
 
-      conn = conn(:get, "/foo", "bar=10")
+      conn = conn(:get, "/foo?bar=10")
       pushes = Plug.Test.sent_pushes(conn)
       assert {"/static/application.css", [{"accept", "text/css"}]} in pushes
       assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
