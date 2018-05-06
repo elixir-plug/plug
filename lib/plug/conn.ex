@@ -30,6 +30,7 @@ defmodule Plug.Conn do
       Note all headers will be downcased.
     * `scheme` - the request scheme as an atom, example: `:http`
     * `query_string` - the request query string as a binary, example: `"foo=bar"`
+    * `version` - the version of the HTTP protocol use by the request as an atom, example: `:"HTTP/2"`
 
   ## Fetchable fields
 
@@ -160,6 +161,7 @@ defmodule Plug.Conn do
   @type segments :: [binary]
   @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status :: atom | int_status
+  @type http_version :: atom
 
   @type t :: %__MODULE__{
           adapter: adapter,
@@ -189,7 +191,8 @@ defmodule Plug.Conn do
           script_name: segments,
           secret_key_base: secret_key_base,
           state: state,
-          status: int_status
+          status: int_status,
+          version: http_version
         }
 
   defstruct adapter: {Plug.MissingAdapter, nil},
@@ -220,7 +223,8 @@ defmodule Plug.Conn do
             script_name: [],
             secret_key_base: nil,
             state: :unset,
-            status: nil
+            status: nil,
+            version: nil
 
   defmodule NotSentError do
     defexception message: "a response was neither set nor sent from the connection"
@@ -1060,6 +1064,10 @@ defmodule Plug.Conn do
   To use inform for early hints send one or more informs with a status of 103.
 
   If the adapter does not support informational responses then this is a noop.
+
+  Most HTTP/1.1 clients do not properly support informational responses but some proxies require it to support server
+  push for HTTP/2. You can use the version atom in `conn` to determine the version of the HTTP client and then
+  decide if you should send an informational response.
   """
   @spec inform(t, status, Keyword.t()) :: t
   def inform(%Conn{} = conn, status, headers \\ []) do
