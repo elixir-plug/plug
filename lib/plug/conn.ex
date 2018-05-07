@@ -1057,17 +1057,18 @@ defmodule Plug.Conn do
   @doc """
   Sends and informational response to the client.
 
-  An informational response, such as an early hint, must happen prior to a response being sent. If an informational
-  request is attempted after a response is sent then a `Plug.Conn.AlreadySentError`
-  will be raised. Only status codes from 100-199 are valid.
+  An informational response, such as an early hint, must happen prior to a response
+  being sent. If an informational request is attempted after a response is sent then
+  a `Plug.Conn.AlreadySentError` will be raised. Only status codes from 100-199 are valid.
 
   To use inform for early hints send one or more informs with a status of 103.
 
   If the adapter does not support informational responses then this is a noop.
 
-  Most HTTP/1.1 clients do not properly support informational responses but some proxies require it to support server
-  push for HTTP/2. You can use the version atom in `conn` to determine the version of the HTTP client and then
-  decide if you should send an informational response.
+  Most HTTP/1.1 clients do not properly support informational responses but some proxies
+  require it to support server push for HTTP/2. You can use the version atom in `conn`
+  to determine the version of the HTTP client and then decide if you should send an
+  informational response.
   """
   @spec inform(t, status, Keyword.t()) :: t
   def inform(%Conn{} = conn, status, headers \\ []) do
