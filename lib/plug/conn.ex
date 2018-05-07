@@ -161,7 +161,7 @@ defmodule Plug.Conn do
   @type segments :: [binary]
   @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status :: atom | int_status
-  @type http_version :: atom
+  @type http_version :: :"HTTP/1" | :"HTTP/1.1" | :"HTTP/2" | atom
 
   @type t :: %__MODULE__{
           adapter: adapter,

@@ -4,7 +4,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Test helpers
 
-  def conn(conn, method, uri, body_or_params, version \\ :"HTTP/1.1") do
+  def conn(conn, method, uri, body_or_params) do
     maybe_flush()
 
     uri = URI.parse(uri)
@@ -40,7 +40,7 @@ defmodule Plug.Adapters.Test.Conn do
         body_params: body_params || %Plug.Conn.Unfetched{aspect: :body_params},
         params: params || %Plug.Conn.Unfetched{aspect: :params},
         scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom(),
-        version: version
+        version: :"HTTP/1.1"
     }
   end
 
