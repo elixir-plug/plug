@@ -17,18 +17,14 @@ defmodule Plug.Adapters.Cowboy2.Handler do
       :error, value ->
         stack = System.stacktrace()
         exception = Exception.normalize(:error, value, stack)
-        reason = {{exception, stack}, {plug, :call, [conn, opts]}}
-        terminate(reason, req, stack)
+        exit({{exception, stack}, {plug, :call, [conn, opts]}})
 
       :throw, value ->
         stack = System.stacktrace()
-        reason = {{{:nocatch, value}, stack}, {plug, :call, [conn, opts]}}
-        terminate(reason, req, stack)
+        exit({{{:nocatch, value}, stack}, {plug, :call, [conn, opts]}})
 
       :exit, value ->
-        stack = System.stacktrace()
-        reason = {value, {plug, :call, [conn, opts]}}
-        terminate(reason, req, stack)
+        exit({value, {plug, :call, [conn, opts]}})
     after
       receive do
         @already_sent -> :ok
@@ -45,9 +41,5 @@ defmodule Plug.Adapters.Cowboy2.Handler do
   defp maybe_send(other, plug) do
     raise "Cowboy2 adapter expected #{inspect(plug)} to return Plug.Conn but got: " <>
             inspect(other)
-  end
-
-  defp terminate(reason, _req, _stack) do
-    exit(reason)
   end
 end
