@@ -39,10 +39,17 @@ defmodule Plug.DebuggerTest do
     end
 
     get "/send_and_wrapped" do
+      stack =
+        try do
+          raise "oops"
+        rescue
+          _ -> System.stacktrace()
+        end
+
       raise Plug.Conn.WrapperError,
         conn: conn,
         kind: :error,
-        stack: System.stacktrace(),
+        stack: stack,
         reason: Exception.exception([])
     end
   end

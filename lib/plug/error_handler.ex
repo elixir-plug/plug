@@ -62,9 +62,14 @@ defmodule Plug.ErrorHandler do
       def call(conn, opts) do
         try do
           super(conn, opts)
+        rescue
+          e in Plug.Conn.WrapperError ->
+            %{conn: conn, kind: kind, reason: reason, stack: stack} = e
+            Plug.ErrorHandler.__catch__(conn, kind, e, reason, stack, &handle_errors/2)
         catch
           kind, reason ->
-            Plug.ErrorHandler.__catch__(conn, kind, reason, &handle_errors/2)
+            stack = System.stacktrace()
+            Plug.ErrorHandler.__catch__(conn, kind, reason, reason, stack, &handle_errors/2)
         end
       end
     end
@@ -73,16 +78,7 @@ defmodule Plug.ErrorHandler do
   @already_sent {:plug_conn, :sent}
 
   @doc false
-  def __catch__(_conn, :error, %Plug.Conn.WrapperError{} = wrapper, handle_errors) do
-    %{conn: conn, kind: kind, reason: reason, stack: stack} = wrapper
-    __catch__(conn, kind, wrapper, reason, stack, handle_errors)
-  end
-
-  def __catch__(conn, kind, reason, handle_errors) do
-    __catch__(conn, kind, reason, reason, System.stacktrace(), handle_errors)
-  end
-
-  defp __catch__(conn, kind, reason, wrapped_reason, stack, handle_errors) do
+  def __catch__(conn, kind, reason, wrapped_reason, stack, handle_errors) do
     receive do
       @already_sent ->
         send(self(), @already_sent)

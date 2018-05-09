@@ -100,25 +100,20 @@ defmodule Plug.Debugger do
       def call(conn, opts) do
         try do
           super(conn, opts)
+        rescue
+          e in Plug.Conn.WrapperError ->
+            %{conn: conn, kind: kind, reason: reason, stack: stack} = e
+            Plug.Debugger.__catch__(conn, kind, reason, stack, @plug_debugger)
         catch
           kind, reason ->
-            Plug.Debugger.__catch__(conn, kind, reason, @plug_debugger)
+            Plug.Debugger.__catch__(conn, kind, reason, System.stacktrace, @plug_debugger)
         end
       end
     end
   end
 
   @doc false
-  def __catch__(_conn, :error, %Plug.Conn.WrapperError{} = wrapper, opts) do
-    %{conn: conn, kind: kind, reason: reason, stack: stack} = wrapper
-    __catch__(conn, kind, reason, stack, opts)
-  end
-
-  def __catch__(conn, kind, reason, opts) do
-    __catch__(conn, kind, reason, System.stacktrace(), opts)
-  end
-
-  defp __catch__(conn, kind, reason, stack, opts) do
+  def __catch__(conn, kind, reason, stack, opts) do
     reason = Exception.normalize(kind, reason, stack)
     status = status(kind, reason)
 
