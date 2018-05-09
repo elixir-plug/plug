@@ -20,7 +20,7 @@ defmodule Plug.Conn.WrapperError do
 
   @deprecated "Use reraise/1 or reraise/4 instead"
   def reraise(conn, kind, reason) do
-    reraise(conn, kind, reason, System.stacktrace)
+    reraise(conn, kind, reason, System.stacktrace())
   end
 
   def reraise(_conn, :error, %__MODULE__{stack: stack} = reason, _stack) do
