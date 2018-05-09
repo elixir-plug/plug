@@ -19,7 +19,7 @@ defmodule Plug.Adapters.Translator do
         :format,
         {~c"Ranch listener" ++ _, [ref, protocol, pid, reason]}
       ) do
-    translate_ranch(min_level, ref, protocol, pid, reason)
+    translate_ranch(min_level, ref, [?\s, ?(, Atom.to_string(protocol), ?)], pid, reason)
   end
 
   # cowboy 2 format
@@ -27,9 +27,10 @@ defmodule Plug.Adapters.Translator do
         min_level,
         :error,
         :format,
-        {~c"Ranch listener" ++ _, [ref, pid, _stream_id, _stream_pid, reason, _]}
+        {~c"Ranch listener" ++ _, [ref, conn_pid, stream_id, stream_pid, reason, _]}
       ) do
-    translate_ranch(min_level, ref, :cowboy_protocol, pid, reason)
+    extra = [" (connection ", inspect(conn_pid), ", stream id ", inspect(stream_id), ?)]
+    translate_ranch(min_level, ref, extra, stream_pid, reason)
   end
 
   def translate(_min_level, _level, _kind, _data) do
@@ -41,7 +42,7 @@ defmodule Plug.Adapters.Translator do
   defp translate_ranch(
          min_level,
          _ref,
-         :cowboy_protocol,
+         extra,
          pid,
          {reason, {mod, :call, [%Plug.Conn{} = conn, _opts]}}
        ) do
@@ -53,6 +54,7 @@ defmodule Plug.Adapters.Translator do
          inspect(pid),
          " running ",
          inspect(mod),
+         extra,
          " terminated\n",
          conn_info(min_level, conn)
          | Exception.format(:exit, reason, [])
@@ -60,22 +62,22 @@ defmodule Plug.Adapters.Translator do
     end
   end
 
-  defp translate_ranch(_min_level, ref, protocol, pid, reason) do
+  defp translate_ranch(_min_level, ref, extra, pid, reason) do
     {:ok,
      [
        "Ranch protocol ",
        inspect(pid),
-       " (",
-       inspect(protocol),
-       ") of listener ",
+       " of listener ",
        inspect(ref),
+       extra,
        " terminated\n"
        | Exception.format(:exit, reason, [])
      ]}
   end
 
-  defp non_500_exception?({%{__exception__: true} = exception, _}),
-    do: Plug.Exception.status(exception) < 500
+  defp non_500_exception?({%{__exception__: true} = exception, _}) do
+    Plug.Exception.status(exception) < 500
+  end
 
   defp non_500_exception?(_), do: false
 

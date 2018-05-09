@@ -34,7 +34,7 @@ defmodule Plug.Adapters.TranslatorTest do
         :hackney.get("http://127.0.0.1:9001/error", [], "", [])
       end)
 
-    assert output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest terminated"
+    assert output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest \(.*\) terminated"
     assert output =~ "Server: 127.0.0.1:9001 (http)"
     assert output =~ "Request: GET /"
     assert output =~ "** (exit) an exception was raised:"
