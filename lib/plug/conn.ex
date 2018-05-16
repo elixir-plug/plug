@@ -559,6 +559,14 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Returns the client ssl certificate for the request if one is present. 
+  """
+  @spec get_client_ssl_cert(t) :: binary | nil
+  def get_client_ssl_cert(%Conn{adapter: {adapter, payload}}) do
+    adapter.get_client_ssl_cert(payload)
+  end
+
+  @doc """
   Returns the values of the request header specified by `key`.
   """
   @spec get_req_header(t, binary) :: [binary]

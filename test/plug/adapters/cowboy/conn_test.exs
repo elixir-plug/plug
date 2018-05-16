@@ -408,8 +408,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   @https_options [
     port: 8002,
     password: "cowboy",
-    keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
-    certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
+    keyfile: Path.expand("../../../fixtures/ssl/server.key", __DIR__),
+    certfile: Path.expand("../../../fixtures/ssl/server.cer", __DIR__)
   ]
 
   test "https" do

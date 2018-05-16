@@ -30,8 +30,8 @@ defmodule Plug.Adapters.Cowboy2Test do
       options = [
         port: 4040,
         password: "cowboy",
-        keyfile: Path.expand("../../fixtures/ssl/key.pem", __DIR__),
-        certfile: Path.expand("../../fixtures/ssl/cert.pem", __DIR__)
+        keyfile: Path.expand("../../fixtures/ssl/server.key", __DIR__),
+        certfile: Path.expand("../../fixtures/ssl/server.cer", __DIR__)
       ]
 
       spec = {Plug.Adapters.Cowboy2, [scheme: :https, plug: __MODULE__, options: options]}

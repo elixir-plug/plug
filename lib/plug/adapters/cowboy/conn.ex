@@ -68,6 +68,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:error, :not_supported}
   end
 
+  def get_client_ssl_cert(_req) do
+    nil
+  end
+
   ## Helpers
 
   defp scheme(:tcp), do: :http
