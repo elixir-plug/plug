@@ -1,5 +1,18 @@
 ## Changelog
 
+## v1.5.1 (2018-05-17)
+
+* Enhancements
+  * Implement missing access behaviour for `Plug.Conn.Unfetched` to provide better error messages
+  * Add function plug forwarding to `Plug.Router`
+  * Support custom body readers in `Plug.Parsers`
+  * Introduce `merge_assigns/2` and `merge_private/2`
+  * Add `Plug.Conn.WrapperError.reraise/1` and `Plug.Conn.WrapperError.reraise/4` to deal with upcoming changes in Elixir v1.7
+
+* Bug fixes
+  * Properly convert all list headers to map when using Cowboy 2
+  * Do not require certfile/keyfile with ssl if sni options are present
+
 ## v1.5.0 (2018-03-09)
 
 * Enhancements
