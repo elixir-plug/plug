@@ -15,22 +15,18 @@ defmodule Plug.Conn.Unfetched do
 
   @behaviour Access
 
-  @impl true
   def fetch(%{aspect: aspect}, key) do
     raise_unfetched(__ENV__.function, aspect, key)
   end
 
-  @impl true
   def get(%{aspect: aspect}, key, _value) do
     raise_unfetched(__ENV__.function, aspect, key)
   end
 
-  @impl true
   def get_and_update(%{aspect: aspect}, key, _fun) do
     raise_unfetched(__ENV__.function, aspect, key)
   end
 
-  @impl true
   def pop(%{aspect: aspect}, key) do
     raise_unfetched(__ENV__.function, aspect, key)
   end
