@@ -78,9 +78,9 @@ defmodule Plug.Parsers do
 
   ## Options
 
-    * `:parsers` - a list of modules to be invoked for parsing.
-      These modules need to implement the behaviour outlined in
-      this module.
+    * `:parsers` - a list of modules or atoms of built-in parsers to be
+      invoked for parsing. These modules need to implement the behaviour
+      outlined in this module.
 
     * `:pass` - an optional list of MIME type strings that are allowed
       to pass through. Any mime not handled by a parser and not explicitly
