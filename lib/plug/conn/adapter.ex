@@ -85,4 +85,9 @@ defmodule Plug.Conn.Adapter do
   should be returned.
   """
   @callback push(payload, path :: String.t(), headers :: Keyword.t()) :: :ok | {:error, term}
+
+  @doc """
+  Returns the client ssl certificate for the request if one is present. 
+  """
+  @callback get_client_ssl_cert(payload) :: binary | nil
 end

@@ -78,6 +78,13 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     :cowboy_req.push(path, to_headers_map(headers), req, opts)
   end
 
+  def get_client_ssl_cert(req) do
+    case :cowboy_req.cert(req) do
+      :undefined -> nil
+      cert -> cert
+    end
+  end
+
   ## Helpers
 
   defp to_headers_list(headers) when is_list(headers) do

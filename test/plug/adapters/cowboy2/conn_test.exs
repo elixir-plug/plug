@@ -16,11 +16,19 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   # e.g. `assert {204, _, _} = request :get, "/build/foo/bar"` will perform a
   # GET http://127.0.0.1:8003/build/foo/bar and Plug will call build/1.
 
+  @client_ssl_opts [
+    verify: :verify_peer,
+    keyfile: Path.expand("../../../fixtures/ssl/client.key", __DIR__),
+    certfile: Path.expand("../../../fixtures/ssl/client.cer", __DIR__),
+    cacertfile: Path.expand("../../../fixtures/ssl/ca.cer", __DIR__)
+  ]
   @https_options [
     port: 8004,
     password: "cowboy",
-    keyfile: Path.expand("../../../fixtures/ssl/key.pem", __DIR__),
-    certfile: Path.expand("../../../fixtures/ssl/cert.pem", __DIR__)
+    verify: :verify_peer,
+    keyfile: Path.expand("../../../fixtures/ssl/server.key.enc", __DIR__),
+    certfile: Path.expand("../../../fixtures/ssl/server.cer", __DIR__),
+    cacertfile: Path.expand("../../../fixtures/ssl/ca.cer", __DIR__)
   ]
 
   setup_all do
@@ -415,12 +423,17 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
   end
 
   test "https" do
-    ssl_options = [
+    pool = :https
+    pool_opts = [timeout: 150_000, max_connections: 10]
+    :ok = :hackney_pool.start_pool(pool, pool_opts)
+
+    opts = [
+      pool: :https,
       ssl_options: [cacertfile: @https_options[:certfile], server_name_indication: 'localhost']
     ]
 
     assert {:ok, 200, _headers, client} =
-             :hackney.get("https://127.0.0.1:8004/https", [], "", ssl_options)
+             :hackney.get("https://127.0.0.1:8004/https", [], "", opts)
 
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)
@@ -469,6 +482,29 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert_receive({:push_promise, %Kadabra.Stream.Response{headers: headers}})
     assert {"accept", "text/plain"} in headers
     assert {":path", "/static/assets.css"} in headers
+  end
+
+  def client_ssl(conn) do
+    assert conn.scheme == :https
+    assert get_client_ssl_cert(conn) != nil
+    send_resp(conn, 200, "OK")
+  end
+
+  test "client ssl certificates" do
+    pool = :client_ssl_pool
+    pool_opts = [timeout: 150_000, max_connections: 10]
+    :ok = :hackney_pool.start_pool(pool, pool_opts)
+
+    opts = [
+      pool: :client_ssl_pool,
+      ssl_options: [server_name_indication: 'localhost'] ++ @client_ssl_opts
+    ]
+
+    assert {:ok, 200, _headers, client} =
+             :hackney.get("https://127.0.0.1:8004/client_ssl", [], "", opts)
+
+    assert {:ok, "OK"} = :hackney.body(client)
+    :hackney.close(client)
   end
 
   ## Helpers
