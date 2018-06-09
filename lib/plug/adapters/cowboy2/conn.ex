@@ -70,7 +70,6 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   def push(req, path, headers) do
     opts =
       case {req.port, req.sock} do
-        {:undefined, {_, port}} when port in [80, 443] -> %{}
         {:undefined, {_, port}} -> %{port: port}
         {port, _} when port in [80, 443] -> %{}
         {port, _} -> %{port: port}

@@ -1058,6 +1058,10 @@ defmodule Plug.Conn do
   will be raised.
 
   If the adapter does not support server push then this is a noop.
+
+  Note that certain browsers (such as Google Chrome) will not accept a pushed
+  resource if your certificate is not trusted. In the case of Chrome this means
+  a valid cert with a SAN. See https://www.chromestatus.com/feature/4981025180483584
   """
   @spec push(t, String.t(), Keyword.t()) :: t
   def push(%Conn{} = conn, path, headers \\ []) do
