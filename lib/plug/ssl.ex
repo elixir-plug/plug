@@ -113,7 +113,7 @@ defmodule Plug.SSL do
       according to RFC 5746
 
   """
-  @spec configure(Keyword.t) :: {:ok, Keyword.t} | {:error, String.t}
+  @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
     options
     |> check_for_missing_keys()
@@ -127,14 +127,11 @@ defmodule Plug.SSL do
   end
 
   defp check_for_missing_keys(options) do
-    has_sni? =
-      Keyword.has_key?(options, :sni_hosts) or Keyword.has_key?(options, :sni_fun)
+    has_sni? = Keyword.has_key?(options, :sni_hosts) or Keyword.has_key?(options, :sni_fun)
 
-    has_key? =
-      Keyword.has_key?(options, :key) or Keyword.has_key?(options, :keyfile)
+    has_key? = Keyword.has_key?(options, :key) or Keyword.has_key?(options, :keyfile)
 
-    has_cert? =
-      Keyword.has_key?(options, :cert) or Keyword.has_key?(options, :certfile)
+    has_cert? = Keyword.has_key?(options, :cert) or Keyword.has_key?(options, :certfile)
 
     cond do
       has_sni? -> options
@@ -168,8 +165,10 @@ defmodule Plug.SSL do
     value = to_charlist(value)
 
     unless File.exists?(value) do
-      message = "the file #{value} required by SSL's #{inspect(key)} either does not exist, " <>
-                "or the application does not have permission to access it"
+      message =
+        "the file #{value} required by SSL's #{inspect(key)} either does not exist, " <>
+          "or the application does not have permission to access it"
+
       fail(message)
     end
 

@@ -2,8 +2,8 @@ defmodule Plug.MixProject do
   use Mix.Project
 
   @version "1.5.1"
-
   @description "A specification and conveniences for composable modules between web applications"
+  @xref_exclude [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream, :cowboy_stream_h]
 
   def project do
     [
@@ -15,7 +15,7 @@ defmodule Plug.MixProject do
       lockfile: lockfile(),
       description: @description,
       name: "Plug",
-      xref: [exclude: [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream]],
+      xref: [exclude: @xref_exclude],
       docs: [
         extras: ["README.md"],
         main: "readme",
