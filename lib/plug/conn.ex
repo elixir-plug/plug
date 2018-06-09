@@ -30,6 +30,7 @@ defmodule Plug.Conn do
       Note all headers will be downcased.
     * `scheme` - the request scheme as an atom, example: `:http`
     * `query_string` - the request query string as a binary, example: `"foo=bar"`
+    * `version` - the version of the HTTP protocol use by the request as an atom, example: `:"HTTP/2"`
 
   ## Fetchable fields
 
@@ -160,6 +161,7 @@ defmodule Plug.Conn do
   @type segments :: [binary]
   @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status :: atom | int_status
+  @type http_version :: :"HTTP/1" | :"HTTP/1.1" | :"HTTP/2" | atom
 
   @type t :: %__MODULE__{
           adapter: adapter,
@@ -189,7 +191,8 @@ defmodule Plug.Conn do
           script_name: segments,
           secret_key_base: secret_key_base,
           state: state,
-          status: int_status
+          status: int_status,
+          version: http_version
         }
 
   defstruct adapter: {Plug.MissingAdapter, nil},
@@ -220,7 +223,8 @@ defmodule Plug.Conn do
             script_name: [],
             secret_key_base: nil,
             state: :unset,
-            status: nil
+            status: nil,
+            version: nil
 
   defmodule NotSentError do
     defexception message: "a response was neither set nor sent from the connection"
@@ -1057,6 +1061,60 @@ defmodule Plug.Conn do
   defp read_multipart_from_buffer_or_adapter(buffer, _adapter, state, _opts) do
     {buffer, state}
   end
+
+  @doc """
+  Sends and informational response to the client.
+
+  An informational response, such as an early hint, must happen prior to a response
+  being sent. If an informational request is attempted after a response is sent then
+  a `Plug.Conn.AlreadySentError` will be raised. Only status codes from 100-199 are valid.
+
+  To use inform for early hints send one or more informs with a status of 103.
+
+  If the adapter does not support informational responses then this is a noop.
+
+  Most HTTP/1.1 clients do not properly support informational responses but some proxies
+  require it to support server push for HTTP/2. You can use the version atom in `conn`
+  to determine the version of the HTTP client and then decide if you should send an
+  informational response.
+  """
+  @spec inform(t, status, Keyword.t()) :: t
+  def inform(%Conn{} = conn, status, headers \\ []) do
+    status_code = Plug.Conn.Status.code(status)
+    adapter_inform(conn, status_code, headers)
+    conn
+  end
+
+  @doc """
+  Sends an information response to a client but raises if the adapter does not support inform.
+  """
+  @spec inform!(t, status, Keyword.t()) :: t
+  def inform!(%Conn{adapter: {adapter, _}} = conn, status, headers \\ []) do
+    status_code = Plug.Conn.Status.code(status)
+
+    case adapter_inform(conn, status_code, headers) do
+      :ok ->
+        conn
+
+      _ ->
+        raise "inform is not supported by #{inspect(adapter)}." <>
+                "You should either delete the call to `inform!/3` or switch to an " <>
+                "adapter that does support informational such as Plug.Adapters.Cowboy2"
+    end
+  end
+
+  defp adapter_inform(_conn, status, _headers)
+       when not (status >= 100 and status <= 199 and is_integer(status)) do
+    raise ArgumentError, "inform expects a status code between 100 and 199, got: #{status}"
+  end
+
+  defp adapter_inform(%Conn{state: state}, _status, _headers)
+       when not (state in @unsent) do
+    raise AlreadySentError
+  end
+
+  defp adapter_inform(%Conn{adapter: {adapter, payload}}, status, headers),
+    do: adapter.inform(payload, status, headers)
 
   @doc """
   Pushes a resource to the client.

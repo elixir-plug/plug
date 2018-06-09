@@ -87,6 +87,14 @@ defmodule Plug.Conn.Adapter do
   @callback push(payload, path :: String.t(), headers :: Keyword.t()) :: :ok | {:error, term}
 
   @doc """
+  Send an informational response to the client.
+
+  If the adapter does not support inform, then `{:error, :not_supported}`
+  should be returned.
+  """
+  @callback inform(payload, Conn.status(), headers :: Keyword.t()) :: :ok | {:error, term}
+
+  @doc """
   Returns the client ssl certificate for the request if one is present. 
   """
   @callback get_client_ssl_cert(payload) :: binary | nil

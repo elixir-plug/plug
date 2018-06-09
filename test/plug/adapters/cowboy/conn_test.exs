@@ -73,6 +73,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert conn.method == "GET"
     assert {{127, 0, 0, 1}, _} = conn.peer
     assert conn.remote_ip == {127, 0, 0, 1}
+    assert conn.version == :"HTTP/1.1"
     resp(conn, 200, "ok")
   end
 
@@ -215,6 +216,27 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
              {"cache-control", "max-age=0, private, must-revalidate"}
 
     assert List.keyfind(headers, "transfer-encoding", 0) == {"transfer-encoding", "chunked"}
+  end
+
+  def inform(conn) do
+    conn
+    |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+    |> send_resp(200, "inform")
+  end
+
+  test "inform will not raise even though the adapter doesn't implement it" do
+    assert {200, _headers, "inform"} = request(:get, "/inform")
+  end
+
+  def inform_or_raise(conn) do
+    conn
+    |> inform!(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+    |> send_resp(200, "inform or raise")
+  end
+
+  test "inform will raise because it is not implemented" do
+    assert {500, _headers, exception} = request(:get, "/inform_or_raise")
+    assert exception =~ "inform is not supported"
   end
 
   def push(conn) do

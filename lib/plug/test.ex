@@ -95,6 +95,34 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Return the informational requsts that have been sent.
+
+  This function depends on gathering the messages sent by the test adapter
+  when informational messages, such as an early hint, are sent. Calling this function
+  will clear the informational request messages from the inbox for the process.
+  To assert on multiple informs, the result of the function should be stored in a variable.
+
+  ## Examples
+
+      conn = conn(:get, "/foo", "bar=10")
+      informs = Plug.Test.sent_informs(conn)
+      assert {"/static/application.css", [{"accept", "text/css"}]} in informs
+      assert {"/static/application.js", [{"accept", "application/javascript"}]} in informs
+  """
+  def sent_informs(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    Enum.reverse(receive_informs(ref, []))
+  end
+
+  defp receive_informs(ref, informs) do
+    receive do
+      {^ref, :inform, response} ->
+        receive_informs(ref, [response | informs])
+    after
+      0 -> informs
+    end
+  end
+
+  @doc """
   Return the assets that have been pushed.
 
   This function depends on gathering the messages sent by the test adapter

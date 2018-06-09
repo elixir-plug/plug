@@ -10,6 +10,7 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     hdrs = :cowboy_req.headers(req)
     qs = :cowboy_req.qs(req)
     peer = :cowboy_req.peer(req)
+    version = :cowboy_req.version(req)
     {remote_ip, _} = peer
 
     req = Map.put(req, :plug_read_body, false)
@@ -26,7 +27,8 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       query_string: qs,
       req_headers: to_headers_list(hdrs),
       request_path: path,
-      scheme: String.to_atom(:cowboy_req.scheme(req))
+      scheme: String.to_atom(:cowboy_req.scheme(req)),
+      version: version
     }
   end
 
@@ -65,6 +67,10 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   def read_req_body(req, opts \\ []) do
     opts = if is_list(opts), do: :maps.from_list(opts), else: opts
     :cowboy_req.read_body(req, opts)
+  end
+
+  def inform(req, status, headers) do
+    :cowboy_req.inform(status, to_headers_map(headers), req)
   end
 
   def push(req, path, headers) do

@@ -403,6 +403,39 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
+  test "inform/3 performs an informational request" do
+    conn = conn(:get, "/foo") |> inform(103, [{"link", "</style.css>; rel=preload; as=style"}])
+    assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
+  end
+
+  test "inform/3 works with an atom or a status code" do
+    conn =
+      conn(:get, "/foo")
+      |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+
+    assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
+  end
+
+  test "inform/3 will raise if the response is sent before informing" do
+    assert_raise(Plug.Conn.AlreadySentError, fn ->
+      conn(:get, "/foo")
+      |> send_chunked(200)
+      |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
+    end)
+  end
+
+  test "inform/3 will raise if the status code is not valid based on rfc8297" do
+    assert_raise(
+      ArgumentError,
+      "inform expects a status code between 100 and 199, got: 200",
+      fn ->
+        conn(:get, "/foo")
+        |> inform(200, [{"link", "</style.css>; rel=preload; as=style"}])
+        |> send_chunked(200)
+      end
+    )
+  end
+
   test "push/3 performs a server push" do
     conn = conn(:get, "/foo") |> push("/static/application.css", [{"accept", "text/plain"}])
     assert {"/static/application.css", [{"accept", "text/plain"}]} in sent_pushes(conn)

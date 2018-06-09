@@ -10,6 +10,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {hdrs, req} = :cowboy_req.headers(req)
     {qs, req} = :cowboy_req.qs(req)
     {peer, req} = :cowboy_req.peer(req)
+    {version, req} = :cowboy_req.version(req)
     {remote_ip, _} = peer
 
     %Plug.Conn{
@@ -24,7 +25,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
       query_string: qs,
       req_headers: hdrs,
       request_path: path,
-      scheme: scheme(transport)
+      scheme: scheme(transport),
+      version: version
     }
   end
 
@@ -62,6 +64,10 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   def read_req_body(req, opts \\ []) do
     :cowboy_req.body(req, opts)
+  end
+
+  def inform(_req, _path, _headers) do
+    {:error, :not_supported}
   end
 
   def push(_req, _path, _headers) do

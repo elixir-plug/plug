@@ -39,7 +39,8 @@ defmodule Plug.Adapters.Test.Conn do
         query_string: query,
         body_params: body_params || %Plug.Conn.Unfetched{aspect: :body_params},
         params: params || %Plug.Conn.Unfetched{aspect: :params},
-        scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom()
+        scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom(),
+        version: :"HTTP/1.1"
     }
   end
 
@@ -100,6 +101,11 @@ defmodule Plug.Adapters.Test.Conn do
       end
 
     {tag, data, %{state | req_body: rest}}
+  end
+
+  def inform(%{owner: owner, ref: ref}, status, headers) do
+    send(owner, {ref, :inform, {status, headers}})
+    :ok
   end
 
   def push(%{owner: owner, ref: ref}, path, headers) do
