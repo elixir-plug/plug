@@ -58,6 +58,155 @@ defmodule Plug.SSL do
   import Plug.Conn
   alias Plug.Conn
 
+  @doc """
+  Configures and validates the options given to the `:ssl` application.
+
+  This function is often called internally by adapters, such as Cowboy,
+  to validate and set reasonable defaults for SSL handling. Therefore
+  Plug users are not expected to invoke it directly, rather you pass
+  the relevant SSL options to your adapter which then invokes this.
+
+  For instance, here is how you would pass the SSL options to the Cowboy
+  adapter:
+
+      Plug.Adapters.Cowboy2.https MyPlug, [],
+        port: 443,
+        password: "SECRET",
+        otp_app: :my_app,
+        keyfile: "priv/ssl/key.pem",
+        certfile: "priv/ssl/cert.pem",
+        dhfile: "priv/ssl/dhparam.pem"
+
+  or using the new child spec API:
+
+      {Plug.Adapters.Cowboy2, scheme: :https, plug: MyPlug, options: [
+         port: 443,
+         password: "SECRET",
+         otp_app: :my_app,
+         keyfile: "priv/ssl/key.pem",
+         certfile: "priv/ssl/cert.pem",
+         dhfile: "priv/ssl/dhparam.pem"
+       ]}
+
+  ## Options
+
+  This function accepts and validates all options defined in [the `ssl`
+  erlang module](http://www.erlang.org/doc/man/ssl.html). With the
+  following additions:
+
+    * The certificate files, like keyfile, certfile, cacertfile, dhfile
+      can be given as a relative path. For such, the `:otp_app` option
+      must also be given and certificates will be looked from the priv
+      directory of the given application
+
+    * In order to provide better security, this function also sets
+      safer defaults for certain options. See the "Defaults" section
+      below
+
+  ## Defaults
+
+  This function sets the following defaults:
+
+    * `:reuse_sessions` is set to true to instruct clients to reuse sessions
+      when possible
+    * `:secure_renegotiate` is set to true to enforce secure renegotiation
+      according to RFC 5746
+
+  """
+  @spec configure(Keyword.t) :: {:ok, Keyword.t} | {:error, String.t}
+  def configure(options) do
+    options
+    |> check_for_missing_keys()
+    |> normalize_ssl_files()
+    |> convert_to_charlist()
+    |> set_secure_defaults()
+  catch
+    {:configure, message} -> {:error, message}
+  else
+    options -> {:ok, options}
+  end
+
+  defp check_for_missing_keys(options) do
+    has_sni? =
+      Keyword.has_key?(options, :sni_hosts) or Keyword.has_key?(options, :sni_fun)
+
+    has_key? =
+      Keyword.has_key?(options, :key) or Keyword.has_key?(options, :keyfile)
+
+    has_cert? =
+      Keyword.has_key?(options, :cert) or Keyword.has_key?(options, :certfile)
+
+    cond do
+      has_sni? -> options
+      not has_key? -> fail("missing option :key/:keyfile")
+      not has_cert? -> fail("missing option :cert/:certfile")
+      true -> options
+    end
+  end
+
+  defp normalize_ssl_files(options) do
+    ssl_files = [:keyfile, :certfile, :cacertfile, :dhfile]
+    Enum.reduce(ssl_files, options, &normalize_ssl_file(&1, &2))
+  end
+
+  defp normalize_ssl_file(key, options) do
+    value = options[key]
+
+    cond do
+      is_nil(value) ->
+        options
+
+      Path.type(value) == :absolute ->
+        put_ssl_file(options, key, value)
+
+      true ->
+        put_ssl_file(options, key, Path.expand(value, otp_app(options)))
+    end
+  end
+
+  defp put_ssl_file(options, key, value) do
+    value = to_charlist(value)
+
+    unless File.exists?(value) do
+      message = "the file #{value} required by SSL's #{inspect(key)} either does not exist, " <>
+                "or the application does not have permission to access it"
+      fail(message)
+    end
+
+    Keyword.put(options, key, value)
+  end
+
+  defp otp_app(options) do
+    if app = options[:otp_app] do
+      Application.app_dir(app)
+    else
+      fail("the :otp_app option is required when setting relative SSL certfiles")
+    end
+  end
+
+  defp convert_to_charlist(options) do
+    Enum.reduce([:password], options, fn key, acc ->
+      if value = acc[key] do
+        Keyword.put(acc, key, to_charlist(value))
+      else
+        acc
+      end
+    end)
+  end
+
+  defp set_secure_defaults(options) do
+    options
+    |> Keyword.put_new(:secure_renegotiate, true)
+    |> Keyword.put_new(:reuse_sessions, true)
+  end
+
+  defp fail(message) when is_binary(message) do
+    throw({:configure, message})
+  end
+
+  @doc """
+  Plug initialization callback.
+  """
   def init(opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
@@ -65,6 +214,9 @@ defmodule Plug.SSL do
     {hsts_header(opts), host, rewrite_on, log}
   end
 
+  @doc """
+  Plug pipeline callback.
+  """
   def call(conn, {hsts, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 

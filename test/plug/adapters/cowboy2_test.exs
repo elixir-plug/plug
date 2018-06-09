@@ -140,26 +140,4 @@ defmodule Plug.Adapters.Cowboy2Test do
              type: :supervisor
            } = child_spec(scheme: :http, plug: __MODULE__, options: [])
   end
-
-  defmodule MyPlug do
-    def init(opts), do: opts
-  end
-
-  test "errors when trying to run on https" do
-    assert_raise ArgumentError, ~r/missing option :key\/:keyfile/, fn ->
-      Plug.Adapters.Cowboy2.https(MyPlug, [], [])
-    end
-
-    ssl_error = ~r/ssl\/key\.pem required by SSL's :keyfile either does not exist/
-
-    assert_raise ArgumentError, ssl_error, fn ->
-      Plug.Adapters.Cowboy2.https(
-        MyPlug,
-        [],
-        keyfile: "priv/ssl/key.pem",
-        certfile: "priv/ssl/cert.pem",
-        otp_app: :plug
-      )
-    end
-  end
 end

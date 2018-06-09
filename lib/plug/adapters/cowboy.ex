@@ -38,7 +38,10 @@ defmodule Plug.Adapters.Cowboy do
     * `:protocol_options` - Specifies remaining protocol options,
       see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
 
-  All other options are given to the underlying transport.
+  All other options are given to the underlying transport. When running
+  on HTTPS, any SSL configuration should be given directly to the adapter.
+  See `https/3` for an example and read `Plug.SSL.configure/1` to understand
+  about our SSL defaults.
   """
 
   require Logger
@@ -79,14 +82,8 @@ defmodule Plug.Adapters.Cowboy do
   Runs cowboy under https.
 
   Besides the options described in the module documentation,
-  this module also accepts all options defined in [the `ssl`
-  erlang module] (http://www.erlang.org/doc/man/ssl.html),
-  like keyfile, certfile, cacertfile, dhfile and others.
-
-  The certificate files can be given as a relative path.
-  For such, the `:otp_app` option must also be given and
-  certificates will be looked from the priv directory of
-  the given application.
+  this modules sets defaults and accepts all options defined
+  in `Plug.SSL.configure/2`.
 
   ## Example
 
@@ -117,13 +114,7 @@ defmodule Plug.Adapters.Cowboy do
     :cowboy.stop_listener(ref)
   end
 
-  @doc """
-  Returns a child spec to be supervised by your application.
-
-  This function returns the old child specs used by early OTP
-  and Elixir versions. See `child_spec/1` for the Elixir v1.5
-  based child specifications.
-  """
+  @doc false
   # TODO: Remove this once we require Elixir v1.5+
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
@@ -197,12 +188,13 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp normalize_cowboy_options(cowboy_options, :https) do
-    assert_ssl_options(cowboy_options)
-    ssl_file_opts = [:keyfile, :certfile, :cacertfile, :dhfile]
-    cowboy_options = Keyword.put_new(cowboy_options, :port, 4040)
-    cowboy_options = Enum.reduce(ssl_file_opts, cowboy_options, &normalize_ssl_file(&1, &2))
-    cowboy_options = Enum.reduce([:password], cowboy_options, &to_charlist(&2, &1))
     cowboy_options
+    |> Keyword.put_new(:port, 4040)
+    |> Plug.SSL.configure()
+    |> case do
+      {:ok, options} -> options
+      {:error, message} -> fail(message)
+    end
   end
 
   defp to_args(opts, non_keyword_opts) do
@@ -225,7 +217,6 @@ defmodule Plug.Adapters.Cowboy do
 
   defp add_on_response(log_request_errors, protocol_options) do
     {provided_onresponse, protocol_options} = Keyword.pop(protocol_options, :onresponse)
-
     add_on_response(log_request_errors, provided_onresponse, protocol_options)
   end
 
@@ -304,72 +295,8 @@ defmodule Plug.Adapters.Cowboy do
     [{:_, [{:_, Plug.Adapters.Cowboy.Handler, {plug, opts}}]}]
   end
 
-  defp normalize_ssl_file(key, cowboy_options) do
-    value = cowboy_options[key]
-
-    cond do
-      is_nil(value) ->
-        cowboy_options
-
-      Path.type(value) == :absolute ->
-        put_ssl_file(cowboy_options, key, value)
-
-      true ->
-        put_ssl_file(cowboy_options, key, Path.expand(value, otp_app(cowboy_options)))
-    end
-  end
-
-  defp assert_ssl_options(cowboy_options) do
-    has_sni? =
-      Keyword.has_key?(cowboy_options, :sni_hosts) or Keyword.has_key?(cowboy_options, :sni_fun)
-
-    has_key? =
-      Keyword.has_key?(cowboy_options, :key) or Keyword.has_key?(cowboy_options, :keyfile)
-
-    has_cert? =
-      Keyword.has_key?(cowboy_options, :cert) or Keyword.has_key?(cowboy_options, :certfile)
-
-    cond do
-      has_sni? -> :ok
-      !has_key? -> fail("missing option :key/:keyfile")
-      !has_cert? -> fail("missing option :cert/:certfile")
-      true -> :ok
-    end
-  end
-
-  defp put_ssl_file(cowboy_options, key, value) do
-    value = to_charlist(value)
-
-    unless File.exists?(value) do
-      fail(
-        "the file #{value} required by SSL's #{inspect(key)} either does not exist, or the application does not have permission to access it"
-      )
-    end
-
-    Keyword.put(cowboy_options, key, value)
-  end
-
-  defp otp_app(cowboy_options) do
-    if app = cowboy_options[:otp_app] do
-      Application.app_dir(app)
-    else
-      fail(
-        "to use a relative certificate with https, the :otp_app " <>
-          "option needs to be given to the adapter"
-      )
-    end
-  end
-
-  defp to_charlist(cowboy_options, key) do
-    if value = cowboy_options[key] do
-      Keyword.put(cowboy_options, key, to_charlist(value))
-    else
-      cowboy_options
-    end
-  end
-
   defp fail(message) do
-    raise ArgumentError, message: "could not start Cowboy adapter, " <> message
+    raise ArgumentError, "could not start Cowboy adapter, " <> message
   end
 
   defp verify_cowboy_version do

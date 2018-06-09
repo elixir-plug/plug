@@ -227,26 +227,4 @@ defmodule Plug.Adapters.CowboyTest do
       assert on_response != my_onresponse
     end
   end
-
-  defmodule MyPlug do
-    def init(opts), do: opts
-  end
-
-  test "errors when trying to run on https" do
-    assert_raise ArgumentError, ~r/missing option :key\/:keyfile/, fn ->
-      Plug.Adapters.Cowboy.https(MyPlug, [], [])
-    end
-
-    message = ~r/ssl\/key\.pem required by SSL's :keyfile either does not exist/
-
-    assert_raise ArgumentError, message, fn ->
-      Plug.Adapters.Cowboy.https(
-        MyPlug,
-        [],
-        keyfile: "priv/ssl/key.pem",
-        certfile: "priv/ssl/cert.pem",
-        otp_app: :plug
-      )
-    end
-  end
 end
