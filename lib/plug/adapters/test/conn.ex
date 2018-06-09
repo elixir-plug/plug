@@ -21,7 +21,8 @@ defmodule Plug.Adapters.Test.Conn do
       req_body: body,
       chunks: nil,
       ref: make_ref(),
-      owner: owner
+      owner: owner,
+      http_protocol: :"HTTP/1.1"
     }
 
     %Plug.Conn{
@@ -39,8 +40,7 @@ defmodule Plug.Adapters.Test.Conn do
         query_string: query,
         body_params: body_params || %Plug.Conn.Unfetched{aspect: :body_params},
         params: params || %Plug.Conn.Unfetched{aspect: :params},
-        scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom(),
-        version: :"HTTP/1.1"
+        scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom()
     }
   end
 
@@ -115,6 +115,10 @@ defmodule Plug.Adapters.Test.Conn do
 
   def get_client_ssl_cert(_state) do
     nil
+  end
+
+  def get_http_protocol(payload) do
+    Map.fetch!(payload, :http_protocol)
   end
 
   ## Private helpers

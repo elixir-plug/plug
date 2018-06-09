@@ -3,7 +3,9 @@ defmodule Plug.Conn.Adapter do
   Specification of the connection adapter API implemented by webservers
   """
   alias Plug.Conn
-  @typep payload :: term
+
+  @type http_protocol :: :"HTTP/1" | :"HTTP/1.1" | :"HTTP/2" | atom
+  @type payload :: term
 
   @doc """
   Sends the given status, headers and body as a response
@@ -98,4 +100,9 @@ defmodule Plug.Conn.Adapter do
   Returns the client ssl certificate for the request if one is present. 
   """
   @callback get_client_ssl_cert(payload) :: binary | nil
+
+  @doc """
+  Returns the HTTP protocol and its version.
+  """
+  @callback get_http_protocol(payload) :: http_protocol
 end

@@ -10,7 +10,6 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {hdrs, req} = :cowboy_req.headers(req)
     {qs, req} = :cowboy_req.qs(req)
     {peer, req} = :cowboy_req.peer(req)
-    {version, req} = :cowboy_req.version(req)
     {remote_ip, _} = peer
 
     %Plug.Conn{
@@ -25,8 +24,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       query_string: qs,
       req_headers: hdrs,
       request_path: path,
-      scheme: scheme(transport),
-      version: version
+      scheme: scheme(transport)
     }
   end
 
@@ -76,6 +74,11 @@ defmodule Plug.Adapters.Cowboy.Conn do
 
   def get_client_ssl_cert(_req) do
     nil
+  end
+
+  def get_http_protocol(req) do
+    {version, _} = :cowboy_req.version(req)
+    version
   end
 
   ## Helpers

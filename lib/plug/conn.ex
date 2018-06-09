@@ -161,7 +161,6 @@ defmodule Plug.Conn do
   @type segments :: [binary]
   @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status :: atom | int_status
-  @type http_version :: :"HTTP/1" | :"HTTP/1.1" | :"HTTP/2" | atom
 
   @type t :: %__MODULE__{
           adapter: adapter,
@@ -191,8 +190,7 @@ defmodule Plug.Conn do
           script_name: segments,
           secret_key_base: secret_key_base,
           state: state,
-          status: int_status,
-          version: http_version
+          status: int_status
         }
 
   defstruct adapter: {Plug.MissingAdapter, nil},
@@ -223,8 +221,7 @@ defmodule Plug.Conn do
             script_name: [],
             secret_key_base: nil,
             state: :unset,
-            status: nil,
-            version: nil
+            status: nil
 
   defmodule NotSentError do
     defexception message: "a response was neither set nor sent from the connection"
@@ -568,6 +565,14 @@ defmodule Plug.Conn do
   @spec get_client_ssl_cert(t) :: binary | nil
   def get_client_ssl_cert(%Conn{adapter: {adapter, payload}}) do
     adapter.get_client_ssl_cert(payload)
+  end
+
+  @doc """
+  Returns the http protocol and version.
+  """
+  @spec get_http_protocol(t) :: Plug.Conn.Adapter.http_protocol
+  def get_http_protocol(%Conn{adapter: {adapter, payload}}) do
+    adapter.get_http_protocol(payload)
   end
 
   @doc """
@@ -1073,10 +1078,9 @@ defmodule Plug.Conn do
 
   If the adapter does not support informational responses then this is a noop.
 
-  Most HTTP/1.1 clients do not properly support informational responses but some proxies
-  require it to support server push for HTTP/2. You can use the version atom in `conn`
-  to determine the version of the HTTP client and then decide if you should send an
-  informational response.
+  Most HTTP/1.1 clients do not properly support informational responses but some
+  proxies require it to support server push for HTTP/2. You can call
+  `get_http_protocol/1` to retrieve the protocol and version.
   """
   @spec inform(t, status, Keyword.t()) :: t
   def inform(%Conn{} = conn, status, headers \\ []) do

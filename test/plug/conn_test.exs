@@ -1100,6 +1100,13 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "get_http_protocol / put_http_protocol" do
+    conn = conn(:get, "/")
+    assert get_http_protocol(conn) == :"HTTP/1.1"
+    conn = put_http_protocol(conn, :"HTTP/2")
+    assert get_http_protocol(conn) == :"HTTP/2"
+  end
+
   test "clear_session/1" do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn(:get, "/") |> Plug.Session.call(opts) |> fetch_session()

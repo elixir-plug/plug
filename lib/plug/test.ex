@@ -151,6 +151,15 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Puts the http protocol.
+  """
+  def put_http_protocol(conn, http_protocol) do
+    update_in conn.adapter, fn {adapter, payload} ->
+      {adapter, Map.put(payload, :http_protocol, http_protocol)}
+    end
+  end
+
+  @doc """
   Puts a request cookie.
   """
   @spec put_req_cookie(Conn.t(), binary, binary) :: Conn.t()

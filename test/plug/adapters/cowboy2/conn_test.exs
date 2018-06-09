@@ -92,7 +92,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert conn.method == "GET"
     assert {{127, 0, 0, 1}, _} = conn.peer
     assert conn.remote_ip == {127, 0, 0, 1}
-    assert conn.version == :"HTTP/1.1"
+    assert get_http_protocol(conn) == :"HTTP/1.1"
     resp(conn, 200, "ok")
   end
 
@@ -464,17 +464,17 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
       "noinfer" <> _ ->
         conn
         |> push("/static/assets.css", [{"accept", "text/plain"}])
-        |> send_resp(200, Atom.to_string(conn.version))
+        |> send_resp(200, Atom.to_string(get_http_protocol(conn)))
 
       "earlyhints" <> _ ->
         conn
         |> inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
-        |> send_resp(200, Atom.to_string(conn.version))
+        |> send_resp(200, Atom.to_string(get_http_protocol(conn)))
 
       _ ->
         conn
         |> push("/static/assets.css")
-        |> send_resp(200, Atom.to_string(conn.version))
+        |> send_resp(200, Atom.to_string(get_http_protocol(conn)))
     end
   end
 
