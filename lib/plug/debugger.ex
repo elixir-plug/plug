@@ -381,8 +381,6 @@ defmodule Plug.Debugger do
   defp url(%Plug.Conn{scheme: scheme, host: host, port: port} = conn),
     do: "#{scheme}://#{host}:#{port}#{conn.request_path}"
 
-  defp peer(%Plug.Conn{peer: {host, port}}), do: "#{:inet_parse.ntoa(host)}:#{port}"
-
   defp h(string) do
     string |> to_string() |> Plug.HTML.html_escape()
   end

@@ -210,7 +210,6 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "<summary>Request info</summary>"
     assert conn.resp_body =~ "http://www.example.com:80/foo/bar"
     assert conn.resp_body =~ "baz=bat"
-    assert conn.resp_body =~ "127.0.0.1:111317"
   end
 
   test "shows headers" do

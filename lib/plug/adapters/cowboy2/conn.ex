@@ -3,28 +3,26 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   @moduledoc false
 
   def conn(req) do
-    path = :cowboy_req.path(req)
-    host = :cowboy_req.host(req)
-    port = :cowboy_req.port(req)
-    meth = :cowboy_req.method(req)
-    hdrs = :cowboy_req.headers(req)
-    qs = :cowboy_req.qs(req)
-    peer = :cowboy_req.peer(req)
-    {remote_ip, _} = peer
-
-    req = Map.put(req, :plug_read_body, false)
+    %{
+      path: path,
+      host: host,
+      port: port,
+      method: method,
+      headers: headers,
+      qs: qs,
+      peer: {remote_ip, _}
+    } = req
 
     %Plug.Conn{
       adapter: {__MODULE__, req},
       host: host,
-      method: meth,
+      method: method,
       owner: self(),
       path_info: split_path(path),
-      peer: peer,
       port: port,
       remote_ip: remote_ip,
       query_string: qs,
-      req_headers: to_headers_list(hdrs),
+      req_headers: to_headers_list(headers),
       request_path: path,
       scheme: String.to_atom(:cowboy_req.scheme(req))
     }
@@ -82,11 +80,12 @@ defmodule Plug.Adapters.Cowboy2.Conn do
     :cowboy_req.push(path, to_headers_map(headers), req, opts)
   end
 
-  def get_client_ssl_cert(req) do
-    case :cowboy_req.cert(req) do
-      :undefined -> nil
-      cert -> cert
-    end
+  def get_peer_data(%{peer: {ip, port}, cert: cert}) do
+    %{
+      address: ip,
+      port: port,
+      ssl_cert: if(cert == :undefined, do: nil, else: cert)
+    }
   end
 
   def get_http_protocol(req) do
@@ -97,10 +96,6 @@ defmodule Plug.Adapters.Cowboy2.Conn do
 
   defp to_headers_list(headers) when is_list(headers) do
     headers
-  end
-
-  defp to_headers_list(headers) when is_map(headers) do
-    :maps.to_list(headers)
   end
 
   defp to_headers_list(headers) when is_map(headers) do

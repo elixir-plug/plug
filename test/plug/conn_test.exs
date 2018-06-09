@@ -110,10 +110,15 @@ defmodule Plug.ConnTest do
     assert conn.port == 8080
   end
 
-  test "peer and remote_ip fields" do
+  test "peer_data and remote_ip fields" do
     conn = conn(:get, "/")
-    assert conn.peer == {{127, 0, 0, 1}, 111_317}
     assert conn.remote_ip == {127, 0, 0, 1}
+
+    assert get_peer_data(conn) == %{
+             address: {127, 0, 0, 1},
+             port: 111_317,
+             ssl_cert: nil
+           }
   end
 
   test "path_info" do

@@ -771,11 +771,6 @@
                 <dt>Query string:</dt>
                 <dd class="code-quote"><%= h @conn.query_string %></dd>
             </dl>
-
-            <dl>
-                <dt>Peer:</dt>
-                <dd class="code-quote"><%= h peer(@conn) %></dd>
-            </dl>
         </details>
 
         <details class="conn-details">

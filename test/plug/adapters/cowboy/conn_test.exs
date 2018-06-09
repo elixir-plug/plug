@@ -71,9 +71,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     assert conn.host == "127.0.0.1"
     assert conn.port == 8001
     assert conn.method == "GET"
-    assert {{127, 0, 0, 1}, _} = conn.peer
     assert conn.remote_ip == {127, 0, 0, 1}
-    assert conn.version == :"HTTP/1.1"
+    assert get_http_protocol(conn) == :"HTTP/1.1"
     resp(conn, 200, "ok")
   end
 

@@ -17,20 +17,17 @@ defmodule Plug.Conn do
     * `host` - the requested host as a binary, example: `"www.example.com"`
     * `method` - the request method as a binary, example: `"GET"`
     * `path_info` - the path split into segments, example: `["hello", "world"]`
-    * `script_name` - the initial portion of the URL's path that corresponds to the application
-      routing, as segments, example: ["sub","app"].
+    * `script_name` - the initial portion of the URL's path that corresponds to
+      the application routing, as segments, example: ["sub","app"]
     * `request_path` - the requested path, example: `/trailing/and//double//slashes/`
     * `port` - the requested port as an integer, example: `80`
-    * `peer` - the actual TCP peer that connected, example: `{{127, 0, 0, 1}, 12345}`. Often this
-      is not the actual IP and port of the client, but rather of a load-balancer or request-router.
-    * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field is meant to
-      be overwritten by plugs that understand e.g. the `X-Forwarded-For` header or HAProxy's PROXY
-      protocol. It defaults to peer's IP.
+    * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field
+      is meant to be overwritten by plugs that understand e.g. the `X-Forwarded-For`
+      header or HAProxy's PROXY protocol. It defaults to peer's IP
     * `req_headers` - the request headers as a list, example: `[{"content-type", "text/plain"}]`.
-      Note all headers will be downcased.
+      Note all headers will be downcased
     * `scheme` - the request scheme as an atom, example: `:http`
     * `query_string` - the request query string as a binary, example: `"foo=bar"`
-    * `version` - the version of the HTTP protocol use by the request as an atom, example: `:"HTTP/2"`
 
   ## Fetchable fields
 
@@ -45,8 +42,8 @@ defmodule Plug.Conn do
     * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
     * `query_params` - the request query params, populated through `fetch_query_params/2`
     * `path_params` - the request path params, populated by routers such as `Plug.Router`
-    * `params` - the request params, the result of merging the `:body_params` and `:query_params`
-       with `:path_params`
+    * `params` - the request params, the result of merging the `:body_params` and
+      `:query_params` with `:path_params`
     * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
@@ -152,7 +149,6 @@ defmodule Plug.Conn do
   @type method :: binary
   @type param :: binary | %{binary => param} | [param]
   @type params :: %{binary => param}
-  @type peer :: {:inet.ip_address(), :inet.port_number()}
   @type port_number :: :inet.port_number()
   @type query_string :: String.t()
   @type resp_cookies :: %{binary => %{}}
@@ -178,7 +174,6 @@ defmodule Plug.Conn do
           private: assigns,
           query_params: params | Unfetched.t(),
           query_string: query_string,
-          peer: peer,
           remote_ip: :inet.ip_address(),
           req_cookies: cookies | Unfetched.t(),
           req_headers: headers,
@@ -209,7 +204,6 @@ defmodule Plug.Conn do
             private: %{},
             query_params: %Unfetched{aspect: :query_params},
             query_string: "",
-            peer: nil,
             remote_ip: nil,
             req_cookies: %Unfetched{aspect: :cookies},
             req_headers: [],
@@ -560,17 +554,17 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns the client ssl certificate for the request if one is present. 
+  Returns the request peer data if one is present. 
   """
-  @spec get_client_ssl_cert(t) :: binary | nil
-  def get_client_ssl_cert(%Conn{adapter: {adapter, payload}}) do
-    adapter.get_client_ssl_cert(payload)
+  @spec get_peer_data(t) :: Plug.Conn.Adapter.peer_data()
+  def get_peer_data(%Conn{adapter: {adapter, payload}}) do
+    adapter.get_peer_data(payload)
   end
 
   @doc """
   Returns the http protocol and version.
   """
-  @spec get_http_protocol(t) :: Plug.Conn.Adapter.http_protocol
+  @spec get_http_protocol(t) :: Plug.Conn.Adapter.http_protocol()
   def get_http_protocol(%Conn{adapter: {adapter, payload}}) do
     adapter.get_http_protocol(payload)
   end

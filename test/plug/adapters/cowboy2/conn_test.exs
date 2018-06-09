@@ -90,7 +90,6 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert conn.host == "127.0.0.1"
     assert conn.port == 8003
     assert conn.method == "GET"
-    assert {{127, 0, 0, 1}, _} = conn.peer
     assert conn.remote_ip == {127, 0, 0, 1}
     assert get_http_protocol(conn) == :"HTTP/1.1"
     resp(conn, 200, "ok")
@@ -508,13 +507,16 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     assert {":path", "/static/assets.css"} in headers
   end
 
-  def client_ssl(conn) do
+  def peer_data(conn) do
     assert conn.scheme == :https
-    assert get_client_ssl_cert(conn) != nil
+    %{address: address, port: port, ssl_cert: ssl_cert} = get_peer_data(conn)
+    assert address == {127, 0, 0, 1}
+    assert is_integer(port)
+    assert is_binary(ssl_cert)
     send_resp(conn, 200, "OK")
   end
 
-  test "client ssl certificates" do
+  test "exposes peer data" do
     pool = :client_ssl_pool
     pool_opts = [timeout: 150_000, max_connections: 10]
     :ok = :hackney_pool.start_pool(pool, pool_opts)
@@ -525,7 +527,7 @@ defmodule Plug.Adapters.Cowboy2.ConnTest do
     ]
 
     assert {:ok, 200, _headers, client} =
-             :hackney.get("https://127.0.0.1:8004/client_ssl", [], "", opts)
+             :hackney.get("https://127.0.0.1:8004/peer_data", [], "", opts)
 
     assert {:ok, "OK"} = :hackney.body(client)
     :hackney.close(client)

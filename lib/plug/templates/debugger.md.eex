@@ -14,7 +14,6 @@ Exception:
 
   * URI: <%= url(@conn) %>
   * Query string: <%= @conn.query_string %>
-  * Peer: <%= peer(@conn) %>
 
 ### Headers
   <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>

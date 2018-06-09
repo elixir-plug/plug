@@ -18,7 +18,6 @@ defmodule Plug.Adapters.Cowboy.Conn do
       method: meth,
       owner: self(),
       path_info: split_path(path),
-      peer: peer,
       port: port,
       remote_ip: remote_ip,
       query_string: qs,
@@ -72,8 +71,14 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:error, :not_supported}
   end
 
-  def get_client_ssl_cert(_req) do
-    nil
+  def get_peer_data(req) do
+    {{ip, port}, _} = :cowboy_req.peer(req)
+
+    %{
+      address: ip,
+      port: port,
+      ssl_cert: nil
+    }
   end
 
   def get_http_protocol(req) do

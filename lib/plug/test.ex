@@ -154,9 +154,9 @@ defmodule Plug.Test do
   Puts the http protocol.
   """
   def put_http_protocol(conn, http_protocol) do
-    update_in conn.adapter, fn {adapter, payload} ->
+    update_in(conn.adapter, fn {adapter, payload} ->
       {adapter, Map.put(payload, :http_protocol, http_protocol)}
-    end
+    end)
   end
 
   @doc """
