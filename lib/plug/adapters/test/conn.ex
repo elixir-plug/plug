@@ -113,6 +113,10 @@ defmodule Plug.Adapters.Test.Conn do
     :ok
   end
 
+  def get_client_ssl_cert(_state) do
+    nil
+  end
+
   ## Private helpers
 
   defp body_or_params(nil, _query, headers), do: {"", nil, nil, headers}

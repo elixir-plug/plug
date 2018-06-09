@@ -563,6 +563,14 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Returns the client ssl certificate for the request if one is present. 
+  """
+  @spec get_client_ssl_cert(t) :: binary | nil
+  def get_client_ssl_cert(%Conn{adapter: {adapter, payload}}) do
+    adapter.get_client_ssl_cert(payload)
+  end
+
+  @doc """
   Returns the values of the request header specified by `key`.
   """
   @spec get_req_header(t, binary) :: [binary]
@@ -1116,6 +1124,10 @@ defmodule Plug.Conn do
   will be raised.
 
   If the adapter does not support server push then this is a noop.
+
+  Note that certain browsers (such as Google Chrome) will not accept a pushed
+  resource if your certificate is not trusted. In the case of Chrome this means
+  a valid cert with a SAN. See https://www.chromestatus.com/feature/4981025180483584
   """
   @spec push(t, String.t(), Keyword.t()) :: t
   def push(%Conn{} = conn, path, headers \\ []) do

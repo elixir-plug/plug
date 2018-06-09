@@ -76,13 +76,19 @@ defmodule Plug.Adapters.Cowboy2.Conn do
   def push(req, path, headers) do
     opts =
       case {req.port, req.sock} do
-        {:undefined, {_, port}} when port in [80, 443] -> %{}
         {:undefined, {_, port}} -> %{port: port}
         {port, _} when port in [80, 443] -> %{}
         {port, _} -> %{port: port}
       end
 
     :cowboy_req.push(path, to_headers_map(headers), req, opts)
+  end
+
+  def get_client_ssl_cert(req) do
+    case :cowboy_req.cert(req) do
+      :undefined -> nil
+      cert -> cert
+    end
   end
 
   ## Helpers

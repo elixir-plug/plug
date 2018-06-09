@@ -494,7 +494,7 @@ defmodule Plug.StaticTest do
     conn = FilterPlug.call(conn(:get, "/static.txt"), [])
     assert conn.status == 200
 
-    conn = FilterPlug.call(conn(:get, "/ssl/cert.pem"), [])
+    conn = FilterPlug.call(conn(:get, "/ssl/server.cer"), [])
     assert conn.status == 200
 
     conn = FilterPlug.call(conn(:get, "/"), [])
