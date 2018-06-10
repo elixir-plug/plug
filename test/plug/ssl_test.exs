@@ -15,6 +15,12 @@ defmodule Plug.SSLTest do
     refute conn.halted
   end
 
+  test "HSTS headers excludes localhost" do
+    conn = call(conn(:get, "https://localhost/"))
+    assert get_resp_header(conn, "strict-transport-security") == []
+    refute conn.halted
+  end
+
   test "HSTS is true" do
     conn = call(conn(:get, "https://example.com/"), hsts: true)
     assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]

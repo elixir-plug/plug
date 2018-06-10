@@ -1,9 +1,9 @@
 defmodule Plug.SSL do
   @moduledoc """
-  A plug to force SSL connections.
+  A plug to force SSL connections and enable HSTS.
 
   If the scheme of a request is `https`, it'll add a `strict-transport-security`
-  header to enable HTTP Strict Transport Security.
+  header to enable HTTP Strict Transport Security by default.
 
   Otherwise, the request will be redirected to a corresponding location
   with the `https` scheme by setting the `location` header of the response.
@@ -32,13 +32,14 @@ defmodule Plug.SSL do
 
     * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
-    * `:expires` - seconds to expires for HSTS, defaults to `31_536_000` (a year).
+    * `:expires` - seconds to expires for HSTS, defaults to `7884000` (three months)
     * `:preload` - a boolean to request inclusion on the HSTS preload list
-       (for full set of required flags, see:
-       [Chromium HSTS submission site](https://hstspreload.org)),
+       (for full set of required flags, see: [Chromium HSTS submission site](https://hstspreload.org)),
       defaults to `false`
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
+    * `:exclude` - exclude the given hosts from having HSTS applied to them.
+      Defaults to `["localhost"]`
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -56,7 +57,6 @@ defmodule Plug.SSL do
 
   require Logger
   import Plug.Conn
-  alias Plug.Conn
 
   @doc """
   Configures and validates the options given to the `:ssl` application.
@@ -128,9 +128,7 @@ defmodule Plug.SSL do
 
   defp check_for_missing_keys(options) do
     has_sni? = Keyword.has_key?(options, :sni_hosts) or Keyword.has_key?(options, :sni_fun)
-
     has_key? = Keyword.has_key?(options, :key) or Keyword.has_key?(options, :keyfile)
-
     has_cert? = Keyword.has_key?(options, :cert) or Keyword.has_key?(options, :certfile)
 
     cond do
@@ -210,17 +208,18 @@ defmodule Plug.SSL do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
-    {hsts_header(opts), host, rewrite_on, log}
+    exclude = Keyword.get(opts, :exclude, ["localhost"])
+    {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
   @doc """
   Plug pipeline callback.
   """
-  def call(conn, {hsts, host, rewrites, log_level}) do
+  def call(conn, {hsts, exclude, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
     case conn do
-      %{scheme: :https} -> put_hsts_header(conn, hsts)
+      %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
       %{} -> redirect_to_https(conn, host, log_level)
     end
   end
@@ -252,13 +251,17 @@ defmodule Plug.SSL do
     end
   end
 
-  defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
-    put_resp_header(conn, "strict-transport-security", hsts_header)
+  defp put_hsts_header(%{host: host} = conn, hsts_header, exclude) when is_binary(hsts_header) do
+    if :lists.member(host, exclude) do
+      conn
+    else
+      put_resp_header(conn, "strict-transport-security", hsts_header)
+    end
   end
 
-  defp put_hsts_header(conn, _), do: conn
+  defp put_hsts_header(conn, nil, _), do: conn
 
-  defp redirect_to_https(%Conn{host: host} = conn, custom_host, log_level) do
+  defp redirect_to_https(%{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
     scheme_and_host = "https://" <> host(custom_host, host)
