@@ -8,65 +8,22 @@ defmodule Plug.Crypto.MessageVerifier do
   tampered with.
   """
 
-  # TODO: Remove deprecated API.
-
   @doc """
   Signs a message according to the given secret.
   """
   def sign(message, secret, digest_type \\ :sha256)
-
-  def sign(message, secret, digest_type)
       when is_binary(message) and is_binary(secret) and digest_type in [:sha256, :sha384, :sha512] do
     hmac_sha2_sign(message, secret, digest_type)
-  end
-
-  def sign(message, secret, :sha) when is_binary(message) and is_binary(secret) do
-    IO.puts(
-      :stderr,
-      "warning: using Plug.Crypto.MessageVerifier with :sha is deprecated and unsafe, " <>
-        "use :sha256 instead\n" <> Exception.format_stacktrace()
-    )
-
-    hmac_sha1_sign(message, secret)
   end
 
   @doc """
   Decodes and verifies the encoded binary was not tampered with.
   """
-  def verify(signed, secret)
-      when is_binary(signed) and is_binary(secret) do
-    if String.contains?(signed, ".") do
-      hmac_sha2_verify(signed, secret)
-    else
-      hmac_sha1_verify(signed, secret)
-    end
+  def verify(signed, secret) when is_binary(signed) and is_binary(secret) do
+    hmac_sha2_verify(signed, secret)
   end
 
   ## Signature Algorithms
-
-  defp hmac_sha1_sign(payload, key)
-       when is_binary(payload) and is_binary(key) do
-    plain_text = Base.url_encode64(payload)
-    signature = :crypto.hmac(:sha, key, plain_text)
-    plain_text <> "##" <> Base.url_encode64(signature)
-  end
-
-  defp hmac_sha1_verify(signed, key)
-       when is_binary(signed) and is_binary(key) do
-    case decode_legacy_token(signed) do
-      {"HS1", payload, plain_text, signature} ->
-        challenge = :crypto.hmac(:sha, key, plain_text)
-
-        if Plug.Crypto.secure_compare(challenge, signature) do
-          {:ok, payload}
-        else
-          :error
-        end
-
-      _ ->
-        :error
-    end
-  end
 
   defp hmac_sha2_to_protected(:sha256), do: "HS256"
   defp hmac_sha2_to_protected(:sha384), do: "HS384"
@@ -124,32 +81,5 @@ defmodule Plug.Crypto.MessageVerifier do
     |> Base.url_encode64(padding: false)
     |> Kernel.<>(".")
     |> Kernel.<>(Base.url_encode64(payload, padding: false))
-  end
-
-  ## Legacy Helpers
-
-  defp decode_legacy_token(token) do
-    split =
-      token
-      |> String.split("##", parts: 2)
-      |> case do
-        [_, _] = both -> both
-        _ -> String.split(token, "--", parts: 2)
-      end
-
-    with [plain_text, signature] when plain_text != "" and signature != "" <- split,
-         {:ok, payload} <- decode_legacy_base64(plain_text),
-         {:ok, signature} <- decode_legacy_base64(signature) do
-      {"HS1", payload, plain_text, signature}
-    else
-      _ -> :error
-    end
-  end
-
-  defp decode_legacy_base64(content) do
-    case Base.url_decode64(content) do
-      {:ok, binary} -> {:ok, binary}
-      :error -> Base.decode64(content)
-    end
   end
 end
