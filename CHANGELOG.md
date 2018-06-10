@@ -1,9 +1,13 @@
 ## Changelog
 
-## current
+## v1.6.0
 
 * Enhancements
-  * Add `Plug.Conn.inform/3` and `Plug.Conn.inform!/3` to support HTTP/2 informational responses.
+  * Add `Plug.Conn.inform/3` and `Plug.Conn.inform!/3` to support HTTP/2 informational responses
+  * Add `Plug.Conn.get_peer_data/1` to read client information such as address, port and ssl cert
+  * Add `Plug.Conn.get_http_protocol/1`
+  * Add `Plug.SSL.configure/1` to hold common SSL configuration and enable `reuse_sessions` and `secure_renegotiate` by default in adapters
+  * `Plug.SSL` skips HSTS by default on localhost. The list of hosts to exclude is configurable
 
 ## v1.5.1 (2018-05-17)
 

@@ -5,7 +5,7 @@ defmodule Plug.SSLTest do
   describe "configure" do
     import Plug.SSL, only: [configure: 1]
 
-    test "sets secure_renegociate and renew_sessions to true by default" do
+    test "sets secure_renegotiate and reuse_sessions to true by default" do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl")
       assert opts[:reuse_sessions] == true
       assert opts[:secure_renegotiate] == true
@@ -29,6 +29,12 @@ defmodule Plug.SSLTest do
 
     test "excludes localhost" do
       conn = call(conn(:get, "https://localhost/"))
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes custom" do
+      conn = call(conn(:get, "https://example.com/"), exclude: ["example.com"])
       assert get_resp_header(conn, "strict-transport-security") == []
       refute conn.halted
     end
