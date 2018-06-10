@@ -115,7 +115,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc false
-  # TODO: Remove this once we require Elixir v1.5+
+  # TODO: Deprecate this once we require Elixir v1.5+
   def child_spec(scheme, plug, opts, cowboy_options \\ []) do
     [ref, nb_acceptors, trans_opts, proto_opts] = args(scheme, plug, opts, cowboy_options)
 
