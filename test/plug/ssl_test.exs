@@ -72,7 +72,10 @@ defmodule Plug.SSLTest do
                )
 
       assert message ==
-               "Your cipher list contained the binary \"ECDHE-RSA-AES256-GCM-SHA384\", which is not valid"
+               "invalid cipher \"ECDHE-RSA-AES256-GCM-SHA384\" in cipher list. " <>
+                 "Strings (double-quoted) are not allowed in ciphers. " <>
+                 "Ciphers must be either charlists (single-quoted) or tuples. " <>
+                 "See the ssl application docs for reference"
     end
   end
 

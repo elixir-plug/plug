@@ -322,7 +322,12 @@ defmodule Plug.SSL do
 
   defp validate_cipher(cipher) do
     if is_binary(cipher) do
-      message = "Your cipher list contained the binary \"#{cipher}\", which is not valid"
+      message =
+        "invalid cipher #{inspect(cipher)} in cipher list. " <>
+          "Strings (double-quoted) are not allowed in ciphers. " <>
+          "Ciphers must be either charlists (single-quoted) or tuples. " <>
+          "See the ssl application docs for reference"
+
       fail(message)
     end
   end
