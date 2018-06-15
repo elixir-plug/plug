@@ -3,7 +3,7 @@ defmodule Plug.CSRFProtection do
   Plug to protect from cross-site request forgery.
 
   For this plug to work, it expects a session to have been
-  previously fetched. It will then compare the plug stored
+  previously fetched. It will then compare the token stored
   in the session with the one sent by the request to determine
   the validity of the request. For an invalid request the action
   taken is based on the `:with` option.
