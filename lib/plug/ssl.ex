@@ -49,38 +49,6 @@ defmodule Plug.SSL do
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
 
-  ## Cipher Suites
-
-  _The cipher suites were last updated on 2018-JUN-14._
-
-  To simplify configuration of TLS defaults Plug provides two preconfifured
-  options: `:strong` and `:compatible`. The Ciphers chosen and related configuration
-  come from the OWASP recommendations found here:
-  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
-
-  We've made two modifications to the suggested config from the OWASP recommendations.
-  First we include ECDSA certificates which are excluded from their configuration.
-  Second we have changed the order of the ciphers to deprioritize DHE because of
-  performance implications noted within the OWASP post itself. As the article notes
-  "...the TLS handshake with DHE hinders the CPU about 2.4 times more than ECDHE".
-
-  The **Strong(()) cipher suite only supports tlsv1.2. Ciphers were based on the OWASP Group A+
-  and includes support for RSA or ECDSA certificates. The intention of this configuration is
-  to provide as secure as possible defaults knowing that it will not be fully compatible with
-  older browsers and operating systems.
-
-  The **Compatible** cipher suite supports tlsv1, tlsv1.1 and tlsv1.2. Ciphers were based on the
-  OWASP Group B and includes support for RSA or ECDSA certificates. The intention of this
-  configuration is to provide as secure as possible defaults that still maintain support for
-  older browsers and Android versions 4.3 and earlier
-
-  For both suites we've specified ceritifcate curves secp256r1, ecp384r1 and secp521r1. Since
-  OWASP doesn't perscribe curves we've based the selection on the following Mozilla recommendations:
-  https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
-
-  In addition to selecting a group of ciphers, selecting a cipher suite will also disable
-  client renegotiation and force the client to honor the server specified cipher order.
-
   ## Port
 
   It is not possible to directly configure the port in `Plug.SSL` because
@@ -142,6 +110,7 @@ defmodule Plug.SSL do
         port: 443,
         password: "SECRET",
         otp_app: :my_app,
+        cipher_suite: :strong,
         keyfile: "priv/ssl/key.pem",
         certfile: "priv/ssl/cert.pem",
         dhfile: "priv/ssl/dhparam.pem"
@@ -152,6 +121,7 @@ defmodule Plug.SSL do
          port: 443,
          password: "SECRET",
          otp_app: :my_app,
+         cipher_suite: :strong,
          keyfile: "priv/ssl/key.pem",
          certfile: "priv/ssl/cert.pem",
          dhfile: "priv/ssl/dhparam.pem"
@@ -163,24 +133,55 @@ defmodule Plug.SSL do
   erlang module](http://www.erlang.org/doc/man/ssl.html). With the
   following additions:
 
+    * The `:cipher_suite` option provides `:strong` and `:compatible`
+      options for setting up better cipher and version defaults according
+      to the OWASP recommendations. See the "Cipher Suites" section below
+
     * The certificate files, like keyfile, certfile, cacertfile, dhfile
       can be given as a relative path. For such, the `:otp_app` option
       must also be given and certificates will be looked from the priv
       directory of the given application
 
-    * In order to provide better security, this function also sets
-      safer defaults for certain options. See the "Defaults" section
-      below
+    * In order to provide better security, this function also enables
+      `:reuse_sessions` and `:secure_renegotiate` by default, to instruct
+      clients to reuse sessions and enforce secure renegotiation according
+      to RFC 5746 respectively
 
-  ## Defaults
+  ## Cipher Suites
 
-  This function sets the following defaults:
+  To simplify configuration of TLS defaults Plug provides two preconfifured
+  options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
+  chosen and related configuration come from the OWASP recommendations found here:
+  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
 
-    * `:reuse_sessions` is set to true to instruct clients to reuse sessions
-      when possible
-    * `:secure_renegotiate` is set to true to enforce secure renegotiation
-      according to RFC 5746
+  We've made two modifications to the suggested config from the OWASP recommendations.
+  First we include ECDSA certificates which are excluded from their configuration.
+  Second we have changed the order of the ciphers to deprioritize DHE because of
+  performance implications noted within the OWASP post itself. As the article notes
+  "...the TLS handshake with DHE hinders the CPU about 2.4 times more than ECDHE".
 
+  The **Strong** cipher suite only supports tlsv1.2. Ciphers were based on the OWASP
+  Group A+ and includes support for RSA or ECDSA certificates. The intention of this
+  configuration is to provide as secure as possible defaults knowing that it will not
+  be fully compatible with older browsers and operating systems.
+
+  The **Compatible** cipher suite supports tlsv1, tlsv1.1 and tlsv1.2. Ciphers were
+  based on the OWASP Group B and includes support for RSA or ECDSA certificates. The
+  intention of this configuration is to provide as secure as possible defaults that
+  still maintain support for older browsers and Android versions 4.3 and earlier
+
+  For both suites we've specified ceritifcate curves secp256r1, ecp384r1 and secp521r1.
+  Since OWASP doesn't perscribe curves we've based the selection on the following Mozilla
+  recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
+
+  In addition to selecting a group of ciphers, selecting a cipher suite will also
+  disable client renegotiation and force the client to honor the server specified
+  cipher order.
+
+  Any of those choices can be disabled on a per choice basis by specifying the
+  equivalent SSL option alongside the cipher suite.
+  
+  **The cipher suites were last updated on 2018-JUN-14.**
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
