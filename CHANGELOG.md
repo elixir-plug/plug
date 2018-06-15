@@ -7,6 +7,7 @@
   * Add `Plug.Conn.get_peer_data/1` to read client information such as address, port and ssl cert
   * Add `Plug.Conn.get_http_protocol/1`
   * Add `Plug.SSL.configure/1` to hold common SSL configuration and enable `reuse_sessions` and `secure_renegotiate` by default in adapters
+  * Add the `cipher_suite` option to provide secure defaults for a `:strong` or a `:compatible` TLS configuration.
   * `Plug.SSL` skips HSTS by default on localhost. The list of hosts to exclude is configurable
 
 ## v1.5.1 (2018-05-17)

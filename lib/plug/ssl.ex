@@ -43,8 +43,43 @@ defmodule Plug.SSL do
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
+    * `:cipher_suite` - select a preconfigured cipher suite as described below.
+      You can select `strong ` or `compatible`. If an option is not specified it inherits
+      the defaults from Cowboy and Ranch to preserve backwords compatibility.
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
+
+  ## Cipher Suites
+
+  _The cipher suites were last updated on 2018-JUN-14._
+
+  To simplify configuration of TLS defaults Plug provides two preconfifured
+  options: `:strong` and `:compatible`. The Ciphers chosen and related configuration
+  come from the OWASP recommendations found here:
+  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
+
+  We've made two modifications to the suggested config from the OWASP recommendations.
+  First we include ECDSA certificates which are excluded from their configuration.
+  Second we have changed the order of the ciphers to deprioritize DHE because of
+  performance implications noted within the OWASP post itself. As the article notes
+  "...the TLS handshake with DHE hinders the CPU about 2.4 times more than ECDHE".
+
+  The **Strong(()) cipher suite only supports tlsv1.2. Ciphers were based on the OWASP Group A+
+  and includes support for RSA or ECDSA certificates. The intention of this configuration is
+  to provide as secure as possible defaults knowing that it will not be fully compatible with
+  older browsers and operating systems.
+
+  The **Compatible** cipher suite supports tlsv1, tlsv1.1 and tlsv1.2. Ciphers were based on the
+  OWASP Group B and includes support for RSA or ECDSA certificates. The intention of this
+  configuration is to provide as secure as possible defaults that still maintain support for
+  older browsers and Android versions 4.3 and earlier
+
+  For both suites we've specified ceritifcate curves secp256r1, ecp384r1 and secp521r1. Since
+  OWASP doesn't perscribe curves we've based the selection on the following Mozilla recommendations:
+  https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
+
+  In addition to selecting a group of ciphers, selecting a cipher suite will also disable
+  client renegotiation and force the client to honor the server specified cipher order.
 
   ## Port
 
@@ -57,6 +92,40 @@ defmodule Plug.SSL do
 
   require Logger
   import Plug.Conn
+
+  @strong_tls_ciphers [
+    'ECDHE-RSA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
+    'ECDHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
+    'DHE-RSA-AES256-GCM-SHA384',
+    'DHE-RSA-AES128-GCM-SHA256'
+  ]
+
+  @compatible_tls_ciphers [
+    'ECDHE-RSA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
+    'ECDHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
+    'DHE-RSA-AES256-GCM-SHA384',
+    'DHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-RSA-AES256-SHA384',
+    'ECDHE-ECDSA-AES256-SHA384',
+    'ECDHE-RSA-AES128-SHA256',
+    'ECDHE-ECDSA-AES128-SHA256',
+    'ECDHE-RSA-AES256-SHA',
+    'ECDHE-ECDSA-AES256-SHA',
+    'DHE-RSA-AES256-SHA256',
+    'DHE-RSA-AES128-SHA256',
+    'ECDHE-RSA-AES128-SHA',
+    'ECDHE-ECDSA-AES128-SHA'
+  ]
+
+  @eccs [
+    :secp256r1,
+    :secp384r1,
+    :secp521r1
+  ]
 
   @doc """
   Configures and validates the options given to the `:ssl` application.
@@ -120,6 +189,7 @@ defmodule Plug.SSL do
     |> normalize_ssl_files()
     |> convert_to_charlist()
     |> set_secure_defaults()
+    |> configure_managed_tls()
   catch
     {:configure, message} -> {:error, message}
   else
@@ -195,6 +265,36 @@ defmodule Plug.SSL do
     options
     |> Keyword.put_new(:secure_renegotiate, true)
     |> Keyword.put_new(:reuse_sessions, true)
+  end
+
+  defp configure_managed_tls(options) do
+    case Keyword.get(options, :cipher_suite) do
+      :strong -> set_strong_tls_defaults(options)
+      :compatible -> set_compatible_tls_defaults(options)
+      _ -> Keyword.delete(options, :cipher_suite)
+    end
+  end
+
+  defp set_managed_tls_defaults(options) do
+    options
+    |> Keyword.delete(:cipher_suite)
+    |> Keyword.put_new(:honor_cipher_order, true)
+    |> Keyword.put_new(:client_renegotiation, false)
+    |> Keyword.put_new(:eccs, @eccs)
+  end
+
+  defp set_strong_tls_defaults(options) do
+    options
+    |> set_managed_tls_defaults
+    |> Keyword.put_new(:ciphers, @strong_tls_ciphers)
+    |> Keyword.put_new(:versions, [:"tlsv1.2"])
+  end
+
+  defp set_compatible_tls_defaults(options) do
+    options
+    |> set_managed_tls_defaults
+    |> Keyword.put_new(:ciphers, @compatible_tls_ciphers)
+    |> Keyword.put_new(:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1])
   end
 
   defp fail(message) when is_binary(message) do
