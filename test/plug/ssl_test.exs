@@ -62,6 +62,18 @@ defmodule Plug.SSLTest do
                'ECDHE-ECDSA-AES128-SHA'
              ]
     end
+
+    test "errors when a cipher is provided as a binary string" do
+      assert {:error, message} =
+               configure(
+                 key: "abcdef",
+                 cert: "ghijkl",
+                 ciphers: ['ECDHE-ECDSA-AES256-GCM-SHA384', "ECDHE-RSA-AES256-GCM-SHA384"]
+               )
+
+      assert message ==
+               "Your cipher list contained the binary \"ECDHE-RSA-AES256-GCM-SHA384\", which is not valid"
+    end
   end
 
   defp call(conn, opts \\ []) do

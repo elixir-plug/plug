@@ -182,6 +182,19 @@ defmodule Plug.SSL do
   equivalent SSL option alongside the cipher suite.
 
   **The cipher suites were last updated on 2018-JUN-14.**
+
+  ## Manual Cipher Configuration
+
+  Should you choose to configure your own ciphers you cannot use the `:cipher_suite` option
+  as setting a cipher suite overrides your cipher selections.
+
+  Instead, you can see the valid options for ciphers in the Erlang SSL documentation:
+  http://erlang.org/doc/man/ssl.html
+
+  Please note that specifying a cipher as a binary string is not valid and would silently fail in the past.
+  This was problematic because the result would be for Erlang to use the default list of ciphers.
+  To prevent this Plug will now throw an error to ensure you're aware of this.
+
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
@@ -191,6 +204,7 @@ defmodule Plug.SSL do
     |> convert_to_charlist()
     |> set_secure_defaults()
     |> configure_managed_tls()
+    |> validate_ciphers()
   catch
     {:configure, message} -> {:error, message}
   else
@@ -297,6 +311,20 @@ defmodule Plug.SSL do
     |> set_managed_tls_defaults
     |> Keyword.put_new(:ciphers, @compatible_tls_ciphers)
     |> Keyword.put_new(:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1])
+  end
+
+  defp validate_ciphers(options) do
+    Keyword.get(options, :ciphers, [])
+    |> Enum.map(&validate_cipher/1)
+
+    options
+  end
+
+  defp validate_cipher(cipher) do
+    if is_binary(cipher) do
+      message = "Your cipher list contained the binary \"#{cipher}\", which is not valid"
+      fail(message)
+    end
   end
 
   defp fail(message) when is_binary(message) do
