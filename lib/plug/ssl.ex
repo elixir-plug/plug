@@ -180,7 +180,7 @@ defmodule Plug.SSL do
 
   Any of those choices can be disabled on a per choice basis by specifying the
   equivalent SSL option alongside the cipher suite.
-  
+
   **The cipher suites were last updated on 2018-JUN-14.**
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
@@ -269,16 +269,17 @@ defmodule Plug.SSL do
   end
 
   defp configure_managed_tls(options) do
-    case Keyword.get(options, :cipher_suite) do
+    {cipher_suite, options} = Keyword.pop(options, :cipher_suite)
+
+    case cipher_suite do
       :strong -> set_strong_tls_defaults(options)
       :compatible -> set_compatible_tls_defaults(options)
-      _ -> Keyword.delete(options, :cipher_suite)
+      _ -> options
     end
   end
 
   defp set_managed_tls_defaults(options) do
     options
-    |> Keyword.delete(:cipher_suite)
     |> Keyword.put_new(:honor_cipher_order, true)
     |> Keyword.put_new(:client_renegotiation, false)
     |> Keyword.put_new(:eccs, @eccs)
