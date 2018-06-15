@@ -10,6 +10,9 @@ defmodule Plug.SSL do
   The status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
 
+  Besides being a Plug, this module also provides conveniences for configuring
+  SSL. See `configure/1`.
+
   ## x-forwarded-proto
 
   If your Plug application is behind a proxy that handles HTTPS, you will
@@ -28,7 +31,7 @@ defmodule Plug.SSL do
     * your proxy strips `x-forwarded-proto` headers from all incoming requests
     * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
-  ## Options
+  ## Plug Options
 
     * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
@@ -43,9 +46,6 @@ defmodule Plug.SSL do
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
-    * `:cipher_suite` - select a preconfigured cipher suite as described below.
-      You can select `strong ` or `compatible`. If an option is not specified it inherits
-      the defaults from Cowboy and Ranch to preserve backwords compatibility.
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
 
