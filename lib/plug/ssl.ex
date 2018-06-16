@@ -200,11 +200,11 @@ defmodule Plug.SSL do
   def configure(options) do
     options
     |> check_for_missing_keys()
+    |> validate_ciphers()
     |> normalize_ssl_files()
     |> convert_to_charlist()
     |> set_secure_defaults()
     |> configure_managed_tls()
-    |> validate_ciphers()
   catch
     {:configure, message} -> {:error, message}
   else
@@ -314,8 +314,9 @@ defmodule Plug.SSL do
   end
 
   defp validate_ciphers(options) do
-    Keyword.get(options, :ciphers, [])
-    |> Enum.map(&validate_cipher/1)
+    options
+    |> Keyword.get(:ciphers, [])
+    |> Enum.each(&validate_cipher/1)
 
     options
   end
