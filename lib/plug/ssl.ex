@@ -10,6 +10,9 @@ defmodule Plug.SSL do
   The status code will be 301 if the method of `conn` is `GET` or `HEAD`,
   or 307 in other situations.
 
+  Besides being a Plug, this module also provides conveniences for configuring
+  SSL. See `configure/1`.
+
   ## x-forwarded-proto
 
   If your Plug application is behind a proxy that handles HTTPS, you will
@@ -28,7 +31,7 @@ defmodule Plug.SSL do
     * your proxy strips `x-forwarded-proto` headers from all incoming requests
     * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
-  ## Options
+  ## Plug Options
 
     * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
@@ -58,6 +61,40 @@ defmodule Plug.SSL do
   require Logger
   import Plug.Conn
 
+  @strong_tls_ciphers [
+    'ECDHE-RSA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
+    'ECDHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
+    'DHE-RSA-AES256-GCM-SHA384',
+    'DHE-RSA-AES128-GCM-SHA256'
+  ]
+
+  @compatible_tls_ciphers [
+    'ECDHE-RSA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
+    'ECDHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
+    'DHE-RSA-AES256-GCM-SHA384',
+    'DHE-RSA-AES128-GCM-SHA256',
+    'ECDHE-RSA-AES256-SHA384',
+    'ECDHE-ECDSA-AES256-SHA384',
+    'ECDHE-RSA-AES128-SHA256',
+    'ECDHE-ECDSA-AES128-SHA256',
+    'DHE-RSA-AES256-SHA256',
+    'DHE-RSA-AES128-SHA256',
+    'ECDHE-RSA-AES256-SHA',
+    'ECDHE-ECDSA-AES256-SHA',
+    'ECDHE-RSA-AES128-SHA',
+    'ECDHE-ECDSA-AES128-SHA'
+  ]
+
+  @eccs [
+    :secp256r1,
+    :secp384r1,
+    :secp521r1
+  ]
+
   @doc """
   Configures and validates the options given to the `:ssl` application.
 
@@ -73,6 +110,7 @@ defmodule Plug.SSL do
         port: 443,
         password: "SECRET",
         otp_app: :my_app,
+        cipher_suite: :strong,
         keyfile: "priv/ssl/key.pem",
         certfile: "priv/ssl/cert.pem",
         dhfile: "priv/ssl/dhparam.pem"
@@ -83,6 +121,7 @@ defmodule Plug.SSL do
          port: 443,
          password: "SECRET",
          otp_app: :my_app,
+         cipher_suite: :strong,
          keyfile: "priv/ssl/key.pem",
          certfile: "priv/ssl/cert.pem",
          dhfile: "priv/ssl/dhparam.pem"
@@ -94,23 +133,67 @@ defmodule Plug.SSL do
   erlang module](http://www.erlang.org/doc/man/ssl.html). With the
   following additions:
 
+    * The `:cipher_suite` option provides `:strong` and `:compatible`
+      options for setting up better cipher and version defaults according
+      to the OWASP recommendations. See the "Cipher Suites" section below
+
     * The certificate files, like keyfile, certfile, cacertfile, dhfile
       can be given as a relative path. For such, the `:otp_app` option
       must also be given and certificates will be looked from the priv
       directory of the given application
 
-    * In order to provide better security, this function also sets
-      safer defaults for certain options. See the "Defaults" section
-      below
+    * In order to provide better security, this function also enables
+      `:reuse_sessions` and `:secure_renegotiate` by default, to instruct
+      clients to reuse sessions and enforce secure renegotiation according
+      to RFC 5746 respectively
 
-  ## Defaults
+  ## Cipher Suites
 
-  This function sets the following defaults:
+  To simplify configuration of TLS defaults Plug provides two preconfifured
+  options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
+  chosen and related configuration come from the OWASP recommendations found here:
+  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
 
-    * `:reuse_sessions` is set to true to instruct clients to reuse sessions
-      when possible
-    * `:secure_renegotiate` is set to true to enforce secure renegotiation
-      according to RFC 5746
+  We've made two modifications to the suggested config from the OWASP recommendations.
+  First we include ECDSA certificates which are excluded from their configuration.
+  Second we have changed the order of the ciphers to deprioritize DHE because of
+  performance implications noted within the OWASP post itself. As the article notes
+  "...the TLS handshake with DHE hinders the CPU about 2.4 times more than ECDHE".
+
+  The **Strong** cipher suite only supports tlsv1.2. Ciphers were based on the OWASP
+  Group A+ and includes support for RSA or ECDSA certificates. The intention of this
+  configuration is to provide as secure as possible defaults knowing that it will not
+  be fully compatible with older browsers and operating systems.
+
+  The **Compatible** cipher suite supports tlsv1, tlsv1.1 and tlsv1.2. Ciphers were
+  based on the OWASP Group B and includes support for RSA or ECDSA certificates. The
+  intention of this configuration is to provide as secure as possible defaults that
+  still maintain support for older browsers and Android versions 4.3 and earlier
+
+  For both suites we've specified ceritifcate curves secp256r1, ecp384r1 and secp521r1.
+  Since OWASP doesn't perscribe curves we've based the selection on the following Mozilla
+  recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
+
+  In addition to selecting a group of ciphers, selecting a cipher suite will also
+  disable client renegotiation and force the client to honor the server specified
+  cipher order.
+
+  Any of those choices can be disabled on a per choice basis by specifying the
+  equivalent SSL option alongside the cipher suite.
+
+  **The cipher suites were last updated on 2018-JUN-14.**
+
+  ## Manual Cipher Configuration
+
+  Should you choose to configure your own ciphers you cannot use the `:cipher_suite` option
+  as setting a cipher suite overrides your cipher selections.
+
+  Instead, you can see the valid options for ciphers in the Erlang SSL documentation:
+  http://erlang.org/doc/man/ssl.html
+
+  Please note that specifying a cipher as a binary string is not valid and would silently fail in the past.
+  This was problematic because the result would be for Erlang to use the default list of ciphers.
+  To prevent this Plug will now throw an error to ensure you're aware of this.
 
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
@@ -120,6 +203,8 @@ defmodule Plug.SSL do
     |> normalize_ssl_files()
     |> convert_to_charlist()
     |> set_secure_defaults()
+    |> configure_managed_tls()
+    |> validate_ciphers()
   catch
     {:configure, message} -> {:error, message}
   else
@@ -195,6 +280,56 @@ defmodule Plug.SSL do
     options
     |> Keyword.put_new(:secure_renegotiate, true)
     |> Keyword.put_new(:reuse_sessions, true)
+  end
+
+  defp configure_managed_tls(options) do
+    {cipher_suite, options} = Keyword.pop(options, :cipher_suite)
+
+    case cipher_suite do
+      :strong -> set_strong_tls_defaults(options)
+      :compatible -> set_compatible_tls_defaults(options)
+      _ -> options
+    end
+  end
+
+  defp set_managed_tls_defaults(options) do
+    options
+    |> Keyword.put_new(:honor_cipher_order, true)
+    |> Keyword.put_new(:client_renegotiation, false)
+    |> Keyword.put_new(:eccs, @eccs)
+  end
+
+  defp set_strong_tls_defaults(options) do
+    options
+    |> set_managed_tls_defaults
+    |> Keyword.put_new(:ciphers, @strong_tls_ciphers)
+    |> Keyword.put_new(:versions, [:"tlsv1.2"])
+  end
+
+  defp set_compatible_tls_defaults(options) do
+    options
+    |> set_managed_tls_defaults
+    |> Keyword.put_new(:ciphers, @compatible_tls_ciphers)
+    |> Keyword.put_new(:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1])
+  end
+
+  defp validate_ciphers(options) do
+    Keyword.get(options, :ciphers, [])
+    |> Enum.map(&validate_cipher/1)
+
+    options
+  end
+
+  defp validate_cipher(cipher) do
+    if is_binary(cipher) do
+      message =
+        "invalid cipher #{inspect(cipher)} in cipher list. " <>
+          "Strings (double-quoted) are not allowed in ciphers. " <>
+          "Ciphers must be either charlists (single-quoted) or tuples. " <>
+          "See the ssl application docs for reference"
+
+      fail(message)
+    end
   end
 
   defp fail(message) when is_binary(message) do

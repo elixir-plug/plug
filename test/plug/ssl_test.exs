@@ -9,9 +9,73 @@ defmodule Plug.SSLTest do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl")
       assert opts[:reuse_sessions] == true
       assert opts[:secure_renegotiate] == true
+      assert opts[:honor_cipher_order] == nil
+      assert opts[:client_renegotiation] == nil
+      assert opts[:cipher_suite] == nil
 
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", reuse_sessions: false)
       assert opts[:reuse_sessions] == false
+    end
+
+    test "sets cipher suite to strong" do
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :strong)
+      assert opts[:cipher_suite] == nil
+      assert opts[:honor_cipher_order] == true
+      assert opts[:client_renegotiation] == false
+      assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
+      assert opts[:versions] == [:"tlsv1.2"]
+
+      assert opts[:ciphers] == [
+               'ECDHE-RSA-AES256-GCM-SHA384',
+               'ECDHE-ECDSA-AES256-GCM-SHA384',
+               'ECDHE-RSA-AES128-GCM-SHA256',
+               'ECDHE-ECDSA-AES128-GCM-SHA256',
+               'DHE-RSA-AES256-GCM-SHA384',
+               'DHE-RSA-AES128-GCM-SHA256'
+             ]
+    end
+
+    test "sets cipher suite to compatible" do
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :compatible)
+      assert opts[:cipher_suite] == nil
+      assert opts[:honor_cipher_order] == true
+      assert opts[:client_renegotiation] == false
+      assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
+      assert opts[:versions] == [:"tlsv1.2", :"tlsv1.1", :tlsv1]
+
+      assert opts[:ciphers] == [
+               'ECDHE-RSA-AES256-GCM-SHA384',
+               'ECDHE-ECDSA-AES256-GCM-SHA384',
+               'ECDHE-RSA-AES128-GCM-SHA256',
+               'ECDHE-ECDSA-AES128-GCM-SHA256',
+               'DHE-RSA-AES256-GCM-SHA384',
+               'DHE-RSA-AES128-GCM-SHA256',
+               'ECDHE-RSA-AES256-SHA384',
+               'ECDHE-ECDSA-AES256-SHA384',
+               'ECDHE-RSA-AES128-SHA256',
+               'ECDHE-ECDSA-AES128-SHA256',
+               'DHE-RSA-AES256-SHA256',
+               'DHE-RSA-AES128-SHA256',
+               'ECDHE-RSA-AES256-SHA',
+               'ECDHE-ECDSA-AES256-SHA',
+               'ECDHE-RSA-AES128-SHA',
+               'ECDHE-ECDSA-AES128-SHA'
+             ]
+    end
+
+    test "errors when a cipher is provided as a binary string" do
+      assert {:error, message} =
+               configure(
+                 key: "abcdef",
+                 cert: "ghijkl",
+                 ciphers: ['ECDHE-ECDSA-AES256-GCM-SHA384', "ECDHE-RSA-AES256-GCM-SHA384"]
+               )
+
+      assert message ==
+               "invalid cipher \"ECDHE-RSA-AES256-GCM-SHA384\" in cipher list. " <>
+                 "Strings (double-quoted) are not allowed in ciphers. " <>
+                 "Ciphers must be either charlists (single-quoted) or tuples. " <>
+                 "See the ssl application docs for reference"
     end
   end
 
