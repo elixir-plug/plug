@@ -63,6 +63,32 @@ defmodule Plug.SSLTest do
              ]
     end
 
+    test "sets cipher suite with overrides compatible" do
+      assert {:ok, opts} =
+               configure(
+                 key: "abcdef",
+                 cert: "ghijkl",
+                 cipher_suite: :compatible,
+                 ciphers: [],
+                 client_renegotiation: true,
+                 eccs: [],
+                 versions: [],
+                 honor_cipher_order: false
+               )
+
+      assert opts[:cipher_suite] == nil
+      assert opts[:honor_cipher_order] == false
+      assert opts[:client_renegotiation] == true
+      assert opts[:eccs] == []
+      assert opts[:versions] == []
+      assert opts[:ciphers] == []
+    end
+
+    test "errors when an invalid cipher is given" do
+      assert configure(key: "abcdef", cert: "ghijkl", cipher_suite: :unknown) ==
+               {:error, "unknown :cipher_suite named :unknown"}
+    end
+
     test "errors when a cipher is provided as a binary string" do
       assert {:error, message} =
                configure(

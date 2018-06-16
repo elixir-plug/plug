@@ -288,7 +288,8 @@ defmodule Plug.SSL do
     case cipher_suite do
       :strong -> set_strong_tls_defaults(options)
       :compatible -> set_compatible_tls_defaults(options)
-      _ -> options
+      nil -> options
+      _ -> fail("unknown :cipher_suite named #{inspect(cipher_suite)}")
     end
   end
 
