@@ -1,6 +1,6 @@
 ## Changelog
 
-## v1.6.0
+## v1.6.0 (2018-06-16)
 
 * Enhancements
   * Add `Plug.Conn.inform/3` and `Plug.Conn.inform!/3` to support HTTP/2 informational responses
