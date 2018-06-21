@@ -38,6 +38,9 @@ defmodule Plug.Debugger do
     * `:otp_app` - the OTP application that is using Plug. This option is used
       to filter stacktraces that belong only to the given application.
     * `:style` - custom styles (see below)
+    * `:banner` - the optional MFA (`{module, function, args}`) which receives
+      exception details and returns banner contents to appear at the top of
+      the page. May be any string, including markup.
 
   ## Custom styles
 
@@ -54,6 +57,23 @@ defmodule Plug.Debugger do
 
   The `:logo` is preferred to be a base64-encoded data URI so not to make any
   external requests, though external URLs (eg, `https://...`) are supported.
+
+  ## Custom Banners
+
+  You may pass an MFA (`{module, function, args}`) to be invoked when an
+  error is rendered which provides a custom banner at the top of the
+  debugger page. The function receives the following arguments, with the
+  passed `args` concentated at the end:
+
+      [conn, status, kind, reason, stacktrace]
+
+  For example, the following `:banner` option:
+
+      use Plug.Debugger, banner: {MyModule, :debug_banner, []}
+
+  would invoke the function:
+
+      MyModule.debug_banner(conn, status, kind, reason, stacktrace)
 
   ## Links to the text editor
 
@@ -153,6 +173,7 @@ defmodule Plug.Debugger do
     params = maybe_fetch_query_params(conn)
     {title, message} = info(kind, reason)
     style = Enum.into(opts[:style] || [], @default_style)
+    banner = banner(conn, status, kind, reason, stack, opts)
 
     if accepts_html?(get_req_header(conn, "accept")) do
       conn = put_resp_content_type(conn, "text/html")
@@ -164,7 +185,8 @@ defmodule Plug.Debugger do
         message: message,
         session: session,
         params: params,
-        style: style
+        style: style,
+        banner: banner,
       ]
 
       send_resp(conn, status, template_html(assigns))
@@ -372,6 +394,18 @@ defmodule Plug.Debugger do
     lines
     |> Enum.map_reduce(initial, fn line, acc -> {{acc, line, highlight}, acc + 1} end)
     |> elem(0)
+  end
+
+  defp banner(conn, status, kind, reason, stack, opts) do
+    case Keyword.fetch(opts, :banner) do
+      {:ok, {mod, func, args}} ->
+        apply(mod, func, [conn, status, kind, reason, stack] ++ args)
+
+      {:ok, other} ->
+        raise ArgumentError, "expected :banner to be an MFA ({module, func, args}), got: #{inspect(other)}"
+
+      :error -> nil
+    end
   end
 
   ## Helpers
