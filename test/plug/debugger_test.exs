@@ -314,11 +314,9 @@ defmodule Plug.DebuggerTest do
 
   test "custom banners can be rendered" do
     conn = put_req_header(conn(:get, "/boom"), "accept", "text/html")
-
     assert_raise RuntimeError, fn -> StyledRouter.call(conn, []) end
 
     {_status, _headers, body} = sent_resp(conn)
-
     assert body =~ "<h1>500, :error, %RuntimeError{message: \"oops\"}</h1>"
   end
 
