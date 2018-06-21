@@ -56,6 +56,7 @@ defmodule Plug.DebuggerTest do
 
   defmodule StyledRouter do
     use Plug.Router
+
     use Plug.Debugger,
       style: [primary: "#c0ffee", logo: nil],
       banner: {__MODULE__, :banner, []}
@@ -68,8 +69,8 @@ defmodule Plug.DebuggerTest do
       raise "oops"
     end
 
-    def banner(%Plug.Conn{}, status, kind, reason, [_|_] = _stack) do
-      "<h1>#{inspect status}, #{inspect kind}, #{inspect reason}</h1>"
+    def banner(%Plug.Conn{}, status, kind, reason, [_ | _] = _stack) do
+      "<h1>#{inspect(status)}, #{inspect(kind)}, #{inspect(reason)}</h1>"
     end
   end
 

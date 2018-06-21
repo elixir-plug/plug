@@ -186,7 +186,7 @@ defmodule Plug.Debugger do
         session: session,
         params: params,
         style: style,
-        banner: banner,
+        banner: banner
       ]
 
       send_resp(conn, status, template_html(assigns))
@@ -402,9 +402,11 @@ defmodule Plug.Debugger do
         apply(mod, func, [conn, status, kind, reason, stack] ++ args)
 
       {:ok, other} ->
-        raise ArgumentError, "expected :banner to be an MFA ({module, func, args}), got: #{inspect(other)}"
+        raise ArgumentError,
+              "expected :banner to be an MFA ({module, func, args}), got: #{inspect(other)}"
 
-      :error -> nil
+      :error ->
+        nil
     end
   end
 
