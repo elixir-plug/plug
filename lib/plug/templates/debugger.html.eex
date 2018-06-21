@@ -584,6 +584,11 @@
         font-style: normal;
     }
 
+    .banner {
+      padding: 24px 48px 24px 48px;
+      border-top: solid 1px <%= @style.line_color %>;
+    }
+
     /*
      * Conn info
      */
@@ -664,6 +669,12 @@
             <p class="detail"><%= h detail %></p>
             <% end %>
         </header>
+
+    <%= if @banner do %>
+        </div>
+        <div class="banner"><%= @banner %></div>
+        <div class="top-details">
+    <% end %>
 
         <div class="code-explorer">
             <div class="code-snippets">

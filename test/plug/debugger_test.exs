@@ -56,7 +56,9 @@ defmodule Plug.DebuggerTest do
 
   defmodule StyledRouter do
     use Plug.Router
-    use Plug.Debugger, style: [primary: "#c0ffee", logo: nil]
+    use Plug.Debugger,
+      style: [primary: "#c0ffee", logo: nil],
+      banner: {__MODULE__, :banner, []}
 
     plug :match
     plug :dispatch
@@ -64,6 +66,10 @@ defmodule Plug.DebuggerTest do
     get "/boom" do
       _ = conn
       raise "oops"
+    end
+
+    def banner(%Plug.Conn{}, status, kind, reason, [_|_] = _stack) do
+      "<h1>#{inspect status}, #{inspect kind}, #{inspect reason}</h1>"
     end
   end
 
@@ -304,6 +310,16 @@ defmodule Plug.DebuggerTest do
     {_status, _headers, body} = sent_resp(conn)
     assert body =~ "color: #c0ffee"
     refute body =~ ~r(\.exception-logo {\s*position: absolute)
+  end
+
+  test "custom banners can be rendered" do
+    conn = put_req_header(conn(:get, "/boom"), "accept", "text/html")
+
+    assert_raise RuntimeError, fn -> StyledRouter.call(conn, []) end
+
+    {_status, _headers, body} = sent_resp(conn)
+
+    assert body =~ "<h1>500, :error, %RuntimeError{message: \"oops\"}</h1>"
   end
 
   test "if the Accept header is something else than text/html, Markdown is rendered" do
