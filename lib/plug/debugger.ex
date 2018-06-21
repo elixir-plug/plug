@@ -39,8 +39,8 @@ defmodule Plug.Debugger do
       to filter stacktraces that belong only to the given application.
     * `:style` - custom styles (see below)
     * `:banner` - the optional MFA (`{module, function, args}`) which receives
-        exception details and returns banner contents to appear at the top of
-        the page. May be any string, including markup.
+      exception details and returns banner contents to appear at the top of
+      the page. May be any string, including markup.
 
   ## Custom styles
 
