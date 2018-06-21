@@ -5,11 +5,13 @@ defmodule Plug.Adapters.Cowboy2 do
   ## Options
 
     * `:ip` - the ip to bind the server to.
-      Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4
-      or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6.
+      Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4,
+      or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6,
+      or a tuple in the format `{:local, path}` for a unix socket at the given `path`.
 
     * `:port` - the port to run the server.
       Defaults to 4000 (http) and 4040 (https).
+      Must be 0 when `:ip` is a `{:local, path}` tuple.
 
     * `:acceptors` - the number of acceptors for the listener.
       Defaults to 100.
@@ -37,7 +39,8 @@ defmodule Plug.Adapters.Cowboy2 do
   All other options are given to the underlying transport. When running
   on HTTPS, any SSL configuration should be given directly to the adapter.
   See `https/3` for an example and read `Plug.SSL.configure/1` to understand
-  about our SSL defaults.
+  about our SSL defaults. When using a unix socket, OTP 21+ is required for `Plug.Static`
+  and `Plug.Conn.send_file/3` to behave correctly.
   """
 
   require Logger
