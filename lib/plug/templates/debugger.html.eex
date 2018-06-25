@@ -146,17 +146,6 @@
         font-weight: 400;
     }
 
-    /* Hide path until hover */
-    .exception-info > .struct > .path {
-        opacity: 0;
-        -webkit-transition: opacity 100ms linear;
-        transition: opacity 100ms linear;
-    }
-
-    .exception-info:hover > .struct > .path {
-        opacity: 1;
-    }
-
     .exception-info > .title {
         font-size: <%= :math.pow(1.2, 4) %>em;
         line-height: 1.4;
