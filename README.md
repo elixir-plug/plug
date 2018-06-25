@@ -5,8 +5,8 @@
 
 Plug is:
 
-1. A specification for composable modules between web applications
-2. Connection adapters for different web servers in the Erlang VM
+  1. A specification for composable modules between web applications
+  2. Connection adapters for different web servers in the Erlang VM
 
 [Documentation for Plug is available online](http://hexdocs.pm/plug/).
 
@@ -35,7 +35,7 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     $ iex -S mix
     iex> c "path/to/file.ex"
     [MyPlug]
-    iex> {:ok, _} = Plug.Adapters.Cowboy.http MyPlug, []
+    iex> {:ok, _} = Plug.Adapters.Cowboy2.http MyPlug, []
     {:ok, #PID<...>}
 
 Access "http://localhost:4000/" and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the "Supervised handlers" section below.
@@ -48,8 +48,10 @@ You can use plug in your projects in two steps:
 
     ```elixir
     def deps do
-      [{:cowboy, "~> 1.0.0"},
-       {:plug, "~> 1.0"}]
+      [
+        {:cowboy, "~> 2.0"},
+        {:plug, "~> 1.0"}
+      ]
     end
     ```
 
@@ -65,9 +67,11 @@ You can use plug in your projects in two steps:
 
 | Branch | Support                  |
 | ------ | ------------------------ |
-| v1.4   | Bug fixes                |
+| v1.6   | Bug fixes                |
+| v1.5   | Security patches only    |
+| v1.4   | Security patches only    |
 | v1.3   | Security patches only    |
-| v1.2   | Security patches only    |
+| v1.2   | Unsupported from 06/2018 |
 | v1.1   | Unsupported from 01/2018 |
 | v1.0   | Unsupported from 05/2017 |
 
