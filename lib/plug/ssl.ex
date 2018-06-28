@@ -341,28 +341,25 @@ defmodule Plug.SSL do
   @doc """
   Plug initialization callback.
   """
+  def init([opt_out: true]), do: nil
   def init(opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
-    opt_out = Keyword.get(opts, :opt_out, false)
     {hsts_header(opts), exclude, host, rewrite_on, log, opt_out}
   end
 
   @doc """
   Plug pipeline callback.
   """
-  def call(conn, {hsts, exclude, host, rewrites, log_level, opt_out}) do
-    case opt_out do
-      true -> conn
-      _ ->
-      conn = rewrite_on(conn, rewrites)
+  def call(conn, nil), do: conn
+  def call(conn, {hsts, exclude, host, rewrites, log_level}) do
+    conn = rewrite_on(conn, rewrites)
 
-      case conn do
-        %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
-        %{} -> redirect_to_https(conn, host, log_level)
-      end
+    case conn do
+      %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
+      %{} -> redirect_to_https(conn, host, log_level)
     end
   end
 
