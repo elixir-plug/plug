@@ -88,20 +88,6 @@ defmodule Plug.Conn do
     * `adapter` - holds the adapter information in a tuple
     * `private` - shared library data as a map
 
-  ## Protocols
-
-  `Plug.Conn` implements both the Collectable and Inspect protocols
-  out of the box. The inspect protocol provides a nice representation
-  of the connection while the collectable protocol allows developers
-  to easily chunk data. For example:
-
-      # Send the chunked response headers
-      conn = send_chunked(conn, 200)
-
-      # Pipe the given list into a connection
-      # Each item is emitted as a chunk
-      Enum.into(~w(each chunk as a word), conn)
-
   ## Custom status codes
 
   Plug allows status codes to be overridden or added in order to allow new codes
