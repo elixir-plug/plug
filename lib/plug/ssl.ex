@@ -347,6 +347,7 @@ defmodule Plug.SSL do
   end
 
   defp get_opts(true, _opts), do: nil
+
   defp get_opts(_, opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
@@ -359,6 +360,7 @@ defmodule Plug.SSL do
   Plug pipeline callback.
   """
   def call(conn, nil), do: conn
+
   def call(conn, {hsts, exclude, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
