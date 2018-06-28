@@ -346,7 +346,7 @@ defmodule Plug.SSL do
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
-    force_ssl = Keyword.get(opts, :force_ssl, true)
+    opt_out = Keyword.get(opts, :opt_out, false)
     {hsts_header(opts), exclude, host, rewrite_on, log, force_ssl}
   end
 
@@ -355,7 +355,7 @@ defmodule Plug.SSL do
   """
   def call(conn, {hsts, exclude, host, rewrites, log_level, opt_out}) do
     case opt_out do
-      false -> conn
+      true -> conn
       _ ->
       conn = rewrite_on(conn, rewrites)
 
