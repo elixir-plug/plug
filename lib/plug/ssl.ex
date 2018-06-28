@@ -341,8 +341,16 @@ defmodule Plug.SSL do
   @doc """
   Plug initialization callback.
   """
-  def init([opt_out: true]), do: nil
   def init(opts) do
+    opt_out = Keyword.get(opts, :opt_out, false)
+    get_opts(opt_out, opts)
+  end
+
+  @doc """
+  Plug get opts.
+  """
+  defp get_opts(true, _opts), do: nil
+  defp get_opts(_, opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
