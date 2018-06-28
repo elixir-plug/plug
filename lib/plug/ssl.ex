@@ -341,31 +341,28 @@ defmodule Plug.SSL do
   @doc """
   Plug initialization callback.
   """
-  def init(opts), do: opts
-
-  @doc """
-  Get runtime config
-  """
-  def get_opts do
-    opts = Application.get_env(:force_ssl, :opts)
+  def init(opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
-
-    {hsts_header(opts), exclude, host, rewrite_on, log}
+    force_ssl = Keyword.get(opts, :force_ssl, true)
+    {hsts_header(opts), exclude, host, rewrite_on, log, force_ssl}
   end
 
   @doc """
   Plug pipeline callback.
   """
-  def call(conn, _opts) do
-    {hsts, exclude, host, rewrites, log_level} = get_opts()
-    conn = rewrite_on(conn, rewrites)
+  def call(conn, {hsts, exclude, host, rewrites, log_level, force_ssl}) do
+    case force_ssl do
+      false -> conn
+      _ ->
+      conn = rewrite_on(conn, rewrites)
 
-    case conn do
-      %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
-      %{} -> redirect_to_https(conn, host, log_level)
+      case conn do
+        %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
+        %{} -> redirect_to_https(conn, host, log_level)
+      end
     end
   end
 
