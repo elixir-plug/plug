@@ -347,7 +347,7 @@ defmodule Plug.SSL do
   Get runtime config
   """
   def get_opts do
-    opts = Application.get_env(:force_ssl)
+    opts = Application.get_env(:force_ssl, :opts)
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
