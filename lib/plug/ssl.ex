@@ -347,7 +347,7 @@ defmodule Plug.SSL do
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
-    {hsts_header(opts), exclude, host, rewrite_on, log, opt_out}
+    {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
   @doc """
