@@ -346,9 +346,6 @@ defmodule Plug.SSL do
     get_opts(opt_out, opts)
   end
 
-  @doc """
-  Plug get opts.
-  """
   defp get_opts(true, _opts), do: nil
   defp get_opts(_, opts) do
     host = Keyword.get(opts, :host)
