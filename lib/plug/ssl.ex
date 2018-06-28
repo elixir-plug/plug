@@ -353,8 +353,8 @@ defmodule Plug.SSL do
   @doc """
   Plug pipeline callback.
   """
-  def call(conn, {hsts, exclude, host, rewrites, log_level, force_ssl}) do
-    case force_ssl do
+  def call(conn, {hsts, exclude, host, rewrites, log_level, opt_out}) do
+    case opt_out do
       false -> conn
       _ ->
       conn = rewrite_on(conn, rewrites)
