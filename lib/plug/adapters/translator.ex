@@ -87,6 +87,10 @@ defmodule Plug.Adapters.Translator do
     [server_info(conn), request_info(conn)]
   end
 
+  defp server_info(%Plug.Conn{host: host, port: :undefined, scheme: scheme}) do
+    ["Server: ", host, ?\s, ?(, Atom.to_string(scheme), ?), ?\n]
+  end
+
   defp server_info(%Plug.Conn{host: host, port: port, scheme: scheme}) do
     ["Server: ", host, ":", Integer.to_string(port), ?\s, ?(, Atom.to_string(scheme), ?), ?\n]
   end
