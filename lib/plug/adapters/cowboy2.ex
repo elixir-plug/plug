@@ -278,7 +278,7 @@ defmodule Plug.Adapters.Cowboy2 do
         :ok
 
       vsn ->
-        raise "you are using Plug.Adapters.Cowboy (for Cowboy 1) but your current Cowboy " <>
+        raise "you are using Plug.Adapters.Cowboy2 (for Cowboy 2) but your current Cowboy " <>
                 "version is #{vsn}. Please update your mix.exs file accordingly"
     end
   end
