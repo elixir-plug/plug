@@ -172,8 +172,8 @@ defmodule Plug.Upload do
     {:noreply, state}
   end
 
-  def handle_info(msg, state) do
-    super(msg, state)
+  def handle_info(_msg, state) do
+    {:noreply, state}
   end
 
   def terminate(_reason, _state) do

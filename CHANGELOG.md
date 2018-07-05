@@ -1,5 +1,13 @@
 ## Changelog
 
+## v1.6.1 (2018-07-05)
+
+* Enhancements
+  * Raise on unknown `Plug.SSL` cipher_suites
+  * Document Cowboy 2 usage with unix sockets
+  * Add `Plug.Debugger` banner for custom page details
+  * Do not crash error reporter for Cowboy 2 on undefined port
+
 ## v1.6.0 (2018-06-16)
 
 * Enhancements

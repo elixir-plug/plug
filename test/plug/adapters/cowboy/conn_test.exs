@@ -42,7 +42,7 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     exception ->
       receive do
         {:plug_conn, :sent} ->
-          :erlang.raise(:error, exception, :erlang.get_stacktrace())
+          :erlang.raise(:error, exception, System.stacktrace())
       after
         0 ->
           message =
