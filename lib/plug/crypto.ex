@@ -9,7 +9,7 @@ defmodule Plug.Crypto do
   use Bitwise
 
   @doc """
-  A restricted version a `:erlang.binary_to_term/1` that
+  A restricted version of `:erlang.binary_to_term/2` that
   forbids possibly unsafe terms.
   """
   def safe_binary_to_term(binary, opts \\ []) when is_binary(binary) do
