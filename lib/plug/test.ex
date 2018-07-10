@@ -95,7 +95,7 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Return the informational requsts that have been sent.
+  Return the informational requests that have been sent.
 
   This function depends on gathering the messages sent by the test adapter
   when informational messages, such as an early hint, are sent. Calling this function
