@@ -119,7 +119,7 @@ defmodule Plug.Conn.Utils do
   def content_type(binary) do
     case media_type(binary) do
       {:ok, _, "*", _} -> :error
-      {:ok, _, _, _} = ok -> ok
+      {:ok, _, _, _} = mt -> mt
       :error -> :error
     end
   end
