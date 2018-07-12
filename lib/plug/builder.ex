@@ -97,6 +97,55 @@ defmodule Plug.Builder do
           halt(conn)
         end
       end
+
+  ## Passing the options of the builder to a plug downstream
+
+  When trying to pass options from the builder to a plug downstream, you might
+  find yourself overriding 'call/2'. When doing so, it is important to be
+  mindful about whether or not the pipeline has been halted. When calling
+  `PlugPassingOptsDownstream` in the following example, failing to check whether
+  the pipeline has been halted before calling `DownstreamPlug` will raise
+  `Plug.Conn.AlreadySentError` rather than respond with 404 "not found":
+
+      defmodule DownstreamPlug do
+        @behaviour Plug
+
+        import Plug.Conn
+
+        def init(opts), do: opts
+
+        def call(conn, opts) do
+          dependency = Keyword.get(opts, :dependency)
+
+          # Do something with the injected dependency
+
+          send_resp(conn, 200, "OK")
+        end
+      end
+
+      defmodule PlugPassingOptsDownstream do
+        use Plug.Builder
+        plug :pretend_not_found
+
+        def call(conn, opts) do
+          conn
+          |> super(opts) # calls :pretend_not_found
+          |> call_downstream_plug(opts)
+        end
+
+        defp pretend_not_found(conn, _opts) do
+          conn
+          |> send_resp(404, "not found")
+          |> halt()
+        end
+
+        defp call_downstream_plug(conn = %{halted: true}, _opts), do: conn
+
+        defp call_downstream_plug(conn, opts) do
+          downstream_plug_opts = DownstreamPlug.init(opts)
+          DownstreamPlug.call(conn, downstream_plug_opts)
+        end
+      end
   """
 
   @type plug :: module | atom
