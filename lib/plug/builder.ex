@@ -98,37 +98,54 @@ defmodule Plug.Builder do
         end
       end
 
-  ## A note about halting a plug pipeline when overriding `call/2`
+  ## Passing the options of the builder to a plug downstream
 
-  When overriding `call/2`, it's important to be mindful about whether or not a
-  pipeline has been halted when implementing behavior:
+  When trying to pass options from the builder to a plug downstream, you might
+  find yourself overriding 'call/2'. When doing so, it is important to be
+  mindful about whether or not the pipeline has been halted. When calling
+  `PlugPassingOptsDownstream` in the following example, failing to check whether
+  the pipeline has been halted before calling `DownstreamPlug` will raise
+  `Plug.Conn.AlreadySentError` rather than respond with 404 "not found":
 
-      defmodule PlugWithCustomCallUsingHalt do
+      defmodule DownstreamPlug do
+        @behaviour Plug
+
+        import Plug.Conn
+
+        def init(opts), do: opts
+
+        def call(conn, opts) do
+          dependency = Keyword.get(opts, :dependency)
+
+          # Do something with the injected dependency
+
+          send_resp(conn, 200, "OK")
+        end
+      end
+
+      defmodule PlugPassingOptsDownstream do
         use Plug.Builder
         plug :pretend_not_found
 
         def call(conn, opts) do
           conn
           |> super(opts) # calls :pretend_not_found
-          |> respond_ok_unless_halted(opts)
+          |> call_downstream_plug(opts)
         end
 
         defp pretend_not_found(conn, _opts) do
           conn
           |> send_resp(404, "not found")
-          |> halt(conn)
+          |> halt()
         end
 
-        defp respond_ok_unless_halted(conn = %{halted: true}, _opts), do: conn
+        defp call_downstream_plug(conn = %{halted: true}, _opts), do: conn
 
-        defp respond_ok_unless_halted(conn, _opts) do
-          send_resp(conn, 200, "OK")
+        defp call_downstream_plug(conn, opts) do
+          downstream_plug_opts = DownstreamPlug.init(opts)
+          DownstreamPlug.call(conn, downstream_plug_opts)
         end
       end
-
-  In the above example, failing to check whether the pipeline has been halted
-  before calling `send_resp/3` a second time would raise a
-  `Plug.Conn.AlreadySentError` rather than respond with 404 "not found".
   """
 
   @type plug :: module | atom
