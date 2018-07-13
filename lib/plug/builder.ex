@@ -206,6 +206,22 @@ defmodule Plug.Builder do
 
   It will print `[custom: :options]` as the builder options
   were passed to the inner plug.
+
+  Note you only pass `builder_opts()` to **function plugs**.
+  You cannot use `builder_opts()` with module plugs because
+  their options are evaluated at compile time. If you need
+  to pass `builder_opts()` to a module plug, you can wrap
+  the module plug in function. To be precise, do not do this:
+
+      plug Plug.Parsers, builder_opts()
+
+  Instead do this:
+
+      plug :custom_plug_parsers, builder_opts()
+
+      defp custom_plug_parsers(conn, opts) do
+        Plug.Parsers.call(conn, Plug.Parsers.init(opts))
+      end
   """
   defmacro builder_opts() do
     quote do
