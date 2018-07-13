@@ -312,14 +312,38 @@ defmodule Plug.Debugger do
   end
 
   defp get_doc(module, fun, arity, app) do
-    with docs when is_list(docs) <- Code.get_docs(module, :docs),
-         true <- List.keymember?(docs, {fun, arity}, 0),
+    with true <- has_docs?(module, fun, arity),
          {:ok, vsn} <- :application.get_key(app, :vsn) do
       vsn = vsn |> List.to_string() |> String.split("-") |> hd()
       fun = fun |> Atom.to_string() |> URI.encode()
       "https://hexdocs.pm/#{app}/#{vsn}/#{inspect(module)}.html##{fun}/#{arity}"
     else
       _ -> nil
+    end
+  end
+
+  if Code.ensure_loaded?(Code) and function_exported?(Code, :fetch_docs, 1) do
+    def has_docs?(module, name, arity) do
+      case Code.fetch_docs(module) do
+        {:docs_v1, _, _, _, module_doc, _, docs} when module_doc != :hidden ->
+          Enum.any?(docs, has_doc_matcher?(name, arity))
+
+        _ ->
+          false
+      end
+    end
+
+    defp has_doc_matcher?(name, arity) do
+      &match?(
+        {{kind, ^name, ^arity}, _, _, doc, _}
+        when kind in [:function, :macro] and doc != :hidden,
+        &1
+      )
+    end
+  else
+    def has_docs?(module, fun, arity) do
+      docs = Code.get_docs(module, :docs)
+      not is_nil(docs) and List.keymember?(docs, {fun, arity}, 0)
     end
   end
 
