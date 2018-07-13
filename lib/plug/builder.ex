@@ -118,7 +118,7 @@ defmodule Plug.Builder do
       defoverridable init: 1, call: 2
 
       import Plug.Conn
-      import Plug.Builder, only: [plug: 1, plug: 2]
+      import Plug.Builder, only: [plug: 1, plug: 2, builder_opts: 0]
 
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
       @before_compile Plug.Builder
@@ -128,13 +128,40 @@ defmodule Plug.Builder do
   @doc false
   defmacro __before_compile__(env) do
     plugs = Module.get_attribute(env.module, :plugs)
-    builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
 
+    plugs =
+      if builder_ref = get_plug_builder_ref(env.module) do
+        traverse(plugs, builder_ref)
+      else
+        plugs
+      end
+
+    builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
     {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
 
     quote do
-      defp plug_builder_call(unquote(conn), _), do: unquote(body)
+      defp plug_builder_call(unquote(conn), opts), do: unquote(body)
     end
+  end
+
+  defp traverse(tuple, ref) when is_tuple(tuple) do
+    tuple |> Tuple.to_list() |> traverse(ref) |> List.to_tuple()
+  end
+
+  defp traverse(map, ref) when is_map(map) do
+    map |> Map.to_list() |> traverse(ref) |> Map.new()
+  end
+
+  defp traverse(list, ref) when is_list(list) do
+    Enum.map(list, &traverse(&1, ref))
+  end
+
+  defp traverse(ref, ref) do
+    {:unquote, [], [quote(do: opts)]}
+  end
+
+  defp traverse(term, _ref) do
+    term
   end
 
   @doc """
@@ -154,6 +181,51 @@ defmodule Plug.Builder do
     quote do
       @plugs {unquote(plug), unquote(opts), true}
     end
+  end
+
+  @doc """
+  Annotates a plug will receive the options given
+  to the current module itself as arguments.
+
+  Imagine the following plug:
+
+      defmodule MyPlug do
+        use Plug.Builder
+
+        plug :inspect_opts, builder_opts()
+
+        defp inspect_opts(conn, opts) do
+          IO.inspect(opts)
+          conn
+        end
+      end
+
+  When plugged as:
+
+      plug MyPlug, custom: :options
+
+  It will print `[custom: :options]` as the builder options
+  were passed to the inner plug.
+  """
+  defmacro builder_opts() do
+    quote do
+      Plug.Builder.__builder_opts__(__MODULE__)
+    end
+  end
+
+  @doc false
+  def __builder_opts__(module) do
+    get_plug_builder_ref(module) || generate_plug_builder_ref(module)
+  end
+
+  defp get_plug_builder_ref(module) do
+    Module.get_attribute(module, :plug_builder_ref)
+  end
+
+  defp generate_plug_builder_ref(module) do
+    ref = make_ref()
+    Module.put_attribute(module, :plug_builder_ref, ref)
+    ref
   end
 
   @doc """
@@ -214,18 +286,22 @@ defmodule Plug.Builder do
     initialized_opts = plug.init(opts)
 
     if function_exported?(plug, :call, 2) do
-      {:module, plug, Macro.escape(initialized_opts), guards}
+      {:module, plug, escape(initialized_opts), guards}
     else
       raise ArgumentError, message: "#{inspect(plug)} plug must implement call/2"
     end
   end
 
   defp init_module_plug(plug, opts, guards, :runtime) do
-    {:module, plug, quote(do: unquote(plug).init(unquote(Macro.escape(opts)))), guards}
+    {:module, plug, quote(do: unquote(plug).init(unquote(escape(opts)))), guards}
   end
 
   defp init_fun_plug(plug, opts, guards) do
-    {:function, plug, Macro.escape(opts), guards}
+    {:function, plug, escape(opts), guards}
+  end
+
+  defp escape(opts) do
+    Macro.escape(opts, unquote: true)
   end
 
   # `acc` is a series of nested plug calls in the form of

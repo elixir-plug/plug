@@ -15,7 +15,7 @@ defmodule Plug.BuilderTest do
   defmodule Sample do
     use Plug.Builder
 
-    plug :fun
+    plug :fun, parent: builder_opts()
     plug Module, :opts
 
     def fun(conn, opts) do
@@ -89,7 +89,16 @@ defmodule Plug.BuilderTest do
 
   test "builds plug stack in the order" do
     conn = assign(conn(:get, "/"), :stack, [])
-    assert Sample.call(conn, []).assigns[:stack] == [call: {:init, :opts}, fun: []]
+
+    assert Sample.call(conn, []).assigns[:stack] == [
+             call: {:init, :opts},
+             fun: [parent: []]
+           ]
+
+    assert Sample.call(conn, :parent).assigns[:stack] == [
+             call: {:init, :opts},
+             fun: [parent: :parent]
+           ]
   end
 
   test "allows call/2 to be overridden with super" do
