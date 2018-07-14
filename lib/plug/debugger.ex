@@ -322,6 +322,7 @@ defmodule Plug.Debugger do
     end
   end
 
+  # TODO: Remove exported check once we depend on Elixir v1.7+
   if Code.ensure_loaded?(Code) and function_exported?(Code, :fetch_docs, 1) do
     def has_docs?(module, name, arity) do
       case Code.fetch_docs(module) do
