@@ -1,7 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-  @version "1.6.1"
+  @version "1.7.0-dev"
   @description "A specification and conveniences for composable modules between web applications"
   @xref_exclude [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream, :cowboy_stream_h]
 
@@ -9,7 +9,7 @@ defmodule Plug.MixProject do
     [
       app: :plug,
       version: @version,
-      elixir: "~> 1.3",
+      elixir: "~> 1.4",
       deps: deps(),
       package: package(),
       lockfile: lockfile(),

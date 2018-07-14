@@ -100,7 +100,7 @@ defmodule Plug.Upload do
   end
 
   defp path(prefix, tmp) do
-    sec = :os.system_time(:seconds)
+    sec = :os.system_time(:second)
     rand = :rand.uniform(999_999_999_999_999)
     scheduler_id = :erlang.system_info(:scheduler_id)
     tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(rand) <> "-" <> i(scheduler_id)
