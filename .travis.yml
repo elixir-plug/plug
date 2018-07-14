@@ -7,7 +7,7 @@ env:
   - COWBOY_VERSION=2.0
 matrix:
   include:
-    - elixir: 1.3.0
+    - elixir: 1.4.0
       otp_release: 18.1
 notifications:
   recipients:
