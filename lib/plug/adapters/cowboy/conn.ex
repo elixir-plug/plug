@@ -18,6 +18,7 @@ defmodule Plug.Adapters.Cowboy.Conn do
       method: meth,
       owner: self(),
       path_info: split_path(path),
+      peer: peer,
       port: port,
       remote_ip: remote_ip,
       query_string: qs,

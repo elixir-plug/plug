@@ -10,7 +10,7 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       method: method,
       headers: headers,
       qs: qs,
-      peer: {remote_ip, _}
+      peer: {remote_ip, _} = peer
     } = req
 
     %Plug.Conn{
@@ -19,6 +19,7 @@ defmodule Plug.Adapters.Cowboy2.Conn do
       method: method,
       owner: self(),
       path_info: split_path(path),
+      peer: peer,
       port: port,
       remote_ip: remote_ip,
       query_string: qs,

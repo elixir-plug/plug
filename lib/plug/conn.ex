@@ -135,6 +135,7 @@ defmodule Plug.Conn do
   @type method :: binary
   @type param :: binary | %{binary => param} | [param]
   @type params :: %{binary => param}
+  @type peer :: {:inet.ip_address(), :inet.port_number()}
   @type port_number :: :inet.port_number()
   @type query_string :: String.t()
   @type resp_cookies :: %{binary => %{}}
@@ -156,6 +157,7 @@ defmodule Plug.Conn do
           params: params | Unfetched.t(),
           path_info: segments,
           path_params: params,
+          peer: peer,
           port: :inet.port_number(),
           private: assigns,
           query_params: params | Unfetched.t(),
@@ -186,6 +188,7 @@ defmodule Plug.Conn do
             params: %Unfetched{aspect: :params},
             path_params: %{},
             path_info: [],
+            peer: nil,
             port: 0,
             private: %{},
             query_params: %Unfetched{aspect: :query_params},
