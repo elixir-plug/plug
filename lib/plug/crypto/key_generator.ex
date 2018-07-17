@@ -57,9 +57,9 @@ defmodule Plug.Crypto.KeyGenerator do
 
   defp generate(_fun, _salt, _iterations, max_length, _block_index, acc, length)
        when length >= max_length do
-    key = acc |> Enum.reverse() |> IO.iodata_to_binary()
-    <<bin::binary-size(max_length), _::binary>> = key
-    bin
+    acc
+    |> IO.iodata_to_binary()
+    |> binary_part(0, max_length)
   end
 
   defp generate(fun, salt, iterations, max_length, block_index, acc, length) do
@@ -72,7 +72,7 @@ defmodule Plug.Crypto.KeyGenerator do
       iterations,
       max_length,
       block_index + 1,
-      [block | acc],
+      [acc | block],
       byte_size(block) + length
     )
   end
