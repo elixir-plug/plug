@@ -107,7 +107,7 @@ defmodule Plug.Session.CookieTest do
       store: :cookie,
       key: "foobar",
       encryption_salt: {__MODULE__, :returns_arg, ["encrypted cookie salt"]},
-      signing_salt: {__MODULE__, :returns_arg, ["signing salt"]},
+      signing_salt: {__MODULE__, :returns_arg, ["signing salt"]}
     ]
 
     plug = Plug.Session.init(opts)
