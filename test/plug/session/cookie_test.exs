@@ -49,6 +49,10 @@ defmodule Plug.Session.CookieTest do
     |> fetch_session
   end
 
+  def returns_arg(arg), do: arg
+
+  defp apply_mfa({module, function, args}), do: apply(module, function, args)
+
   test "requires signing_salt option to be defined" do
     assert_raise ArgumentError, ~r/expects :signing_salt as option/, fn ->
       Plug.Session.init(Keyword.delete(@default_opts, :signing_salt))
@@ -96,6 +100,19 @@ defmodule Plug.Session.CookieTest do
 
   test "uses custom cookie serializer" do
     assert @custom_serializer_opts.store_config.serializer == CustomSerializer
+  end
+
+  test "uses MFAs for salts" do
+    opts = [
+      store: :cookie,
+      key: "foobar",
+      encryption_salt: {__MODULE__, :returns_arg, ["encrypted cookie salt"]},
+      signing_salt: {__MODULE__, :returns_arg, ["signing salt"]}
+    ]
+
+    plug = Plug.Session.init(opts)
+    assert apply_mfa(plug.store_config.encryption_salt) == "encrypted cookie salt"
+    assert apply_mfa(plug.store_config.signing_salt) == "signing salt"
   end
 
   ## Signed

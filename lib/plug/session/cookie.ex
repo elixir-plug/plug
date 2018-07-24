@@ -19,10 +19,12 @@ defmodule Plug.Session.COOKIE do
   ## Options
 
     * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
-      a key for encrypting/decrypting a cookie.
+      a key for encrypting/decrypting a cookie, can be either a binary or
+      an MFA returning a binary;
 
     * `:signing_salt` - a salt used with `conn.secret_key_base` to generate a
-      key for signing/verifying a cookie;
+      key for signing/verifying a cookie, can be either a binary or
+      an MFA returning a binary;
 
     * `:key_iterations` - option passed to `Plug.Crypto.KeyGenerator`
       when generating the encryption and signing keys. Defaults to 1000;
@@ -84,13 +86,13 @@ defmodule Plug.Session.COOKIE do
 
     case opts do
       %{encryption_salt: nil} ->
-        MessageVerifier.verify(cookie, derive(conn, signing_salt, key_opts))
+        MessageVerifier.verify(cookie, derive(conn, get_mfa(signing_salt), key_opts))
 
       %{encryption_salt: key} ->
         MessageEncryptor.decrypt(
           cookie,
-          derive(conn, key, key_opts),
-          derive(conn, signing_salt, key_opts)
+          derive(conn, get_mfa(key), key_opts),
+          derive(conn, get_mfa(signing_salt), key_opts)
         )
     end
     |> decode(serializer, log)
@@ -102,13 +104,13 @@ defmodule Plug.Session.COOKIE do
 
     case opts do
       %{encryption_salt: nil} ->
-        MessageVerifier.sign(binary, derive(conn, signing_salt, key_opts))
+        MessageVerifier.sign(binary, derive(conn, get_mfa(signing_salt), key_opts))
 
       %{encryption_salt: key} ->
         MessageEncryptor.encrypt(
           binary,
-          derive(conn, key, key_opts),
-          derive(conn, signing_salt, key_opts)
+          derive(conn, get_mfa(key), key_opts),
+          derive(conn, get_mfa(signing_salt), key_opts)
         )
     end
   end
@@ -188,4 +190,7 @@ defmodule Plug.Session.COOKIE do
 
   defp check_serializer(_),
     do: raise(ArgumentError, "cookie store expects :serializer option to be a module")
+
+  defp get_mfa({module, function, arguments}), do: apply(module, function, arguments)
+  defp get_mfa(other), do: other
 end
