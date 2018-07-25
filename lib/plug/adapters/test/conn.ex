@@ -22,6 +22,11 @@ defmodule Plug.Adapters.Test.Conn do
       chunks: nil,
       ref: make_ref(),
       owner: owner,
+      peer_data:
+        case conn.adapter do
+          {Plug.MissingAdapter, _} -> %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: nil}
+          {adapter, payload} -> adapter.get_peer_data(payload)
+        end,
       http_protocol:
         case conn.adapter do
           {Plug.MissingAdapter, _} -> :"HTTP/1.1"
@@ -116,8 +121,8 @@ defmodule Plug.Adapters.Test.Conn do
     :ok
   end
 
-  def get_peer_data(_state) do
-    %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: nil}
+  def get_peer_data(payload) do
+    Map.fetch!(payload, :peer_data)
   end
 
   def get_http_protocol(payload) do
