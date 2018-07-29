@@ -119,19 +119,8 @@ defmodule Plug.Adapters.Test.ConnTest do
   end
 
   test "use custom peer data" do
-    certificate =
-      Path.expand("../../../fixtures/ssl/client.cer", __DIR__)
-      |> File.read!()
-
-    [{:Certificate, certificate, _}] = :public_key.pem_decode(certificate)
-
-    peer_data = %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: certificate}
-
-    conn =
-      conn(:get, "/")
-      |> put_peer_data(peer_data)
-
-    new_peer_data = Plug.Conn.get_peer_data(conn)
-    assert peer_data == new_peer_data
+    peer_data = %{address: {127, 0, 0, 1}, port: 111_317}
+    conn = conn(:get, "/") |> put_peer_data(peer_data)
+    assert peer_data == Plug.Conn.get_peer_data(conn)
   end
 end

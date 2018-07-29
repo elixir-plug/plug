@@ -22,16 +22,13 @@ defmodule Plug.Adapters.Test.Conn do
       chunks: nil,
       ref: make_ref(),
       owner: owner,
+      http_protocol: get_from_adapter(conn, :get_http_protocol, :"HTTP/1.1"),
       peer_data:
-        case conn.adapter do
-          {Plug.MissingAdapter, _} -> %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: nil}
-          {adapter, payload} -> adapter.get_peer_data(payload)
-        end,
-      http_protocol:
-        case conn.adapter do
-          {Plug.MissingAdapter, _} -> :"HTTP/1.1"
-          {adapter, payload} -> adapter.get_http_protocol(payload)
-        end
+        get_from_adapter(conn, :get_peer_data, %{
+          address: {127, 0, 0, 1},
+          port: 111_317,
+          ssl_cert: nil
+        })
     }
 
     %Plug.Conn{
@@ -131,6 +128,13 @@ defmodule Plug.Adapters.Test.Conn do
   end
 
   ## Private helpers
+
+  defp get_from_adapter(conn, op, default) do
+    case conn.adapter do
+      {Plug.MissingAdapter, _} -> default
+      {adapter, payload} -> apply(adapter, op, [payload])
+    end
+  end
 
   defp body_or_params(nil, _query, headers), do: {"", nil, nil, headers}
 
