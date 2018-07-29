@@ -117,4 +117,21 @@ defmodule Plug.Adapters.Test.ConnTest do
     child_conn = Plug.Adapters.Test.Conn.conn(conn_with_remote_ip, :get, "/", foo: "bar")
     assert child_conn.remote_ip == {151, 236, 219, 228}
   end
+
+  test "use custom peer data" do
+    certificate =
+      Path.expand("../../../fixtures/ssl/client.cer", __DIR__)
+      |> File.read!()
+
+    [{:Certificate, certificate, _}] = :public_key.pem_decode(certificate)
+
+    peer_data = %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: certificate}
+
+    conn =
+      conn(:get, "/")
+      |> put_peer_data(peer_data)
+
+    new_peer_data = Plug.Conn.get_peer_data(conn)
+    assert peer_data == new_peer_data
+  end
 end
