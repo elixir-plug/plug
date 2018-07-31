@@ -1,7 +1,7 @@
 # Plug
 
 [![Build Status](https://travis-ci.org/elixir-plug/plug.svg?branch=master)](https://travis-ci.org/elixir-plug/plug)
-[![Inline docs](http://inch-ci.org/github/elixir-plug/plug.svg?branch=master)](http://inch-ci.org/github/elixir-plug/plug)
+[![Inline docs](https://inch-ci.org/github/elixir-plug/plug.svg?branch=master)](http://inch-ci.org/github/elixir-plug/plug)
 
 Plug is:
 
@@ -257,6 +257,6 @@ Check LICENSE file for more information.
   [pulls]: https://github.com/elixir-plug/plug/pulls
   [ML]: https://groups.google.com/group/elixir-lang-core
   [code-of-conduct]: https://github.com/elixir-lang/elixir/blob/master/CODE_OF_CONDUCT.md
-  [writing-docs]: http://elixir-lang.org/docs/stable/elixir/writing-documentation.html
+  [writing-docs]: https://elixir-lang.org/docs/stable/elixir/writing-documentation.html
   [IRC]: https://webchat.freenode.net/?channels=#elixir-lang
-  [freenode]: http://www.freenode.net
+  [freenode]: https://freenode.net/
