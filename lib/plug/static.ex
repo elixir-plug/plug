@@ -114,7 +114,7 @@ defmodule Plug.Static do
   import Plug.Conn
   alias Plug.Conn
 
-  # In this module, the `:prim_info` Erlang module along with the `:file_info`
+  # In this module, the `:prim_file` Erlang module along with the `:file_info`
   # record are used instead of the more common and Elixir-y `File` module and
   # `File.Stat` struct, respectively. The reason behind this is performance: all
   # the `File` operations pass through a single process in order to support node
