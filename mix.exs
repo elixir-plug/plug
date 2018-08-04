@@ -39,7 +39,7 @@ defmodule Plug.MixProject do
     [
       {:mime, "~> 1.0"},
       {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.4", optional: true},
-      {:ex_doc, "~> 0.17.1", only: :docs},
+      {:ex_doc, "~> 0.19", only: :docs},
       {:inch_ex, ">= 0.0.0", only: :docs},
       {:hackney, "~> 1.2.0", only: :test},
       {:kadabra, "~> 0.3.4", only: :test}
