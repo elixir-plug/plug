@@ -1,7 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-  @version "1.6.1"
+  @version "1.6.2"
   @description "A specification and conveniences for composable modules between web applications"
   @xref_exclude [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream, :cowboy_stream_h]
 

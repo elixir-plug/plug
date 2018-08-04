@@ -1,5 +1,11 @@
 ## Changelog
 
+## v1.6.2 (2018-08-04)
+
+  * Add `Plug.Test.put_peer_data/2`
+  * Support MFAs for cookie session secrets
+  * Allow `builder_opts()` to be passed to inner plugs in `Plug.Builder`
+
 ## v1.6.1 (2018-07-05)
 
 * Enhancements
