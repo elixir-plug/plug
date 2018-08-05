@@ -204,7 +204,7 @@ defmodule Plug.SSL do
       openssl dhparam -out dhparam.pem 4096
 
   On a slow machine (e.g. a cheap VPS) this may take several hours. You may want
-  to run the command on a stong machine and copy the file over: the file does
+  to run the command on a strong machine and copy the file over: the file does
   not need to be kept secret.
 
   Add the resulting file to your application's `priv` directory and pass the
