@@ -195,6 +195,25 @@ defmodule Plug.SSL do
   This was problematic because the result would be for Erlang to use the default list of ciphers.
   To prevent this Plug will now throw an error to ensure you're aware of this.
 
+  ## Diffie Hellman parameters
+
+  It is recommended to generate a custom set of Diffie Hellman parameters, to be
+  used for the DHE key exchange. Use the following OpenSSL CLI command to create
+  a 'dhparam.pem' file:
+
+      openssl dhparam -out dhparam.pem 4096
+
+  On a slow machine (e.g. a cheap VPS) this may take several hours. You may want
+  to run the command on a stong machine and copy the file over: the file does
+  not need to be kept secret.
+
+  Add the resulting file to your application's `priv` directory and pass the
+  path using the `:dhfile` key. It is best practice to rotate the file
+  periodically.
+
+  If no custom parameters are specified, Erlang's `ssl` uses its built-in
+  defaults. Since OTP 19 this has been the 2048-bit 'group 14' from RFC 3526.
+
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
