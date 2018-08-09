@@ -42,7 +42,11 @@ defmodule Plug.MixProject do
       {:ex_doc, "~> 0.17.1", only: :docs},
       {:inch_ex, ">= 0.0.0", only: :docs},
       {:hackney, "~> 1.2.0", only: :test},
-      {:kadabra, "~> 0.3.4", only: :test}
+      {:kadabra, "~> 0.3.4", only: :test},
+
+      # Benchmarks
+      {:benchee, "~> 0.11.0"},
+      {:benchee_json, "~> 0.4.0"}
     ]
   end
 
