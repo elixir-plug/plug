@@ -15,5 +15,5 @@ $ BENCHMARKS_OUTPUT_PATH=bench/results mix run bench/bench_helper.exs
 $ env BENCHMARKS_OUTPUT_PATH=bench/results mix run bench/bench_helper.exs
 ```
 
-Plug benchmarks will (soon) be automatically run by the [ElixirBench](http://elixirbench.org)
+Plug benchmarks will (soon) be automatically run by the [ElixirBench](https://elixirbench.org)
 service.
