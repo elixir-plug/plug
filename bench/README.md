@@ -7,12 +7,12 @@ To run the benchmarks tests just type in the console:
 
 ```
 # POSIX-compatible shells
-$ BENCHMARKS_OUTPUT_PATH=bench/results mix run bench/bench_helper.exs
+$ BENCHMARKS_OUTPUT_PATH=bench/results MIX_ENV=bench mix run bench/bench_helper.exs
 ```
 
 ```
 # other shells
-$ env BENCHMARKS_OUTPUT_PATH=bench/results mix run bench/bench_helper.exs
+$ env BENCHMARKS_OUTPUT_PATH=bench/results MIX_ENV=bench mix run bench/bench_helper.exs
 ```
 
 Plug benchmarks will (soon) be automatically run by the [ElixirBench](https://elixirbench.org)
