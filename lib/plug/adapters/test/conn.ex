@@ -51,19 +51,19 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Connection adapter
 
-  def send_resp(%{method: "HEAD"} = state, status, headers, _body) do
-    do_send(state, status, headers, "")
+  def send_resp(%{method: "HEAD"} = state, status, headers, capitalize?, _body) do
+    do_send(state, status, headers, capitalize?, "")
   end
 
-  def send_resp(state, status, headers, body) do
-    do_send(state, status, headers, IO.iodata_to_binary(body))
+  def send_resp(state, status, headers, capitalize?, body) do
+    do_send(state, status, headers, capitalize?, IO.iodata_to_binary(body))
   end
 
-  def send_file(%{method: "HEAD"} = state, status, headers, _path, _offset, _length) do
-    do_send(state, status, headers, "")
+  def send_file(%{method: "HEAD"} = state, status, headers, capitalize?, _path, _offset, _length) do
+    do_send(state, status, headers, capitalize?, "")
   end
 
-  def send_file(state, status, headers, path, offset, length) do
+  def send_file(state, status, headers, capitalize?, path, offset, length) do
     %File.Stat{type: :regular, size: size} = File.stat!(path)
 
     length =
@@ -77,10 +77,10 @@ defmodule Plug.Adapters.Test.Conn do
         :file.pread(device, offset, length)
       end)
 
-    do_send(state, status, headers, data)
+    do_send(state, status, headers, capitalize?, data)
   end
 
-  def send_chunked(state, _status, _headers), do: {:ok, "", %{state | chunks: ""}}
+  def send_chunked(state, _status, _headers, _capitalize?), do: {:ok, "", %{state | chunks: ""}}
 
   def chunk(%{method: "HEAD"} = state, _body), do: {:ok, "", state}
 
@@ -89,7 +89,8 @@ defmodule Plug.Adapters.Test.Conn do
     {:ok, body, %{state | chunks: body}}
   end
 
-  defp do_send(%{owner: owner, ref: ref} = state, status, headers, body) do
+  defp do_send(%{owner: owner, ref: ref} = state, status, headers, capitalize?, body)
+       when is_boolean(capitalize?) do
     send(owner, {ref, {status, headers, body}})
     {:ok, body, state}
   end
