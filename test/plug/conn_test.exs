@@ -1143,7 +1143,7 @@ defmodule Plug.ConnTest do
 
   test "does not delegate to connections' adapter's chunk/2 when called with an empty chunk" do
     defmodule RaisesOnEmptyChunkAdapter do
-      defdelegate send_chunked(state, status, headers), to: Plug.Adapters.Test.Conn
+      defdelegate send_chunked(state, status, headers, capitalize?), to: Plug.Adapters.Test.Conn
 
       def chunk(payload, chunk) do
         if IO.iodata_length(chunk) == 0 do
@@ -1170,7 +1170,7 @@ defmodule Plug.ConnTest do
   end
 
   test "default adapter doesn't cause confusing errors for newbies" do
-    assert_raise UndefinedFunctionError, ~r/Plug\.MissingAdapter\.send_resp\/4/, fn ->
+    assert_raise UndefinedFunctionError, ~r/Plug\.MissingAdapter\.send_resp\/5/, fn ->
       Conn.send_resp(%Plug.Conn{}, 200, "Hello World")
     end
   end

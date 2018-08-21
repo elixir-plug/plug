@@ -167,6 +167,7 @@ defmodule Plug.Conn do
           resp_body: body | nil,
           resp_cookies: resp_cookies,
           resp_headers: headers,
+          should_capitalize_resp_headers?: boolean(),
           scheme: scheme,
           script_name: segments,
           secret_key_base: secret_key_base,
@@ -197,6 +198,7 @@ defmodule Plug.Conn do
             resp_body: nil,
             resp_cookies: %{},
             resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
+            should_capitalize_resp_headers?: false,
             scheme: :http,
             script_name: [],
             secret_key_base: nil,
@@ -362,6 +364,14 @@ defmodule Plug.Conn do
   def put_status(%Conn{} = conn, status), do: %{conn | status: Plug.Conn.Status.code(status)}
 
   @doc """
+  Ensures that header keys will be sent as title case header keys.
+  """
+  @spec capitalize_resp_headers?(t, boolean()) :: t
+  def capitalize_resp_headers?(%Conn{} = conn, capitalize?) when is_boolean(capitalize?) do
+    %{conn | should_capitalize_resp_headers?: capitalize?}
+  end
+
+  @doc """
   Sends a response to the client.
 
   It expects the connection state to be `:set`, otherwise raises an
@@ -379,9 +389,10 @@ defmodule Plug.Conn do
 
   def send_resp(%Conn{adapter: {adapter, payload}, state: :set, owner: owner} = conn) do
     conn = run_before_send(conn, :set)
+    capitalize? = conn.should_capitalize_resp_headers?
 
     {:ok, body, payload} =
-      adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
+      adapter.send_resp(payload, conn.status, conn.resp_headers, capitalize?, conn.resp_body)
 
     send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
@@ -432,7 +443,15 @@ defmodule Plug.Conn do
       run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :set_file)
 
     {:ok, body, payload} =
-      adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
+      adapter.send_file(
+        payload,
+        conn.status,
+        conn.resp_headers,
+        conn.should_capitalize_resp_headers?,
+        file,
+        offset,
+        length
+      )
 
     send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :file, resp_body: body}
@@ -454,7 +473,11 @@ defmodule Plug.Conn do
   def send_chunked(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status) do
     conn = %{conn | status: Plug.Conn.Status.code(status), resp_body: nil}
     conn = run_before_send(conn, :set_chunked)
-    {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
+    capitalize? = conn.should_capitalize_resp_headers?
+
+    {:ok, body, payload} =
+      adapter.send_chunked(payload, conn.status, conn.resp_headers, capitalize?)
+
     send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :chunked, resp_body: body}
   end

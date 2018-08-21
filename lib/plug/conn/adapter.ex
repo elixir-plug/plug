@@ -24,7 +24,7 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  @callback send_resp(payload, Conn.status(), Conn.headers(), Conn.body()) ::
+  @callback send_resp(payload, Conn.status(), Conn.headers(), boolean(), Conn.body()) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """
@@ -43,6 +43,7 @@ defmodule Plug.Conn.Adapter do
               payload,
               Conn.status(),
               Conn.headers(),
+              boolean(),
               file :: binary,
               offset :: integer,
               length :: integer | :all
@@ -57,7 +58,7 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  @callback send_chunked(payload, Conn.status(), Conn.headers()) ::
+  @callback send_chunked(payload, Conn.status(), Conn.headers(), boolean()) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """
