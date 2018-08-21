@@ -27,15 +27,15 @@ defmodule Plug.Adapters.Cowboy.Conn do
     }
   end
 
-  def send_resp(req, status, headers, body) do
-    headers = capitalize_headers(headers)
+  def send_resp(req, status, headers, capitalize?, body) do
+    headers = capitalize_headers(capitalize?, headers)
     status = Integer.to_string(status) <> " " <> Plug.Conn.Status.reason_phrase(status)
     {:ok, req} = :cowboy_req.reply(status, headers, body, req)
     {:ok, nil, req}
   end
 
-  def send_file(req, status, headers, path, offset, length) do
-    headers = capitalize_headers(headers)
+  def send_file(req, status, headers, capitalize?, path, offset, length) do
+    headers = capitalize_headers(capitalize?, headers)
     %File.Stat{type: :regular, size: size} = File.stat!(path)
 
     length =
@@ -52,8 +52,8 @@ defmodule Plug.Adapters.Cowboy.Conn do
     {:ok, nil, req}
   end
 
-  def send_chunked(req, status, headers) do
-    headers = capitalize_headers(headers)
+  def send_chunked(req, status, headers, capitalize?) do
+    headers = capitalize_headers(capitalize?, headers)
     {:ok, req} = :cowboy_req.chunked_reply(status, headers, req)
     {:ok, nil, req}
   end
@@ -99,7 +99,9 @@ defmodule Plug.Adapters.Cowboy.Conn do
     for segment <- segments, segment != "", do: segment
   end
 
-  defp capitalize_headers(headers) do
+  defp capitalize_headers(false, headers), do: headers
+
+  defp capitalize_headers(true, headers) do
     :lists.keymap(&:cowboy_bstr.capitalize_token/1, 1, headers)
   end
 end
