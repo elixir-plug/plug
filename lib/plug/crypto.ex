@@ -111,6 +111,7 @@ defmodule Plug.Crypto do
 
   See: http://codahale.com/a-lesson-in-timing-attacks/
   """
+  @spec secure_compare(binary(), binary()) :: boolean()
   def secure_compare(left, right) do
     if byte_size(left) == byte_size(right) do
       secure_compare(left, right, 0) == 0
