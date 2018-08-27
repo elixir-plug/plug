@@ -12,6 +12,7 @@ defmodule Plug.Crypto do
   A restricted version of `:erlang.binary_to_term/2` that
   forbids possibly unsafe terms.
   """
+  @spec safe_binary_to_term(binary(), [atom()]) :: term() | {term(), non_neg_integer}
   def safe_binary_to_term(binary, opts \\ []) when is_binary(binary) do
     term = :erlang.binary_to_term(binary, opts)
     safe_terms(term)
@@ -71,6 +72,7 @@ defmodule Plug.Crypto do
 
   Both tokens are required to have the same size.
   """
+  @spec mask(binary(), binary()) :: binary()
   def mask(left, right) do
     mask(left, right, "")
   end
@@ -89,6 +91,7 @@ defmodule Plug.Crypto do
 
   It is assumed the right token is masked according to the given mask.
   """
+  @spec masked_compare(binary(), binary(), binary()) :: boolean()
   def masked_compare(left, right, mask) do
     if byte_size(left) == byte_size(right) do
       masked_compare(left, right, mask, 0) == 0
