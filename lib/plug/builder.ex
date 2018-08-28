@@ -342,8 +342,8 @@ defmodule Plug.Builder do
           %Plug.Conn{} = conn ->
             unquote(acc)
 
-          _ ->
-            raise unquote(error_message)
+          other ->
+            raise unquote(error_message) <> ", got: #{inspect(other)}"
         end
       end
 
