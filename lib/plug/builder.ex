@@ -343,7 +343,7 @@ defmodule Plug.Builder do
             unquote(acc)
 
           other ->
-            raise unquote(error_message <> ", got: #{inspect(other)}")
+            raise unquote(error_message) <> ", got: #{inspect(other)}"
         end
       end
 
