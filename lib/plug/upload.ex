@@ -187,3 +187,9 @@ defmodule Plug.Upload do
     :ok
   end
 end
+
+defimpl String.Chars, for: Plug.Upload do
+  def to_string(%{path: path, filename: filename}) do
+    Path.join(path, filename)
+  end
+end
