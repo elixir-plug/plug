@@ -30,4 +30,8 @@ defmodule Plug.UploadTest do
     :ok = Plug.Upload.terminate(:shutdown, [])
     refute File.exists?(path)
   end
+
+  test "get file path with to_string" do
+    assert "PATH/FILENAME" = to_string(%Plug.Upload{path: "PATH", filename: "FILENAME"})
+  end
 end
