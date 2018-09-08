@@ -1,7 +1,7 @@
 defmodule Plug.RequestId do
   @moduledoc """
   A plug for generating a unique request id for each request. 
-  
+
   The generated request id will be in the format "uq8hs30oafhj5vve8ji5pmp7mtopc08f".
 
   If a request id already exists as the "x-request-id" HTTP request header,
