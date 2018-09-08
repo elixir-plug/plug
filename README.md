@@ -257,6 +257,6 @@ Check LICENSE file for more information.
   [pulls]: https://github.com/elixir-plug/plug/pulls
   [ML]: https://groups.google.com/group/elixir-lang-core
   [code-of-conduct]: https://github.com/elixir-lang/elixir/blob/master/CODE_OF_CONDUCT.md
-  [writing-docs]: https://elixir-lang.org/docs/stable/elixir/writing-documentation.html
+  [writing-docs]: https://hexdocs.pm/elixir/master/writing-documentation.html
   [IRC]: https://webchat.freenode.net/?channels=#elixir-lang
   [freenode]: https://freenode.net/
