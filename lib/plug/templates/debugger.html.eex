@@ -639,6 +639,10 @@
         }
     }
     </style>
+
+    <style>
+        <%= Plug.Debugger.Highlighter.style("code") %>
+    </style>
 </head>
 <body>
     <div class="top-details">
@@ -674,7 +678,7 @@
                     </div>
 
                     <%= if (snippet = frame.snippet) && snippet != [] do %>
-<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= h String.trim_trailing(line) %></span></span>
+<pre class="code code-block"><%= for {index, line, highlight} <- snippet do %><span class="line <%= if highlight, do: "-highlight" %>"><span class="ln"><%= h index %></span><span class="code"><%= line %></span></span>
 <% end %></pre>
                     <% else %>
                     <div class="code code-block-empty">No code available.</div>
@@ -697,7 +701,7 @@
                             <summary>Called with <%= length(frame.args) %> arguments</summary>
                             <ol class="code code-quote -padded">
                                 <%= for arg <- frame.args do %>
-                                    <li><%= h inspect arg %></li>
+                                    <li><%= arg %></li>
                                 <% end %>
                             </ol>
                         </details>
@@ -795,6 +799,10 @@
         </details>
         <% end %>
     </div>
+
+    <script>
+        <%= Plug.Debugger.Highlighter.javascript() %>
+    </script>
 
     <script>(function () {
         var $items = document.querySelectorAll('[role~="stack-trace-item"]')

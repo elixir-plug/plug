@@ -103,6 +103,7 @@ defmodule Plug.Debugger do
 
   import Plug.Conn
   require Logger
+  alias Plug.Debugger.Highlighter
 
   @doc false
   defmacro __using__(opts) do
@@ -259,6 +260,23 @@ defmodule Plug.Debugger do
     source = get_source(module, file)
     context = get_context(root, app)
     snippet = get_snippet(source, line)
+    # The `file` arguments is used to highlight using the correct lexer
+    highlighted_snippet = Highlighter.highlight_snippet(snippet, file)
+    # The arguments are meant to be highlighted as Elixir terms,
+    # so the filename isn't needed
+    highlighted_args =
+      if args do
+        Highlighter.highlight_args(args)
+      else
+        # Don't try to highlight the args if args == nil!
+        args
+      end
+
+    # It's possible that the `snippet` and the `args` won't be highlighted.
+    # This can happen, for example, because the `ElixirLexer` isn't available.
+    # In the case, we render them without syntax highlighting.
+    # Even if they are not highlighted, they are escaped by the `Highlighter` module,
+    # so that they can be added to the template whether they have been highlighted or not.
 
     {%{
        app: app,
@@ -266,11 +284,11 @@ defmodule Plug.Debugger do
        file: file,
        line: line,
        context: context,
-       snippet: snippet,
+       snippet: highlighted_snippet,
        index: index,
        doc: doc,
        clauses: clauses,
-       args: args,
+       args: highlighted_args,
        link: editor && get_editor(source, line, editor)
      }, index + 1}
   end

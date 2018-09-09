@@ -37,6 +37,7 @@ defmodule Plug.MixProject do
 
   def deps do
     [
+      {:makeup_elixir, "~> 0.7"},
       {:mime, "~> 1.0"},
       {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.4", optional: true},
       {:ex_doc, "~> 0.19.1", only: :docs},
