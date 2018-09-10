@@ -94,12 +94,12 @@ defmodule Plug.Conn do
   not directly specified by Plug or its adapters. Adding or overriding a status
   code is done through the Mix configuration of the `:plug` application. For
   example, to override the existing 404 reason phrase for the 404 status code
-  ("Not Found" by default) and add a new 451 status code, the following config
+  ("Not Found" by default) and add a new 998 status code, the following config
   can be specified:
 
       config :plug, :statuses, %{
         404 => "Actually This Was Found",
-        451 => "Unavailable For Legal Reasons"
+        998 => "Not An RFC Status Code"
       }
 
   As this configuration is Plug specific, Plug will need to be recompiled for
@@ -115,7 +115,7 @@ defmodule Plug.Conn do
 
       put_status(conn, :not_found)                     # 404
       put_status(conn, :actually_this_was_found)       # 404
-      put_status(conn, :unavailable_for_legal_reasons) # 451
+      put_status(conn, :not_an_rfc_status_code)        # 998
 
   Even though 404 has been overridden, the `:not_found` atom can still be used
   to set the status to 404 as well as the new atom `:actually_this_was_found`

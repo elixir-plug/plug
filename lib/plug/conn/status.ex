@@ -158,18 +158,18 @@ defmodule Plug.Conn.Status do
     under the :statuses key (which contains a map of status codes as keys and
     reason phrases as values). For example:
 
-        config :plug, :statuses, %{451 => "Unavailable For Legal Reasons"}
+        config :plug, :statuses, %{998 => "Not An RFC Status Code"}
 
     After defining the config for custom statuses, Plug must be recompiled for
     the changes to take place using:
 
         MIX_ENV=dev mix deps.clean plug --build
 
-    Doing this will allow the use of the integer status code 451 as
+    Doing this will allow the use of the integer status code 998 as
     well as the atom :unavailable_for_legal_reasons in many Plug functions.
     For example:
 
-        put_status(conn, :unavailable_for_legal_reasons)
+        put_status(conn, :not_an_rfc_status_code)
     """
   end
 end
