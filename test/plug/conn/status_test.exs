@@ -10,7 +10,7 @@ defmodule Plug.Conn.StatusTest do
   end
 
   test "code for custom status return the numeric code" do
-    assert Status.code(:unavailable_for_legal_reasons) == 451
+    assert Status.code(:not_an_rfc_status_code) == 998
   end
 
   test "code with both a built_in and custom code return the numeric code" do
@@ -25,7 +25,7 @@ defmodule Plug.Conn.StatusTest do
   end
 
   test "reason_atom returns the atom for custom statuses" do
-    assert Status.reason_atom(451) == :unavailable_for_legal_reasons
+    assert Status.reason_atom(998) == :not_an_rfc_status_code
   end
 
   test "reason_atom with both a built_in and custom status always returns the custom atom" do
@@ -45,7 +45,7 @@ defmodule Plug.Conn.StatusTest do
   end
 
   test "reason_phrase for custom status return the phrase" do
-    assert Status.reason_phrase(451) == "Unavailable For Legal Reasons"
+    assert Status.reason_phrase(998) == "Not An RFC Status Code"
   end
 
   test "reason_phrase with both a built_in and custom status always returns the custom phrase" do

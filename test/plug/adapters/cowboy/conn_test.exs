@@ -137,8 +137,8 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
     send_resp(conn, 418, "")
   end
 
-  def send_451(conn) do
-    send_resp(conn, 451, "")
+  def send_998(conn) do
+    send_resp(conn, 998, "")
   end
 
   def send_500(conn) do
@@ -160,9 +160,9 @@ defmodule Plug.Adapters.Cowboy.ConnTest do
   end
 
   test "allows customized statuses based on config" do
-    assert {451, _headers, ""} = request(:get, "/send_451")
-    {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_451", [], "", async: :once)
-    assert_receive({:hackney_response, ^ref, {:status, 451, "Unavailable For Legal Reasons"}})
+    assert {998, _headers, ""} = request(:get, "/send_998")
+    {:ok, ref} = :hackney.get("http://127.0.0.1:8001/send_998", [], "", async: :once)
+    assert_receive({:hackney_response, ^ref, {:status, 998, "Not An RFC Status Code"}})
     :hackney.close(ref)
   end
 
