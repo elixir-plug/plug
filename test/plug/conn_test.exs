@@ -41,9 +41,17 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "inspect/2" do
-    assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
-    refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"
+  describe "inspect/2" do
+    test "trims adapter payload" do
+      assert inspect(conn(:get, "/")) =~ "{Plug.Adapters.Test.Conn, :...}"
+      refute inspect(conn(:get, "/"), limit: :infinity) =~ "{Plug.Adapters.Test.Conn, :...}"
+    end
+
+    test "removes secret_key_base" do
+      conn = conn(:get, "/")
+      assert inspect(conn) =~ "secret_key_base: nil"
+      assert inspect(%{conn | secret_key_base: "secret"}) =~ "secret_key_base: :..."
+    end
   end
 
   test "assign/3" do
@@ -1169,7 +1177,7 @@ defmodule Plug.ConnTest do
     assert {:ok, conn} == Plug.Conn.chunk(conn, [["", ""]])
   end
 
-  test "default adapter doesn't cause confusing errors for newbies" do
+  test "default adapter doesn't cause confusing errors for beginners" do
     assert_raise UndefinedFunctionError, ~r/Plug\.MissingAdapter\.send_resp\/4/, fn ->
       Conn.send_resp(%Plug.Conn{}, 200, "Hello World")
     end
