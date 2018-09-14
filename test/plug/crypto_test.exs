@@ -3,6 +3,11 @@ defmodule Plug.CryptoTest do
 
   import Plug.Crypto
 
+  test "prunes stacktrace" do
+    assert prune_args_from_stacktrace([{:erlang, :+, 2, []}]) == [{:erlang, :+, 2, []}]
+    assert prune_args_from_stacktrace([{:erlang, :+, [1, 2], []}]) == [{:erlang, :+, 2, []}]
+  end
+
   test "masks tokens" do
     assert mask(<<0, 1, 0, 1>>, <<0, 1, 1, 0>>) == <<0, 0, 1, 1>>
     assert mask(<<0, 0, 1, 1>>, <<0, 1, 1, 0>>) == <<0, 1, 0, 1>>
