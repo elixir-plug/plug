@@ -9,6 +9,15 @@ defmodule Plug.Crypto do
   use Bitwise
 
   @doc """
+  Prunes the stacktrace to remove any argument trace.
+  """
+  def prune_args_from_stacktrace([{mod, fun, [_ | _] = args, info} | rest]),
+    do: [{mod, fun, length(args), info} | rest]
+
+  def prune_args_from_stacktrace(stack) when is_list(stack),
+    do: stack
+
+  @doc """
   A restricted version of `:erlang.binary_to_term/2` that
   forbids possibly unsafe terms.
   """
@@ -92,12 +101,9 @@ defmodule Plug.Crypto do
   It is assumed the right token is masked according to the given mask.
   """
   @spec masked_compare(binary(), binary(), binary()) :: boolean()
-  def masked_compare(left, right, mask) do
-    if byte_size(left) == byte_size(right) do
-      masked_compare(left, right, mask, 0) == 0
-    else
-      false
-    end
+  def masked_compare(left, right, mask)
+      when is_binary(left) and is_binary(right) and is_binary(mask) do
+    byte_size(left) == byte_size(right) and masked_compare(left, right, mask, 0)
   end
 
   defp masked_compare(<<x, left::binary>>, <<y, right::binary>>, <<z, mask::binary>>, acc) do
@@ -106,7 +112,7 @@ defmodule Plug.Crypto do
   end
 
   defp masked_compare(<<>>, <<>>, <<>>, acc) do
-    acc
+    acc === 0
   end
 
   @doc """
@@ -115,12 +121,8 @@ defmodule Plug.Crypto do
   See: http://codahale.com/a-lesson-in-timing-attacks/
   """
   @spec secure_compare(binary(), binary()) :: boolean()
-  def secure_compare(left, right) do
-    if byte_size(left) == byte_size(right) do
-      secure_compare(left, right, 0) == 0
-    else
-      false
-    end
+  def secure_compare(left, right) when is_binary(left) and is_binary(right) do
+    byte_size(left) == byte_size(right) and secure_compare(left, right, 0)
   end
 
   defp secure_compare(<<x, left::binary>>, <<y, right::binary>>, acc) do
@@ -129,6 +131,6 @@ defmodule Plug.Crypto do
   end
 
   defp secure_compare(<<>>, <<>>, acc) do
-    acc
+    acc === 0
   end
 end

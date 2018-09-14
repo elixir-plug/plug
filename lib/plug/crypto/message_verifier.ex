@@ -14,6 +14,8 @@ defmodule Plug.Crypto.MessageVerifier do
   def sign(message, secret, digest_type \\ :sha256)
       when is_binary(message) and is_binary(secret) and digest_type in [:sha256, :sha384, :sha512] do
     hmac_sha2_sign(message, secret, digest_type)
+  rescue
+    e -> reraise e, Plug.Crypto.prune_args_from_stacktrace(System.stacktrace())
   end
 
   @doc """
@@ -21,6 +23,8 @@ defmodule Plug.Crypto.MessageVerifier do
   """
   def verify(signed, secret) when is_binary(signed) and is_binary(secret) do
     hmac_sha2_verify(signed, secret)
+  rescue
+    e -> reraise e, Plug.Crypto.prune_args_from_stacktrace(System.stacktrace())
   end
 
   ## Signature Algorithms

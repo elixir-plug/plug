@@ -39,6 +39,8 @@ defmodule Plug.Crypto.KeyGenerator do
         generate(mac_fun(digest, secret), salt, iterations, length, 1, [], 0)
       end)
     end
+  rescue
+    e -> reraise e, Plug.Crypto.prune_args_from_stacktrace(System.stacktrace())
   end
 
   defp with_cache(nil, _key, fun), do: fun.()
