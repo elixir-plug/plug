@@ -1,5 +1,10 @@
 ## Changelog
 
+## v1.6.3 (2018-09-14)
+
+  * Do not include secret_key_base in inspected data
+  * Prune args from stacktrace in Crypto functions
+
 ## v1.6.2 (2018-08-04)
 
   * Add `Plug.Test.put_peer_data/2`
