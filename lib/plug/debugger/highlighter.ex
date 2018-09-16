@@ -339,8 +339,8 @@ defmodule Plug.Debugger.Highlighter do
     numbers
     |> Enum.max()
     |> :math.log10()
-    |> :math.ceil()
-    |> round()
+    |> Float.ceil()
+    |> trunc()
   end
 
   # Converts the line number into a string and pads it with wthitspace
