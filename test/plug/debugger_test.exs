@@ -356,12 +356,12 @@ defmodule Plug.DebuggerTest do
     # of the `data-group-id` attribute is (intentinally) non-deterministic.
     # The attribute value matches the regex `~r/\d+-\d+/`.
     assert conn.resp_body =~ ~r"""
-      <span class="kd">defmodule</span>\
-      <span class="w"> </span>\
-      <span class="nc">Plug.Conn</span>\
-      <span class="w"> </span>\
-      <span class="k" data-group-id="\d+-\d+">do</span>\
-      """
+           <span class="kd">defmodule</span>\
+           <span class="w"> </span>\
+           <span class="nc">Plug.Conn</span>\
+           <span class="w"> </span>\
+           <span class="k" data-group-id="\d+-\d+">do</span>\
+           """
   end
 
   test "stacktrace from otp_app (with syntax highlighting explicitly activated)" do
@@ -370,6 +370,7 @@ defmodule Plug.DebuggerTest do
         assert Highlighter.is_active?() == true
         stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
       end)
+
     assert conn.resp_body =~ "Plug.Conn.unknown/1"
     assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
     assert conn.resp_body =~ "<span class=\"line\">:1</span>"
@@ -379,12 +380,12 @@ defmodule Plug.DebuggerTest do
     # of the `data-group-id` attribute is (intentinally) non-deterministic.
     # The attribute value matches the regex `~r/\d+-\d+/`.
     assert conn.resp_body =~ ~r"""
-      <span class="kd">defmodule</span>\
-      <span class="w"> </span>\
-      <span class="nc">Plug.Conn</span>\
-      <span class="w"> </span>\
-      <span class="k" data-group-id="\d+-\d+">do</span>\
-      """
+           <span class="kd">defmodule</span>\
+           <span class="w"> </span>\
+           <span class="nc">Plug.Conn</span>\
+           <span class="w"> </span>\
+           <span class="k" data-group-id="\d+-\d+">do</span>\
+           """
   end
 
   test "stacktrace from otp_app (with syntax highlighting explicitly deactivated)" do
@@ -427,7 +428,7 @@ defmodule Plug.DebuggerTest do
       stack([
         {__MODULE__, :unknown, 1, file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}
       ])
-    # Again, as above we use a Regex to match the non-deterministic `data-group-id` attribute.
-    assert conn.resp_body =~ ~r'<span class="w">  </span><span class="k" data-group-id="\d+-\d+">end</span>'
+    assert conn.resp_body =~
+             ~r'<span class="w">  </span><span class="k" data-group-id="\d+-\d+">end</span>'
   end
 end

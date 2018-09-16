@@ -354,6 +354,7 @@ defmodule Plug.Debugger.Highlighter do
   defp pad_lines(lines) do
     line_numbers = Enum.map(lines, fn {nr, _, _} -> nr end)
     length = max_digits(line_numbers)
+
     Enum.map(lines, fn {nr, line, highlight} ->
       {pad_line_number(nr, length), line, highlight}
     end)
@@ -392,6 +393,7 @@ defmodule Plug.Debugger.Highlighter do
   defp with_highlighter_activation_set_to(new_activation_state, fun) do
     old_activation_state = is_active?()
     set_activation_state(new_activation_state)
+
     try do
       result = fun.()
       set_activation_state(old_activation_state)
