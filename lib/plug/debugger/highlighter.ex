@@ -1,5 +1,6 @@
 defmodule Plug.Debugger.Highlighter do
   @moduledoc false
+  alias Makeup.Lexer
   alias Makeup.Lexers.ElixirLexer
   alias Makeup.Formatters.HTML.HTMLFormatter
 
@@ -7,8 +8,76 @@ defmodule Plug.Debugger.Highlighter do
   # Public API
   # -----------------------
 
+  # The Highlighter functions detect if the appropriate lexer is available.
+  # If the lexer is not available, the functions render the text as plaintext.
+  # However, for testing purposes, it might be useful to render text as plaintext
+  # even though the lexer is available.
+  #
+  # To help with testing, the Highlighter provides a way to turn off
+  # syntax highlighting even when the lexer is available.
+
   @doc """
-  Outputs the CSS stylesheet for the classes used by Makeup
+  Manually deactivate the highlighter.
+
+  To temporarily deactivate the highlighter,
+  you should use `Plug.Debugger.Highlighter.with_inactive_highlighter/1` instead.
+  """
+  def deactivate() do
+    set_activation_state(false)
+  end
+
+  @doc """
+  Manually activate the highlighter.
+
+  To temporarily activate the highlighter,
+  you should use `Plug.Debugger.Highlighter.with_active_highlighter/1` instead.
+  """
+  def activate() do
+    set_activation_state(true)
+  end
+
+  @doc """
+  Runs a given function with the highlighter active  (the default).
+
+  After running the function, the highlighter is reverted to its previous state.
+  Even if the function raises an error, the highlighter is reverted to its previous state
+  and the error is propagated.
+
+  If you want to do something while ensuring the Highlighter is active,
+  you should probably use this function.
+  """
+  def with_active_highlighter(fun) do
+    with_highlighter_activation_set_to(true, fun)
+  end
+
+  @doc """
+  Runs a given function with the highlighter deactivated
+  (simulates a situation in which the lexer is not available).
+
+  After running the function, the highlighter is reverted to its previous state.
+  Even if the function raises an error, the highlighter is reverted to its previous state
+  and the error is propagated.
+
+  If you want to do something while the Highlighter is deactivated,
+  you should probably use this function.
+  """
+  def with_inactive_highlighter(fun) do
+    with_highlighter_activation_set_to(false, fun)
+  end
+
+  @doc """
+  Checks if the highlighter is active.
+
+  The highlighter is only inactive when someone has explicitly deactivated it.
+  Otherwise, it's active.
+  """
+  def is_active?() do
+    Application.get_env(:plug, :use_syntax_highlighting_in_debugger) != false
+  end
+
+  @doc """
+  Outputs the CSS stylesheet for the classes used by Makeup.
+  This theme isn't included in Makeup yet, so we'll include it here.
   """
   def style(class) do
     """
@@ -105,8 +174,16 @@ defmodule Plug.Debugger.Highlighter do
   Receives a list of elixir values and outputs a list of HTML strings.
   No need to care about splitting at linebreaks.
   """
+  def highlight_args(nil), do: nil
+
   def highlight_args(args) do
-    if Code.ensure_loaded?(ElixirLexer) do
+    # Arguments should be highlighted as Elixir values, not Erlang terms
+    # Test if:
+    #   1. The elixir lexer is loaded
+    #      The `args` are always highlighted using the elixir lexer,
+    #      even if they come from an erlang file.
+    #   2. The highlighter is active (we might want to turn it off for tests)
+    if Code.ensure_loaded?(ElixirLexer) && is_active?() do
       Enum.map(args, &highlight_arg/1)
     else
       plain_args(args)
@@ -114,40 +191,146 @@ defmodule Plug.Debugger.Highlighter do
   end
 
   @doc """
-  Highlights a sequence of lines of source code.
+  Returns a snippet, which may or may not be highlighted.
 
-  Returns a list of highlighted lines in the format expected by `Plug.Debugger`.
-  Must split tokens at linebreaks.
+  In any case, the snipppet is already escaped.
+  It should not be escaped again before being added to the template.
   """
-  def highlight_snippet(lines, file) do
-    case lexer_for_file(file) do
-      _ -> lines
-      ElixirLexer -> highlight_snippet_with_lexer(lines, ElixirLexer)
-      _other -> plain_lines(lines)
+  def get_snippet(file, line) do
+    if File.regular?(file) and is_integer(line) do
+      lexer = lexer_for_file(file)
+      # Test if:
+      #   1. The lexer picked from the file name is not `nil`
+      #   2. The lexer is loaded
+      #   3. The highlighter is active (we might want to turn it off for tests)
+      if lexer && Code.ensure_loaded?(lexer) && is_active?() do
+        get_highlighted_snippet(file, lexer, line)
+      else
+        get_plain_snippet(file, line)
+      end
     end
   end
 
-  # ----------------------------
+  # -------------------------
   # Private functions
+  # -------------------------
+
+  # Helpers for `get_snippet/2`:
   # ----------------------------
 
-  # Highlighting function arguments:
-  # --------------------------------
+  @radius 5
 
-  # Escape arguments not meant to be highlighted,
-  # so that they can be inserted in the HTML template
-  defp plain_args(args) do
-    Enum.map(args, fn arg -> arg |> inspect() |> escape_string() end)
+  # 1. First branch: the `ElixirLexer` is available
+  # -----------------------------------------------
+  # Lines will need to be lexed and formatted.
+  # The HTML formatter already takes care of HTML escaping,
+  # so they don't need to be escaped again.
+
+  defp get_highlighted_snippet(file, lexer, line) do
+    to_discard = max(line - @radius - 1, 0)
+    # We use `Enum` and not `Stream` because we already
+    lines =
+      highlight_file(file, lexer)
+      |> Enum.take(line + 5)
+      |> Enum.drop(to_discard)
+
+    {first_five, lines} = Enum.split(lines, line - to_discard - 1)
+    first_five = with_line_number(first_five, to_discard + 1, false)
+
+    {center, last_five} = Enum.split(lines, 1)
+    center = with_line_number(center, line, true)
+    last_five = with_line_number(last_five, line + 1, false)
+
+    lines_to_format = first_five ++ center ++ last_five
+
+    lines_to_format |> format_lines() |> pad_lines()
   end
 
-  # Highlight a list of arguments
-  defp highlight_arg(arg) do
-    # Makeup takes care of the escaping
-    arg |> inspect() |> Makeup.highlight_inner_html()
+  # Highlight the whole file and split it into lines.
+  # We need to highlight the whole file becuase the lexer might highlight
+  # the file incorrectly if it doesn't take into account the whole context.
+  # For example:1
+  #
+  #     defmodule WilRaiseAnError do
+  #       @doc """
+  #       Blah blah blah,
+  #       blah blah blah, Blah! # <- section starts here
+  #       Blah blah blah,
+  #       blah blah blah, Blah!
+  #       Some docs even more docs etc
+  #       """
+  #       def f(x) do
+  #         x/0
+  #       end
+  #     end
+  #
+  # In the above module, the highlighted would highlight the source incorrectly
+  # if given only the lines around the error as context.
+  # Highlighting the whole file decreases performance, of course, but because
+  # the debugger is meant to be used in dev only, the tradeoff is accceptable.
+  def highlight_file(file, lexer) do
+    contents = File.read!(file)
+    tokens = lexer.lex(contents)
+    Lexer.split_into_lines(tokens)
   end
 
-  # Highlight source lines
-  # -----------------------------
+  defp format_lines(lines) do
+    Enum.map(lines, &format_line/1)
+  end
+
+  defp format_line({nr, tokens, highlight}) do
+    html =
+      tokens
+      |> Enum.map(fn token -> HTMLFormatter.format_token(token) end)
+      |> Enum.join("")
+
+    {nr, html, highlight}
+  end
+
+  defp lexer_for_file(file) do
+    cond do
+      String.ends_with?(file, ".exs") -> ElixirLexer
+      String.ends_with?(file, ".ex") -> ElixirLexer
+      true -> nil
+    end
+  end
+
+  # 2. Second branch: the `ElixirLexer` is not available
+  # ----------------------------------------------------
+  # Lines will be rendered as plain text.
+  # The are not lexed or formatted, but they need to be escaped.
+
+  defp get_plain_snippet(file, line) do
+    if File.regular?(file) and is_integer(line) do
+      to_discard = max(line - @radius - 1, 0)
+      lines = File.stream!(file) |> Stream.take(line + 5) |> Stream.drop(to_discard)
+
+      {first_five, lines} = Enum.split(lines, line - to_discard - 1)
+      first_five = with_line_number(first_five, to_discard + 1, false)
+
+      {center, last_five} = Enum.split(lines, 1)
+      center = with_line_number(center, line, true)
+      last_five = with_line_number(last_five, line + 1, false)
+
+      unescaped_lines = first_five ++ center ++ last_five
+
+      unescaped_lines |> escape_plain_lines() |> pad_lines()
+    end
+  end
+
+  defp escape_plain_lines(lines) do
+    Enum.map(lines, fn {nr, line, highlight} ->
+      {nr, line |> String.trim_trailing() |> Plug.HTML.html_escape(), highlight}
+    end)
+  end
+
+  # 3. Helper functions common to both branches
+
+  defp with_line_number(lines, initial, highlight) do
+    lines
+    |> Enum.map_reduce(initial, fn line, acc -> {{acc, line, highlight}, acc + 1} end)
+    |> elem(0)
+  end
 
   # Evaluates the maximum number of digits in a list of integers
   defp max_digits([]), do: 0
@@ -176,137 +359,47 @@ defmodule Plug.Debugger.Highlighter do
     end)
   end
 
-  # Stolen from `Plug.Debugger`
-  defp escape_string(string) do
-    string |> to_string() |> String.trim_trailing() |> Plug.HTML.html_escape()
+  # Get the lexer from the filename
+
+  # Highlighting function arguments:
+  # --------------------------------
+
+  # Escape arguments not meant to be highlighted,
+  # so that they can be inserted in the HTML template
+  defp plain_args(args) do
+    Enum.map(args, fn arg ->
+      arg
+      |> inspect()
+      |> String.trim_trailing()
+      |> Plug.HTML.html_escape()
+    end)
   end
 
-  defp escape_line({nr, line, highlighted}) do
-    {nr, escape_string(line), highlighted}
+  # Highlight a list of arguments
+  # Makeup takes care of the escaping
+  defp highlight_arg(arg) do
+    arg |> inspect() |> Makeup.highlight_inner_html(lexer: ElixirLexer)
   end
 
-  defp escape_lines(lines) do
-    Enum.map(lines, &escape_line/1)
+  # Activating or deactivating the Highlighter
+  # ------------------------------------------
+  defp set_activation_state(activation_state) do
+    Application.put_env(:plug, :use_syntax_highlighting_in_debugger, activation_state)
   end
 
-  defp plain_lines(lines) do
-    lines
-    |> pad_lines()
-    |> escape_lines()
-  end
-
-  # Currently only an elixir lexer is supported
-  defp lexer_for_file(file) do
-    cond do
-      String.ends_with?(file, ".ex") -> ElixirLexer
-      String.ends_with?(file, ".exs") -> ElixirLexer
-      :otherwise -> nil
+  # Runs a given function with the highlighter in the given state.
+  # The highlighter will be restored to its previous state even if the function returns an error.
+  defp with_highlighter_activation_set_to(new_activation_state, fun) do
+    old_activation_state = is_active?()
+    set_activation_state(new_activation_state)
+    try do
+      result = fun.()
+      set_activation_state(old_activation_state)
+      result
+    rescue
+      e ->
+        set_activation_state(old_activation_state)
+        raise e
     end
-  end
-
-  defp highlight_snippet_with_lexer(lines, lexer) do
-    if Code.ensure_loaded?(lexer) do
-      # Unzip the 3-tuples
-      line_numbers = Enum.map(lines, fn {nr, _, _} -> nr end)
-      text_lines = Enum.map(lines, fn {_, line, _} -> line end)
-      # `highlight` here has nothing to do with syntax highlighting;
-      # It marks the lines we mush highlight becuase that's where the error occured.
-      highlight = Enum.map(lines, fn {_, _, highlight} -> highlight end)
-      # Join the lines we're about to highlight
-      # Highlighting will be more precise that way.
-      # Highlighting will still be unreliable if there is a token that spans too many lines,
-      # for example, a long heredoc.
-      # This is an argument for highlighting the whole file and extracting the interesting lines later.
-      # TODO: should we do this?
-      text = Enum.join(text_lines, "")
-      # Get a list of tokens. Tokens may span more than one line.
-      tokens = lexer.lex(text)
-      # We must split the list of tokens into a list of lists,
-      # splitting a token in several parts if needed.
-      token_lines = split_into_lines(tokens)
-      # Finally, render the lines into HTML.
-      # The HTML is already escaped, which means we don't escape it again in the template
-      html_lines = Enum.map(token_lines, fn line -> token_line_to_html(line) end)
-      debugger_lines = Enum.zip([line_numbers, html_lines, highlight])
-      pad_lines(debugger_lines)
-    else
-      plain_lines(lines)
-    end
-  end
-
-  defp token_line_to_html(tokens) do
-    html =
-      tokens
-      |> Enum.map(fn token -> HTMLFormatter.format_token(token) end)
-      |> Enum.join("")
-
-    html
-  end
-
-  # Splits a list of tokens into lines.
-  # If necessary, will split a token on linebreaks.
-  defp split_into_lines(tokens) do
-    {lines, last_line} =
-      Enum.reduce tokens, {[], []}, (fn {ttype, meta, value} = tok, {lines, line} ->
-        text = value |> escape() |> IO.iodata_to_binary()
-        case String.split(text, "\n") do
-          [_] -> {lines, [tok | line]}
-          [part | parts] ->
-            first_line = [{ttype, meta, part} | line] |> :lists.reverse
-
-            all_but_last_line =
-              parts
-              |> Enum.slice(0..-2)
-              |> Enum.map(fn tok_text -> [{ttype, meta, tok_text}] end)
-              |> :lists.reverse
-
-            last_line_text = Enum.at(parts, -1)
-            last_line = [{ttype, meta, Enum.at(parts, -1)}]
-
-            case last_line_text do
-              "" -> {all_but_last_line ++ [first_line | lines], []}
-              _ -> {all_but_last_line ++ [first_line | lines], last_line}
-            end
-
-        end
-      end)
-
-    :lists.reverse([last_line | lines])
-  end
-
-  defp escape(iodata) when is_list(iodata) do
-    iodata
-    |> :lists.flatten()
-    |> Enum.map(&escape_for/1)
-  end
-
-  defp escape(other) when is_binary(other) do
-    Plug.HTML.html_escape(other)
-  end
-
-  defp escape(c) when is_integer(c) do
-    [escape_for(c)]
-  end
-
-  defp escape(other) do
-    raise "Found `#{inspect(other)}` inside what should be an iolist"
-  end
-
-  defp escape_for(?&), do: "&amp;"
-
-  defp escape_for(?<), do: "&lt;"
-
-  defp escape_for(?>), do: "&gt;"
-
-  defp escape_for(?"), do: "&quot;"
-
-  defp escape_for(?'), do: "&#39;"
-
-  defp escape_for(c) when is_integer(c) and c <= 127, do: c
-
-  defp escape_for(c) when is_integer(c) and c > 128, do: << c :: utf8 >>
-
-  defp escape_for(string) when is_binary(string) do
-    Plug.HTML.html_escape(string)
   end
 end

@@ -259,21 +259,13 @@ defmodule Plug.Debugger do
     clauses = module && get_clauses(module, fun, args)
     source = get_source(module, file)
     context = get_context(root, app)
-    snippet = get_snippet(source, line)
-    # The `file` arguments is used to highlight using the correct lexer
-    highlighted_snippet = Highlighter.highlight_snippet(snippet, file)
-    # The arguments are meant to be highlighted as Elixir terms,
-    # so the filename isn't needed
-    highlighted_args =
-      if args do
-        Highlighter.highlight_args(args)
-      else
-        # Don't try to highlight the args if args == nil!
-        args
-      end
+    snippet = Highlighter.get_snippet(source, line)
+    # We don't need the filename to highlight the arguments
+    highlighted_args = Highlighter.highlight_args(args)
 
     # It's possible that the `snippet` and the `args` won't be highlighted.
-    # This can happen, for example, because the `ElixirLexer` isn't available.
+    # This can happen, for example, because the `ElixirLexer` isn't available
+    # or if the `Highlighter` has been manually deactivated.
     # In the case, we render them without syntax highlighting.
     # Even if they are not highlighted, they are escaped by the `Highlighter` module,
     # so that they can be added to the template whether they have been highlighted or not.
@@ -284,7 +276,7 @@ defmodule Plug.Debugger do
        file: file,
        line: line,
        context: context,
-       snippet: highlighted_snippet,
+       snippet: snippet,
        index: index,
        doc: doc,
        clauses: clauses,
@@ -413,30 +405,6 @@ defmodule Plug.Debugger do
     |> :binary.replace("__FILE__", URI.encode(Path.expand(file)))
     |> :binary.replace("__LINE__", to_string(line))
     |> h
-  end
-
-  @radius 5
-
-  defp get_snippet(file, line) do
-    if File.regular?(file) and is_integer(line) do
-      to_discard = max(line - @radius - 1, 0)
-      lines = File.stream!(file) |> Stream.take(line + 5) |> Stream.drop(to_discard)
-
-      {first_five, lines} = Enum.split(lines, line - to_discard - 1)
-      first_five = with_line_number(first_five, to_discard + 1, false)
-
-      {center, last_five} = Enum.split(lines, 1)
-      center = with_line_number(center, line, true)
-      last_five = with_line_number(last_five, line + 1, false)
-
-      first_five ++ center ++ last_five
-    end
-  end
-
-  defp with_line_number(lines, initial, highlight) do
-    lines
-    |> Enum.map_reduce(initial, fn line, acc -> {{acc, line, highlight}, acc + 1} end)
-    |> elem(0)
   end
 
   defp banner(conn, status, kind, reason, stack, opts) do

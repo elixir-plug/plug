@@ -1,8 +1,17 @@
 defmodule Plug.DebuggerTest do
-  use ExUnit.Case, async: true
+  # These tests edit change temporarily the config of the `:plug` app.
+  # This means one must take care when running them in parallel with other modules.
+  # The config changes only affect the output of the `Plug.Debugger` module
+  # Currently other tests depend on `Plug.Debugger`'s output,
+  # which means running these tests in parallel with other modules *seems* safe.
+  # As a precaution, though, it's better to use `async: false`.
+  # Using `async: false` makes the test suite ~ 22% slower, though.
+  use ExUnit.Case, async: false
   use Plug.Test
 
   import ExUnit.CaptureLog
+
+  alias Plug.Debugger.Highlighter
 
   defmodule Exception do
     defexception plug_status: 403, message: "oops"
@@ -335,14 +344,62 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "unsupported media type foo/bar"
   end
 
-  test "stacktrace from otp_app" do
+  test "stacktrace from otp_app (with syntax highlighting implicitly active)" do
     conn = stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
+    assert Highlighter.is_active?() == true
     assert conn.resp_body =~ "Plug.Conn.unknown/1"
     assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
     assert conn.resp_body =~ "<span class=\"line\">:1</span>"
     assert conn.resp_body =~ "<span class=\"app\">plug</span>"
     assert conn.resp_body =~ "<span class=\"ln\">1</span>"
-    assert conn.resp_body =~ "<span class=\"code\">defmodule Plug.Conn do</span>"
+    # This needs to be a Regex and not a simple string because the value
+    # of the `data-group-id` attribute is (intentinally) non-deterministic.
+    # The attribute value matches the regex `~r/\d+-\d+/`.
+    assert conn.resp_body =~ ~r"""
+      <span class="kd">defmodule</span>\
+      <span class="w"> </span>\
+      <span class="nc">Plug.Conn</span>\
+      <span class="w"> </span>\
+      <span class="k" data-group-id="\d+-\d+">do</span>\
+      """
+  end
+
+  test "stacktrace from otp_app (with syntax highlighting explicitly activated)" do
+    conn =
+      Highlighter.with_active_highlighter(fn ->
+        assert Highlighter.is_active?() == true
+        stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
+      end)
+    assert conn.resp_body =~ "Plug.Conn.unknown/1"
+    assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
+    assert conn.resp_body =~ "<span class=\"line\">:1</span>"
+    assert conn.resp_body =~ "<span class=\"app\">plug</span>"
+    assert conn.resp_body =~ "<span class=\"ln\">1</span>"
+    # This needs to be a Regex and not a simple string because the value
+    # of the `data-group-id` attribute is (intentinally) non-deterministic.
+    # The attribute value matches the regex `~r/\d+-\d+/`.
+    assert conn.resp_body =~ ~r"""
+      <span class="kd">defmodule</span>\
+      <span class="w"> </span>\
+      <span class="nc">Plug.Conn</span>\
+      <span class="w"> </span>\
+      <span class="k" data-group-id="\d+-\d+">do</span>\
+      """
+  end
+
+  test "stacktrace from otp_app (with syntax highlighting explicitly deactivated)" do
+    conn =
+      Highlighter.with_inactive_highlighter(fn ->
+        assert Highlighter.is_active?() == false
+        stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
+      end)
+
+    assert conn.resp_body =~ "Plug.Conn.unknown/1"
+    assert conn.resp_body =~ ~r(<span class=\"filename\">\s*lib/plug/conn.ex)
+    assert conn.resp_body =~ "<span class=\"line\">:1</span>"
+    assert conn.resp_body =~ "<span class=\"app\">plug</span>"
+    assert conn.resp_body =~ "<span class=\"ln\">1</span>"
+    assert conn.resp_body =~ ~s'<span class="code">defmodule Plug.Conn do</span>'
   end
 
   test "stacktrace from elixir" do
@@ -370,7 +427,7 @@ defmodule Plug.DebuggerTest do
       stack([
         {__MODULE__, :unknown, 1, file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}
       ])
-
-    assert conn.resp_body =~ "<span class=\"code\">  end</span>"
+    # Again, as above we use a Regex to match the non-deterministic `data-group-id` attribute.
+    assert conn.resp_body =~ ~r'<span class="w">  </span><span class="k" data-group-id="\d+-\d+">end</span>'
   end
 end
