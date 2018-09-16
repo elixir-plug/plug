@@ -428,6 +428,7 @@ defmodule Plug.DebuggerTest do
       stack([
         {__MODULE__, :unknown, 1, file: Path.relative_to_cwd(__ENV__.file), line: __ENV__.line}
       ])
+
     assert conn.resp_body =~
              ~r'<span class="w">  </span><span class="k" data-group-id="\d+-\d+">end</span>'
   end
