@@ -623,7 +623,7 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing where an header that is not lowercase raises a
+  testing where a header that is not lowercase raises a
   `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
@@ -733,7 +733,7 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing where an header that is not lowercase raises a
+  testing where a header that is not lowercase raises a
   `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
@@ -772,7 +772,7 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing where an header that is not lowercase raises a
+  testing where a header that is not lowercase raises a
   `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
@@ -1631,8 +1631,8 @@ end
 defimpl Collectable, for: Plug.Conn do
   def into(conn) do
     IO.warn(
-      "using Enum.into/2 for conn is deprecated, use `Plug.Conn.chunk/2` " <>
-        "and `Enum.reduce_while/3` instead (see the `Plug.Conn.chunk/2` docs for an example)"
+      "using Enum.into/2 for conn is deprecated, use Plug.Conn.chunk/2 " <>
+        "and Enum.reduce_while/3 instead (see the Plug.Conn.chunk/2 docs for an example)"
     )
 
     fun = fn
