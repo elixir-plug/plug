@@ -256,6 +256,10 @@ defmodule Plug.Conn do
   @doc """
   Assigns a value to a key in the connection.
 
+  The "assigns" storage is meant to be used to store values in the connection
+  so that other plugs in your plug pipeline can access them. The assigns storage
+  is a map.
+
   ## Examples
 
       iex> conn.assigns[:hello]
@@ -314,13 +318,13 @@ defmodule Plug.Conn do
   to the user storage (the `:assigns` field). It is recommended for
   libraries/frameworks to prefix the keys with the library name.
 
-  For example, if some plug needs to store a `:hello` key, it
-  should do so as `:plug_hello`:
+  For example, if a plug called `my_plug` needs to store a `:hello`
+  key, it would store it as `:my_plug_hello`:
 
-      iex> conn.private[:plug_hello]
+      iex> conn.private[:my_plug_hello]
       nil
-      iex> conn = put_private(conn, :plug_hello, :world)
-      iex> conn.private[:plug_hello]
+      iex> conn = put_private(conn, :my_plug_hello, :world)
+      iex> conn.private[:my_plug_hello]
       :world
 
   """
@@ -336,11 +340,12 @@ defmodule Plug.Conn do
 
   ## Examples
 
-      iex> conn.private[:plug_hello]
+      iex> conn.private[:my_plug_hello]
       nil
-      iex> conn = merge_private(conn, plug_hello: :world)
-      iex> conn.private[:plug_hello]
+      iex> conn = merge_private(conn, my_plug_hello: :world)
+      iex> conn.private[:my_plug_hello]
       :world
+
   """
   @spec merge_private(t, Keyword.t()) :: t
   def merge_private(%Conn{private: private} = conn, keyword) when is_list(keyword) do
@@ -350,11 +355,17 @@ defmodule Plug.Conn do
   @doc """
   Stores the given status code in the connection.
 
-  The status code can be `nil`, an integer or an atom. The list of allowed
+  The status code can be `nil`, an integer, or an atom. The list of allowed
   atoms is available in `Plug.Conn.Status`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  ## Examples
+
+      Plug.Conn.put_status(conn, :not_found)
+      Plug.Conn.put_status(conn, 200)
+
   """
   @spec put_status(t, status) :: t
   def put_status(%Conn{state: :sent}, _status), do: raise(AlreadySentError)
@@ -453,7 +464,7 @@ defmodule Plug.Conn do
   Sends the response headers as a chunked response.
 
   It expects a connection that has not been `:sent` yet and sets its
-  state to `:chunked` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
+  state to `:chunked` afterwards. Otherwise, raises `Plug.Conn.AlreadySentError`.
   """
   @spec send_chunked(t, status) :: t | no_return
   def send_chunked(%Conn{state: state}, status)
@@ -483,8 +494,7 @@ defmodule Plug.Conn do
 
   ## Example
 
-      ~w(each chunk as a word)
-      |> Enum.reduce_while(conn, fn (chunk, conn) ->
+      Enum.reduce_while(~w(each chunk as a word), conn, fn (chunk, conn) ->
         case Plug.Conn.chunk(conn, chunk) do
           {:ok, conn} ->
             {:cont, conn}
@@ -543,6 +553,17 @@ defmodule Plug.Conn do
 
   It sets the connection state to `:set` (if not already `:set`)
   and raises `Plug.Conn.AlreadySentError` if it was already `:sent`.
+
+  If you also want to send the response, use `send_resp/1` after this
+  or use `send_resp/3`.
+
+  The status can be an integer, an atom, or `nil`. See `Plug.Conn.Status`
+  for more information.
+
+  ## Examples
+
+      Plug.Conn.resp(conn, 404, "Not found")
+
   """
   @spec resp(t, status, body) :: t
   def resp(%Conn{state: state}, status, _body)
@@ -561,7 +582,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns the request peer data if one is present. 
+  Returns the request peer data if one is present.
   """
   @spec get_peer_data(t) :: Plug.Conn.Adapter.peer_data()
   def get_peer_data(%Conn{adapter: {adapter, payload}}) do
@@ -569,7 +590,13 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns the http protocol and version.
+  Returns the HTTP protocol and version.
+
+  ## Examples
+
+      iex> get_http_protocol(conn)
+      :"HTTP/1.1"
+
   """
   @spec get_http_protocol(t) :: Plug.Conn.Adapter.http_protocol()
   def get_http_protocol(%Conn{adapter: {adapter, payload}}) do
@@ -578,10 +605,16 @@ defmodule Plug.Conn do
 
   @doc """
   Returns the values of the request header specified by `key`.
+
+  ## Examples
+
+      iex> get_req_header(conn, "accept")
+      ["application/json"]
+
   """
   @spec get_req_header(t, binary) :: [binary]
   def get_req_header(%Conn{req_headers: headers}, key) when is_binary(key) do
-    for {k, v} <- headers, k == key, do: v
+    for {^key, value} <- headers, do: value
   end
 
   @doc """
@@ -590,13 +623,20 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
-  is not lowercase.
+  testing where an header that is not lowercase raises a
+  `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  ## Examples
+
+      Plug.Conn.put_req_header(conn, "accept", "application/json")
+
   """
   @spec put_req_header(t, binary, binary) :: t
+  def put_req_header(conn, key, value)
+
   def put_req_header(%Conn{state: :sent}, _key, _value) do
     raise AlreadySentError
   end
@@ -612,8 +652,15 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  ## Examples
+
+      Plug.Conn.delete_req_header(conn, "content-type")
+
   """
   @spec delete_req_header(t, binary) :: t
+  def delete_req_header(conn, key)
+
   def delete_req_header(%Conn{state: :sent}, _key) do
     raise AlreadySentError
   end
@@ -633,8 +680,22 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  Only the first value of the header `key` is updated if present.
+
+  ## Examples
+
+      Plug.Conn.update_req_header(
+        conn,
+        "accept",
+        "application/json; charset=utf-8",
+        &(&1 <> "; charset=utf-8")
+      )
+
   """
   @spec update_req_header(t, binary, binary, (binary -> binary)) :: t
+  def update_req_header(conn, key, initial, fun)
+
   def update_req_header(%Conn{state: :sent}, _key, _initial, _fun) do
     raise AlreadySentError
   end
@@ -663,7 +724,7 @@ defmodule Plug.Conn do
   """
   @spec get_resp_header(t, binary) :: [binary]
   def get_resp_header(%Conn{resp_headers: headers}, key) when is_binary(key) do
-    for {k, v} <- headers, k == key, do: v
+    for {^key, value} <- headers, do: value
   end
 
   @doc ~S"""
@@ -672,14 +733,19 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
-  is not lowercase.
+  testing where an header that is not lowercase raises a
+  `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
+
+  ## Examples
+
+      Plug.Conn.put_resp_header(conn, "content-type", "application/json")
+
   """
   @spec put_resp_header(t, binary, binary) :: t
   def put_resp_header(%Conn{state: :sent}, _key, _value) do
@@ -706,16 +772,23 @@ defmodule Plug.Conn do
 
   It is recommended for header keys to be in lower-case, to avoid sending
   duplicate keys in a request. As a convenience, this is validated during
-  testing which raises a `Plug.Conn.InvalidHeaderError` if the header key
-  is not lowercase.
+  testing where an header that is not lowercase raises a
+  `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
+
+  ## Examples
+
+      Plug.Conn.prepend_resp_headers(conn, "content-type", "application/json")
+
   """
   @spec prepend_resp_headers(t, headers) :: t
+  def prepend_resp_headers(conn, headers)
+
   def prepend_resp_headers(%Conn{state: :sent}, _headers) do
     raise AlreadySentError
   end
@@ -739,9 +812,12 @@ defmodule Plug.Conn do
 
   ## Example
 
-      iex> conn = merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
+      Plug.Conn.merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
+
   """
   @spec merge_resp_headers(t, Enum.t()) :: t
+  def merge_resp_headers(conn, headers)
+
   def merge_resp_headers(%Conn{state: :sent}, _headers) do
     raise AlreadySentError
   end
@@ -771,6 +847,11 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  ## Examples
+
+      Plug.Conn.delete_resp_header(conn, "content-type")
+
   """
   @spec delete_resp_header(t, binary) :: t
   def delete_resp_header(%Conn{state: :sent}, _key) do
@@ -792,8 +873,22 @@ defmodule Plug.Conn do
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
+
+  Only the first value of the header `key` is updated if present.
+
+  ## Examples
+
+      Plug.Conn.update_resp_header(
+        conn,
+        "content-type",
+        "application/json; charset=utf-8",
+        &(&1 <> "; charset=utf-8")
+      )
+
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
+  def update_resp_header(conn, key, initial, fun)
+
   def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
     raise AlreadySentError
   end
@@ -813,6 +908,16 @@ defmodule Plug.Conn do
   @doc """
   Sets the value of the `"content-type"` response header taking into account the
   `charset`.
+
+  If `charset` is `nil`, the value of the `"content-type"` response header won't
+  specify a charset.
+
+  ## Examples
+
+      iex> conn = put_resp_content_type(conn, "application/json")
+      iex> get_resp_header(conn, "content-type")
+      ["application/json; charset=utf-8"]
+
   """
   @spec put_resp_content_type(t, binary, binary | nil) :: t
   def put_resp_content_type(conn, content_type, charset \\ "utf-8")
@@ -829,7 +934,7 @@ defmodule Plug.Conn do
   @doc """
   Fetches query parameters from the query string.
 
-  Params are decoded as "x-www-form-urlencoded" in which key/value pairs
+  Params are decoded as `"x-www-form-urlencoded"` in which key/value pairs
   are separated by `&` and keys are separated from values by `=`.
 
   This function does not fetch parameters from the body. To fetch
@@ -837,7 +942,7 @@ defmodule Plug.Conn do
 
   ## Options
 
-    * `:length` - the maximum query string length. Defaults to 1_000_000 bytes.
+    * `:length` - the maximum query string length. Defaults to `1_000_000` bytes.
 
   """
   @spec fetch_query_params(t, Keyword.t()) :: t
@@ -868,10 +973,11 @@ defmodule Plug.Conn do
   @doc """
   Reads the request body.
 
-  This function reads a chunk of the request body up to a given `:length`. If
-  there is more data to be read, then `{:more, partial_body, conn}` is
-  returned. Otherwise `{:ok, body, conn}` is returned. In case of an error
-  reading the socket, `{:error, reason}` is returned as per `:gen_tcp.recv/2`.
+  This function reads a chunk of the request body up to a given length (specified
+  by the `:length` option). If there is more data to be read, then
+  `{:more, partial_body, conn}` is returned. Otherwise `{:ok, body, conn}` is
+  returned. In case of an error reading the socket, `{:error, reason}` is
+  returned as per `:gen_tcp.recv/2`.
 
   Like all functions in this module, the `conn` returned by `read_body` must
   be passed to the next stage of your pipeline and should not be ignored.
@@ -892,14 +998,14 @@ defmodule Plug.Conn do
   ## Options
 
     * `:length` - sets the maximum number of bytes to read from the body on
-      every call, defaults to 8_000_000 bytes
+      every call, defaults to `8_000_000` bytes
     * `:read_length` - sets the amount of bytes to read at one time from the
-      underlying socket to fill the chunk, defaults to 1_000_000 bytes
+      underlying socket to fill the chunk, defaults to `1_000_000` bytes
     * `:read_timeout` - sets the timeout for each socket read, defaults to
-      15_000ms
+      `15_000` milliseconds
 
   The values above are not meant to be exact. For example, setting the
-  length to 8_000_000 may end up reading some hundred bytes more from
+  length to `8_000_000` may end up reading some hundred bytes more from
   the socket until we halt.
 
   ## Examples
@@ -930,7 +1036,7 @@ defmodule Plug.Conn do
   It returns `{:ok, headers, conn}` with the headers or
   `{:done, conn}` if there are no more parts.
 
-  Once `read_part_headers/2` is invoked, a developer may call
+  Once `read_part_headers/2` is invoked, you may call
   `read_part_body/2` to read the body associated to the headers.
   If `read_part_headers/2` is called instead, the body is automatically
   skipped until the next part headers.
@@ -938,15 +1044,17 @@ defmodule Plug.Conn do
   ## Options
 
     * `:length` - sets the maximum number of bytes to read from the body for
-      each chunk, defaults to 64_000 bytes
+      each chunk, defaults to `64_000` bytes
     * `:read_length` - sets the amount of bytes to read at one time from the
-      underlying socket to fill the chunk, defaults to 64_000 bytes
+      underlying socket to fill the chunk, defaults to `64_000` bytes
     * `:read_timeout` - sets the timeout for each socket read, defaults to
-      5_000ms
+      `5_000` milliseconds
 
   """
   @spec read_part_headers(t, Keyword.t()) :: {:ok, headers, t} | {:done, t}
-  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
+  def read_part_headers(conn, opts \\ [])
+
+  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts) do
     opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
 
     case init_multipart(conn) do
@@ -987,7 +1095,9 @@ defmodule Plug.Conn do
   It accepts the same options as `read_body/2`.
   """
   @spec read_part_body(t, Keyword.t()) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
-  def read_part_body(%{adapter: {adapter, state}} = conn, opts) do
+  def read_part_body(conn, opts)
+
+  def read_part_body(%Conn{adapter: {adapter, state}} = conn, opts) do
     case init_multipart(conn) do
       {boundary, buffer} ->
         # Note we will read the whole length from the socket
@@ -1001,12 +1111,12 @@ defmodule Plug.Conn do
     end
   end
 
-  defp read_part_body(conn, data, acc, length, boundary, adapter, state, _opts)
+  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, adapter, state, _opts)
        when byte_size(acc) > length do
     {:more, acc, store_multipart(conn, {boundary, data}, adapter, state)}
   end
 
-  defp read_part_body(conn, data, acc, length, boundary, adapter, state, opts) do
+  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, adapter, state, opts) do
     case :plug_multipart.parse_body(data, boundary) do
       {:ok, body} ->
         {_, next, state} = next_multipart(adapter, state, opts)
@@ -1092,6 +1202,8 @@ defmodule Plug.Conn do
 
   @doc """
   Sends an information response to a client but raises if the adapter does not support inform.
+
+  See `inform/1` for more information.
   """
   @spec inform!(t, status, Keyword.t()) :: t
   def inform!(%Conn{adapter: {adapter, _}} = conn, status, headers \\ []) do
@@ -1204,10 +1316,10 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Puts a response cookie.
+  Puts a response cookie in the connection.
 
   The cookie value is not automatically escaped. Therefore, if you
-  want to store values with comma, quotes, etc, you need to explicitly
+  want to store values with comma, quotes, and so on, you need to explicitly
   escape them or use a function such as `Base.encode64(value, padding: false)`
   when writing and `Base.decode64(encoded, padding: false)` when reading
   the cookie. Padding needs to be disabled since `=` is not a valid character
@@ -1219,9 +1331,9 @@ defmodule Plug.Conn do
     * `:max_age` - the cookie max-age, in seconds. Providing a value for this
       option will set both the _max-age_ and _expires_ cookie attributes
     * `:path` - the path the cookie applies to
-    * `:http_only` - when false, the cookie is accessible beyond http
+    * `:http_only` - when `false`, the cookie is accessible beyond HTTP
     * `:secure` - if the cookie must be sent only over https. Defaults
-      to true when the connection is https
+      to true when the connection is HTTPS
     * `:extra` - string to append to cookie. Use this to take advantage of
       non-standard cookie attributes.
 
@@ -1279,7 +1391,7 @@ defmodule Plug.Conn do
   def put_session(%Conn{state: state}, _key, _value) when not (state in @unsent),
     do: raise(AlreadySentError)
 
-  def put_session(conn, key, value) do
+  def put_session(conn, key, value) when is_atom(key) or is_binary(key) do
     put_session(conn, &Map.put(&1, session_key(key), value))
   end
 
@@ -1291,7 +1403,7 @@ defmodule Plug.Conn do
   automatically converted to strings.
   """
   @spec get_session(t, String.t() | atom) :: any
-  def get_session(conn, key) do
+  def get_session(conn, key) when is_atom(key) or is_binary(key) do
     conn |> get_session |> Map.get(session_key(key))
   end
 
@@ -1305,7 +1417,7 @@ defmodule Plug.Conn do
   def delete_session(%Conn{state: state}, _key) when not (state in @unsent),
     do: raise(AlreadySentError)
 
-  def delete_session(conn, key) do
+  def delete_session(conn, key) when is_atom(key) or is_binary(key) do
     put_session(conn, &Map.delete(&1, session_key(key)))
   end
 
@@ -1335,6 +1447,8 @@ defmodule Plug.Conn do
 
   """
   @spec configure_session(t, Keyword.t()) :: t
+  def configure_session(conn, opts)
+
   def configure_session(%Conn{state: state}, _opts) when not (state in @unsent),
     do: raise(AlreadySentError)
 
@@ -1350,13 +1464,27 @@ defmodule Plug.Conn do
     end
   end
 
-  @doc """
+  @doc ~S"""
   Registers a callback to be invoked before the response is sent.
 
   Callbacks are invoked in the reverse order they are defined (callbacks
   defined first are invoked last).
+
+  ## Examples
+
+  To log the status of requests being sent:
+
+      require Logger
+
+      Plug.Conn.register_before_send(conn, fn conn ->
+        Logger.info("Sent a #{conn.status} response")
+        conn
+      end)
+
   """
   @spec register_before_send(t, (t -> t)) :: t
+  def register_before_send(conn, callback)
+
   def register_before_send(%Conn{state: state}, _callback)
       when not (state in @unsent) do
     raise AlreadySentError
@@ -1370,7 +1498,7 @@ defmodule Plug.Conn do
   @doc """
   Halts the Plug pipeline by preventing further plugs downstream from being
   invoked. See the docs for `Plug.Builder` for more information on halting a
-  plug pipeline.
+  Plug pipeline.
   """
   @spec halt(t) :: t
   def halt(%Conn{} = conn) do
@@ -1504,7 +1632,7 @@ defimpl Collectable, for: Plug.Conn do
   def into(conn) do
     IO.warn(
       "using Enum.into/2 for conn is deprecated, use `Plug.Conn.chunk/2` " <>
-        "and `Enum.reduce_while/3` instead (see the Plug.Conn.chunk/2 docs for an example)"
+        "and `Enum.reduce_while/3` instead (see the `Plug.Conn.chunk/2` docs for an example)"
     )
 
     fun = fn
