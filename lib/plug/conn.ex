@@ -371,8 +371,8 @@ defmodule Plug.Conn do
   At the end sets the connection state to `:sent`.
 
   Note that this function does not halt the connection, so if
-  subsequent plugs try to send the connection, it will error out.
-  Use `halt/1` after this function if you want to halt the connection.
+  subsequent plugs try to send another response, it will error out.
+  Use `halt/1` after this function if you want to halt the plug pipeline.
 
   ## Examples
 
