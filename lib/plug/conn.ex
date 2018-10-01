@@ -369,6 +369,17 @@ defmodule Plug.Conn do
   already `:sent` connections.
 
   At the end sets the connection state to `:sent`.
+
+  Note that this function does not halt the connection, so if
+  subsequent plugs try to send the connection, it will error out.
+  Use `halt/1` after this function if you want to halt the connection.
+
+  ## Examples
+
+      conn
+      |> Plug.Conn.resp(404, "Not found")
+      |> Plug.Conn.send_resp()
+
   """
   @spec send_resp(t) :: t | no_return
   def send_resp(conn)
@@ -510,7 +521,17 @@ defmodule Plug.Conn do
   @doc """
   Sends a response with the given status and body.
 
-  See `send_resp/1` for more information.
+  This is equivalent to setting the status and the body and then
+  calling `send_resp/1`.
+
+  Note that this function does not halt the connection, so if
+  subsequent plugs try to send the connection, it will error out.
+  Use `halt/1` after this function if you want to halt the connection.
+
+  ## Examples
+
+      Plug.Conn.send_resp(conn, 404, "Not found")
+
   """
   @spec send_resp(t, status, body) :: t | no_return
   def send_resp(%Conn{} = conn, status, body) do
