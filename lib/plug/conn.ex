@@ -8,7 +8,7 @@ defmodule Plug.Conn do
   for working with Plug connections.
 
   Note request headers are normalized to lowercase and response
-  headers are expected to have lower-case keys.
+  headers are expected to have lowercase keys.
 
   ## Request fields
 
@@ -56,7 +56,7 @@ defmodule Plug.Conn do
     * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
       is set to `"max-age=0, private, must-revalidate"`. Note, response headers
-      are expected to have lower-case keys.
+      are expected to have lowercase keys.
     * `status` - the response status
 
   Furthermore, the `before_send` field stores callbacks that are invoked
@@ -621,10 +621,10 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
-  It is recommended for header keys to be in lower-case, to avoid sending
-  duplicate keys in a request. As a convenience, this is validated during
-  testing where a header that is not lowercase raises a
-  `Plug.Conn.InvalidHeaderError`.
+  It is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request. As a convenience, when using the
+  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase
+  will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
@@ -731,10 +731,10 @@ defmodule Plug.Conn do
   Adds a new response header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
-  It is recommended for header keys to be in lower-case, to avoid sending
-  duplicate keys in a request. As a convenience, this is validated during
-  testing where a header that is not lowercase raises a
-  `Plug.Conn.InvalidHeaderError`.
+  It is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request. As a convenience, when using the
+  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase
+  will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
@@ -770,10 +770,10 @@ defmodule Plug.Conn do
   (`key`) but rather then replacing the existing one it prepends another header
   with the same `key`.
 
-  It is recommended for header keys to be in lower-case, to avoid sending
-  duplicate keys in a request. As a convenience, this is validated during
-  testing where a header that is not lowercase raises a
-  `Plug.Conn.InvalidHeaderError`.
+  It is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request. As a convenience, when using the
+  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase will
+  raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
@@ -1052,9 +1052,7 @@ defmodule Plug.Conn do
 
   """
   @spec read_part_headers(t, Keyword.t()) :: {:ok, headers, t} | {:done, t}
-  def read_part_headers(conn, opts \\ [])
-
-  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts) do
+  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
     opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
 
     case init_multipart(conn) do
@@ -1095,8 +1093,6 @@ defmodule Plug.Conn do
   It accepts the same options as `read_body/2`.
   """
   @spec read_part_body(t, Keyword.t()) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
-  def read_part_body(conn, opts)
-
   def read_part_body(%Conn{adapter: {adapter, state}} = conn, opts) do
     case init_multipart(conn) do
       {boundary, buffer} ->
