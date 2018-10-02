@@ -38,6 +38,7 @@ defmodule Plug.MixProject do
   def deps do
     [
       {:mime, "~> 1.0"},
+      {:plug_crypto, "~> 1.0"},
       {:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.4", optional: true},
       {:ex_doc, "~> 0.19.1", only: :docs},
       {:inch_ex, ">= 0.0.0", only: :docs},
@@ -68,7 +69,6 @@ defmodule Plug.MixProject do
     # Plug
     # Plug.Builder
     # Plug.Conn
-    # Plug.Crypto
     # Plug.Debugger
     # Plug.ErrorHandler
     # Plug.Exception
@@ -101,11 +101,6 @@ defmodule Plug.MixProject do
         Plug.Conn.Status,
         Plug.Conn.Unfetched,
         Plug.Conn.Utils
-      ],
-      "Plug.Crypto": [
-        Plug.Crypto.KeyGenerator,
-        Plug.Crypto.MessageEncryptor,
-        Plug.Crypto.MessageVerifier
       ],
       "Plug.Parsers": [
         Plug.Parsers.JSON,
