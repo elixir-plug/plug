@@ -1,7 +1,7 @@
 language: elixir
 sudo: false
-elixir: 1.6.6
-otp_release: 20.1
+elixir: 1.7.3
+otp_release: 21.1
 env:
   - COWBOY_VERSION=1.0
   - COWBOY_VERSION=2.0
@@ -14,7 +14,7 @@ notifications:
     - jose.valim@plataformatec.com.br
     - eric.meadows.jonsson@gmail.com
 script:
-  - if [[ `elixir -v` = *"1.6"* ]]; then mix format --check-formatted; fi
+  - if [[ `elixir -v` = *"1.7"* ]]; then mix format --check-formatted; fi
   - mix test
 after_script:
   - mix deps.get --only docs
