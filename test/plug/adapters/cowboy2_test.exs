@@ -40,7 +40,6 @@ defmodule Plug.Adapters.Cowboy2Test do
 
       assert [
                Plug.Adapters.Cowboy2Test.HTTPS,
-               100,
                :ranch_ssl,
                transport_opts,
                :cowboy_tls,
@@ -49,6 +48,7 @@ defmodule Plug.Adapters.Cowboy2Test do
 
       assert Keyword.get(transport_opts, :alpn_preferred_protocols) == ["h2", "http/1.1"]
       assert Keyword.get(transport_opts, :next_protocols_advertised) == ["h2", "http/1.1"]
+      assert Keyword.get(transport_opts, :num_acceptors) == 100
     end
   end
 
