@@ -1,5 +1,9 @@
 ## Changelog
 
+## v1.6.4 (2018-10-04)
+
+  * Fix compatability with Ranch 1.6
+
 ## v1.6.3 (2018-09-14)
 
   * Do not include secret_key_base in inspected data
