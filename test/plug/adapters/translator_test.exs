@@ -27,11 +27,11 @@ defmodule Plug.Adapters.TranslatorTest do
 
   test "ranch/cowboy 500 logs", %{adapter_module: adapter_module} do
     {:ok, _pid} = adapter_module.http(__MODULE__, [], port: 9001)
-    on_exit(fn -> adapter_module.shutdown(__MODULE__.HTTP) end)
 
     output =
       capture_log(fn ->
         :hackney.get("http://127.0.0.1:9001/error", [], "", [])
+        adapter_module.shutdown(__MODULE__.HTTP)
       end)
 
     assert output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest \(.*\) terminated"
@@ -43,14 +43,14 @@ defmodule Plug.Adapters.TranslatorTest do
 
   test "ranch/cowboy non-500 skips", %{adapter_module: adapter_module} do
     {:ok, _pid} = adapter_module.http(__MODULE__, [], port: 9002)
-    on_exit(fn -> adapter_module.shutdown(__MODULE__.HTTP) end)
 
     output =
       capture_log(fn ->
         :hackney.get("http://127.0.0.1:9002/warn", [], "", [])
+        adapter_module.shutdown(__MODULE__.HTTP)
       end)
 
-    refute output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest terminated"
+    refute output =~ ~r"#PID<0\.\d+\.0> running Plug\.Adapters\.TranslatorTest \(.*\) terminated"
     refute output =~ "Server: 127.0.0.1:9002 (http)"
     refute output =~ "Request: GET /"
     refute output =~ "** (exit) an exception was raised:"
