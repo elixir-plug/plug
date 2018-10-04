@@ -162,7 +162,6 @@ defmodule Plug.Adapters.Cowboy2 do
           {:ranch_ssl, :cowboy_tls, transport_opts}
       end
 
-    num_acceptors = Keyword.get(transport_opts, :num_acceptors, 100)
 
     %{
       id: {:ranch_listener_sup, ref},
@@ -170,7 +169,6 @@ defmodule Plug.Adapters.Cowboy2 do
         {:ranch_listener_sup, :start_link,
          [
            ref,
-           num_acceptors,
            ranch_module,
            transport_opts,
            cowboy_protocol,
