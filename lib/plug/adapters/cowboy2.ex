@@ -162,25 +162,10 @@ defmodule Plug.Adapters.Cowboy2 do
           {:ranch_ssl, :cowboy_tls, transport_opts}
       end
 
-    num_acceptors = Keyword.get(transport_opts, :num_acceptors, 100)
+    {id, start, restart, shutdown, type, modules} =
+      :ranch.child_spec(ref, ranch_module, transport_opts, cowboy_protocol, proto_opts)
 
-    %{
-      id: {:ranch_listener_sup, ref},
-      start:
-        {:ranch_listener_sup, :start_link,
-         [
-           ref,
-           num_acceptors,
-           ranch_module,
-           transport_opts,
-           cowboy_protocol,
-           proto_opts
-         ]},
-      restart: :permanent,
-      shutdown: :infinity,
-      type: :supervisor,
-      modules: [:ranch_listener_sup]
-    }
+    %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}
   end
 
   ## Helpers
