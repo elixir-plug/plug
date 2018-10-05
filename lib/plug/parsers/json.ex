@@ -29,11 +29,44 @@ defmodule Plug.Parsers.JSON do
     {decoder, opts} = Keyword.pop(opts, :json_decoder)
     {body_reader, opts} = Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
 
-    unless decoder do
-      raise ArgumentError, "JSON parser expects a :json_decoder option"
-    end
+    validate_decoder!(decoder)
 
     {body_reader, decoder, opts}
+  end
+
+  defp validate_decoder!(nil) do
+    raise ArgumentError, "JSON parser expects a :json_decoder option"
+  end
+
+  defp validate_decoder!({module, fun, args})
+       when is_atom(module) and is_atom(fun) and is_list(args) do
+    arity = length(args) + 1
+
+    unless Code.ensure_compiled?(module) and function_exported?(module, fun, arity) do
+      raise ArgumentError,
+            "invalid :json_decoder option. Undefined function " <>
+              Exception.format_mfa(module, fun, arity)
+    end
+  end
+
+  defp validate_decoder!(decoder) when is_atom(decoder) do
+    unless Code.ensure_compiled?(decoder) do
+      raise ArgumentError,
+            "invalid :json_decoder option. The module #{inspect(decoder)} is not " <>
+              "loaded and could not be found"
+    end
+
+    unless function_exported?(decoder, :decode!, 1) do
+      raise ArgumentError,
+            "invalid :json_decoder option. The module #{inspect(decoder)} must " <>
+              "implement decode!/1"
+    end
+  end
+
+  defp validate_decoder!(decoder) do
+    raise ArgumentError,
+          "the :json_decoder option expects a module, or a three-element " <>
+            "tuple in the form of {module, function, extra_args}, got: #{inspect(decoder)}"
   end
 
   def parse(conn, "application", subtype, _headers, {{mod, fun, args}, decoder, opts}) do

@@ -100,9 +100,38 @@ defmodule Plug.Parsers.JSONTest do
     assert conn.params["query"] == "fooBAZ"
   end
 
-  test "expects a json encoder" do
+  test "expects a json decoder" do
     assert_raise ArgumentError, "JSON parser expects a :json_decoder option", fn ->
       nil |> json_conn() |> parse(json_decoder: nil)
+    end
+  end
+
+  test "validates the json decoder (expressed as a MFA tuple)" do
+    message = "invalid :json_decoder option. Undefined function Plug.Parsers.JSONTest.JSON.test/2"
+
+    assert_raise ArgumentError, message, fn ->
+      nil |> json_conn() |> parse(json_decoder: {JSON, :test, [[capitalize_keys: true]]})
+    end
+  end
+
+  test "validates the json decoder (expressed as a module)" do
+    message =
+      "invalid :json_decoder option. The module InexistentJSONDecoder is not loaded " <>
+        "and could not be found"
+
+    assert_raise ArgumentError, message, fn ->
+      nil |> json_conn() |> parse(json_decoder: InexistentJSONDecoder)
+    end
+
+    defmodule InvalidJSONDecoder do
+    end
+
+    message =
+      "invalid :json_decoder option. The module Plug.Parsers.JSONTest.InvalidJSONDecoder " <>
+        "must implement decode!/1"
+
+    assert_raise ArgumentError, message, fn ->
+      nil |> json_conn() |> parse(json_decoder: InvalidJSONDecoder)
     end
   end
 
