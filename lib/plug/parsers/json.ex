@@ -42,7 +42,7 @@ defmodule Plug.Parsers.JSON do
        when is_atom(module) and is_atom(fun) and is_list(args) do
     arity = length(args) + 1
 
-    unless function_exported?(module, fun, arity) do
+    unless Code.ensure_compiled?(module) and function_exported?(module, fun, arity) do
       raise ArgumentError,
             "invalid :json_decoder option. Undefined function " <>
               Exception.format_mfa(module, fun, arity)
@@ -50,7 +50,7 @@ defmodule Plug.Parsers.JSON do
   end
 
   defp validate_decoder!(decoder) when is_atom(decoder) do
-    unless Code.ensure_loaded?(decoder) do
+    unless Code.ensure_compiled?(decoder) do
       raise ArgumentError,
             "invalid :json_decoder option. The module #{inspect(decoder)} is not " <>
               "loaded and could not be found"
