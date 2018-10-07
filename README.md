@@ -89,10 +89,7 @@ def hello_world_plug(conn, _opts) do
 end
 ```
 
-A module plug implements two functions:
-
-1. An `init/1` function that initializes and returns the plug options.
-2. A `call/2` function which receives the connection and the value returned by `init/1`, and returns the connection:
+A module plug implements an `init/1` function to initialize the options and a `call/2` function which receives the connection and initialized options and returns the connection:
 
 ```elixir
 defmodule MyPlug do
