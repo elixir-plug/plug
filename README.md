@@ -44,7 +44,7 @@ Access "http://localhost:4000/" and we are done! For now, we have directly start
 
 You can use plug in your projects in two steps:
 
-1. Add plug and your webserver of choice (currently [Cowboy](https://github.com/ninenines/cowboy)) to your `mix.exs` dependencies:
+1. Add plug and your webserver of choice (currently [Cowboy][cowboy]) to your `mix.exs` dependencies:
 
     ```elixir
     def deps do
@@ -168,7 +168,7 @@ On a production system, you likely want to start your Plug pipeline under your a
 $ mix new my_app --sup
 ```
 
-and then update `lib/my_app/application.ex` as follows:
+and then update your application file (for example, `lib/my_app/application.ex`) as follows:
 
 ```elixir
 defmodule MyApp do
@@ -265,3 +265,4 @@ Check LICENSE file for more information.
   [writing-docs]: https://hexdocs.pm/elixir/writing-documentation.html
   [IRC]: https://webchat.freenode.net/?channels=#elixir-lang
   [freenode]: https://freenode.net/
+  [cowboy]: https://github.com/ninenines/cowboy
