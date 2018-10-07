@@ -168,7 +168,7 @@ On a production system, you likely want to start your Plug pipeline under your a
 $ mix new my_app --sup
 ```
 
-and then update your application file (for example, `lib/my_app/application.ex`) as follows:
+and then update `lib/my_app/application.ex` as follows:
 
 ```elixir
 defmodule MyApp do
