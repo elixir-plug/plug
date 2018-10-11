@@ -2,6 +2,7 @@ defmodule Plug.Adapters.Cowboy2Test do
   use ExUnit.Case, async: true
 
   import Plug.Adapters.Cowboy2
+  import ExUnit.CaptureIO
 
   @moduletag :cowboy2
 
@@ -97,12 +98,32 @@ defmodule Plug.Adapters.Cowboy2Test do
            ] = args(:http, __MODULE__, [], port: 3000, protocol_options: [timeout: 30_000])
   end
 
-  test "builds args with num_acceptors option" do
-    assert [
-             Plug.Adapters.Cowboy2Test.HTTP,
-             %{max_connections: 16_384, socket_opts: [port: 3000], num_acceptors: 5},
-             %{env: %{dispatch: @dispatch}}
-           ] = args(:http, __MODULE__, [], port: 3000, compress: true, num_acceptors: 5)
+  test "builds args with num_acceptors option writes a deprecation" do
+    output =
+      capture_io(:stderr, fn ->
+        assert [
+                 Plug.Adapters.Cowboy2Test.HTTP,
+                 %{max_connections: 16_384, socket_opts: [port: 3000], num_acceptors: 5},
+                 %{env: %{dispatch: @dispatch}}
+               ] = args(:http, __MODULE__, [], port: 3000, compress: true, num_acceptors: 5)
+      end)
+
+    assert output =~ "using :num_acceptors in options is deprecated"
+    assert output =~ "Please pass :num_acceptors"
+  end
+
+  test "build args using acceptors has a custom deprecation warning" do
+    output =
+      capture_io(:stderr, fn ->
+        assert [
+                 Plug.Adapters.Cowboy2Test.HTTP,
+                 %{max_connections: 16_384, socket_opts: [port: 3000], num_acceptors: 5},
+                 %{env: %{dispatch: @dispatch}}
+               ] = args(:http, __MODULE__, [], port: 3000, compress: true, acceptors: 5)
+      end)
+
+    assert output =~ "using :acceptors in options is deprecated"
+    assert output =~ "Please pass :num_acceptors"
   end
 
   test "builds args with compress option" do
@@ -114,6 +135,29 @@ defmodule Plug.Adapters.Cowboy2Test do
                stream_handlers: [:cowboy_compress_h, Plug.Adapters.Cowboy2.Stream]
              }
            ] = args(:http, __MODULE__, [], port: 3000, compress: true)
+  end
+
+  test "builds args with transport options" do
+    assert [
+             Plug.Adapters.Cowboy2Test.HTTP,
+             %{
+               num_acceptors: 50,
+               max_connections: 16_384,
+               shutdown: :brutal_kill,
+               socket_opts: [:inets, priority: 1, port: 3000]
+             },
+             %{
+               env: %{dispatch: @dispatch}
+             }
+           ] =
+             args(:http, __MODULE__, [],
+               port: 3000,
+               transport_options: [
+                 shutdown: :brutal_kill,
+                 num_acceptors: 50,
+                 socket_opts: [:inets, priority: 1]
+               ]
+             )
   end
 
   test "builds args with compress option fails if stream_handlers are set" do
