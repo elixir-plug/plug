@@ -35,8 +35,8 @@ defmodule Plug.Adapters.Cowboy2 do
         By default `:num_acceptors` will be set to `100` and `:max_connections`
         to `16_384`.
 
-  All other options are given to the underlying transport as `:socket_opts`. When
-  running on HTTPS, any SSL configuration should be given directly to the
+  All other options are given as `:socket_opts` to the underlying transport.
+  When running on HTTPS, any SSL configuration should be given directly to the
   adapter. See `https/3` for an example and read `Plug.SSL.configure/1` to
   understand about our SSL defaults. When using a unix socket, OTP 21+ is
   required for `Plug.Static` and `Plug.Conn.send_file/3` to behave correctly.
