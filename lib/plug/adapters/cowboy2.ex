@@ -112,6 +112,8 @@ defmodule Plug.Adapters.Cowboy2 do
     :cowboy.stop_listener(ref)
   end
 
+  @transport_options [:connection_type, :max_connections, :num_acceptors, :shutdown, :socket]
+
   @doc """
   A function for starting a Cowboy2 server under Elixir v1.5 supervisors.
 
@@ -154,12 +156,14 @@ defmodule Plug.Adapters.Cowboy2 do
           {:ranch_tcp, :cowboy_clear, transport_opts}
 
         :https ->
-          transport_opts =
-            transport_opts
+          %{socket_opts: socket_opts} = transport_opts
+
+          socket_opts =
+            socket_opts
             |> Keyword.put_new(:next_protocols_advertised, ["h2", "http/1.1"])
             |> Keyword.put_new(:alpn_preferred_protocols, ["h2", "http/1.1"])
 
-          {:ranch_ssl, :cowboy_tls, transport_opts}
+          {:ranch_ssl, :cowboy_tls, %{transport_opts | socket_opts: socket_opts}}
       end
 
     {id, start, restart, shutdown, type, modules} =
@@ -241,7 +245,14 @@ defmodule Plug.Adapters.Cowboy2 do
     protocol_options = Map.merge(%{env: %{dispatch: dispatch}}, protocol_and_extra_options)
     transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
 
-    [ref || build_ref(plug, scheme), non_keyword_opts ++ transport_options, protocol_options]
+    {transport_options, socket_options} = Keyword.split(transport_options, @transport_options)
+
+    transport_options =
+      transport_options
+      |> Keyword.put(:socket_opts, non_keyword_opts ++ socket_options)
+      |> Map.new()
+
+    [ref || build_ref(plug, scheme), transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do
