@@ -1,4 +1,6 @@
 defmodule Plug.Adapters.Cowboy2.Stream do
+  @moduledoc false
+  
   require Logger
 
   def init(stream_id, req, opts) do
