@@ -13,12 +13,6 @@ defmodule Plug.Adapters.Cowboy2 do
       Defaults to 4000 (http) and 4040 (https).
       Must be 0 when `:ip` is a `{:local, path}` tuple.
 
-    * `:acceptors` - the number of acceptors for the listener.
-      Defaults to 100.
-
-    * `:max_connections` - max number of connections supported.
-      Defaults to `16_384`.
-
     * `:dispatch` - manually configure Cowboy's dispatch.
       If this option is used, the given plug won't be initialized
       nor dispatched to (and doing so becomes the user's responsibility).
@@ -34,13 +28,18 @@ defmodule Plug.Adapters.Cowboy2 do
       Defaults to 5000ms.
 
     * `:protocol_options` - Specifies remaining protocol options,
-      see [Cowboy docs](https://ninenines.eu/docs/en/cowboy/2.0/manual/cowboy_http/).
+      see [Cowboy docs](https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/).
 
-  All other options are given to the underlying transport. When running
-  on HTTPS, any SSL configuration should be given directly to the adapter.
-  See `https/3` for an example and read `Plug.SSL.configure/1` to understand
-  about our SSL defaults. When using a unix socket, OTP 21+ is required for `Plug.Static`
-  and `Plug.Conn.send_file/3` to behave correctly.
+    * `:transport_options` - A keyword list specifying transport options,
+        see [ranch docs](https://ninenines.eu/docs/en/ranch/1.6/manual/ranch/).
+        By default `:num_acceptors` will be set to `100` and `:max_connections`
+        to `16_384`.
+
+  All other options are given as `:socket_opts` to the underlying transport.
+  When running on HTTPS, any SSL configuration should be given directly to the
+  adapter. See `https/3` for an example and read `Plug.SSL.configure/1` to
+  understand about our SSL defaults. When using a unix socket, OTP 21+ is
+  required for `Plug.Static` and `Plug.Conn.send_file/3` to behave correctly.
   """
 
   require Logger
@@ -52,7 +51,6 @@ defmodule Plug.Adapters.Cowboy2 do
       enum_split_with(cowboy_options, &(is_tuple(&1) and tuple_size(&1) == 2))
 
     cowboy_options
-    |> Keyword.put_new(:max_connections, 16_384)
     |> set_compress()
     |> normalize_cowboy_options(scheme)
     |> to_args(scheme, plug, plug_opts, non_keyword_options)
@@ -112,6 +110,19 @@ defmodule Plug.Adapters.Cowboy2 do
     :cowboy.stop_listener(ref)
   end
 
+  @transport_options [
+    :connection_type,
+    :handshake_timeout,
+    :max_connections,
+    :logger,
+    # special case supported by plug but not ranch
+    :acceptors,
+    :num_acceptors,
+    :shutdown,
+    :socket,
+    :socket_opts
+  ]
+
   @doc """
   A function for starting a Cowboy2 server under Elixir v1.5 supervisors.
 
@@ -154,12 +165,14 @@ defmodule Plug.Adapters.Cowboy2 do
           {:ranch_tcp, :cowboy_clear, transport_opts}
 
         :https ->
-          transport_opts =
-            transport_opts
+          %{socket_opts: socket_opts} = transport_opts
+
+          socket_opts =
+            socket_opts
             |> Keyword.put_new(:next_protocols_advertised, ["h2", "http/1.1"])
             |> Keyword.put_new(:alpn_preferred_protocols, ["h2", "http/1.1"])
 
-          {:ranch_ssl, :cowboy_tls, transport_opts}
+          {:ranch_ssl, :cowboy_tls, %{transport_opts | socket_opts: socket_opts}}
       end
 
     {id, start, restart, shutdown, type, modules} =
@@ -230,18 +243,40 @@ defmodule Plug.Adapters.Cowboy2 do
     opts = Keyword.delete(opts, :otp_app)
     {ref, opts} = Keyword.pop(opts, :ref)
     {dispatch, opts} = Keyword.pop(opts, :dispatch)
-    {num_acceptors, opts} = Keyword.pop(opts, :acceptors, 100)
     {protocol_options, opts} = Keyword.pop(opts, :protocol_options, [])
 
     dispatch = :cowboy_router.compile(dispatch || dispatch_for(plug, plug_opts))
-    {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
+    {extra_options, opts} = Keyword.split(opts, @protocol_options)
 
     extra_options = Keyword.put_new(extra_options, :stream_handlers, @default_stream_handlers)
     protocol_and_extra_options = :maps.from_list(protocol_options ++ extra_options)
     protocol_options = Map.merge(%{env: %{dispatch: dispatch}}, protocol_and_extra_options)
-    transport_options = Keyword.put_new(transport_options, :num_acceptors, num_acceptors)
+    {transport_options, socket_options} = Keyword.pop(opts, :transport_options, [])
 
-    [ref || build_ref(plug, scheme), non_keyword_opts ++ transport_options, protocol_options]
+    option_keys = Keyword.keys(socket_options)
+
+    for opt <- @transport_options, opt in option_keys do
+      option_deprecation_warning(opt)
+    end
+
+    {num_acceptors, socket_options} = Keyword.pop(socket_options, :num_acceptors, 100)
+    {num_acceptors, socket_options} = Keyword.pop(socket_options, :acceptors, num_acceptors)
+    {max_connections, socket_options} = Keyword.pop(socket_options, :max_connections, 16_384)
+
+    socket_options = non_keyword_opts ++ socket_options
+
+    transport_options =
+      transport_options
+      |> Keyword.put_new(:num_acceptors, num_acceptors)
+      |> Keyword.put_new(:max_connections, max_connections)
+      |> Keyword.update(
+        :socket_opts,
+        socket_options,
+        &(&1 ++ socket_options)
+      )
+      |> Map.new()
+
+    [ref || build_ref(plug, scheme), transport_options, protocol_options]
   end
 
   defp build_ref(plug, scheme) do
@@ -266,6 +301,20 @@ defmodule Plug.Adapters.Cowboy2 do
         raise "you are using Plug.Adapters.Cowboy2 (for Cowboy 2) but your current Cowboy " <>
                 "version is #{vsn}. Please update your mix.exs file accordingly"
     end
+  end
+
+  defp option_deprecation_warning(:acceptors),
+    do: option_deprecation_warning(:acceptors, :num_acceptors)
+
+  defp option_deprecation_warning(option),
+    do: option_deprecation_warning(option, option)
+
+  defp option_deprecation_warning(option, expected_option) do
+    warning =
+      "using :#{option} in options is deprecated. Please pass " <>
+        ":#{expected_option} to the :transport_options keyword list instead"
+
+    IO.warn(warning)
   end
 
   # TODO: Remove once we depend on Elixir ~> 1.4.
