@@ -462,6 +462,11 @@ defmodule Plug.Conn do
 
   @doc """
   Sends the response headers as a chunked response.
+  
+  HTTP/2 does not support chunking and will instead stream the response without a
+  transfer encoding. When using HTTP/1.1 the Cowboy adapter will stream the response
+  without a chunking the `content-length` header has been set before calling
+  `send_chunked/2`.
 
   It expects a connection that has not been `:sent` yet and sets its
   state to `:chunked` afterwards. Otherwise, raises `Plug.Conn.AlreadySentError`.
