@@ -29,7 +29,7 @@ defmodule Plug.MixProject do
   # Configuration for the OTP application
   def application do
     [
-      applications: [:crypto, :logger, :mime],
+      extra_applications: [:logger],
       mod: {Plug, []},
       env: [validate_header_keys_during_test: true]
     ]
