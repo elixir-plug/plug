@@ -1219,7 +1219,7 @@ defmodule Plug.Conn do
       _ ->
         raise "inform is not supported by #{inspect(adapter)}." <>
                 "You should either delete the call to `inform!/3` or switch to an " <>
-                "adapter that does support informational such as Plug.Adapters.Cowboy2"
+                "adapter that does support informational such as Plug.Cowboy"
     end
   end
 
@@ -1268,7 +1268,7 @@ defmodule Plug.Conn do
       _ ->
         raise "server push not supported by #{inspect(adapter)}." <>
                 "You should either delete the call to `push!/3` or switch to an " <>
-                "adapter that does support server push such as Plug.Adapters.Cowboy2."
+                "adapter that does support server push such as Plug.Cowboy."
     end
   end
 

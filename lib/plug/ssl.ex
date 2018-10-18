@@ -106,7 +106,7 @@ defmodule Plug.SSL do
   For instance, here is how you would pass the SSL options to the Cowboy
   adapter:
 
-      Plug.Adapters.Cowboy2.https MyPlug, [],
+      Plug.Cowboy.https MyPlug, [],
         port: 443,
         password: "SECRET",
         otp_app: :my_app,
@@ -117,7 +117,7 @@ defmodule Plug.SSL do
 
   or using the new child spec API:
 
-      {Plug.Adapters.Cowboy2, scheme: :https, plug: MyPlug, options: [
+      {Plug.Cowboy, scheme: :https, plug: MyPlug, options: [
          port: 443,
          password: "SECRET",
          otp_app: :my_app,

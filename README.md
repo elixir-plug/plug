@@ -35,7 +35,7 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     $ iex -S mix
     iex> c "path/to/file.ex"
     [MyPlug]
-    iex> {:ok, _} = Plug.Adapters.Cowboy2.http MyPlug, []
+    iex> {:ok, _} = Plug.Cowboy.http MyPlug, []
     {:ok, #PID<...>}
 
 Access "http://localhost:4000/" and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the "Supervised handlers" section below.
@@ -44,13 +44,12 @@ Access "http://localhost:4000/" and we are done! For now, we have directly start
 
 You can use plug in your projects in two steps:
 
-1. Add plug and your webserver of choice (currently [Cowboy][cowboy]) to your `mix.exs` dependencies:
+1. Add the plug adapter of your choice (currently [Cowboy][cowboy]) to your `mix.exs` dependencies:
 
     ```elixir
     def deps do
       [
-        {:cowboy, "~> 2.0"},
-        {:plug, "~> 1.0"}
+        {:plug_cowboy, "~> 2.0"}
       ]
     end
     ```
@@ -59,7 +58,7 @@ You can use plug in your projects in two steps:
 
     ```elixir
     def application do
-      [applications: [:cowboy, :plug]]
+      [applications: [:plug_cowboy]]
     end
     ```
 
@@ -178,7 +177,7 @@ defmodule MyApp do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      Plug.Adapters.Cowboy2.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001])
+      Plug.Cowboy.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
