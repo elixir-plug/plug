@@ -41,8 +41,8 @@ defmodule Plug.SSL do
       defaults to `false`
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
-    * `:exclude` - exclude the given hosts from having HSTS applied to them.
-      Defaults to `["localhost"]`
+    * `:exclude` - exclude the given hosts from redirecting to the `https`
+      scheme. Defaults to `["localhost"]`
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -374,9 +374,10 @@ defmodule Plug.SSL do
   def call(conn, {hsts, exclude, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
-    case conn do
-      %{scheme: :https} -> put_hsts_header(conn, hsts, exclude)
-      %{} -> redirect_to_https(conn, host, log_level)
+    cond do
+      :lists.member(conn.host, exclude) -> conn
+      conn.scheme == :https -> put_hsts_header(conn, hsts)
+      true -> redirect_to_https(conn, host, log_level)
     end
   end
 
@@ -407,15 +408,11 @@ defmodule Plug.SSL do
     end
   end
 
-  defp put_hsts_header(%{host: host} = conn, hsts_header, exclude) when is_binary(hsts_header) do
-    if :lists.member(host, exclude) do
-      conn
-    else
-      put_resp_header(conn, "strict-transport-security", hsts_header)
-    end
+  defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
+    put_resp_header(conn, "strict-transport-security", hsts_header)
   end
 
-  defp put_hsts_header(conn, nil, _), do: conn
+  defp put_hsts_header(conn, nil), do: conn
 
   defp redirect_to_https(%{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
