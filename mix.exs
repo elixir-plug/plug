@@ -3,15 +3,7 @@ defmodule Plug.MixProject do
 
   @version "1.7.0-dev"
   @description "A specification and conveniences for composable modules between web applications"
-  @xref_exclude [
-    :ranch,
-    :cowboy,
-    :cowboy_req,
-    :cowboy_router,
-    :cowboy_stream,
-    :cowboy_stream_h,
-    Plug.Cowboy
-  ]
+  @xref_exclude [Plug.Cowboy]
 
   def project do
     [
@@ -20,7 +12,6 @@ defmodule Plug.MixProject do
       elixir: "~> 1.4",
       deps: deps(),
       package: package(),
-      lockfile: lockfile(),
       description: @description,
       name: "Plug",
       xref: [exclude: @xref_exclude],
@@ -53,13 +44,6 @@ defmodule Plug.MixProject do
       {:hackney, "~> 1.2.0", only: :test},
       {:kadabra, "~> 0.3.4", only: :test}
     ]
-  end
-
-  defp lockfile() do
-    case System.get_env("COWBOY_VERSION") do
-      "1" <> _ -> "mix-cowboy1.lock"
-      _ -> "mix.lock"
-    end
   end
 
   defp package do
@@ -96,11 +80,6 @@ defmodule Plug.MixProject do
         Plug.SSL,
         Plug.Session,
         Plug.Static
-      ],
-      "Plug.Adapters": [
-        Plug.Adapters.Cowboy,
-        Plug.Adapters.Cowboy2,
-        Plug.Adapters.Translator
       ],
       "Plug.Conn": [
         Plug.Conn.Adapter,
