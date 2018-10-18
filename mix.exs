@@ -3,7 +3,15 @@ defmodule Plug.MixProject do
 
   @version "1.7.0-dev"
   @description "A specification and conveniences for composable modules between web applications"
-  @xref_exclude [:ranch, :cowboy, :cowboy_req, :cowboy_router, :cowboy_stream, :cowboy_stream_h]
+  @xref_exclude [
+    :ranch,
+    :cowboy,
+    :cowboy_req,
+    :cowboy_router,
+    :cowboy_stream,
+    :cowboy_stream_h,
+    Plug.Cowboy
+  ]
 
   def project do
     [
