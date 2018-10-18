@@ -11,6 +11,10 @@ defmodule Plug.Cowboy do
     {:ok, :shutdown}
   end
 
+  def child_spec(_, _, _, _) do
+    {:ok, :child_spec}
+  end
+
   def child_spec(_) do
     {:ok, :child_spec}
   end
