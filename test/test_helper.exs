@@ -1,10 +1,4 @@
-exclude =
-  case System.get_env("COWBOY_VERSION") do
-    "1" <> _ -> [:cowboy2]
-    _ -> [:cowboy1]
-  end
-
-ExUnit.start(exclude: exclude, assert_receive_timeout: 200)
+ExUnit.start(assert_receive_timeout: 200)
 
 {:ok, _} = Application.ensure_all_started(:cowboy)
 {:ok, _} = Application.ensure_all_started(:hackney)
