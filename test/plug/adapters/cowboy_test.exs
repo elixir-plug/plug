@@ -2,7 +2,7 @@ defmodule Plug.Adapters.CowboyTest do
   use ExUnit.Case
 
   @raise_message "plug_cowboy dependency missing"
-  @missing_warning "Please add `{:plug_cowboy, \"~> 1.0\"}`"
+  @missing_warning "{:plug_cowboy, \"~> 1.0\"}"
   @plug_cowboy_path Path.expand("../../fixtures/plug_cowboy.exs", __DIR__)
 
   setup do

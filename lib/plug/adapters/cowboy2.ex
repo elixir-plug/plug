@@ -39,22 +39,20 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   defp warn_and_raise() do
-    warning =
-      "the `plug_cowboy` dependency is missing. This is required to use " <>
-        "#{inspect(__MODULE__)}. Please add `{:plug_cowboy, \"~> 2.0\"}` to " <>
-        "your mix dependencies. It is recommended that you use the `Plug.Cowboy`" <>
-        "module directly"
+    IO.warn("""
+    please add the following dependency to your mix.exs:
 
-    IO.warn(warning)
+        {:plug_cowboy, "~> 2.0"}
+
+    This dependency is required by Plug.Adapters.Cowboy2
+    which you may be using directly or indirectly.
+    Note you no longer need to depend on :cowboy directly.
+    """)
+
     raise "plug_cowboy dependency missing"
   end
 
   defp plug_cowboy_deprecation_warning() do
-    warning =
-      "using the #{inspect(__MODULE__)} adapter is deprecated and will be removed in " <>
-        "future versions of plug. Please use the `Plug.Cowboy` module from the " <>
-        "`plug_cowboy` library."
-
-    IO.warn(warning)
+    IO.warn("Plug.Adapters.Cowboy2 is deprecated, please use Plug.Cowboy instead")
   end
 end

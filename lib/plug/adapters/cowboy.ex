@@ -3,7 +3,7 @@ defmodule Plug.Adapters.Cowboy do
   This module is deprecated. To use Cowboy 1 With Plug please
   include `plug_cowboy` version 1.0 or above in your `mix.exs`
   file. It is recommended that you use the `Plug.Cowboy` module
-  directly instead of #{inspect(__MODULE__)}
+  directly instead of #{inspect(__MODULE__)}.
   """
 
   @doc false
@@ -41,13 +41,16 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp warn_and_raise() do
-    warning =
-      "the `plug_cowboy` dependency is missing. This is required to use " <>
-        "#{inspect(__MODULE__)}. Please add `{:plug_cowboy, \"~> 1.0\"}` to " <>
-        "your mix dependencies. It is recommended that you use the `Plug.Cowboy`" <>
-        "module directly"
+    IO.warn("""
+    please add the following dependency to your mix.exs:
 
-    IO.warn(warning)
+        {:plug_cowboy, "~> 1.0"}
+
+    This dependency is required by Plug.Adapters.Cowboy
+    which you may be using directly or indirectly.
+    Note you no longer need to depend on :cowboy directly.
+    """)
+
     raise "plug_cowboy dependency missing"
   end
 end

@@ -2,8 +2,8 @@ defmodule Plug.Adapters.Cowboy2Test do
   use ExUnit.Case
 
   @raise_message "plug_cowboy dependency missing"
-  @missing_warning "Please add `{:plug_cowboy, \"~> 2.0\"}`"
-  @deprecated_warning "using the Plug.Adapters.Cowboy2 adapter"
+  @missing_warning "{:plug_cowboy, \"~> 2.0\"}"
+  @deprecated_warning "Plug.Adapters.Cowboy2 is deprecated, please use Plug.Cowboy instead"
   @plug_cowboy_path Path.expand("../../fixtures/plug_cowboy.exs", __DIR__)
 
   setup do

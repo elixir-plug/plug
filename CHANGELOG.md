@@ -5,11 +5,14 @@
 ### Enhancements
 
   * [Plug] Require Elixir v1.4+
-
-### Breaking Changes
-
+  * [Plug.Session] Support MFAs for cookie session secrets
+  * [Plug.Test] Add `put_peer_data`
   * [Plug.Adapters.Cowboy] Extract into [plug_cowboy][plug_cowboy]
   * [Plug.Adapters.Cowboy2] Extract into [plug_cowboy][plug_cowboy]
+
+### Bug fixes
+
+  * [Plug.SSL] Don't redirect excluded hosts on Plug.SSL
 
 ## v1.6
 

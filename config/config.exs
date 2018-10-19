@@ -6,5 +6,3 @@ if Mix.env() == :test do
     998 => "Not An RFC Status Code"
   }
 end
-
-config :cowboy, omg: 1
