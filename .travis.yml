@@ -13,6 +13,3 @@ notifications:
 script:
   - if [[ `elixir -v` = *"1.7"* ]]; then mix format --check-formatted; fi
   - mix test
-after_script:
-  - mix deps.get --only docs
-  - MIX_ENV=docs mix inch.report
