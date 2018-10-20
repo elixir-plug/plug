@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.7.0-dev
+## v1.7.0 (2018-10-20)
 
 ### Enhancements
 
