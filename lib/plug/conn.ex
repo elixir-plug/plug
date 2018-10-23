@@ -18,7 +18,7 @@ defmodule Plug.Conn do
     * `method` - the request method as a binary, example: `"GET"`
     * `path_info` - the path split into segments, example: `["hello", "world"]`
     * `script_name` - the initial portion of the URL's path that corresponds to
-      the application routing, as segments, example: ["sub","app"]
+      the application routing, as segments, example: `["sub","app"]`
     * `request_path` - the requested path, example: `/trailing/and//double//slashes/`
     * `port` - the requested port as an integer, example: `80`
     * `remote_ip` - the IP of the client, example: `{151, 236, 219, 228}`. This field
