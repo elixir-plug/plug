@@ -66,9 +66,9 @@ defmodule Plug.Adapters.Cowboy2Test do
 
     output =
       capture_io(:stderr, fn ->
-        assert_raise(RuntimeError, @raise_message, fn ->
-          fun.()
-        end)
+        Process.flag(:trap_exit, true)
+        pid = spawn_link(fun)
+        assert_receive({:EXIT, ^pid, @raise_message})
       end)
 
     assert output =~ @missing_warning
