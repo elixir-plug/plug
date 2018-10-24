@@ -39,7 +39,7 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   defp warn_and_raise() do
-    IO.warn("""
+    error = """
     please add the following dependency to your mix.exs:
 
         {:plug_cowboy, "~> 2.0"}
@@ -47,9 +47,10 @@ defmodule Plug.Adapters.Cowboy2 do
     This dependency is required by Plug.Adapters.Cowboy2
     which you may be using directly or indirectly.
     Note you no longer need to depend on :cowboy directly.
-    """)
+    """
 
-    raise "plug_cowboy dependency missing"
+    IO.warn(error, [])
+    :erlang.raise(:exit, "plug_cowboy dependency missing", [])
   end
 
   defp plug_cowboy_deprecation_warning() do
