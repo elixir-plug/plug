@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.1 (2018-10-24)
+
+  * [Plug.Adapters.Cowboy] Less verbose output when plug_cowboy is missing
+  * [Plug.Adapters.Cowboy2] Less verbose output when plug_cowboy is missing
+
 ## v1.7.0 (2018-10-20)
 
 ### Enhancements
