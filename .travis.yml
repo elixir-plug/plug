@@ -1,15 +1,24 @@
 language: elixir
 sudo: false
-matrix:
+
+elixir: '1.7.3'
+otp_release: '21.1'
+
+stages:
+  - check formatted
+  - test
+
+jobs:
   include:
-    - elixir: 1.4.0
-      otp_release: 19.1
-    - elixir: 1.7.3
-      otp_release: 21.1
+    - stage: test
+
+    - elixir: '1.4.0'
+      otp_release: '19.1'
+
+    - stage: check formatted
+      script: mix format --check-formatted
+
 notifications:
   recipients:
     - jose.valim@plataformatec.com.br
     - eric.meadows.jonsson@gmail.com
-script:
-  - if [[ `elixir -v` = *"1.7"* ]]; then mix format --check-formatted; fi
-  - mix test
