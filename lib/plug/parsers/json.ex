@@ -2,8 +2,8 @@ defmodule Plug.Parsers.JSON do
   @moduledoc """
   Parses JSON request body.
 
-  JSON arrays are parsed into a `"_json"` key to allow
-  proper param merging.
+  JSON documents that aren't maps (arrays, strings, numbers, etc) are parsed
+  into a `"_json"` key to allow proper param merging.
 
   An empty request body is parsed as an empty map.
 

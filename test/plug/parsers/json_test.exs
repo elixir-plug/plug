@@ -19,6 +19,22 @@ defmodule Plug.Parsers.JSONTest do
       %{"query" => "fooBAZ"}
     end
 
+    def decode!(~s("str")) do
+      "str"
+    end
+
+    def decode!(~s(1)) do
+      1
+    end
+
+    def decode!(~s(false)) do
+      false
+    end
+
+    def decode!(~s(null)) do
+      nil
+    end
+
     def decode!(_) do
       raise "oops"
     end
@@ -63,9 +79,24 @@ defmodule Plug.Parsers.JSONTest do
     assert conn.params["_json"] == [1, 2, 3]
   end
 
-  test "handles empty body as blank map" do
-    conn = nil |> json_conn() |> parse()
-    assert conn.params == %{}
+  test "parses the request body when it is a scalar" do
+    conn = ~s("str") |> json_conn() |> parse()
+    assert conn.params["_json"] == "str"
+  end
+
+  test "parses the request body when it is a number" do
+    conn = ~s(1) |> json_conn() |> parse()
+    assert conn.params["_json"] == 1
+  end
+
+  test "parses the request body when it is a boolean" do
+    conn = ~s(false) |> json_conn() |> parse()
+    assert conn.params["_json"] == false
+  end
+
+  test "parses the request body when it is null" do
+    conn = ~s(null) |> json_conn() |> parse()
+    assert conn.params["_json"] == nil
   end
 
   test "parses json-parseable content types" do
