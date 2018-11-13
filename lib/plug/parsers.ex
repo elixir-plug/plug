@@ -107,7 +107,7 @@ defmodule Plug.Parsers do
                          json_decoder: Jason
 
   Each parser also accepts options to be given directly to it by using tuples.
-  For example, to support file uploads it is common pass the `:length`,
+  For example, to support file uploads it is common to pass the `:length`,
   `:read_length` and `:read_timeout` option to the multipart parser:
 
       plug Plug.Parsers,
