@@ -42,25 +42,15 @@ Access "http://localhost:4000/" and we are done! For now, we have directly start
 
 ## Installation
 
-You can use plug in your projects in two steps:
+In order to use Plug, you need a webserver and its bindings for Plug. For example, to use the Cowboy webserver with Plug, just add the `plug_cowboy` dependency to your `mix.exs`:
 
-1. Add the plug adapter of your choice (currently [Cowboy][cowboy]) to your `mix.exs` dependencies:
-
-    ```elixir
-    def deps do
-      [
-        {:plug_cowboy, "~> 2.0"}
-      ]
-    end
-    ```
-
-2. List both `:cowboy` and `:plug` as your application dependencies:
-
-    ```elixir
-    def application do
-      [applications: [:plug_cowboy]]
-    end
-    ```
+```elixir
+def deps do
+  [
+    {:plug_cowboy, "~> 2.0"}
+  ]
+end
+```
 
 ## Supported Versions
 
