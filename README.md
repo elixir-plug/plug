@@ -42,25 +42,15 @@ Access "http://localhost:4000/" and we are done! For now, we have directly start
 
 ## Installation
 
-You can use plug in your projects in two steps:
+You can use plug in your projects adding the plug adapter to your `mix.exs` dependencies:
 
-1. Add the plug adapter of your choice (currently [Cowboy][cowboy]) to your `mix.exs` dependencies:
-
-    ```elixir
-    def deps do
-      [
-        {:plug_cowboy, "~> 2.0"}
-      ]
-    end
-    ```
-
-2. List both `:cowboy` and `:plug` as your application dependencies:
-
-    ```elixir
-    def application do
-      [applications: [:plug_cowboy]]
-    end
-    ```
+```elixir
+def deps do
+  [
+    {:plug_cowboy, "~> 2.0"}
+  ]
+end
+```
 
 ## Supported Versions
 
