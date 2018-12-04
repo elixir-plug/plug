@@ -172,7 +172,21 @@ defmodule Plug.Parsers.MULTIPART do
         {:file, name, path, upload}
 
       :error ->
-        {:binary, name}
+        case Map.fetch(params, "filename*") do
+          {:ok, ""} ->
+            :skip
+
+          {:ok, "utf-8''" <> filename} ->
+            filename = URI.decode(filename)
+            path = Plug.Upload.random_file!("multipart")
+            content_type = get_header(headers, "content-type")
+            upload = %Plug.Upload{filename: filename, path: path, content_type: content_type}
+            {:file, name, path, upload}
+
+          :error ->
+            {:binary, name}
+        end
+
     end
   end
 

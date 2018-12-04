@@ -131,6 +131,13 @@ defmodule Plug.ParsersTest do
 
     \r
     ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"doc\"; filename*=\"utf-8''%C5%BC%C3%B3%C5%82%C4%87.txt\"\r
+    Content-Type: text/plain\r
+    \r
+    hello
+
+    \r
+    ------w58EW1cEpjzydSCq\r
     Content-Disposition: form-data\r
     \r
     skipped\r
@@ -167,6 +174,11 @@ defmodule Plug.ParsersTest do
     assert File.read!(file.path) == "hello\n\n"
     assert file.content_type == "text/plain"
     assert file.filename == "foo.txt"
+
+    assert %Plug.Upload{} = file = params["doc"]
+    assert File.read!(file.path) == "hello\n\n"
+    assert file.content_type == "text/plain"
+    assert file.filename == "żółć.txt"
   end
 
   test "parses empty multipart body" do
