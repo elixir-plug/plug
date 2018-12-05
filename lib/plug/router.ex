@@ -8,10 +8,14 @@ defmodule Plug.Router do
         use Plug.Router
 
         plug :match
-        plug :dispatch
+        plug :dispatch, builder_opts()
+        
+        def init(_) do
+          [hello: "world"]
+        end
 
         get "/hello" do
-          send_resp(conn, 200, "world")
+          send_resp(conn, 200, opts[:content])
         end
 
         match _ do
@@ -19,7 +23,10 @@ defmodule Plug.Router do
         end
       end
 
-  Each route needs to return a connection, as per the Plug spec.
+  Each route receives 2 variables `conn` of type `Plug.Conn.t()`
+  and `opts` of type `Plug.opts()` and needs to return a connection,
+  as per the Plug spec. The `opts` variables is assigned to the one
+  passed to `plug :dispatch`, see `Plug.Builder.builder_opts/0` for more details.
   A catch-all `match` is recommended to be defined as in the example
   above, otherwise routing fails with a function clause error.
 
