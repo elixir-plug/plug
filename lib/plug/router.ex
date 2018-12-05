@@ -201,6 +201,7 @@ defmodule Plug.Router do
       @impl true
       def call(conn, opts) do
         old_opts = conn.private[:plug_route_opts]
+
         conn
         |> Plug.Conn.put_private(:plug_route_opts, opts)
         |> super(opts)
@@ -494,7 +495,10 @@ defmodule Plug.Router do
         conn = update_in(unquote(conn).params, merge_params)
         conn = update_in(conn.path_params, merge_params)
 
-        Plug.Router.__put_route__(conn, unquote(path), fn var!(conn), var!(opts) -> _ = var!(opts); unquote(body) end)
+        Plug.Router.__put_route__(conn, unquote(path), fn var!(conn), var!(opts) ->
+          _ = var!(opts)
+          unquote(body)
+        end)
       end
     end
   end
