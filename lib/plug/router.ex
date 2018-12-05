@@ -198,29 +198,18 @@ defmodule Plug.Router do
 
       use Plug.Builder, unquote(opts)
 
-      @impl true
-      def call(conn, opts) do
-        old_opts = conn.private[:plug_route_opts]
-
-        conn
-        |> Plug.Conn.put_private(:plug_route_opts, opts)
-        |> super(opts)
-        |> Plug.Conn.put_private(:plug_route_opts, old_opts)
-      end
-
       @doc false
       def match(conn, _opts) do
         do_match(conn, conn.method, Enum.map(conn.path_info, &URI.decode/1), conn.host)
       end
 
       @doc false
-      def dispatch(%Plug.Conn{} = conn, _opts) do
+      def dispatch(%Plug.Conn{} = conn, opts) do
         {_path, fun} = Map.fetch!(conn.private, :plug_route)
-        opts = Map.fetch!(conn.private, :plug_route_opts)
         fun.(conn, opts)
       end
 
-      defoverridable match: 2, dispatch: 2, call: 2
+      defoverridable match: 2, dispatch: 2
     end
   end
 
