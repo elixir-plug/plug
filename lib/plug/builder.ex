@@ -129,13 +129,6 @@ defmodule Plug.Builder do
   defmacro __before_compile__(env) do
     plugs = Module.get_attribute(env.module, :plugs)
 
-    plugs =
-      if builder_ref = get_plug_builder_ref(env.module) do
-        traverse(plugs, builder_ref)
-      else
-        plugs
-      end
-
     builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
     {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
 
@@ -144,24 +137,31 @@ defmodule Plug.Builder do
     end
   end
 
+  defp traverse(term, nil) do
+    {false, term}
+  end
+
   defp traverse(tuple, ref) when is_tuple(tuple) do
-    tuple |> Tuple.to_list() |> traverse(ref) |> List.to_tuple()
+    {found, result} = tuple |> Tuple.to_list() |> traverse(ref)
+    {found, List.to_tuple(result)}
   end
 
   defp traverse(map, ref) when is_map(map) do
-    map |> Map.to_list() |> traverse(ref) |> Map.new()
+    {found, result} = map |> Map.to_list() |> traverse(ref)
+    {found, Map.new(result)}
   end
 
   defp traverse(list, ref) when is_list(list) do
-    Enum.map(list, &traverse(&1, ref))
+    {found, result} = list |> Enum.map(&traverse(&1, ref)) |> Enum.unzip()
+    {Enum.any?(found), result}
   end
 
   defp traverse(ref, ref) do
-    {:unquote, [], [quote(do: opts)]}
+    {true, {:unquote, [], [quote(do: opts)]}}
   end
 
   defp traverse(term, _ref) do
-    term
+    {false, term}
   end
 
   @doc """
@@ -271,6 +271,7 @@ defmodule Plug.Builder do
   def compile(env, pipeline, builder_opts) do
     conn = quote do: conn
     init_mode = builder_opts[:init_mode] || :compile
+    builder_ref = get_plug_builder_ref(env.module)
 
     unless init_mode in [:compile, :runtime] do
       raise ArgumentError, """
@@ -283,7 +284,7 @@ defmodule Plug.Builder do
     ast =
       Enum.reduce(pipeline, conn, fn {plug, opts, guards}, acc ->
         {plug, opts, guards}
-        |> init_plug(init_mode)
+        |> init_plug(builder_ref, init_mode)
         |> quote_plug(acc, env, builder_opts)
       end)
 
@@ -291,7 +292,10 @@ defmodule Plug.Builder do
   end
 
   # Initializes the options of a plug in the configured init_mode.
-  defp init_plug({plug, opts, guards}, init_mode) do
+  defp init_plug({plug, opts, guards}, builder_ref, init_mode) do
+    {found, {plug, opts, guards}} = traverse({plug, opts, guards}, builder_ref)
+    init_mode = if found, do: :runtime, else: init_mode
+
     case Atom.to_charlist(plug) do
       ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards, init_mode)
       _ -> init_fun_plug(plug, opts, guards)
