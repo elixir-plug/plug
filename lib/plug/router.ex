@@ -8,14 +8,10 @@ defmodule Plug.Router do
         use Plug.Router
 
         plug :match
-        plug :dispatch, builder_opts()
-        
-        def init(_) do
-          [hello: "world"]
-        end
+        plug :dispatch
 
         get "/hello" do
-          send_resp(conn, 200, opts[:content])
+          send_resp(conn, 200, "world")
         end
 
         match _ do
@@ -23,10 +19,8 @@ defmodule Plug.Router do
         end
       end
 
-  Each route receives 2 variables `conn` of type `Plug.Conn.t()`
-  and `opts` of type `Plug.opts()` and needs to return a connection,
-  as per the Plug spec. The `opts` variables is assigned to the one
-  passed to `plug :dispatch`, see `Plug.Builder.builder_opts/0` for more details.
+  Each route receives a `conn` variable containing a `Plug.Conn`
+  struct and it needs to return a connection, as per the Plug spec.
   A catch-all `match` is recommended to be defined as in the example
   above, otherwise routing fails with a function clause error.
 
@@ -34,21 +28,14 @@ defmodule Plug.Router do
 
       AppRouter.call(conn, AppRouter.init([]))
 
-  Notice the router contains a plug pipeline and by default it requires
-  two plugs: `match` and `dispatch`. `match` is responsible for
-  finding a matching route which is then forwarded to `dispatch`.
-  This means users can easily hook into the router mechanism and add
-  behaviour before match, before dispatch or after both.
-
-  To specify private options on `match` that can be used by plugs
-  before `dispatch` pass an option with key `:private` containing a map.
-  Example:
-
-      get "/hello", private: %{an_option: :a_value} do
-        send_resp(conn, 200, "world")
-      end
-
-  These options are assigned to `:private` in the call's `Plug.Conn`.
+  Each `Plug.Router` has plug pipeline, defined by `Plug.Builder`,
+  and by default it requires two plugs: `:match` and `:dispatch`.
+  `:match` is responsible for finding a matching route which is
+  then forwarded to `:dispatch`. This means users can easily hook
+  into the router mechanism and add behaviour before match, before
+  dispatch or after both. All of the options given to `use Plug.Router`
+  is forwarded to `Plug.Builder`. See the `Plug.Builder` module
+  for more information on the `plug` macro and on the available options.
 
   ## Routes
 
@@ -56,12 +43,12 @@ defmodule Plug.Router do
         send_resp(conn, 200, "world")
       end
 
-  In the example above, a request will only match if it is a `GET` request and
-  the route is "/hello". The supported HTTP methods are `get`, `post`, `put`,
-  `patch`, `delete` and `options`.
+  In the example above, a request will only match if it is a `GET`
+  request and the route is "/hello". The supported HTTP methods are
+  `get`, `post`, `put`, `patch`, `delete` and `options`.
 
-  A route can also specify parameters which will then be
-  available in the function body:
+  A route can also specify parameters which will then be available
+  in the function body:
 
       get "/hello/:name" do
         send_resp(conn, 200, "hello #{name}")
@@ -164,6 +151,25 @@ defmodule Plug.Router do
         end
       end
 
+  ## Passing data between routes and plugs
+
+  It is also possible to assign data to the `Plug.Conn` that will
+  be available to any plug invoked after the `:match` plug.
+  This is very useful if you want a matched route to customize how
+  later plugs will behave.
+
+  You can use `:assigns` (which contains user data) or `:private`
+  (which contains library/framework data) for this. For example:
+
+      get "/hello", assigns: %{an_option: :a_value} do
+        send_resp(conn, 200, "world")
+      end
+
+  In the example above, `conn.assigns[:an_option]` will be available
+  to all plugs invoked after `:match`. Such plugs can read from
+  `conn.assigns` (or `conn.private`) to configure their behaviour
+  based on the matched route.
+
   ## Routes compilation
 
   All routes are compiled to a match function that receives
@@ -190,11 +196,46 @@ defmodule Plug.Router do
   as a function in the connection. This function is then retrieved
   and invoked in the `dispatch` plug.
 
-  ## Options
+  ## Routes options
 
-  When used, the following options are accepted by `Plug.Router`:
+  Sometimes you may want to customize how a route behaves during dispatch.
+  This can be done by accessing the `opts` variable inside the route:
 
-    * `:log_on_halt` - accepts the level to log whenever the request is halted
+      defmodule AppRouter do
+        use Plug.Router
+
+        plug :match
+        plug :dispatch, content: "hello world"
+
+        get "/hello" do
+          send_resp(conn, 200, opts[:content])
+        end
+
+        match _ do
+          send_resp(conn, 404, "oops")
+        end
+      end
+
+  This is particularly useful when used with `Plug.Builder.builder_opts/0`.
+  `builder_opts/0` allows us to pass options received when initializing
+  `AppRouter` to a specific plug, such as dispatch itself. So if instead of
+
+      plug :dispatch, content: "hello world"
+
+  we do
+
+      plug :dispatch, builder_opts()
+
+  now the content can be given when starting the router, like this:
+
+      Plug.Cowboy.http AppRouter, [content: "hello world"]
+
+  Or as part of a pipeline like this:
+
+      plug AppRouter, content: "hello world"
+
+  In a nutshell, `builder_opts()` allows us to pass the options given
+  when initializing the router to a `dispatch`.
   """
 
   @doc false
