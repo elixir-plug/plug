@@ -28,13 +28,13 @@ defmodule Plug.Router do
 
       AppRouter.call(conn, AppRouter.init([]))
 
-  Each `Plug.Router` has plug pipeline, defined by `Plug.Builder`,
+  Each `Plug.Router` has a plug pipeline, defined by `Plug.Builder`,
   and by default it requires two plugs: `:match` and `:dispatch`.
   `:match` is responsible for finding a matching route which is
   then forwarded to `:dispatch`. This means users can easily hook
   into the router mechanism and add behaviour before match, before
-  dispatch or after both. All of the options given to `use Plug.Router`
-  is forwarded to `Plug.Builder`. See the `Plug.Builder` module
+  dispatch, or after both. All of the options given to `use Plug.Router`
+  are forwarded to `Plug.Builder`. See the `Plug.Builder` module
   for more information on the `plug` macro and on the available options.
 
   ## Routes
@@ -218,11 +218,11 @@ defmodule Plug.Router do
 
   This is particularly useful when used with `Plug.Builder.builder_opts/0`.
   `builder_opts/0` allows us to pass options received when initializing
-  `AppRouter` to a specific plug, such as dispatch itself. So if instead of
+  `AppRouter` to a specific plug, such as dispatch itself. So if instead of:
 
       plug :dispatch, content: "hello world"
 
-  we do
+  we do:
 
       plug :dispatch, builder_opts()
 
