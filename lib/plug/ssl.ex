@@ -149,7 +149,7 @@ defmodule Plug.SSL do
 
   ## Cipher Suites
 
-  To simplify configuration of TLS defaults Plug provides two preconfifured
+  To simplify configuration of TLS defaults Plug provides two preconfigured
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
   chosen and related configuration come from the OWASP recommendations found here:
   https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
@@ -170,8 +170,8 @@ defmodule Plug.SSL do
   intention of this configuration is to provide as secure as possible defaults that
   still maintain support for older browsers and Android versions 4.3 and earlier
 
-  For both suites we've specified ceritifcate curves secp256r1, ecp384r1 and secp521r1.
-  Since OWASP doesn't perscribe curves we've based the selection on the following Mozilla
+  For both suites we've specified certificate curves secp256r1, ecp384r1 and secp521r1.
+  Since OWASP doesn't prescribe curves we've based the selection on the following Mozilla
   recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
 
   In addition to selecting a group of ciphers, selecting a cipher suite will also
