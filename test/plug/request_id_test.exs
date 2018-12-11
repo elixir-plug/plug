@@ -29,6 +29,20 @@ defmodule Plug.RequestIdTest do
     assert res_request_id == meta_request_id
   end
 
+  test "uses short existing id if validation is disabled" do
+    request_id = "tooshort"
+
+    conn =
+      conn(:get, "/")
+      |> put_req_header("x-request-id", request_id)
+      |> call([validate: false])
+
+    [res_request_id] = get_resp_header(conn, "x-request-id")
+    meta_request_id = Logger.metadata()[:request_id]
+    assert res_request_id == request_id
+    assert res_request_id == meta_request_id
+  end
+
   test "uses existing request id" do
     request_id = "existingidthatislongenough"
 

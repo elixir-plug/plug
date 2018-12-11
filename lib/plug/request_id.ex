@@ -29,6 +29,9 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, http_header: "custom-request-id"
 
+    * `:validate` - The flag which shows if value of header will be validated.
+      For now, it only checks the length. Default value is `true`.
+
   """
 
   require Logger
@@ -36,19 +39,22 @@ defmodule Plug.RequestId do
   @behaviour Plug
 
   def init(opts) do
-    Keyword.get(opts, :http_header, "x-request-id")
+    %{
+      http_header: Keyword.get(opts, :http_header, "x-request-id"),
+      validate: Keyword.get(opts, :validate, true)
+    }
   end
 
-  def call(conn, req_id_header) do
+  def call(conn, %{http_header: req_id_header, validate: validate}) do
     conn
-    |> get_request_id(req_id_header)
+    |> get_request_id(req_id_header, validate)
     |> set_request_id(req_id_header)
   end
 
-  defp get_request_id(conn, header) do
+  defp get_request_id(conn, header, validate) do
     case Conn.get_req_header(conn, header) do
       [] -> {conn, generate_request_id()}
-      [val | _] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
+      [val | _] -> if valid_request_id?(validate, val), do: {conn, val}, else: {conn, generate_request_id()}
     end
   end
 
@@ -67,5 +73,6 @@ defmodule Plug.RequestId do
     Base.hex_encode32(binary, case: :lower)
   end
 
-  defp valid_request_id?(s), do: byte_size(s) in 20..200
+  defp valid_request_id?(true, s), do: byte_size(s) in 20..200
+  defp valid_request_id?(_, _), do: true
 end
