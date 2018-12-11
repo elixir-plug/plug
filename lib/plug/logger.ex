@@ -35,14 +35,18 @@ defmodule Plug.Logger do
       diff = System.convert_time_unit(stop - start, :native, :microsecond)
       status = Integer.to_string(conn.status)
 
-      Logger.metadata(
+      metadata = [
         status: status,
         execution_time: diff
-      )
+      ]
 
-      Logger.log(level, fn ->
-        [connection_type(conn), ?\s, status, " in ", formatted_diff(diff)]
-      end)
+      Logger.log(
+        level,
+        fn ->
+          [connection_type(conn), ?\s, status, " in ", formatted_diff(diff)]
+        end,
+        metadata
+      )
 
       conn
     end)
