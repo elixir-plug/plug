@@ -21,7 +21,7 @@ defmodule Plug.SSL do
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
 
-  The command above will effectively change the value of `conn.scheme` by
+  The command above will effectively change the value of `conn.scheme` to
   the one sent in `x-forwarded-proto`.
 
   Since rewriting the scheme based on `x-forwarded-proto` can open up
@@ -53,7 +53,7 @@ defmodule Plug.SSL do
 
   It is not possible to directly configure the port in `Plug.SSL` because
   HSTS expects the port to be 443 for SSL. If you are not using HSTS and
-  wants to redirect to HTTPS on another port, you can sneak it alongside
+  want to redirect to HTTPS on another port, you can sneak it alongside
   the host, for example: `host: "example.com:443"`.
   """
   @behaviour Plug
