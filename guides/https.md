@@ -2,7 +2,7 @@
 
 Plug can serve HTTP over TLS ('HTTPS') through an appropriately configured Adapter. While the exact syntax for defining an HTTPS listener is adapter-specific, Plug does define a common set of TLS configuration options that most adapters support, formally documented as `Plug.SSL.configure/1`.
 
-The current document describes how to use these parameters to set up an HTTPS server with Plug, and documents some best-practices and potential pitfalls.
+This guide describes how to use these parameters to set up an HTTPS server with Plug, and documents some best-practices and potential pitfalls.
 
 *Editor's note: The secure transport protocol used by HTTPS is nowadays referred to as TLS. However, the application in the Erlang/OTP standard library that implements it is called 'ssl', for historical reasons. In this document we will refer to the protocol as 'TLS' and to the Erlang/OTP implementation as 'ssl', and its configuration parameters as 'ssl options'.*
 
@@ -10,22 +10,32 @@ The current document describes how to use these parameters to set up an HTTPS se
 
 The prerequisites for running an HTTPS server with Plug include:
 
-* The Erlang/OTP runtime, built against OpenSSL; run `:crypto.info_lib()` in an IEx session to verify
+* The Erlang/OTP runtime, with OpenSSL bindings; run `:crypto.info_lib()` in an IEx session to verify
 * A Plug Adapter that supports HTTPS, e.g. [Plug.Cowboy](https://hex.pm/packages/plug_cowboy)
 * A valid certificate and associated private key
 
-For testing purposes it may be sufficient to use a self-signed certificate. The Phoenix project includes a Mix task `phx.gen.cert` that will generate a key and self-signed certificate. Alternatively you could use the OpenSSL CLI or another utility to generate the necessary files.
+### Self-signed Certificate
 
-For staging and production you will want to obtain a CA-signed certificate from a Certificate Authority, such as [Let's Encrypt](https://letsencrypt.org).
+For testing purposes it may be sufficient to use a self-signed certificate. Such certificates generally result in warnings in browsers and failed connections from other tools, but these can be overridden to enable HTTPS testing. This is especially useful for local testing of HTTP 2, which is only specified over TLS.
+
+**Warning**: *use self-signed certificates only for local testing, and do not mark such test certificates as globally trusted in browsers or operating system!*
+
+The [Phoenix](https://phoenixframework.org/) project includes a Mix task `phx.gen.cert` that generates the necessary files and places them in the application's 'priv' directory. The [X509](https://hex.pm/packages/x509) package can be used as a dev-only dependency to add a similar `x509.gen.selfsigned` Mix task to non-Phoenix projects.
+
+Alternatively, the OpenSSL CLI or other utilities can be used to generate a self-signed certificate. Instructions are widely available online.
+
+### CA Issued Certificate
+
+For staging and production it is necessary to obtain a CA-signed certificate from a trusted Certificate Authority, such as [Let's Encrypt](https://letsencrypt.org). Certificates issued by a CA usually come with an additional file containing one or more certificates that make up the 'CA chain'.
+
+For use with Plug the certificates and key should be stored in PEM format, containing Base64-encoded data between 'BEGIN' and 'END' markers. Some useful OpenSSL commands for converting certificates/keys from other formats can be found at [the end of this document](#converting-certificates-and-keys).
 
 ## Getting Started
-
-Typically the certificate and private key are provided as PEM-encoded files. Such files contain Base64 data between 'BEGIN' and 'END' markers. Certificates issued by a CA usually come with an additional file containing one or more certificates that make up the 'CA chain'. Some useful OpenSSL commands for converting certificates/keys from other formats to PEM format can be found at [the end of this document](#converting-certificates-and-keys).
 
 A minimal HTTPS listener, using Plug.Cowboy, might be defined as follows:
 
 ```elixir
-Plug.Cowboy.https MyPlug, [],
+Plug.Cowboy.https MyApp.MyPlug, [],
   port: 8443,
   cipher_suite: :strong,
   certfile: "/etc/letsencrypt/live/example.net/cert.pem",
@@ -33,18 +43,26 @@ Plug.Cowboy.https MyPlug, [],
   cacertfile: "/etc/letsencrypt/live/example.net/chain.pem"
 ```
 
-The `cacertfile` option is not needed when using a self-signed certificate.
+The `cacertfile` option is not needed when using a self-signed certificate, or when the file pointed to by `certfile` contains both the server certificate and all necessary CA chain certificates:
+
+```elixir
+  #...
+  certfile: "/etc/letsencrypt/live/example.net/fullchain.pem",
+  keyfile: "/etc/letsencrypt/live/example.net/privkey.pem"
+```
 
 It is possible to bundle the certificate files with the  application, possibly for packaging into a release. In this case the files must be stored under the application's 'priv' directory. The `otp_app` option must be set to the name of the OTP application that contains the files, in order to correctly resolve the relative paths:
 
 ```elixir
-Plug.Cowboy.https MyPlug, [],
+Plug.Cowboy.https MyApp.MyPlug, [],
   port: 8443,
   cipher_suite: :strong,
   certfile: "priv/cert/selfsigned.pem",
   keyfile: "priv/cert/selfsigned_key.pem",
   otp_app: :my_app
 ```
+
+Remember to exclude the files from version control, unless the certificate and key are shared by all developers for testing purposes only. For example, add this line to the '.gitignore' file: `priv/**/*.pem`.
 
 ## TLS Protocol Options
 
@@ -61,11 +79,11 @@ To simplify configuration of TLS defaults Plug provides two preconfigured option
 
 The `:strong` profile enables AES-GCM ciphers with ECDHE or DHE key exchange, and TLS version 1.2 only. It is intended for typical installations with support for browsers and other modern clients.
 
-The `:compatible` profile additionally enables AES-CBC ciphers, as well as TLS versions 1.1 and 1.0. Use this configuration to allow connections from older clients, such as older PC or mobile operating systems. Note that RSA key exchange is not enabled by this configuration, due to known weaknesses, so to support clients that do not support ECDHE or DHE it is necessary specify the ciphers explicitly (see below).
+The `:compatible` profile additionally enables AES-CBC ciphers, as well as TLS versions 1.1 and 1.0. Use this configuration to allow connections from older clients, such as older PC or mobile operating systems. Note that RSA key exchange is not enabled by this configuration, due to known weaknesses, so to support clients that do not support ECDHE or DHE it is necessary specify the ciphers explicitly (see [below](#manual-configuration)).
 
 In addition, both profiles:
 
-* Configure the server to select a cipher suite from the client's offer based on its own preferences rather than the client's (`honor_cipher_order` set to `true`)
+* Configure the server to choose a cipher based on its own preferences rather than the client's (`honor_cipher_order` set to `true`); when specifying a custom cipher list, ensure the ciphers are listed in descending order of preference
 * Disable `client_renegotiation`
 * Select the 'Prime' (SECP) curves for use in Elliptic Curve Cryptography (ECC)
 
@@ -73,16 +91,16 @@ All these parameters, including the global defaults mentioned above, can be over
 
 It is worth noting that the cipher lists and TLS protocol versions selected by the profiles are whitelists. If a new Erlang/OTP release introduces new TLS protocol versions or ciphers that are not included in the profile definition, they would have to be enabled explicitly by overriding the `ciphers` and/or `versions` options, until such time as they are added to the Plug.SSL profiles.
 
-The Ciphers chosen and related configuration are based on [OWASP recommendations](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet), with some modifications as described in the `Plug.SSL.configure/1` documentation.
+The ciphers chosen and related configuration are based on [OWASP recommendations](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet), with some modifications as described in the `Plug.SSL.configure/1` documentation.
 
-### Manual configuration
+### Manual Configuration
 
 Please refer to the [Erlang/OTP 'ssl' documentation](http://erlang.org/doc/man/ssl.html) for details on the supported configuration options.
 
 An example configuration with custom 'ssl' options might look like this:
 
 ```elixir
-Plug.Cowboy.https MyPlug, [],
+Plug.Cowboy.https MyApp.MyPlug, [],
   port: 8443,
   certfile: "/etc/letsencrypt/live/example.net/cert.pem",
   keyfile: "/etc/letsencrypt/live/example.net/privkey.pem",
@@ -100,16 +118,20 @@ Plug.Cowboy.https MyPlug, [],
 
 ## HTTP Strict Transport Security (HSTS)
 
-Once a server is configured to support HTTPS it is often a good idea to redirect HTTP requests to HTTPS. To do this, include Plug.SSL in your Plug pipeline.
+Once a server is configured to support HTTPS it is often a good idea to redirect HTTP requests to HTTPS. To do this, include `Plug.SSL` in the Plug pipeline.
 
-To prevent downgrade attacks, in which an attacker tricks a victim into connecting over plain HTTP even if the server would normally redirect that user to HTTPS, Plug.SSL by default sets the 'Strict-Transport-Security' header to mark the domain as HTTPS-only in the browser. To disable this behaviour, pass `hsts: false` to Plug.SSL.
+To prevent downgrade attacks, in which an attacker intercepts a plain HTTP request to the server before the redirect to HTTPS takes place, Plug.SSL by default sets the '[Strict-Transport-Security](https://www.owasp.org/index.php/HTTP_Strict_Transport_Security_Cheat_Sheet)' (HSTS) header. This informs the browser that the current site must only ever be accessed over HTTPS, even if the user typed or clicked a plain HTTP URL. This only works if the site is reachable on port 443 (see [Listening on Port 443](#listening-on-port-443), below).
+
+Note that it is very difficult, if not impossible, to revert the effect of HSTS before the entry stored in the browser expires! Consider using a short `expires` value initially, and increasing it to a large value (e.g. 31536000 seconds for 1 year) after testing.
+
+The Strict-Transport-Security header can be disabled altogether by setting `hsts: false` in the `Plug.SSL` options.
 
 ## Encrypted Keys
 
-To protect the private key on disk it is best to store it in encrypted PEM format, also known as PKCS#5. When configuring a Plug server with an encrypted private key, specify the password using the `password` option:
+To protect the private key on disk it is best stored in encrypted PEM format, also known as PKCS#5. When configuring a Plug server with an encrypted private key, specify the password using the `password` option:
 
 ```elixir
-Plug.Cowboy.https MyPlug, [],
+Plug.Cowboy.https MyApp.MyPlug, [],
   port: 8443,
   certfile: "/etc/letsencrypt/live/example.net/cert.pem",
   keyfile: "/etc/letsencrypt/live/example.net/privkey_aes.pem",
@@ -117,19 +139,19 @@ Plug.Cowboy.https MyPlug, [],
   password: "SECRET"
 ```
 
-To encrypt an existing PEM-encoded RSA key use the OpenSSL CLI: `openssl rsa -in privkey.pem -out privkey_aes.pem -aes128`. Use `ec` instead of `rsa` when using an ECDSA certificate. Don't forget to securely erase the unencrypted copy afterwards! Even better would be to encrypt the file during initial key generation: please refer to the instructions provided by your CA.
+To encrypt an existing PEM-encoded RSA key use the OpenSSL CLI: `openssl rsa -in privkey.pem -out privkey_aes.pem -aes128`. Use `ec` instead of `rsa` when using an ECDSA certificate. Don't forget to securely erase the unencrypted copy afterwards! Best practice would be to encrypt the file immediately during initial key generation: please refer to the instructions provided by the CA.
 
 It is important to note that, at the time of writing, Erlang/OTP does not support keys encrypted with AES-256. The OpenSSL command in the previous paragraph can also be used to convert an AES-256 encrypted key to AES-128.
 
 ## Passing DER Binaries
 
-Sometimes it is preferable to not store the private key on disk at all. Instead, the private key might be passed to your application using an environment variable or retrieved from a key store such as Vault.
+Sometimes it is preferable to not store the private key on disk at all. Instead, the private key might be passed to the application using an environment variable or retrieved from a key store such as Vault.
 
 In such cases it is possible to pass the private key directly, using the `key` parameter. For example, assuming an RSA private key is available in the PRIVKEY environment variable in Base64 encoded DER format, the key may be set as follows:
 
 ```elixir
 der = System.get_env("PRIVKEY") |> Base.decode64!
-Plug.Cowboy.https MyPlug, [],
+Plug.Cowboy.https MyApp.MyPlug, [],
   port: 8443,
   key: {:RSAPrivateKey, der},
   #....
@@ -145,11 +167,21 @@ It is recommended to generate a custom set of Diffie Hellman parameters, to be u
 
 `openssl dhparam -out dhparams.pem 4096`
 
-On a slow machine (e.g. a cheap VPS) this may take several hours. You may want to run the command on a strong machine and copy the file over to the target server: the file does not need to be kept secret.
+On a slow machine (e.g. a cheap VPS) this may take several hours. You may want to run the command on a strong machine and copy the file over to the target server: the file does not need to be kept secret. It is best practice to rotate the file periodically.
 
-Pass the (relative or absolute) path using the `dhfile` option. It is best practice to rotate the file periodically.
+Pass the (relative or absolute) path using the `dhfile` option:
 
-If no custom parameters are specified, Erlang's 'ssl' uses its built-in defaults. Since OTP 19 this has been the 2048-bit 'group 14' from RFC 3526.
+```elixir
+Plug.Cowboy.https MyApp.MyPlug, [],
+  port: 8443,
+  cipher_suite: :strong,
+  certfile: "priv/cert/selfsigned.pem",
+  keyfile: "priv/cert/selfsigned_key.pem",
+  dhfile: "priv/cert/dhparams.pem",
+  otp_app: :my_app
+```
+
+If no custom parameters are specified, Erlang's 'ssl' uses its built-in defaults. Since OTP 19 this has been the 2048-bit 'group 14' from RFC3526.
 
 ## Renewing Certificates
 
@@ -157,14 +189,16 @@ TODO
 
 ## Listening on Port 443
 
-By default clients expect HTTPS servers to listen on port 443. It is possible to specify a different port in HTTPS URLs, but for public servers it is often preferable to stick to the default. This presents a problem, however: only privileged processes can bind to TCP port numbers under 1024, and it is bad idea to run your Plug application as 'root'.
+By default clients expect HTTPS servers to listen on port 443. It is possible to specify a different port in HTTPS URLs, but for public servers it is often preferable to stick to the default. In particular, HSTS requires that the site is reachable throug HTTPS on port 443.
+
+This presents a problem, however: only privileged processes can bind to TCP port numbers under 1024, and it is bad idea to run the application as 'root'.
 
 Leaving aside solutions that rely on external network elements, such as load balancers, there are a few solutions on typical Linux servers:
 
-* Deploy a reverse proxy or load balancer process, such as Nginx or HAProxy (see also 'Offloading TLS', below); the proxy will listen on port 443 and pass the traffic to the Elixir application running on an unprivileged port
+* Deploy a reverse proxy or load balancer process, such as Nginx or HAProxy (see [Offloading TLS](#offloading-tls), below); the proxy will listen on port 443 and pass the traffic to the Elixir application running on an unprivileged port
 * Create an IPTables rule to forward packets arriving on port 443 to the port on which the Elixir application is running
 * Give the Erlang/OTP runtime (that is, the BEAM VM executable) permission to bind to privileged ports using 'setcap', e.g. `sudo setcap 'cap_net_bind_service=+ep' /usr/lib/erlang/erts-10.1/bin/beam.smp`; update the path as necessary, and remember to run the command again after Erlang upgrades
-* Use a tools such as 'authbind' to give an unprivileged user/group permission to bind to specific ports
+* Use a tool such as 'authbind' to give an unprivileged user/group permission to bind to specific ports
 
 This is not intended to be an exhaustive list, as this topic is actually a bit beyond the scope of the current document. The issue is a generic one, not specific to Erlang/Elixir, and a lot of documentation can be found online.
 
@@ -172,15 +206,22 @@ This is not intended to be an exhaustive list, as this topic is actually a bit b
 
 So far this document has focussed on configuring Plug to handle TLS within the application. Some people instead prefer to terminate TLS in a proxy or load balancer deployed in front of the Plug application.
 
+### Pros and Cons
+
+Offloading might be done to achieve higher throughput, or to stick to the more widely used OpenSSL implementation of the TLS protocol. The Erlang/OTP implementation depends on OpenSSL for the underlying cryptography, but it implements its own message framing and protocol state machine. While it is not clear that one implementation is inherently more secure than the other, it might be advantageous to just patch OpenSSL along with everybody else, rather than having to research the implications of a new TLS vulnerability on the Erlang/OTP implementation.
+
+On the other hand, the proxy solution might not support end-to-end HTTP 2, limiting the benefits of the new protocol. It can also introduce operational complexities and new resource constraints, especially for long-lived connections such as WebSockets.
+
+### Plug Configuration Impact
+
 TODO:
-- Pros and cons
 - X-Forwarded-For and X-Forwarded-Proto
 - Using Plug.SSL
 - 'Secure' cookies
 
 ## Converting Certificates and Keys
 
-If your certificate and/or key files are not in PEM format, here are some OpenSSL commands you may use to convert the files for use with Plug.
+When certificate and/or key files are not in provided in PEM format they can usually be converted using the OpenSSL CLI. This section describes some common formats and the associated OpenSSL commands to convert to PEM.
 
 ### From DER to PEM
 
@@ -196,6 +237,6 @@ A DER private key may also be stored in a PKCS#8 container, which may be passwor
 
 The PKCS#12 format is a container format potentially containing multiple certificates and/or encrypted keys. Such files typically have a `.p12` extension.
 
-To extract all certificates from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nokeys -out fullchain.pem`. The resulting file contains all certificates from the input file, typically the server certificate and any CA certificates that make up the CA chain. You can split the file into seperate `cert.pem` and `chain.pem` files using a text editor, or you can just pass `certfile: fullchain.pem` to the HTTPS adapter (Erlang's ssl will look for the CA chain in the certificate file if no separate `cacertfile` is specified).
+To extract all certificates from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nokeys -out fullchain.pem`. The resulting file contains all certificates from the input file, typically the server certificate and any CA certificates that make up the CA chain. You can split the file into seperate `cert.pem` and `chain.pem` files using a text editor, or you can just pass `certfile: fullchain.pem` to the HTTPS adapter.
 
 To extract an RSA private key from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nocerts -nodes -out privkey.pem`. You may want to replace the `-nodes` argument with `-aes128` to produce an encrypted, password protected PEM file.
