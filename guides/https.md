@@ -185,7 +185,15 @@ If no custom parameters are specified, Erlang's 'ssl' uses its built-in defaults
 
 ## Renewing Certificates
 
-TODO
+Whenever a certificate is about to expire, when the contents of the certificate has been updated, or when the certificate is 're-keyed', the HTTPS server needs to be updated with the new certificate and/or key.
+
+When using the `certfile` and `keyfile` parameters to reference PEM files on disk, replacing the certificate and key is as simple as overwriting the files. Erlang's 'ssl' application periodically checks the timestamps of such files, and reloads them if it detects a change. It may be best to use symbolic links that point to versioned copies of the files, to allow for quick rollback in case of problems.
+
+Note that there is a potential race condition when both the certificate and the key need to be replaced at the same time: if the 'ssl' application detects the change of one file before the other file is updated, the partial update can leave the HTTPS server with a mismatched private key. This can be avoiding by placing the private key in the same PEM file as the certificate, and omitting the `keyfile` parameter. This configuration allows atomic updates, and it works because 'ssl' looks for a private key entry in the `certfile` PEM file if no `key` or `keyfile` option is specified.
+
+Also note that some filesystems, such as network and container filesystems or VM-mounted volumes, may not support reliable detection of file changes through metadata.
+
+While it is possible to update the DER binaries passed in the `cert` or `key` options (as well as any other TLS protocol parameters) at runtime, this requires knowledge of the internals of the Plug adapter being used, and is therefore beyond the scope of this document.
 
 ## Listening on Port 443
 
@@ -195,7 +203,7 @@ This presents a problem, however: only privileged processes can bind to TCP port
 
 Leaving aside solutions that rely on external network elements, such as load balancers, there are a few solutions on typical Linux servers:
 
-* Deploy a reverse proxy or load balancer process, such as Nginx or HAProxy (see [Offloading TLS](#offloading-tls), below); the proxy will listen on port 443 and pass the traffic to the Elixir application running on an unprivileged port
+* Deploy a reverse proxy or load balancer process, such as Nginx or HAProxy (see [Offloading TLS](#offloading-tls), below); the proxy listens on port 443 and passes the traffic to the Elixir application running on an unprivileged port
 * Create an IPTables rule to forward packets arriving on port 443 to the port on which the Elixir application is running
 * Give the Erlang/OTP runtime (that is, the BEAM VM executable) permission to bind to privileged ports using 'setcap', e.g. `sudo setcap 'cap_net_bind_service=+ep' /usr/lib/erlang/erts-10.1/bin/beam.smp`; update the path as necessary, and remember to run the command again after Erlang upgrades
 * Use a tool such as 'authbind' to give an unprivileged user/group permission to bind to specific ports
@@ -208,16 +216,19 @@ So far this document has focussed on configuring Plug to handle TLS within the a
 
 ### Pros and Cons
 
-Offloading might be done to achieve higher throughput, or to stick to the more widely used OpenSSL implementation of the TLS protocol. The Erlang/OTP implementation depends on OpenSSL for the underlying cryptography, but it implements its own message framing and protocol state machine. While it is not clear that one implementation is inherently more secure than the other, it might be advantageous to just patch OpenSSL along with everybody else, rather than having to research the implications of a new TLS vulnerability on the Erlang/OTP implementation.
+Offloading might be done to achieve higher throughput, or to stick to the more widely used OpenSSL implementation of the TLS protocol. The Erlang/OTP implementation depends on OpenSSL for the underlying cryptography, but it implements its own message framing and protocol state machine. While it is not clear that one implementation is inherently more secure than the other, just patching OpenSSL along with everybody else in case of vulnerabilities might give peace of mind, compared to than having to research the implications on the Erlang/OTP implementation.
 
 On the other hand, the proxy solution might not support end-to-end HTTP 2, limiting the benefits of the new protocol. It can also introduce operational complexities and new resource constraints, especially for long-lived connections such as WebSockets.
 
 ### Plug Configuration Impact
 
-TODO:
-- X-Forwarded-For and X-Forwarded-Proto
-- Using Plug.SSL
-- 'Secure' cookies
+When using TLS offloading it may be necessary to make some configuration changes to the application.
+
+The `remote_ip` field in the `Plug.Conn` struct by default contains the network peer IP address. Terminating TLS in a separate process or network element typically masks the actual client IP address from the Elixir application. If proxying is done at the HTTP layer, the original client IP address is often inserted into an HTTP header, e.g. 'X-Forwarded-For'. There are Plug packages available to extract the client IP from such a header and update the `remote_ip` field. Please beware of, and mitigate, the security risk of clients spoofing an IP address by including this header in their original request!
+
+For solutions that operate below the HTTP layer, e.g. using HAProxy, the client IP address can sometimes be passed through the 'PROXY protocol'. Extracting this information must be handled by the Plug adapter. Please refer to the Plug adapter documentation for further information.
+
+`Plug.SSL` takes on another important role when using TLS offloading: it can update the `scheme` field in the `Plug.Conn` struct based on an HTTP header (e.g. 'X-Forwarded-Proto'), to reflect the actual protocol used by the client (HTTP or HTTPS). It is very important that the `scheme` field properly reflects the use of HTTPS, even if the connection between the proxy and the application uses plain HTTP, because cookies set by `Plug.Session` and `Plug.Conn.put_resp_cookie/4` by default set the 'secure' cookie flag only if `scheme` is set to `:https`! When relying on this default behaviour it is essential that `Plug.SSL` is included in the Plug pipeline, that its `rewrite_on` option is set correctly, and that the proxy sets the appropriate header.
 
 ## Converting Certificates and Keys
 
