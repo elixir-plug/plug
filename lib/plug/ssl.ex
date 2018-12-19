@@ -110,8 +110,8 @@ defmodule Plug.SSL do
 
   To simplify configuration of TLS defaults Plug provides two preconfigured
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
-  chosen and related configuration come from the OWASP recommendations found here:
-  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
+  chosen and related configuration come from the [OWASP Cipher String Cheat
+  Sheet](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet)
 
   We've made two modifications to the suggested config from the OWASP recommendations.
   First we include ECDSA certificates which are excluded from their configuration.
@@ -130,8 +130,8 @@ defmodule Plug.SSL do
   still maintain support for older browsers and Android versions 4.3 and earlier
 
   For both suites we've specified certificate curves secp256r1, ecp384r1 and secp521r1.
-  Since OWASP doesn't prescribe curves we've based the selection on the following Mozilla
-  recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
+  Since OWASP doesn't prescribe curves we've based the selection on [Mozilla's
+  recommendations](https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table)
 
   **The cipher suites were last updated on 2018-JUN-14.**
   """
