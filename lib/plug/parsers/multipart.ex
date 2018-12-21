@@ -147,8 +147,15 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, file)
        when limit >= byte_size(tail) do
-    IO.binwrite(file, tail)
-    {:ok, limit - byte_size(tail), conn}
+    case IO.binwrite(file, tail) do
+      :ok ->
+        {:ok, limit - byte_size(tail), conn}
+
+      {:error, reason} ->
+        raise Plug.UploadError,
+              "could not write to file #{inspect(file)} during upload " <>
+                "due to reason: #{inspect(reason)}"
+    end
   end
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, _file) do
