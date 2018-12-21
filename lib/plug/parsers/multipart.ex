@@ -129,16 +129,9 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart_file({:more, tail, conn}, limit, opts, file)
        when limit >= byte_size(tail) do
-    case IO.binwrite(file, tail) do
-      :ok ->
-        read_result = Plug.Conn.read_part_body(conn, opts)
-        parse_multipart_file(read_result, limit - byte_size(tail), opts, file)
-
-      {:error, reason} ->
-        raise Plug.UploadError,
-              "could not write to file #{inspect(file)} during upload " <>
-                "due to reason: #{inspect(reason)}"
-    end
+    binwrite!(file, tail)
+    read_result = Plug.Conn.read_part_body(conn, opts)
+    parse_multipart_file(read_result, limit - byte_size(tail), opts, file)
   end
 
   defp parse_multipart_file({:more, tail, conn}, limit, _opts, _file) do
@@ -147,15 +140,8 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, file)
        when limit >= byte_size(tail) do
-    case IO.binwrite(file, tail) do
-      :ok ->
-        {:ok, limit - byte_size(tail), conn}
-
-      {:error, reason} ->
-        raise Plug.UploadError,
-              "could not write to file #{inspect(file)} during upload " <>
-                "due to reason: #{inspect(reason)}"
-    end
+    binwrite!(file, tail)
+    {:ok, limit - byte_size(tail), conn}
   end
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, _file) do
@@ -163,6 +149,18 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   ## Helpers
+
+  defp binwrite!(device, contents) do
+    case IO.binwrite(device, contents) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        raise Plug.UploadError,
+              "could not write to file #{inspect(device)} during upload " <>
+                "due to reason: #{inspect(reason)}"
+    end
+  end
 
   defp multipart_type(headers) do
     with {_, disposition} <- List.keyfind(headers, "content-disposition", 0),
