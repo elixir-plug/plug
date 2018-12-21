@@ -34,7 +34,7 @@ defmodule Plug.Parsers.MULTIPART do
       parse_multipart(conn, opts)
     rescue
       # Do not ignore upload errors
-      e in Plug.UploadError ->
+      e in [Plug.UploadError, Plug.Parsers.BadEncodingError] ->
         reraise e, System.stacktrace()
 
       # All others are wrapped
@@ -129,9 +129,16 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart_file({:more, tail, conn}, limit, opts, file)
        when limit >= byte_size(tail) do
-    IO.binwrite(file, tail)
-    read_result = Plug.Conn.read_part_body(conn, opts)
-    parse_multipart_file(read_result, limit - byte_size(tail), opts, file)
+    case IO.binwrite(file, tail) do
+      :ok ->
+        read_result = Plug.Conn.read_part_body(conn, opts)
+        parse_multipart_file(read_result, limit - byte_size(tail), opts, file)
+
+      {:error, reason} ->
+        raise Plug.UploadError,
+              "could not write to file #{inspect(file)} during upload " <>
+                "due to reason: #{inspect(reason)}"
+    end
   end
 
   defp parse_multipart_file({:more, tail, conn}, limit, _opts, _file) do
