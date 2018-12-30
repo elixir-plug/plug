@@ -175,8 +175,7 @@ defmodule Plug.SSL do
   recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
 
   In addition to selecting a group of ciphers, selecting a cipher suite will also
-  disable client renegotiation and force the client to honor the server specified
-  cipher order.
+  force the client to honor the server specified cipher order.
 
   Any of those choices can be disabled on a per choice basis by specifying the
   equivalent SSL option alongside the cipher suite.
@@ -315,7 +314,6 @@ defmodule Plug.SSL do
   defp set_managed_tls_defaults(options) do
     options
     |> Keyword.put_new(:honor_cipher_order, true)
-    |> Keyword.put_new(:client_renegotiation, false)
     |> Keyword.put_new(:eccs, @eccs)
   end
 
