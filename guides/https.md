@@ -84,7 +84,6 @@ The `:compatible` profile additionally enables AES-CBC ciphers, as well as TLS v
 In addition, both profiles:
 
 * Configure the server to choose a cipher based on its own preferences rather than the client's (`honor_cipher_order` set to `true`); when specifying a custom cipher list, ensure the ciphers are listed in descending order of preference
-* Set `client_renegotiation: false`
 * Select the 'Prime' (SECP) curves for use in Elliptic Curve Cryptography (ECC)
 
 All these parameters, including the global defaults mentioned above, can be overridden by specifying custom `:ssl` configuration options.
