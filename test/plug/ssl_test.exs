@@ -21,7 +21,6 @@ defmodule Plug.SSLTest do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :strong)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
-      assert opts[:client_renegotiation] == false
       assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
       assert opts[:versions] == [:"tlsv1.2"]
 
@@ -39,7 +38,6 @@ defmodule Plug.SSLTest do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :compatible)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
-      assert opts[:client_renegotiation] == false
       assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
       assert opts[:versions] == [:"tlsv1.2", :"tlsv1.1", :tlsv1]
 
