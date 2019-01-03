@@ -178,6 +178,32 @@ defmodule Plug.ParsersTest do
     assert params == %{}
   end
 
+  test "parses malformed multipart body" do
+    %{params: params} =
+      conn(:post, "/", "{}")
+      |> put_req_header("content-type", "multipart/form-data")
+      |> put_req_header("boundary", "xYzZY")
+      |> parse()
+
+    assert params == %{}
+
+    %{params: params} =
+      conn(:post, "/", "{")
+      |> put_req_header("content-type", "multipart/form-data")
+      |> put_req_header("boundary", "xYzZY")
+      |> parse()
+
+    assert params == %{}
+
+    %{params: params} =
+      conn(:post, "/", nil)
+      |> put_req_header("content-type", "multipart/form-data")
+      |> put_req_header("boundary", "xYzZY")
+      |> parse()
+
+    assert params == %{}
+  end
+
   test "parses with custom body reader" do
     conn = conn(:post, "/?query=elixir", "body=foo")
 
