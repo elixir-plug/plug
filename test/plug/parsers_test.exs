@@ -238,6 +238,16 @@ defmodule Plug.ParsersTest do
     end
   end
 
+  test "raises on invalid url encoded for multipart" do
+    message = "invalid UTF-8 on urlencoded body, got byte 139"
+
+    assert_raise Plug.Parsers.BadEncodingError, message, fn ->
+      conn(:post, "/", "wrong data" <> <<139>>)
+      |> put_req_header("content-type", "multipart/form-data")
+      |> parse()
+    end
+  end
+
   test "raises on too large bodies with root option" do
     exception =
       assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
