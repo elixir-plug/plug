@@ -178,32 +178,6 @@ defmodule Plug.ParsersTest do
     assert params == %{}
   end
 
-  test "parses malformed multipart body" do
-    %{params: params} =
-      conn(:post, "/", "{}")
-      |> put_req_header("content-type", "multipart/form-data")
-      |> put_req_header("boundary", "xYzZY")
-      |> parse()
-
-    assert params == %{}
-
-    %{params: params} =
-      conn(:post, "/", "{")
-      |> put_req_header("content-type", "multipart/form-data")
-      |> put_req_header("boundary", "xYzZY")
-      |> parse()
-
-    assert params == %{}
-
-    %{params: params} =
-      conn(:post, "/", nil)
-      |> put_req_header("content-type", "multipart/form-data")
-      |> put_req_header("boundary", "xYzZY")
-      |> parse()
-
-    assert params == %{}
-  end
-
   test "parses with custom body reader" do
     conn = conn(:post, "/?query=elixir", "body=foo")
 
@@ -239,11 +213,23 @@ defmodule Plug.ParsersTest do
   end
 
   test "raises on invalid url encoded for multipart" do
-    message = "invalid UTF-8 on urlencoded body, got byte 139"
+    message =
+      "malformed request, a RuntimeError exception was raised with message \"invalid multipart, body terminated too soon\""
 
-    assert_raise Plug.Parsers.BadEncodingError, message, fn ->
+    assert_raise Plug.Parsers.ParseError, message, fn ->
       conn(:post, "/", "wrong data" <> <<139>>)
-      |> put_req_header("content-type", "multipart/form-data")
+      |> put_req_header("content-type", "multipart/form-data; boundary=xYzZY")
+      |> parse()
+    end
+  end
+
+  test "raises on invalid url encoded for multipart with boundary" do
+    message =
+      "malformed request, a RuntimeError exception was raised with message \"invalid multipart, body terminated too soon\""
+
+    assert_raise Plug.Parsers.ParseError, message, fn ->
+      conn(:post, "/", "{}")
+      |> put_req_header("content-type", "multipart/form-data; boundary=xYzZY")
       |> parse()
     end
   end
