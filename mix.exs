@@ -16,9 +16,13 @@ defmodule Plug.MixProject do
       name: "Plug",
       xref: [exclude: @xref_exclude],
       docs: [
-        extras: ["README.md"],
+        extras: [
+          "README.md",
+          "guides/https.md"
+        ],
         main: "readme",
         groups_for_modules: groups_for_modules(),
+        groups_for_extras: groups_for_extras(),
         source_ref: "v#{@version}",
         source_url: "https://github.com/elixir-plug/plug"
       ]
@@ -95,6 +99,12 @@ defmodule Plug.MixProject do
         Plug.Session.ETS,
         Plug.Session.Store
       ]
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      Guides: ~r/guides\/[^\/]+\.md/
     ]
   end
 end

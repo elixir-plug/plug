@@ -103,56 +103,15 @@ defmodule Plug.SSL do
   Plug users are not expected to invoke it directly, rather you pass
   the relevant SSL options to your adapter which then invokes this.
 
-  For instance, here is how you would pass the SSL options to the Cowboy
-  adapter:
-
-      Plug.Cowboy.https MyPlug, [],
-        port: 443,
-        password: "SECRET",
-        otp_app: :my_app,
-        cipher_suite: :strong,
-        keyfile: "priv/ssl/key.pem",
-        certfile: "priv/ssl/cert.pem",
-        dhfile: "priv/ssl/dhparam.pem"
-
-  or using the new child spec API:
-
-      {Plug.Cowboy, scheme: :https, plug: MyPlug, options: [
-         port: 443,
-         password: "SECRET",
-         otp_app: :my_app,
-         cipher_suite: :strong,
-         keyfile: "priv/ssl/key.pem",
-         certfile: "priv/ssl/cert.pem",
-         dhfile: "priv/ssl/dhparam.pem"
-       ]}
-
-  ## Options
-
-  This function accepts and validates all options defined in [the `ssl`
-  erlang module](http://www.erlang.org/doc/man/ssl.html). With the
-  following additions:
-
-    * The `:cipher_suite` option provides `:strong` and `:compatible`
-      options for setting up better cipher and version defaults according
-      to the OWASP recommendations. See the "Cipher Suites" section below
-
-    * The certificate files, like keyfile, certfile, cacertfile, dhfile
-      can be given as a relative path. For such, the `:otp_app` option
-      must also be given and certificates will be looked from the priv
-      directory of the given application
-
-    * In order to provide better security, this function also enables
-      `:reuse_sessions` and `:secure_renegotiate` by default, to instruct
-      clients to reuse sessions and enforce secure renegotiation according
-      to RFC 5746 respectively
+  For further information, please refer to the adapter documentation and
+  the [HTTPS Guide](https.html).
 
   ## Cipher Suites
 
   To simplify configuration of TLS defaults Plug provides two preconfigured
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
-  chosen and related configuration come from the OWASP recommendations found here:
-  https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet
+  chosen and related configuration come from the [OWASP Cipher String Cheat
+  Sheet](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet)
 
   We've made two modifications to the suggested config from the OWASP recommendations.
   First we include ECDSA certificates which are excluded from their configuration.
@@ -171,48 +130,10 @@ defmodule Plug.SSL do
   still maintain support for older browsers and Android versions 4.3 and earlier
 
   For both suites we've specified certificate curves secp256r1, ecp384r1 and secp521r1.
-  Since OWASP doesn't prescribe curves we've based the selection on the following Mozilla
-  recommendations: https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table
-
-  In addition to selecting a group of ciphers, selecting a cipher suite will also
-  force the client to honor the server specified cipher order.
-
-  Any of those choices can be disabled on a per choice basis by specifying the
-  equivalent SSL option alongside the cipher suite.
+  Since OWASP doesn't prescribe curves we've based the selection on [Mozilla's
+  recommendations](https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table)
 
   **The cipher suites were last updated on 2018-JUN-14.**
-
-  ## Manual Cipher Configuration
-
-  Should you choose to configure your own ciphers you cannot use the `:cipher_suite` option
-  as setting a cipher suite overrides your cipher selections.
-
-  Instead, you can see the valid options for ciphers in the Erlang SSL documentation:
-  http://erlang.org/doc/man/ssl.html
-
-  Please note that specifying a cipher as a binary string is not valid and would silently fail in the past.
-  This was problematic because the result would be for Erlang to use the default list of ciphers.
-  To prevent this Plug will now throw an error to ensure you're aware of this.
-
-  ## Diffie Hellman parameters
-
-  It is recommended to generate a custom set of Diffie Hellman parameters, to be
-  used for the DHE key exchange. Use the following OpenSSL CLI command to create
-  a 'dhparam.pem' file:
-
-      openssl dhparam -out dhparam.pem 4096
-
-  On a slow machine (e.g. a cheap VPS) this may take several hours. You may want
-  to run the command on a strong machine and copy the file over: the file does
-  not need to be kept secret.
-
-  Add the resulting file to your application's `priv` directory and pass the
-  path using the `:dhfile` key. It is best practice to rotate the file
-  periodically.
-
-  If no custom parameters are specified, Erlang's `ssl` uses its built-in
-  defaults. Since OTP 19 this has been the 2048-bit 'group 14' from RFC 3526.
-
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
