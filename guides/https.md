@@ -127,7 +127,7 @@ The Strict-Transport-Security header can be disabled altogether by setting `hsts
 
 ## Encrypted Keys
 
-To protect the private key on disk it is best stored in encrypted PEM format, also known as PKCS#5. When configuring a Plug server with an encrypted private key, specify the password using the `:password` option:
+To protect the private key on disk it is best stored in encrypted PEM format, protected by a password. When configuring a Plug server with an encrypted private key, specify the password using the `:password` option:
 
 ```elixir
 Plug.Cowboy.https MyApp.MyPlug, [],
@@ -184,7 +184,7 @@ If no custom parameters are specified, Erlang's `:ssl` uses its built-in default
 
 ## Renewing Certificates
 
-Whenever a certificate is about to expire, when the contents of the certificate has been updated, or when the certificate is 're-keyed', the HTTPS server needs to be updated with the new certificate and/or key.
+Whenever a certificate is about to expire, when the contents of the certificate have been updated, or when the certificate is 're-keyed', the HTTPS server needs to be updated with the new certificate and/or key.
 
 When using the `:certfile` and `:keyfile` parameters to reference PEM files on disk, replacing the certificate and key is as simple as overwriting the files. Erlang's `:ssl` application periodically checks the timestamps of such files, and reloads them if it detects a change. It may be best to use symbolic links that point to versioned copies of the files, to allow for quick rollback in case of problems.
 
@@ -241,9 +241,7 @@ DER-encoded files contain binary data. Common file extensions are `.crt` for cer
 
 To convert a single DER-encoded certificate to PEM format: `openssl x509 -in server.crt -inform der -out cert.pem`
 
-To convert an RSA private key from DER to PEM format: `openssl rsa -in privkey.der -inform der -out privkey.pem`. You may want to add the `-aes128` argument to produce an encrypted, password protected PEM file.
-
-A DER private key may also be stored in a PKCS#8 container, which may be password protected. Such files sometimes have a `.p8` extension. In such cases use the following command to convert the private key to PEM format: `openssl pkcs8 -in privkey.p8 -inform der -out privkey.pem`. Again, add the `-aes128` argument if desired.
+To convert an RSA private key from DER to PEM format: `openssl rsa -in privkey.der -inform der -out privkey.pem`. If the private key is a Elliptic Curve key, for use with an ECDSA certificate, replace `rsa` with `ec`. You may want to add the `-aes128` argument to produce an encrypted, password protected PEM file.
 
 ### From PKCS#12 to PEM
 
@@ -251,4 +249,4 @@ The PKCS#12 format is a container format containing one or more certificates and
 
 To extract all certificates from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nokeys -out fullchain.pem`. The resulting file contains all certificates from the input file, typically the server certificate and any CA certificates that make up the CA chain. You can split the file into seperate `cert.pem` and `chain.pem` files using a text editor, or you can just pass `certfile: fullchain.pem` to the HTTPS adapter.
 
-To extract an RSA private key from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nocerts -nodes -out privkey.pem`. You may want to replace the `-nodes` argument with `-aes128` to produce an encrypted, password protected PEM file.
+To extract a private key from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nocerts -nodes -out privkey.pem`. You may want to replace the `-nodes` argument with `-aes128` to produce an encrypted, password protected PEM file.
