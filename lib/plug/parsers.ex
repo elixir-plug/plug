@@ -202,8 +202,8 @@ defmodule Plug.Parsers do
               conn :: Conn.t(),
               type :: binary,
               subtype :: binary,
-              params :: Keyword.t(),
-              state :: term
+              params :: Conn.Utils.params(),
+              opts :: Plug.opts()
             ) ::
               {:ok, Conn.params(), Conn.t()}
               | {:error, :too_large, Conn.t()}
