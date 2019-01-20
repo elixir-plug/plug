@@ -629,9 +629,11 @@ defmodule Plug.Conn do
   previous value of that header with `value`.
 
   It is recommended for header keys to be in lowercase, to avoid sending
-  duplicate keys in a request. As a convenience, when using the
-  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase
-  will raise a `Plug.Conn.InvalidHeaderError`.
+  duplicate keys in a request.
+  Additionally, requests with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped requests.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
@@ -739,9 +741,11 @@ defmodule Plug.Conn do
   previous value of that header with `value`.
 
   It is recommended for header keys to be in lowercase, to avoid sending
-  duplicate keys in a request. As a convenience, when using the
-  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase
-  will raise a `Plug.Conn.InvalidHeaderError`.
+  duplicate keys in a request.
+  Additionally, responses with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped responses.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
@@ -778,9 +782,11 @@ defmodule Plug.Conn do
   with the same `key`.
 
   It is recommended for header keys to be in lowercase, to avoid sending
-  duplicate keys in a request. As a convenience, when using the
-  `Plug.Adapters.Conn.Test` adapter, any headers that aren't lowercase will
-  raise a `Plug.Conn.InvalidHeaderError`.
+  duplicate keys in a request.
+  Additionally, responses with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped responses.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
   `:sent` or `:chunked`.
