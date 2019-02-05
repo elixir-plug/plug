@@ -21,7 +21,7 @@
 
 ### Breaking Changes
 
-You may need to add `:plug_cowboy` to your deps to use this version
+  * [Plug] Applications may need to add `:plug_cowboy` to your deps to use this version
 
 ## v1.6
 
