@@ -19,6 +19,10 @@
 
   * [Plug.SSL] Don't redirect excluded hosts on Plug.SSL
 
+### Breaking Changes
+
+  * [Plug] Applications may need to add `:plug_cowboy` to your deps to use this version
+
 ## v1.6
 
 See [CHANGELOG in the v1.6 branch](https://github.com/elixir-plug/plug/blob/v1.6/CHANGELOG.md).
