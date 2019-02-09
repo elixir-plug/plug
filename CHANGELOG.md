@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.7.2 (2019-02-09)
+
+  * [Plug.Parser.MULTIPART] Support UTF-8 filename encoding in multipart parser
+  * [Plug.Router] Add `builder_opts` support to `:dispatch` plug
+  * [Plug.SSL] Do not disable client renegotiation
+  * [Plug.Upload] Raise when we can't write to disk during upload
+
 ## v1.7.1 (2018-10-24)
 
   * [Plug.Adapters.Cowboy] Less verbose output when plug_cowboy is missing
