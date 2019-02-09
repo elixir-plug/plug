@@ -173,38 +173,35 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp handle_disposition(params, name, headers) do
-    case Map.fetch(params, "filename") do
-      {:ok, ""} ->
+    case params do
+      %{"filename" => ""} ->
         :skip
 
-      {:ok, filename} ->
+      %{"filename" => filename} ->
         path = Plug.Upload.random_file!("multipart")
         content_type = get_header(headers, "content-type")
         upload = %Plug.Upload{filename: filename, path: path, content_type: content_type}
         {:file, name, path, upload}
 
-      :error ->
-        case Map.fetch(params, "filename*") do
-          {:ok, ""} ->
-            :skip
+      %{"filename*" => ""} ->
+        :skip
 
-          {:ok, "utf-8''" <> filename} ->
-            filename = URI.decode(filename)
+      %{"filename*" => "utf-8''" <> filename} ->
+        filename = URI.decode(filename)
 
-            Plug.Conn.Utils.validate_utf8!(
-              filename,
-              Plug.Parsers.BadEncodingError,
-              "multipart filename"
-            )
+        Plug.Conn.Utils.validate_utf8!(
+          filename,
+          Plug.Parsers.BadEncodingError,
+          "multipart filename"
+        )
 
-            path = Plug.Upload.random_file!("multipart")
-            content_type = get_header(headers, "content-type")
-            upload = %Plug.Upload{filename: filename, path: path, content_type: content_type}
-            {:file, name, path, upload}
+        path = Plug.Upload.random_file!("multipart")
+        content_type = get_header(headers, "content-type")
+        upload = %Plug.Upload{filename: filename, path: path, content_type: content_type}
+        {:file, name, path, upload}
 
-          :error ->
-            {:binary, name}
-        end
+      %{} ->
+        {:binary, name}
     end
   end
 
