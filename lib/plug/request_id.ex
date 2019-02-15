@@ -1,6 +1,6 @@
 defmodule Plug.RequestId do
   @moduledoc """
-  A plug for generating a unique request id for each request. 
+  A plug for generating a unique request id for each request.
 
   The generated request id will be in the format "uq8hs30oafhj5vve8ji5pmp7mtopc08f".
 
@@ -64,7 +64,7 @@ defmodule Plug.RequestId do
       :erlang.unique_integer()::32
     >>
 
-    Base.hex_encode32(binary, case: :lower)
+    Base.url_encode64(binary)
   end
 
   defp valid_request_id?(s), do: byte_size(s) in 20..200
