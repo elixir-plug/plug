@@ -94,6 +94,12 @@ defmodule Plug.Parsers.MULTIPART do
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         {conn, limit, [{name, body} | acc]}
 
+      {:binary_with_headers, name} ->
+        {:ok, limit, body, conn} =
+          parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
+
+        {conn, limit, [{name, %{headers: headers, body: body}} | acc]}
+
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
 
@@ -163,11 +169,12 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp multipart_type(headers) do
-    with {_, disposition} <- List.keyfind(headers, "content-disposition", 0),
+    with {:disp, {_, disposition}} <- {:disp, List.keyfind(headers, "content-disposition", 0)},
          [_, params] <- :binary.split(disposition, ";"),
          %{"name" => name} = params <- Plug.Conn.Utils.params(params) do
       handle_disposition(params, name, headers)
     else
+      {:disp, _} -> {:binary_with_headers, "_parts[]"}
       _ -> :skip
     end
   end

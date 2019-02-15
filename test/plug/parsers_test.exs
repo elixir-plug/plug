@@ -158,6 +158,18 @@ defmodule Plug.ParsersTest do
     Content-Disposition: form-data; name=\"commit\"\r
     \r
     Create User\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/json\r
+    \r
+    {"indisposed": "json"}\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/octet-stream\r
+    X-My-Foo: bar\r
+    \r
+    foo\r
+    ------w58EW1cEpjzydSCq\r
+    \r
+    No content-type? No problem!\r
     ------w58EW1cEpjzydSCq--\r
     """
 
@@ -179,6 +191,14 @@ defmodule Plug.ParsersTest do
     assert File.read!(file.path) == "hello\n\n"
     assert file.content_type == "text/plain"
     assert file.filename == "żółć.txt"
+
+    assert [
+             %{body: "{\"indisposed\": \"json\"}"},
+             %{body: "foo", headers: [{_, _}, {_, _}] = part_headers},
+             %{body: "No content-type? No problem!"}
+           ] = params["_parts"]
+
+    assert %{"x-my-foo" => "bar"} = Enum.into(part_headers, %{})
   end
 
   test "parses empty multipart body" do
