@@ -47,7 +47,7 @@ defmodule Plug.RequestIdTest do
     conn = call(conn(:get, "/"), http_header: "custom-request-id")
     [res_request_id] = get_resp_header(conn, "custom-request-id")
     meta_request_id = Logger.metadata()[:request_id]
-    assert Regex.match?(~r/^[a-z0-9=]+$/u, res_request_id)
+    assert generated_request_id?(res_request_id)
     assert res_request_id == meta_request_id
   end
 
@@ -66,6 +66,6 @@ defmodule Plug.RequestIdTest do
   end
 
   defp generated_request_id?(request_id) do
-    Regex.match?(~r/^[a-z0-9=]+$/u, request_id)
+    Regex.match?(~r/\A[A-Za-z0-9-_]+\z/, request_id)
   end
 end
