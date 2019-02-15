@@ -18,9 +18,16 @@ defmodule Plug.Parsers.MULTIPART do
   socket with an overall limit of 8_000_000 bytes.
 
   Besides the options supported by `Plug.Conn.read_body/2`, the multipart parser
-  also checks for `:headers` option that contains the same `:length`, `:read_length`
-  and `:read_timeout` options which are used explicitly for parsing multipart
-  headers.
+  also checks for:
+
+    * `:headers` - containing the same `:length`, `:read_length`
+      and `:read_timeout` options which are used explicitly for parsing multipart
+      headers.
+    * `:include_unnamed_parts_at` - string specifying a body parameter that can
+      hold a lists of body parts that didn't have a 'Content-Disposition' header.
+      For instance, `include_unnamed_parts_at: "_parts"` would result in
+      a body parameter `"_parts"`, containing a list of parts, each with `:body`
+      and `:headers` fields, like `[%{ body: "{}", headers: [{"content-type", "application/json"}]}]`.
   """
 
   @behaviour Plug.Parsers
@@ -86,7 +93,7 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_headers(headers, conn, limit, opts, acc) do
-    case multipart_type(headers) do
+    case multipart_type(headers, opts) do
       {:binary, name} ->
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
@@ -94,7 +101,7 @@ defmodule Plug.Parsers.MULTIPART do
         Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         {conn, limit, [{name, body} | acc]}
 
-      {:binary_with_headers, name} ->
+      {:part, name} ->
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
 
@@ -168,13 +175,29 @@ defmodule Plug.Parsers.MULTIPART do
     end
   end
 
-  defp multipart_type(headers) do
-    with {:disp, {_, disposition}} <- {:disp, List.keyfind(headers, "content-disposition", 0)},
-         [_, params] <- :binary.split(disposition, ";"),
+  defp multipart_type(headers, opts) do
+    case get_header(headers, "content-disposition") do
+      disposition when is_binary(disposition) ->
+        multipart_type_from_disposition(headers, disposition)
+
+      _ ->
+        multipart_type_from_unnamed(opts)
+    end
+  end
+
+  defp multipart_type_from_unnamed(opts) do
+    with "" <> name when is_binary(name) <- Keyword.get(opts, :include_unnamed_parts_at, :skip) do
+      {:part, name <> "[]"}
+    else
+      _ -> :skip
+    end
+  end
+
+  defp multipart_type_from_disposition(headers, disposition) do
+    with [_, params] <- :binary.split(disposition, ";"),
          %{"name" => name} = params <- Plug.Conn.Utils.params(params) do
       handle_disposition(params, name, headers)
     else
-      {:disp, _} -> {:binary_with_headers, "_parts[]"}
       _ -> :skip
     end
   end

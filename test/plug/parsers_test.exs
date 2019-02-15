@@ -158,18 +158,6 @@ defmodule Plug.ParsersTest do
     Content-Disposition: form-data; name=\"commit\"\r
     \r
     Create User\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/json\r
-    \r
-    {"indisposed": "json"}\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/octet-stream\r
-    X-My-Foo: bar\r
-    \r
-    foo\r
-    ------w58EW1cEpjzydSCq\r
-    \r
-    No content-type? No problem!\r
     ------w58EW1cEpjzydSCq--\r
     """
 
@@ -191,14 +179,43 @@ defmodule Plug.ParsersTest do
     assert File.read!(file.path) == "hello\n\n"
     assert file.content_type == "text/plain"
     assert file.filename == "żółć.txt"
+  end
 
-    assert [
-             %{body: "{\"indisposed\": \"json\"}"},
-             %{body: "foo", headers: [{_, _}, {_, _}] = part_headers},
-             %{body: "No content-type? No problem!"}
-           ] = params["_parts"]
+  test "multipart bodies with unnamed body parts opt" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/json\r
+    \r
+    {"indisposed": "json"}\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/octet-stream\r
+    X-My-Foo: bar\r
+    \r
+    foo\r
+    ------w58EW1cEpjzydSCq\r
+    \r
+    No content-type? No problem!\r
+    ------w58EW1cEpjzydSCq--\r
+    """
 
-    assert %{"x-my-foo" => "bar"} = Enum.into(part_headers, %{})
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse(include_unnamed_parts_at: "_parts")
+
+    assert params["name"] == "hello"
+
+    assert [part1, part2, part3] = params["_parts"]
+    assert part1.body == "{\"indisposed\": \"json\"}"
+    assert part1.headers == [{"content-type", "application/json"}]
+    assert part2.body == "foo"
+    assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
+    assert part3.body == "No content-type? No problem!"
+    assert part3.headers == []
   end
 
   test "parses empty multipart body" do
