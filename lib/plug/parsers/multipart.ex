@@ -176,20 +176,17 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp multipart_type(headers, opts) do
-    case get_header(headers, "content-disposition") do
-      disposition when is_binary(disposition) ->
-        multipart_type_from_disposition(headers, disposition)
-
-      _ ->
-        multipart_type_from_unnamed(opts)
+    if disposition = get_header(headers, "content-disposition") do
+      multipart_type_from_disposition(headers, disposition)
+    else
+      multipart_type_from_unnamed(opts)
     end
   end
 
   defp multipart_type_from_unnamed(opts) do
-    with "" <> name when is_binary(name) <- Keyword.get(opts, :include_unnamed_parts_at, :skip) do
-      {:part, name <> "[]"}
-    else
-      _ -> :skip
+    case Keyword.fetch(opts, :include_unnamed_parts_at) do
+      {:ok, name} when is_binary(name) -> {:part, name <> "[]"}
+      :error -> :skip
     end
   end
 
