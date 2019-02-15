@@ -181,6 +181,43 @@ defmodule Plug.ParsersTest do
     assert file.filename == "żółć.txt"
   end
 
+  test "multipart bodies with unnamed body parts opt" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    hello\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/json\r
+    \r
+    {"indisposed": "json"}\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: application/octet-stream\r
+    X-My-Foo: bar\r
+    \r
+    foo\r
+    ------w58EW1cEpjzydSCq\r
+    \r
+    No content-type? No problem!\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse(include_unnamed_parts_at: "_parts")
+
+    assert params["name"] == "hello"
+
+    assert [part1, part2, part3] = params["_parts"]
+    assert part1.body == "{\"indisposed\": \"json\"}"
+    assert part1.headers == [{"content-type", "application/json"}]
+    assert part2.body == "foo"
+    assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
+    assert part3.body == "No content-type? No problem!"
+    assert part3.headers == []
+  end
+
   test "parses empty multipart body" do
     %{params: params} =
       conn(:post, "/", "")
