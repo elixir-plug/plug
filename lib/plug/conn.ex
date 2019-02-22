@@ -796,7 +796,7 @@ defmodule Plug.Conn do
 
   ## Examples
 
-      Plug.Conn.prepend_resp_headers(conn, "content-type", "application/json")
+      Plug.Conn.prepend_resp_headers(conn, [{"content-type", "application/json"}])
 
   """
   @spec prepend_resp_headers(t, headers) :: t
