@@ -15,6 +15,18 @@ defmodule Plug.ParsersTest do
     end
   end
 
+  defmodule PreparePartHeaders do
+    def dispose_text_for_upload(headers, _conn, name) do
+      with {_, "text/plain"} <- List.keyfind(headers, "content-type", 0) do
+        key = "content-disposition"
+        value = "form-data; name=\"#{name}[]\"; filename=\"a.txt\""
+        List.keystore(headers, key, 0, {key, value})
+      else
+        _ -> headers
+      end
+    end
+  end
+
   def parse(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :parsers, [Plug.Parsers.URLENCODED, Plug.Parsers.MULTIPART])
     Plug.Parsers.call(conn, Plug.Parsers.init(opts))
@@ -216,6 +228,34 @@ defmodule Plug.ParsersTest do
     assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
     assert part3.body == "No content-type? No problem!"
     assert part3.headers == []
+  end
+
+  test "parses transformed part headers" do
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    what lisp\r
+    ------w58EW1cEpjzydSCq\r
+    Content-Type: text/plain\r
+    \r
+    curse?\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    transform_mfa = {PreparePartHeaders, :dispose_text_for_upload, ["_files"]}
+
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse(prepare_part_headers: transform_mfa)
+
+    assert params["name"] == "what lisp"
+
+    assert [file = %Plug.Upload{}] = params["_files"]
+    assert file.filename == "a.txt"
+    assert file.content_type == "text/plain"
+    assert File.read!(file.path) == "curse?"
   end
 
   test "parses empty multipart body" do

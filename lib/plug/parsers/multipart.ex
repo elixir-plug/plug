@@ -1,5 +1,5 @@
 defmodule Plug.Parsers.MULTIPART do
-  @moduledoc """
+  @moduledoc ~S"""
   Parses multipart request body.
 
   ## Options
@@ -28,6 +28,11 @@ defmodule Plug.Parsers.MULTIPART do
       For instance, `include_unnamed_parts_at: "_parts"` would result in
       a body parameter `"_parts"`, containing a list of parts, each with `:body`
       and `:headers` fields, like `[%{ body: "{}", headers: [{"content-type", "application/json"}]}]`.
+    * `:prepare_part_headers` - a `{module, function, args}` tuple
+      that can specify a transform to be applied to the headers of a body
+      part prior to those headers being used. The function will be applied
+      with args of `[headers, conn | args]`, and should return the transformed
+      headers.
   """
 
   @behaviour Plug.Parsers
@@ -93,6 +98,8 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_headers(headers, conn, limit, opts, acc) do
+    headers = prepare_part_headers(headers, conn, opts)
+
     case multipart_type(headers, opts) do
       {:binary, name} ->
         {:ok, limit, body, conn} =
@@ -172,6 +179,13 @@ defmodule Plug.Parsers.MULTIPART do
         raise Plug.UploadError,
               "could not write to file #{inspect(device)} during upload " <>
                 "due to reason: #{inspect(reason)}"
+    end
+  end
+
+  def prepare_part_headers(headers, conn, opts) do
+    case Keyword.get(opts, :prepare_part_headers) do
+      {module, fun, args} -> apply(module, fun, [headers, conn | args])
+      _ -> headers
     end
   end
 
