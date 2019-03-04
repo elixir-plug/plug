@@ -21,18 +21,28 @@ defmodule Plug.TelemetryTest do
   end
 
   setup do
-    :telemetry.attach(:start, [:plug, :call, :start], fn _, measurements, metadata, _ ->
-      send(self(), {:event, :start, measurements, metadata})
-    end, nil)
-    :telemetry.attach(:stop, [:plug, :call, :stop], fn _, measurements, metadata, _ ->
-      send(self(), {:event, :stop, measurements, metadata})
-    end, nil)
+    :telemetry.attach(
+      :start,
+      [:plug, :call, :start],
+      fn _, measurements, metadata, _ ->
+        send(self(), {:event, :start, measurements, metadata})
+      end,
+      nil
+    )
+
+    :telemetry.attach(
+      :stop,
+      [:plug, :call, :stop],
+      fn _, measurements, metadata, _ ->
+        send(self(), {:event, :stop, measurements, metadata})
+      end,
+      nil
+    )
 
     on_exit(fn ->
-     :telemetry.detach(:start)
-     :telemetry.detach(:stop)
+      :telemetry.detach(:start)
+      :telemetry.detach(:stop)
     end)
-
   end
 
   test "emits an event before the pipeline and before sending the response" do
