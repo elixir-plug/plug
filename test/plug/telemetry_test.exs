@@ -53,8 +53,8 @@ defmodule Plug.TelemetryTest do
     assert %{conn: conn} = metadata
 
     assert_received {:event, :stop, measurements, metadata}
-    assert %{time: time} = measurements
-    assert is_integer(time)
+    assert %{duration: duration} = measurements
+    assert is_integer(duration)
     assert %{conn: conn, status: 200} = metadata
     assert conn.state == :set
   end

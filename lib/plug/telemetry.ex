@@ -19,8 +19,13 @@ defmodule Plug.Telemetry do
   end
 
   defp emit_stop_event(conn) do
-    time = System.monotonic_time() - conn.private[:plug_telemetry_start_time]
-    :telemetry.execute([:plug, :call, :stop], %{time: time}, %{conn: conn, status: conn.status})
+    duration = System.monotonic_time() - conn.private[:plug_telemetry_start_time]
+
+    :telemetry.execute([:plug, :call, :stop], %{duration: duration}, %{
+      conn: conn,
+      status: conn.status
+    })
+
     conn
   end
 end
