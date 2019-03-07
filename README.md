@@ -217,6 +217,7 @@ This project aims to ship with different plugs that can be re-used across applic
   * `Plug.Session` - handles session management and storage;
   * `Plug.SSL` - enforces requests through SSL;
   * `Plug.Static` - serves static files;
+  * `Plug.Telemetry` - instruments the plug pipeline with `:telemetry` events;
 
 You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
 
