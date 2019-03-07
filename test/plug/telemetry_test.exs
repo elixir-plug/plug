@@ -9,7 +9,7 @@ defmodule Plug.TelemetryTest do
 
     plug :send_resp, 200
 
-    def send_resp(conn, status) do
+    defp send_resp(conn, status) do
       Plug.Conn.send_resp(conn, status, "Response")
     end
   end
@@ -18,6 +18,22 @@ defmodule Plug.TelemetryTest do
     use Plug.Builder
 
     plug Plug.Telemetry, event_prefix: [:nosend, :pipeline]
+  end
+
+  defmodule MyCrashingPlug do
+    use Plug.Builder
+
+    plug Plug.Telemetry, event_prefix: [:crashing, :pipeline]
+    plug :raise_error
+    plug :send_resp, 200
+
+    defp raise_error(_conn, _) do
+      raise "Crash!"
+    end
+
+    defp send_resp(conn, status) do
+      Plug.Conn.send_resp(conn, status, "Response")
+    end
   end
 
   setup do
@@ -55,7 +71,7 @@ defmodule Plug.TelemetryTest do
     assert conn.status == 200
   end
 
-  test "doesn't emit an event if the response is not sent", %{
+  test "doesn't emit a stop event if the response is not sent", %{
     start_handler: start_handler,
     stop_handler: stop_handler
   } do
@@ -81,6 +97,24 @@ defmodule Plug.TelemetryTest do
     assert_raise ArgumentError, ~r/^expected :event_prefix to be a list of atoms, got: 1$/, fn ->
       Plug.Telemetry.init(event_prefix: 1)
     end
+  end
+
+  test "doesn't emit a stop event when the pipeline crashes", %{
+    start_handler: start_handler,
+    stop_handler: stop_handler
+  } do
+    attach(start_handler, [:crashing, :pipeline, :call, :start])
+    attach(stop_handler, [:crashing, :pipeline, :call, :stop])
+
+    assert_raise RuntimeError, fn ->
+      MyCrashingPlug.call(conn(:get, "/"), [])
+    end
+
+    assert_received {:event, [:crashing, :pipeline, :call, :start], measurements, metadata}
+    assert %{} == measurements
+    assert %{conn: conn} = metadata
+
+    refute_received {:event, [:crashing, :pipeline, :call, :stop], _, _}
   end
 
   defp attach(handler_id, event) do
