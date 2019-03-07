@@ -43,13 +43,16 @@ defmodule Plug.TelemetryTest do
 
     assert_received {:event, [:pipeline, :call, :start], measurements, metadata}
     assert %{} == measurements
+    assert map_size(metadata) == 1
     assert %{conn: conn} = metadata
 
     assert_received {:event, [:pipeline, :call, :stop], measurements, metadata}
     assert %{duration: duration} = measurements
     assert is_integer(duration)
-    assert %{conn: conn, status: 200} = metadata
+    assert map_size(metadata) == 1
+    assert %{conn: conn} = metadata
     assert conn.state == :set
+    assert conn.status == 200
   end
 
   test "doesn't emit an event if the response is not sent", %{

@@ -23,9 +23,9 @@ defmodule Plug.Telemetry do
       duration = System.monotonic_time() - start_time
 
       :telemetry.execute(stop_event, %{duration: duration}, %{
-        conn: conn,
-        status: conn.status
+        conn: conn
       })
+
       conn
     end)
   end
@@ -44,7 +44,8 @@ defmodule Plug.Telemetry do
     if is_list(event_prefix) && Enum.all?(event_prefix, &is_atom/1) do
       :ok
     else
-      raise ArgumentError, "expected :event_prefix to be a list of atoms, got: #{inspect(event_prefix)}"
+      raise ArgumentError,
+            "expected :event_prefix to be a list of atoms, got: #{inspect(event_prefix)}"
     end
   end
 end
