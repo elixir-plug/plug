@@ -6,26 +6,45 @@ defmodule Plug.Telemetry do
   @behaviour Plug
 
   @impl true
-  def init(_), do: []
-
-  @impl true
-  def call(conn, _opts) do
-    time = System.monotonic_time()
-    :telemetry.execute([:plug, :call, :start], %{}, %{conn: conn})
-
-    conn
-    |> Plug.Conn.put_private(:plug_telemetry_start_time, time)
-    |> Plug.Conn.register_before_send(&emit_stop_event/1)
+  def init(opts) do
+    event_prefix = ensure_event_prefix!(opts)
+    ensure_valid_event_prefix!(event_prefix)
+    start_event = event_prefix ++ [:call, :start]
+    stop_event = event_prefix ++ [:call, :stop]
+    {start_event, stop_event}
   end
 
-  defp emit_stop_event(conn) do
-    duration = System.monotonic_time() - conn.private[:plug_telemetry_start_time]
+  @impl true
+  def call(conn, {start_event, stop_event}) do
+    start_time = System.monotonic_time()
+    :telemetry.execute(start_event, %{}, %{conn: conn})
 
-    :telemetry.execute([:plug, :call, :stop], %{duration: duration}, %{
-      conn: conn,
-      status: conn.status
-    })
+    Plug.Conn.register_before_send(conn, fn conn ->
+      duration = System.monotonic_time() - start_time
 
-    conn
+      :telemetry.execute(stop_event, %{duration: duration}, %{
+        conn: conn,
+        status: conn.status
+      })
+      conn
+    end)
+  end
+
+  defp ensure_event_prefix!(opts) do
+    case Keyword.fetch(opts, :event_prefix) do
+      {:ok, event_prefix} ->
+        event_prefix
+
+      _ ->
+        raise ArgumentError, ":event_prefix is required"
+    end
+  end
+
+  defp ensure_valid_event_prefix!(event_prefix) do
+    if is_list(event_prefix) && Enum.all?(event_prefix, &is_atom/1) do
+      :ok
+    else
+      raise ArgumentError, "expected :event_prefix to be a list of atoms, got: #{inspect(event_prefix)}"
+    end
   end
 end
