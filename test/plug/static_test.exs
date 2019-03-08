@@ -48,6 +48,8 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "x-custom") == ["x-value"]
 
     assert [etag] = get_resp_header(conn, "etag")
+    assert String.first(etag) == "\""
+    assert String.at(etag, String.length(etag) - 1) == "\""
     assert get_resp_header(conn, "cache-control") == ["public"]
 
     conn =
@@ -71,6 +73,12 @@ defmodule Plug.StaticTest do
     end
   end
 
+  defmodule QuotingEtagGenerator do
+    def generate(path, a, b) do
+      "\"" <> EtagGenerator.generate(path, a, b) <> "\""
+    end
+  end
+
   test "performs etag negotiation with user defined etag generation" do
     opts = [
       at: "/public",
@@ -86,7 +94,7 @@ defmodule Plug.StaticTest do
     assert [etag] = get_resp_header(conn, "etag")
 
     assert etag ==
-             EtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y")
+             "\"" <> EtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y") <> "\""
 
     assert get_resp_header(conn, "cache-control") == ["public"]
 
@@ -399,7 +407,7 @@ defmodule Plug.StaticTest do
       opts = [
         at: "/public",
         from: Path.expand("..", __DIR__),
-        etag_generation: {EtagGenerator, :generate, ["x", "y"]}
+        etag_generation: {QuotingEtagGenerator, :generate, ["x", "y"]}
       ]
 
       conn =
@@ -415,7 +423,7 @@ defmodule Plug.StaticTest do
       assert [etag] = get_resp_header(conn, "etag")
 
       assert etag ==
-               EtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y")
+               QuotingEtagGenerator.generate(Path.expand("../fixtures/static.txt", __DIR__), "x", "y")
 
       assert get_resp_header(conn, "cache-control") == ["public"]
 

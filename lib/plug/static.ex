@@ -346,7 +346,13 @@ defmodule Plug.Static do
         file_info(size: size, mtime: mtime) = file_info
         {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
     end
+    |> maybe_add_quotes()
   end
+
+  # If the etag starts with a quote or a weak prefix we assume that it is correctly quoted.
+  defp maybe_add_quotes(<<"\"", _::binary>> = etag), do: etag
+  defp maybe_add_quotes(<<"W/\"", _::binary>> = etag), do: etag
+  defp maybe_add_quotes(etag), do: "\"" <> etag <> "\""
 
   defp file_encoding(conn, path, [_range], _gzip?, _brotli?) do
     # We do not support compression for range queries.
