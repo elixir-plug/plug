@@ -58,13 +58,17 @@ defmodule Plug.TelemetryTest do
     MyPlug.call(conn(:get, "/"), [])
 
     assert_received {:event, [:pipeline, :call, :start], measurements, metadata}
-    assert %{} == measurements
+    assert map_size(measurements) == 1
+    assert %{time: time} = measurements
+    assert is_integer(time)
     assert map_size(metadata) == 1
     assert %{conn: conn} = metadata
 
     assert_received {:event, [:pipeline, :call, :stop], measurements, metadata}
-    assert %{duration: duration} = measurements
+    assert map_size(measurements) == 2
+    assert %{duration: duration, time: time} = measurements
     assert is_integer(duration)
+    assert is_integer(time)
     assert map_size(metadata) == 1
     assert %{conn: conn} = metadata
     assert conn.state == :set
@@ -80,10 +84,7 @@ defmodule Plug.TelemetryTest do
 
     MyNoSendPlug.call(conn(:get, "/"), [])
 
-    assert_received {:event, [:nosend, :pipeline, :call, :start], measurements, metadata}
-    assert %{} == measurements
-    assert %{conn: conn} = metadata
-
+    assert_received {:event, [:nosend, :pipeline, :call, :start], _, _}
     refute_received {:event, [:nosend, :pipeline, :call, :stop], _, _}
   end
 
@@ -110,10 +111,7 @@ defmodule Plug.TelemetryTest do
       MyCrashingPlug.call(conn(:get, "/"), [])
     end
 
-    assert_received {:event, [:crashing, :pipeline, :call, :start], measurements, metadata}
-    assert %{} == measurements
-    assert %{conn: conn} = metadata
-
+    assert_received {:event, [:crashing, :pipeline, :call, :start], _, _}
     refute_received {:event, [:crashing, :pipeline, :call, :stop], _, _}
   end
 

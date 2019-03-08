@@ -4,14 +4,18 @@ defmodule Plug.Telemetry do
 
   Currently the following events are emitted (event names assume that `:event_prefix` option is set
   to `[:my, :plug]` - more on that in the paragraph below):
-    * `[:my, :plug, :call, :start]` - emitted right after this plug is invoked. There are no
-      measurements in this event, and the only metadata is the whole `Plug.Conn` under the `:conn`
-      key
+
+    * `[:my, :plug, :call, :start]` - emitted right after this plug is invoked. The event carries
+      a single measurement, `:time`, which is the system time at the moment the event is emitted.
+      The only metadata is the whole `Plug.Conn` under the `:conn` key
     * `[:my, :plug, :call, :stop]` - emitted right before the request is sent back. The event carries
-      a single measurement, `:duration`, which is the monotonic time difference between the stop
-      and start events. The duration is presented in the `:native` time unit (see docs for
-      `System.convert_time_unit/3` for more information). The same as for the start event, the only
-      metadata is the `Plug.Conn` struct under the `:conn` key.
+      two measurements
+
+        * `:time`, which is the system time at the moment the event is emitted
+        * `:duration`, which is the monotonic time difference between the stop and start events
+
+      The same as for the start event, the only metadata is the `Plug.Conn` struct under the `:conn`
+      key.
 
   The names of the events are based on the provided `event_prefix`: for the start event, the name is
   `event_prefix ++ [:call, :start]`, and for the stop event: `event_prefix ++ [:call, :stop]`.
@@ -20,6 +24,11 @@ defmodule Plug.Telemetry do
 
   Note that this plug measures only the time between its invocation and the rest of the plug pipeline -
   this can be used to exclude some plugs from measurement.
+
+  ## Time unit
+
+  Both `:time` and `:duration` measurements are presented in the `:native` time unit. You can read
+  more about it in the docs for `System.convert_time_unit/3`.
 
   ## Example
 
@@ -57,12 +66,12 @@ defmodule Plug.Telemetry do
   @impl true
   def call(conn, {start_event, stop_event}) do
     start_time = System.monotonic_time()
-    :telemetry.execute(start_event, %{}, %{conn: conn})
+    :telemetry.execute(start_event, %{time: System.system_time()}, %{conn: conn})
 
     Plug.Conn.register_before_send(conn, fn conn ->
       duration = System.monotonic_time() - start_time
 
-      :telemetry.execute(stop_event, %{duration: duration}, %{
+      :telemetry.execute(stop_event, %{duration: duration, time: System.system_time()}, %{
         conn: conn
       })
 
