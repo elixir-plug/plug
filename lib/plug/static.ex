@@ -217,6 +217,7 @@ defmodule Plug.Static do
 
       {:fresh, conn} ->
         conn
+        |> maybe_add_vary(options.gzip?, options.brotli?)
         |> send_resp(304, "")
         |> halt()
     end

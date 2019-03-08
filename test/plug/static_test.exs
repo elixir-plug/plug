@@ -61,6 +61,7 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == ""
     assert get_resp_header(conn, "cache-control") == ["public"]
     assert get_resp_header(conn, "x-custom") == []
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
 
     assert get_resp_header(conn, "content-type") == []
     assert get_resp_header(conn, "etag") == [etag]
@@ -398,6 +399,7 @@ defmodule Plug.StaticTest do
       assert conn.resp_body == ""
       assert get_resp_header(conn, "cache-control") == ["public"]
       assert get_resp_header(conn, "x-custom") == []
+      assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
 
       assert get_resp_header(conn, "content-type") == []
       assert get_resp_header(conn, "etag") == [etag]
