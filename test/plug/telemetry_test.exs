@@ -1,3 +1,5 @@
+Application.ensure_all_started(:telemetry)
+
 defmodule Plug.TelemetryTest do
   use ExUnit.Case, async: true
   use Plug.Test
@@ -6,7 +8,6 @@ defmodule Plug.TelemetryTest do
     use Plug.Builder
 
     plug Plug.Telemetry, event_prefix: [:pipeline]
-
     plug :send_resp, 200
 
     defp send_resp(conn, status) do
@@ -52,21 +53,21 @@ defmodule Plug.TelemetryTest do
     start_handler: start_handler,
     stop_handler: stop_handler
   } do
-    attach(start_handler, [:pipeline, :call, :start])
-    attach(stop_handler, [:pipeline, :call, :stop])
+    attach(start_handler, [:pipeline, :start])
+    attach(stop_handler, [:pipeline, :stop])
 
     MyPlug.call(conn(:get, "/"), [])
 
-    assert_received {:event, [:pipeline, :call, :start], measurements, metadata}
+    assert_received {:event, [:pipeline, :start], measurements, metadata}
     assert map_size(measurements) == 1
     assert %{time: time} = measurements
     assert is_integer(time)
     assert map_size(metadata) == 1
     assert %{conn: conn} = metadata
 
-    assert_received {:event, [:pipeline, :call, :stop], measurements, metadata}
-    assert map_size(measurements) == 2
-    assert %{duration: duration, time: time} = measurements
+    assert_received {:event, [:pipeline, :stop], measurements, metadata}
+    assert map_size(measurements) == 1
+    assert %{duration: duration} = measurements
     assert is_integer(duration)
     assert is_integer(time)
     assert map_size(metadata) == 1
@@ -79,13 +80,13 @@ defmodule Plug.TelemetryTest do
     start_handler: start_handler,
     stop_handler: stop_handler
   } do
-    attach(start_handler, [:nosend, :pipeline, :call, :start])
-    attach(stop_handler, [:nosend, :pipeline, :call, :stop])
+    attach(start_handler, [:nosend, :pipeline, :start])
+    attach(stop_handler, [:nosend, :pipeline, :stop])
 
     MyNoSendPlug.call(conn(:get, "/"), [])
 
-    assert_received {:event, [:nosend, :pipeline, :call, :start], _, _}
-    refute_received {:event, [:nosend, :pipeline, :call, :stop], _, _}
+    assert_received {:event, [:nosend, :pipeline, :start], _, _}
+    refute_received {:event, [:nosend, :pipeline, :stop], _, _}
   end
 
   test "raises if event prefix is not provided" do
@@ -104,15 +105,15 @@ defmodule Plug.TelemetryTest do
     start_handler: start_handler,
     stop_handler: stop_handler
   } do
-    attach(start_handler, [:crashing, :pipeline, :call, :start])
-    attach(stop_handler, [:crashing, :pipeline, :call, :stop])
+    attach(start_handler, [:crashing, :pipeline, :start])
+    attach(stop_handler, [:crashing, :pipeline, :stop])
 
     assert_raise RuntimeError, fn ->
       MyCrashingPlug.call(conn(:get, "/"), [])
     end
 
-    assert_received {:event, [:crashing, :pipeline, :call, :start], _, _}
-    refute_received {:event, [:crashing, :pipeline, :call, :stop], _, _}
+    assert_received {:event, [:crashing, :pipeline, :start], _, _}
+    refute_received {:event, [:crashing, :pipeline, :stop], _, _}
   end
 
   defp attach(handler_id, event) do
