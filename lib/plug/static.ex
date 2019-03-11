@@ -351,7 +351,7 @@ defmodule Plug.Static do
 
       nil ->
         file_info(size: size, mtime: mtime) = file_info
-        <<?", ({size, mtime} |> :erlang.phash2() |> Integer.to_string(16))::binary, ?">>
+        <<?", {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)::binary, ?">>
     end
   end
 
