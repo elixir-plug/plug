@@ -58,10 +58,12 @@ defmodule Plug.Static do
     * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
 
-    * `:etag_generation` - specify a `{module, function, args}` to be used to generate
-      an etag. The `path` of the resource will be passed to the function, as well as the `args`.
-      If this option is not supplied, etags will be generated based off of
-      file size and modification time.
+    * `:etag_generation` - specify a `{module, function, args}` to be used
+      to generate   an etag. The `path` of the resource will be passed to
+      the function, as well as the `args`. If this option is not supplied,
+      etags will be generated based off of file size and modification time.
+      Note it is [recommended for the etag value to be quoted](https://tools.ietf.org/html/rfc7232#section-2.3),
+      which Plug won't do automatically.
 
     * `:cache_control_for_vsn_requests` - sets the cache header for
       requests starting with "?vsn=" in the query string. Defaults to
@@ -169,7 +171,7 @@ defmodule Plug.Static do
       path = path(from, segments)
       range = get_req_header(conn, "range")
       encoding = file_encoding(conn, path, range, gzip?, brotli?)
-      serve_static(encoding, segments, range, options)
+      serve_static(encoding, conn, segments, range, options)
     else
       conn
     end
@@ -195,7 +197,7 @@ defmodule Plug.Static do
     h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
   end
 
-  defp serve_static({:ok, conn, file_info, path}, segments, range, options) do
+  defp serve_static({content_encoding, file_info, path}, conn, segments, range, options) do
     %{
       qs_cache: qs_cache,
       et_cache: et_cache,
@@ -212,19 +214,19 @@ defmodule Plug.Static do
         conn
         |> put_resp_header("content-type", content_type)
         |> put_resp_header("accept-ranges", "bytes")
+        |> maybe_add_encoding(content_encoding)
         |> merge_resp_headers(headers)
         |> serve_range(file_info, path, range, options)
 
       {:fresh, conn} ->
         conn
-        |> maybe_add_vary(options.gzip?, options.brotli?)
-        |> delete_resp_header("content-encoding")
+        |> maybe_add_vary(options)
         |> send_resp(304, "")
         |> halt()
     end
   end
 
-  defp serve_static({:error, conn}, _segments, _range, _options) do
+  defp serve_static(:error, conn, _segments, _range, _options) do
     conn
   end
 
@@ -289,14 +291,17 @@ defmodule Plug.Static do
     |> halt()
   end
 
-  defp send_entire_file(conn, path, %{gzip?: gzip?, brotli?: brotli?} = _options) do
+  defp send_entire_file(conn, path, options) do
     conn
-    |> maybe_add_vary(gzip?, brotli?)
+    |> maybe_add_vary(options)
     |> send_file(200, path)
     |> halt()
   end
 
-  defp maybe_add_vary(conn, gzip?, brotli?) do
+  defp maybe_add_encoding(conn, nil), do: conn
+  defp maybe_add_encoding(conn, ce), do: put_resp_header(conn, "content-encoding", ce)
+
+  defp maybe_add_vary(conn, %{gzip?: gzip?, brotli?: brotli?}) do
     # If we serve gzip or brotli at any moment, we need to set the proper vary
     # header regardless of whether we are serving gzip content right now.
     # See: http://www.fastly.com/blog/best-practices-for-using-the-vary-header/
@@ -346,15 +351,9 @@ defmodule Plug.Static do
 
       nil ->
         file_info(size: size, mtime: mtime) = file_info
-        {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)
+        <<?", ({size, mtime} |> :erlang.phash2() |> Integer.to_string(16))::binary, ?">>
     end
-    |> maybe_add_quotes()
   end
-
-  # If the etag starts with a quote or a weak prefix we assume that it is correctly quoted.
-  defp maybe_add_quotes(<<"\"", _::binary>> = etag), do: etag
-  defp maybe_add_quotes(<<"W/\"", _::binary>> = etag), do: etag
-  defp maybe_add_quotes(etag), do: "\"" <> etag <> "\""
 
   defp file_encoding(conn, path, [_range], _gzip?, _brotli?) do
     # We do not support compression for range queries.
@@ -364,16 +363,16 @@ defmodule Plug.Static do
   defp file_encoding(conn, path, _range, gzip?, brotli?) do
     cond do
       file_info = brotli? and accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
-        {:ok, put_resp_header(conn, "content-encoding", "br"), file_info, path <> ".br"}
+        {"br", file_info, path <> ".br"}
 
       file_info = gzip? and accept_encoding?(conn, "gzip") && regular_file_info(path <> ".gz") ->
-        {:ok, put_resp_header(conn, "content-encoding", "gzip"), file_info, path <> ".gz"}
+        {"gzip", file_info, path <> ".gz"}
 
       file_info = regular_file_info(path) ->
-        {:ok, conn, file_info, path}
+        {nil, file_info, path}
 
       true ->
-        {:error, conn}
+        :error
     end
   end
 
