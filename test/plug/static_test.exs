@@ -64,6 +64,41 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
 
     assert get_resp_header(conn, "content-type") == []
+    assert get_resp_header(conn, "content-encoding") == []
+    assert get_resp_header(conn, "etag") == [etag]
+  end
+
+  test "performs etag negotiation for gzip encoded files" do
+    conn =
+      conn(:get, "/public/fixtures/static.txt", [])
+      |> put_req_header("accept-encoding", "gzip")
+      |> call
+
+    assert conn.status == 200
+    assert conn.resp_body == "GZIPPED HELLO"
+    assert get_resp_header(conn, "content-encoding") == ["gzip"]
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
+    assert get_resp_header(conn, "x-custom") == ["x-value"]
+
+    assert [etag] = get_resp_header(conn, "etag")
+    assert String.first(etag) == "\""
+    assert String.at(etag, String.length(etag) - 1) == "\""
+    assert get_resp_header(conn, "cache-control") == ["public"]
+
+    conn =
+      conn(:get, "/public/fixtures/static.txt", [])
+      |> put_req_header("accept-encoding", "gzip")
+      |> put_req_header("if-none-match", etag)
+      |> call
+      
+    assert conn.status == 304
+    assert conn.resp_body == ""
+    assert get_resp_header(conn, "cache-control") == ["public"]
+    assert get_resp_header(conn, "x-custom") == []
+    assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
+
+    assert get_resp_header(conn, "content-type") == []
+    assert get_resp_header(conn, "content-encoding") == []
     assert get_resp_header(conn, "etag") == [etag]
   end
 
@@ -108,6 +143,7 @@ defmodule Plug.StaticTest do
     assert conn.resp_body == ""
     assert get_resp_header(conn, "cache-control") == ["public"]
     assert get_resp_header(conn, "content-type") == []
+    assert get_resp_header(conn, "content-encoding") == []
     assert get_resp_header(conn, "etag") == [etag]
   end
 
@@ -402,6 +438,7 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
 
       assert get_resp_header(conn, "content-type") == []
+      assert get_resp_header(conn, "content-encoding") == []
       assert get_resp_header(conn, "etag") == [etag]
     end
 
@@ -439,6 +476,7 @@ defmodule Plug.StaticTest do
       assert conn.resp_body == ""
       assert get_resp_header(conn, "cache-control") == ["public"]
       assert get_resp_header(conn, "content-type") == []
+      assert get_resp_header(conn, "content-encoding") == []
       assert get_resp_header(conn, "etag") == [etag]
     end
 
