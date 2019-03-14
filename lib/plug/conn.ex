@@ -1417,6 +1417,20 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Returns the whole session.
+
+  Raises if the session was not yet fetched.
+  """
+  @spec get_session(t) :: %{(String.t() | atom) => any}
+  def get_session(%Conn{private: private}) do
+    if session = Map.get(private, :plug_session) do
+      session
+    else
+      raise ArgumentError, "session not fetched, call fetch_session/2"
+    end
+  end
+
+  @doc """
   Deletes the session for the given `key`.
 
   The key can be a string or an atom, where atoms are
@@ -1567,14 +1581,6 @@ defmodule Plug.Conn do
 
   defp session_key(binary) when is_binary(binary), do: binary
   defp session_key(atom) when is_atom(atom), do: Atom.to_string(atom)
-
-  defp get_session(%Conn{private: private}) do
-    if session = Map.get(private, :plug_session) do
-      session
-    else
-      raise ArgumentError, "session not fetched, call fetch_session/2"
-    end
-  end
 
   defp put_session(conn, fun) do
     private =

@@ -220,7 +220,7 @@ defmodule Plug.Debugger do
 
   defp maybe_fetch_session(conn) do
     if conn.private[:plug_session_fetch] do
-      fetch_session(conn).private[:plug_session]
+      conn |> fetch_session(conn) |> get_session()
     end
   end
 
