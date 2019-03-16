@@ -47,7 +47,7 @@ defmodule Plug.Session.COOKIE do
       list will be tried in order after the `:secret_key_base` to
       decrypt/verify. When a cookie is updated the `:secret_key_base` is always
       used to encrypt/sign. Can be either a list of binaries or an MFA
-      returning a list of binarys. Defaults to `[]`;
+      returning a list of binaries. Defaults to `[]`;
 
     * `:log` - Log level to use when the cookie cannot be decoded.
       Defaults to `:debug`, can be set to false to disable it.
