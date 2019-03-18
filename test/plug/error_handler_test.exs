@@ -56,7 +56,7 @@ defmodule Plug.ErrorHandlerTest do
   test "call/2 is overridden but is a no-op when response is already sent" do
     conn = conn(:get, "/send_and_boom")
 
-    assert_raise RuntimeError, "oops", fn ->
+    assert_raise Plug.Conn.WrapperError, "** (RuntimeError) oops", fn ->
       Router.call(conn, [])
     end
 

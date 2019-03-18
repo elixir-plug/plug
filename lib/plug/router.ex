@@ -254,7 +254,13 @@ defmodule Plug.Router do
       @doc false
       def dispatch(%Plug.Conn{} = conn, opts) do
         {_path, fun} = Map.fetch!(conn.private, :plug_route)
-        fun.(conn, opts)
+
+        try do
+          fun.(conn, opts)
+        catch
+          kind, reason ->
+            Plug.Conn.WrapperError.reraise(conn, kind, reason, System.stacktrace())
+        end
       end
 
       defoverridable match: 2, dispatch: 2

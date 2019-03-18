@@ -352,7 +352,8 @@ defmodule Plug.RouterTest do
       call(Sample, conn(:get, "/forward/raise"))
       flunk("oops")
     rescue
-      Plug.Parsers.RequestTooLargeError ->
+      e in Plug.Conn.WrapperError ->
+        %{kind: :error, reason: %Plug.Parsers.RequestTooLargeError{}} = e
         assert_received @already_sent
         assigns = Process.get(:plug_handle_errors)
         assert assigns.status == 413
