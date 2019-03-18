@@ -1431,7 +1431,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Deletes the session for the given `key`.
+  Deletes a `key` from the session.
 
   The key can be a string or an atom, where atoms are
   automatically converted to strings.
