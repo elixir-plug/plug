@@ -130,6 +130,27 @@ defmodule Plug.CSRFProtection do
   ## API
 
   @doc """
+  Load CSRF state into the process dictionary.
+
+  This can be used to load CSRF state into another process.
+  See `dump_state/0` for dumping it.
+  """
+  def load_state(secret_key_base, csrf_token) when is_binary(csrf_token) or is_nil(csrf_token) do
+    Process.put(:plug_unmasked_csrf_token, csrf_token)
+    Process.put(:plug_csrf_token_per_host, %{secret_key_base: secret_key_base})
+    :ok
+  end
+
+  @doc """
+  Dump CSRF state so it can be loaded in another process.
+
+  See `load_state/2`. If a token was not yet computed, it will be.
+  """
+  def dump_state() do
+    unmasked_csrf_token()
+  end
+
+  @doc """
   Gets the CSRF token.
 
   Generates a token and stores it in the process
@@ -218,8 +239,7 @@ defmodule Plug.CSRFProtection do
 
   def call(conn, {session_key, mode, allow_hosts}) do
     csrf_token = get_csrf_from_session(conn, session_key)
-    Process.put(:plug_unmasked_csrf_token, csrf_token)
-    Process.put(:plug_csrf_token_per_host, %{secret_key_base: conn.secret_key_base})
+    load_state(conn.secret_key_base, csrf_token)
 
     conn =
       cond do
