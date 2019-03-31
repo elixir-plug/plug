@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.8.0 (2019-03-31)
+
+### Enhancements
+
+  * [Plug.Conn] Add `get_session/1` for retrieving the whole session
+  * [Plug.CSRFProtection] Add `Plug.CSRFPRotection.load_state/2` and `Plug.CSRFPRotection.dump_state/0` to allow tokens to be generated in other processes
+  * [Plug.Parsers] Allow unnamed parts in multipart parser via `:include_unnamed_parts_at`
+  * [Plug.Router] Wrap router dispatch in a connection checkpoint to avoid losing information attached to the connection in error cases
+  * [Plug.Telemetry] Add `Plug.Telemetry` to facilitate with telemetry integration
+
+### Bug fixes
+
+  * [Plug.Conn.Status] Use IANA registered status code for HTTP 425
+  * [Plug.RequestID] Reduce RequestID size by relying on base64 encoding
+  * [Plug.Static] Ensure etags are quoted correctly
+  * [Plug.Static] Ensure vary header is set in 304 response
+  * [Plug.Static] Omit content-encoding header in 304 responses
+
 ## v1.7.2 (2019-02-09)
 
   * [Plug.Parser.MULTIPART] Support UTF-8 filename encoding in multipart parser
