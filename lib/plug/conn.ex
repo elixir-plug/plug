@@ -133,8 +133,9 @@ defmodule Plug.Conn do
   @type int_status :: non_neg_integer | nil
   @type owner :: pid
   @type method :: binary
-  @type param :: binary | %{binary => param} | [param]
-  @type params :: %{binary => param}
+  @type query_param :: binary | %{binary => query_param} | [query_param]
+  @type query_params :: %{binary => query_param}
+  @type params :: %{binary => term}
   @type port_number :: :inet.port_number()
   @type query_string :: String.t()
   @type resp_cookies :: %{binary => %{}}
@@ -155,10 +156,10 @@ defmodule Plug.Conn do
           owner: owner,
           params: params | Unfetched.t(),
           path_info: segments,
-          path_params: params,
+          path_params: query_params,
           port: :inet.port_number(),
           private: assigns,
-          query_params: params | Unfetched.t(),
+          query_params: query_params | Unfetched.t(),
           query_string: query_string,
           remote_ip: :inet.ip_address(),
           req_cookies: cookies | Unfetched.t(),
