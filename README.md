@@ -38,7 +38,7 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     iex> {:ok, _} = Plug.Cowboy.http MyPlug, []
     {:ok, #PID<...>}
 
-Access "http://localhost:4000/" and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the "Supervised handlers" section below.
+Access "http://localhost:4000/" and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section below.
 
 ## Installation
 
