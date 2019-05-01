@@ -107,7 +107,7 @@ defmodule Plug.CSRFProtectionTest do
 
   test "raise error for missing authenticity token in session" do
     assert_raise InvalidCSRFTokenError, fn ->
-      call(conn(:post, "/"))
+      call(conn(:post, "/", %{}))
     end
 
     assert_raise InvalidCSRFTokenError, fn ->
@@ -134,7 +134,7 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "clear session for missing authenticity token in session" do
-    assert conn(:post, "/")
+    assert conn(:post, "/", %{})
            |> call(with: :clear_session)
            |> get_session("key") == nil
 
@@ -159,10 +159,10 @@ defmodule Plug.CSRFProtectionTest do
     conn = call(conn(:get, "/?token=get"))
     csrf_token = conn.resp_body
 
-    conn = call_with_old_conn(conn(:post, "/"), conn, with: :clear_session)
+    conn = call_with_old_conn(conn(:post, "/", %{}), conn, with: :clear_session)
     assert get_session(conn, "key") == nil
 
-    assert conn(:post, "/")
+    assert conn(:post, "/", %{})
            |> put_req_header("x-csrf-token", csrf_token)
            |> call_with_old_conn(conn, with: :clear_session)
            |> get_session("key") == "val"
@@ -301,21 +301,21 @@ defmodule Plug.CSRFProtectionTest do
     csrf_token = old_conn.resp_body
 
     conn =
-      conn(:post, "/")
+      conn(:post, "/", %{})
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
 
     refute conn.halted
 
     conn =
-      conn(:put, "/")
+      conn(:put, "/", %{})
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
 
     refute conn.halted
 
     conn =
-      conn(:patch, "/")
+      conn(:patch, "/", %{})
       |> put_req_header("x-csrf-token", csrf_token)
       |> call_with_old_conn(old_conn)
 
