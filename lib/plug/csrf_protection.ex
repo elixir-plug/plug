@@ -272,7 +272,7 @@ defmodule Plug.CSRFProtection do
 
   defp verified_request?(conn, csrf_token, allow_hosts) do
     conn.method in @unprotected_methods ||
-      valid_csrf_token?(conn, csrf_token, conn.params["_csrf_token"], allow_hosts) ||
+      valid_csrf_token?(conn, csrf_token, conn.body_params["_csrf_token"], allow_hosts) ||
       valid_csrf_token?(conn, csrf_token, first_x_csrf_token(conn), allow_hosts) ||
       skip_csrf_protection?(conn)
   end
