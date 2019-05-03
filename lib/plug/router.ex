@@ -317,8 +317,8 @@ defmodule Plug.Router do
 
     * `:assigns` - assigns values to `conn.assigns` for use in the match
 
-    * `:via` - matches the route against some specific HTTP method (specified as
-      an atom, like `:get` or `:put`.
+    * `:via` - matches the route against some specific HTTP method(s) specified
+      as an atom, like `:get` or `:put`, or a list, like `[:get, :post]`.
 
     * `:do` - contains the implementation to be invoked in case
       the route matches.
