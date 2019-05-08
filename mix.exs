@@ -3,7 +3,7 @@ defmodule Plug.MixProject do
 
   @version "1.8.0"
   @description "A specification and conveniences for composable modules between web applications"
-  @xref_exclude [Plug.Cowboy]
+  @xref_exclude [Plug.Cowboy, :telemetry]
 
   def project do
     [
