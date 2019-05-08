@@ -169,7 +169,7 @@ defmodule Plug.Builder do
   plug.
 
   This macro doesn't add any guards when adding the new plug to the pipeline;
-  for more information about adding plugs with guards see `compile/1`.
+  for more information about adding plugs with guards see `compile/3`.
 
   ## Examples
 
