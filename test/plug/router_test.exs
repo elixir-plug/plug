@@ -144,6 +144,26 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(conn.assigns))
     end
 
+    post "/options/assigns", assigns: %{an_option: :a_value} do
+      resp(conn, 200, inspect(conn.assigns))
+    end
+
+    put "/options/assigns", assigns: %{an_option: :a_value} do
+      resp(conn, 200, inspect(conn.assigns))
+    end
+
+    patch "/options/assigns", assigns: %{an_option: :a_value} do
+      resp(conn, 200, inspect(conn.assigns))
+    end
+
+    delete "/options/assigns", assigns: %{an_option: :a_value} do
+      resp(conn, 200, inspect(conn.assigns))
+    end
+
+    options "/options/assigns", assigns: %{an_option: :a_value} do
+      resp(conn, 200, inspect(conn.assigns))
+    end
+
     forward "/options/forward",
       to: Forward,
       private: %{an_option: :a_value},
@@ -414,8 +434,38 @@ defmodule Plug.RouterTest do
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
 
-  test "assigns route options to assigns conn map" do
+  test "assigns route options to assigns conn map on GET requests" do
     conn = call(Sample, conn(:get, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "assigns route options to assigns conn map on POST requests" do
+    conn = call(Sample, conn(:post, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "assigns route options to assigns conn map on PUT requests" do
+    conn = call(Sample, conn(:put, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "assigns route options to assigns conn map on PATCH requests" do
+    conn = call(Sample, conn(:patch, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "assigns route options to assigns conn map on DELETE requests" do
+    conn = call(Sample, conn(:delete, "/options/assigns"))
+    assert conn.assigns[:an_option] == :a_value
+    assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "assigns route options to assigns conn map on OPTIONS requests" do
+    conn = call(Sample, conn(:options, "/options/assigns"))
     assert conn.assigns[:an_option] == :a_value
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
