@@ -54,7 +54,7 @@ defmodule Plug.MIME do
     MIME.type(file_extension)
   end
 
-  @deprecated "Sse MIME.from_path/1 instead"
+  @deprecated "Use MIME.from_path/1 instead"
   def path(path) do
     IO.puts(
       :stderr,
