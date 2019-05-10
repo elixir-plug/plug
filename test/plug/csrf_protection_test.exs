@@ -95,6 +95,7 @@ defmodule Plug.CSRFProtectionTest do
     assert CSRFProtection.get_csrf_token() == token
     assert CSRFProtection.get_csrf_token_for("/") == token
     assert CSRFProtection.get_csrf_token_for("/foo") == token
+    assert CSRFProtection.get_csrf_token_for(%URI{host: nil}) == token
     assert CSRFProtection.get_csrf_token_for("//www.example.com") != token
     assert CSRFProtection.get_csrf_token_for("http://www.example.com") != token
     assert CSRFProtection.get_csrf_token_for(%URI{host: "www.example.com"}) != token
@@ -128,8 +129,10 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "raise error when unrecognized option is sent" do
-    assert_raise ArgumentError, fn ->
-      call(conn(:post, "/"), with: :unknown_opt)
+    token = CSRFProtection.get_csrf_token()
+
+    assert_raise ArgumentError, ~r/option :with should be/, fn ->
+      call(conn(:post, "/", %{_csrf_token: token}), with: :unknown_opt)
     end
   end
 
