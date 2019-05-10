@@ -144,24 +144,24 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(conn.assigns))
     end
 
-    post "/options/assigns", assigns: %{an_option: :a_value} do
-      resp(conn, 200, inspect(conn.assigns))
+    post "/post" do
+      resp(conn, 200, "")
     end
 
-    put "/options/assigns", assigns: %{an_option: :a_value} do
-      resp(conn, 200, inspect(conn.assigns))
+    put "/put" do
+      resp(conn, 200, "")
     end
 
-    patch "/options/assigns", assigns: %{an_option: :a_value} do
-      resp(conn, 200, inspect(conn.assigns))
+    patch "/patch" do
+      resp(conn, 200, "")
     end
 
-    delete "/options/assigns", assigns: %{an_option: :a_value} do
-      resp(conn, 200, inspect(conn.assigns))
+    delete "/delete" do
+      resp(conn, 200, "")
     end
 
-    options "/options/assigns", assigns: %{an_option: :a_value} do
-      resp(conn, 200, inspect(conn.assigns))
+    options "/options" do
+      resp(conn, 200, "")
     end
 
     forward "/options/forward",
@@ -440,34 +440,29 @@ defmodule Plug.RouterTest do
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
 
-  test "assigns route options to assigns conn map on POST requests" do
-    conn = call(Sample, conn(:post, "/options/assigns"))
-    assert conn.assigns[:an_option] == :a_value
-    assert conn.resp_body =~ ~s(an_option: :a_value)
+  test "declare and call POST requests" do
+    conn = call(Sample, conn(:post, "/post"))
+    assert conn.status == 200
   end
 
-  test "assigns route options to assigns conn map on PUT requests" do
-    conn = call(Sample, conn(:put, "/options/assigns"))
-    assert conn.assigns[:an_option] == :a_value
-    assert conn.resp_body =~ ~s(an_option: :a_value)
+  test "declare and call PUT requests" do
+    conn = call(Sample, conn(:put, "/put"))
+    assert conn.status == 200
   end
 
-  test "assigns route options to assigns conn map on PATCH requests" do
-    conn = call(Sample, conn(:patch, "/options/assigns"))
-    assert conn.assigns[:an_option] == :a_value
-    assert conn.resp_body =~ ~s(an_option: :a_value)
+  test "declare and call PATCH requests" do
+    conn = call(Sample, conn(:patch, "/patch"))
+    assert conn.status == 200
   end
 
-  test "assigns route options to assigns conn map on DELETE requests" do
-    conn = call(Sample, conn(:delete, "/options/assigns"))
-    assert conn.assigns[:an_option] == :a_value
-    assert conn.resp_body =~ ~s(an_option: :a_value)
+  test "declare and call DELETE requests" do
+    conn = call(Sample, conn(:delete, "/delete"))
+    assert conn.status == 200
   end
 
-  test "assigns route options to assigns conn map on OPTIONS requests" do
-    conn = call(Sample, conn(:options, "/options/assigns"))
-    assert conn.assigns[:an_option] == :a_value
-    assert conn.resp_body =~ ~s(an_option: :a_value)
+  test "declare and call OPTIONS requests" do
+    conn = call(Sample, conn(:options, "/options"))
+    assert conn.status == 200
   end
 
   test "assigns options on forward" do
