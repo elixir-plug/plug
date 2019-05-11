@@ -144,6 +144,26 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(conn.assigns))
     end
 
+    post "/post" do
+      resp(conn, 200, "")
+    end
+
+    put "/put" do
+      resp(conn, 200, "")
+    end
+
+    patch "/patch" do
+      resp(conn, 200, "")
+    end
+
+    delete "/delete" do
+      resp(conn, 200, "")
+    end
+
+    options "/options" do
+      resp(conn, 200, "")
+    end
+
     forward "/options/forward",
       to: Forward,
       private: %{an_option: :a_value},
@@ -414,10 +434,35 @@ defmodule Plug.RouterTest do
     assert conn.resp_body =~ ~s(an_option: :a_value)
   end
 
-  test "assigns route options to assigns conn map" do
+  test "assigns route options to assigns conn map on GET requests" do
     conn = call(Sample, conn(:get, "/options/assigns"))
     assert conn.assigns[:an_option] == :a_value
     assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "declare and call POST requests" do
+    conn = call(Sample, conn(:post, "/post"))
+    assert conn.status == 200
+  end
+
+  test "declare and call PUT requests" do
+    conn = call(Sample, conn(:put, "/put"))
+    assert conn.status == 200
+  end
+
+  test "declare and call PATCH requests" do
+    conn = call(Sample, conn(:patch, "/patch"))
+    assert conn.status == 200
+  end
+
+  test "declare and call DELETE requests" do
+    conn = call(Sample, conn(:delete, "/delete"))
+    assert conn.status == 200
+  end
+
+  test "declare and call OPTIONS requests" do
+    conn = call(Sample, conn(:options, "/options"))
+    assert conn.status == 200
   end
 
   test "assigns options on forward" do
