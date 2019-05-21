@@ -20,6 +20,12 @@ defmodule Plug.Upload do
   **Note**: as mentioned in the documentation for `Plug.Parsers`, the `:plug`
   application has to be started in order to upload files and use the
   `Plug.Upload` module.
+
+  ## Security
+
+  The `:content_type` and `:filename` fields in the `Plug.Upload` struct are
+  client-controlled. These values should be validated, via file content
+  inspection or similar, before being trusted.
   """
 
   use GenServer
