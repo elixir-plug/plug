@@ -269,8 +269,8 @@ defmodule Plug.Static do
     end
   end
 
-  defp check_bounds(range_start, range_end, file_size)
-       when range_start < 0 or range_end >= file_size or range_start > range_end do
+  defp check_bounds(range_start, range_end, _file_size)
+       when range_start < 0 or range_start > range_end do
     :error
   end
 
@@ -280,6 +280,10 @@ defmodule Plug.Static do
 
   defp check_bounds(_range_start, _range_end, _file_size) do
     :ok
+  end
+
+  defp send_range(conn, path, range_start, range_end, file_size) when range_end >= file_size do
+    send_range(conn, path, range_start, file_size - 1, file_size)
   end
 
   defp send_range(conn, path, range_start, range_end, file_size) do
