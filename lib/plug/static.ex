@@ -234,9 +234,8 @@ defmodule Plug.Static do
     file_info(size: file_size) = file_info
 
     with %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
-         {range_start, range_end} <- start_and_end(bytes, file_size),
-         :ok <- check_bounds(range_start, range_end, file_size) do
-      send_range(conn, path, range_start, range_end, file_size)
+         {range_start, range_end} <- start_and_end(bytes, file_size) do
+      send_range(conn, path, range_start, range_end, file_size, options)
     else
       _ -> send_entire_file(conn, path, options)
     end
@@ -248,19 +247,19 @@ defmodule Plug.Static do
 
   defp start_and_end("-" <> rest, file_size) do
     case Integer.parse(rest) do
-      {last, ""} -> {file_size - last, file_size - 1}
+      {last, ""} when last > 0 and last <= file_size -> {file_size - last, file_size - 1}
       _ -> :error
     end
   end
 
   defp start_and_end(range, file_size) do
     case Integer.parse(range) do
-      {first, "-"} ->
+      {first, "-"} when first >= 0 ->
         {first, file_size - 1}
 
-      {first, "-" <> rest} ->
+      {first, "-" <> rest} when first >= 0 ->
         case Integer.parse(rest) do
-          {last, ""} -> {first, last}
+          {last, ""} when last >= first -> {first, min(last, file_size - 1)}
           _ -> :error
         end
 
@@ -269,24 +268,11 @@ defmodule Plug.Static do
     end
   end
 
-  defp check_bounds(range_start, range_end, _file_size)
-       when range_start < 0 or range_start > range_end do
-    :error
+  defp send_range(conn, path, 0, range_end, file_size, options) when range_end == file_size - 1 do
+    send_entire_file(conn, path, options)
   end
 
-  defp check_bounds(0, range_end, file_size) when range_end == file_size - 1 do
-    :error
-  end
-
-  defp check_bounds(_range_start, _range_end, _file_size) do
-    :ok
-  end
-
-  defp send_range(conn, path, range_start, range_end, file_size) when range_end >= file_size do
-    send_range(conn, path, range_start, file_size - 1, file_size)
-  end
-
-  defp send_range(conn, path, range_start, range_end, file_size) do
+  defp send_range(conn, path, range_start, range_end, file_size, _options) do
     length = range_end - range_start + 1
 
     conn
