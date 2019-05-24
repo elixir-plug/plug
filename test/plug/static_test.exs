@@ -358,6 +358,19 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-range") == ["bytes 2-4/5"]
     end
 
+    test "serves tail of file if range end greater than file length" do
+      conn =
+        conn(:get, "/public/fixtures/static.txt", [])
+        |> put_req_header("range", "bytes=4-1024")
+        |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "O"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+      assert get_resp_header(conn, "content-range") == ["bytes 4-4/5"]
+    end
+
     test "returns entire file if range does not contain either start or end" do
       conn =
         conn(:get, "/public/fixtures/static.txt", [])
