@@ -37,6 +37,10 @@ defmodule Plug.Test do
   The request `method` and `path` are required arguments. `method` may be any
   value that implements `to_string/1` and it will properly converted and
   normalized (e.g., `:get` or `"post"`).
+  
+  The `path` is commonly the request path with optional query string but it may
+  also be a complete URI. When a URI is given, the host and schema will be used
+  as part of the request too.
 
   The `params_or_body` field must be one of:
 
