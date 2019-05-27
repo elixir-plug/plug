@@ -29,6 +29,10 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, http_header: "custom-request-id"
 
+    * `:id_generator` - Optionally override the ID generation.
+
+          plug Plug.RequestId, id_generator: fn() -> UUID.uuid4() end
+
   """
 
   require Logger
@@ -36,19 +40,21 @@ defmodule Plug.RequestId do
   @behaviour Plug
 
   def init(opts) do
-    Keyword.get(opts, :http_header, "x-request-id")
+    req_id_header = Keyword.get(opts, :http_header, "x-request-id")
+    req_id_generator = Keyword.get(opts, :id_generator, &generate_request_id/0)
+    {req_id_header, req_id_generator}
   end
 
-  def call(conn, req_id_header) do
+  def call(conn, {req_id_header, req_id_generator}) do
     conn
-    |> get_request_id(req_id_header)
+    |> get_request_id(req_id_header, req_id_generator)
     |> set_request_id(req_id_header)
   end
 
-  defp get_request_id(conn, header) do
+  defp get_request_id(conn, header, id_generator) do
     case Conn.get_req_header(conn, header) do
-      [] -> {conn, generate_request_id()}
-      [val | _] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
+      [] -> {conn, id_generator.()}
+      [val | _] -> if valid_request_id?(val), do: {conn, val}, else: {conn, id_generator.()}
     end
   end
 

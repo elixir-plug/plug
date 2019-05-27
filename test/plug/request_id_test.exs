@@ -65,6 +65,16 @@ defmodule Plug.RequestIdTest do
     assert res_request_id == meta_request_id
   end
 
+  test "generates request id using generator function from opts, if provided" do
+    id_generator = fn -> "staticidfortestingpurposesonly" end
+
+    conn = call(conn(:get, "/"), id_generator: id_generator)
+    [res_request_id] = get_resp_header(conn, "x-request-id")
+    meta_request_id = Logger.metadata()[:request_id]
+    assert res_request_id == "staticidfortestingpurposesonly"
+    assert res_request_id == meta_request_id
+  end
+
   defp generated_request_id?(request_id) do
     Regex.match?(~r/\A[A-Za-z0-9-_]+\z/, request_id)
   end
