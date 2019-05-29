@@ -10,14 +10,15 @@ defmodule Plug.Telemetry do
 
     * `[:my, :plug, :start]` - emitted when the plug is invoked.
       The event carries a single measurement, `:time`, which is the
-      system time in native units at the moment the event is emitted.
-      The only metadata is the whole `Plug.Conn` under the `:conn` key.
+      monotonic time in native units at the moment the event is emitted.
+      The metadata is the whole `Plug.Conn` under the `:conn` key and
+      any leftover options given to the plug under `:options`.
 
     * `[:my, :plug, :stop]` - emitted right before the request is sent.
       The event carries a single measurement, `:duration`,  which is the
       monotonic time difference between the stop and start events.
-      The same as for the start event, the only metadata is the `Plug.Conn`
-      struct under the `:conn` key.
+      It has the same metadata as the start even, except the connection
+      has been updated.
 
   After the Plug is added, please be sure to add
   [:telemetry](https://github.com/beam-telemetry/telemetry) as
@@ -72,7 +73,7 @@ defmodule Plug.Telemetry do
   @impl true
   def call(conn, {start_event, stop_event, opts}) do
     start_time = System.monotonic_time()
-    :telemetry.execute(start_event, %{time: System.system_time()}, %{conn: conn, options: opts})
+    :telemetry.execute(start_event, %{time: start_time}, %{conn: conn, options: opts})
 
     Plug.Conn.register_before_send(conn, fn conn ->
       duration = System.monotonic_time() - start_time
