@@ -7,7 +7,7 @@ defmodule Plug.TelemetryTest do
   defmodule MyPlug do
     use Plug.Builder
 
-    plug Plug.Telemetry, event_prefix: [:pipeline]
+    plug Plug.Telemetry, event_prefix: [:pipeline], extra_options: :hello
     plug :send_resp, 200
 
     defp send_resp(conn, status) do
@@ -62,16 +62,16 @@ defmodule Plug.TelemetryTest do
     assert map_size(measurements) == 1
     assert %{time: time} = measurements
     assert is_integer(time)
-    assert map_size(metadata) == 1
-    assert %{conn: conn} = metadata
+    assert map_size(metadata) == 2
+    assert %{conn: conn, options: [extra_options: :hello]} = metadata
 
     assert_received {:event, [:pipeline, :stop], measurements, metadata}
     assert map_size(measurements) == 1
     assert %{duration: duration} = measurements
     assert is_integer(duration)
     assert is_integer(time)
-    assert map_size(metadata) == 1
-    assert %{conn: conn} = metadata
+    assert map_size(metadata) == 2
+    assert %{conn: conn, options: [extra_options: :hello]} = metadata
     assert conn.state == :set
     assert conn.status == 200
   end

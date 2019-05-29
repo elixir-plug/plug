@@ -57,21 +57,26 @@ defmodule Plug.Telemetry do
 
   @impl true
   def init(opts) do
-    event_prefix = opts[:event_prefix] || raise ArgumentError, ":event_prefix is required"
+    {event_prefix, opts} = Keyword.pop(opts, :event_prefix)
+
+    unless event_prefix do
+      raise ArgumentError, ":event_prefix is required"
+    end
+
     ensure_valid_event_prefix!(event_prefix)
     start_event = event_prefix ++ [:start]
     stop_event = event_prefix ++ [:stop]
-    {start_event, stop_event}
+    {start_event, stop_event, opts}
   end
 
   @impl true
-  def call(conn, {start_event, stop_event}) do
+  def call(conn, {start_event, stop_event, opts}) do
     start_time = System.monotonic_time()
-    :telemetry.execute(start_event, %{time: System.system_time()}, %{conn: conn})
+    :telemetry.execute(start_event, %{time: System.system_time()}, %{conn: conn, options: opts})
 
     Plug.Conn.register_before_send(conn, fn conn ->
       duration = System.monotonic_time() - start_time
-      :telemetry.execute(stop_event, %{duration: duration}, %{conn: conn})
+      :telemetry.execute(stop_event, %{duration: duration}, %{conn: conn, options: opts})
       conn
     end)
   end
