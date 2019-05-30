@@ -1420,9 +1420,13 @@ defmodule Plug.Conn do
   @doc """
   Returns the whole session.
 
+  Although `get_session/2` and `put_session/3` allow atom keys,
+  they are always normalized to strings. So this function always
+  returns a map with string keys.
+
   Raises if the session was not yet fetched.
   """
-  @spec get_session(t) :: %{(String.t() | atom) => any}
+  @spec get_session(t) :: %{String.t() => any}
   def get_session(%Conn{private: private}) do
     if session = Map.get(private, :plug_session) do
       session
