@@ -3,6 +3,8 @@ defmodule Plug.Session.Store do
   Specification for session stores.
   """
 
+  # Add function that interns the store from an atom
+
   @typedoc """
   The internal reference to the session in the store.
   """
