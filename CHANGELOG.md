@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.2 (2019-06-01)
+
+### Enhancements
+
+  * [Plug.CSRFProtection] Increase entropy and ensure forwards compatibility with future URL-safe CSRF tokens
+
 ## v1.8.1 (2019-06-01)
 
 ### Enhancements
