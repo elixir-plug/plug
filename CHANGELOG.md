@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.8.1 (2019-06-01)
+
+### Enhancements
+
+  * [Plug.CSRFProtection] Allow state to be dumped from the session and provide an API to validate both state and tokens
+  * [Plug.Session.Store] Add `get/1` to retrieve the store from a module/atom
+  * [Plug.Static] Support Nginx range requests
+  * [Plug.Telemetry] Allow extra options in `Plug.Telemetry` metadata
+
 ## v1.8.0 (2019-03-31)
 
 ### Enhancements
