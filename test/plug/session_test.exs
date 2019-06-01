@@ -3,6 +3,7 @@ defmodule Plug.SessionTest do
   use Plug.Test
 
   alias Plug.ProcessStore
+  doctest Plug.Session.Store
 
   test "puts session cookie" do
     conn = fetch_cookies(conn(:get, "/"))

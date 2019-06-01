@@ -3,7 +3,22 @@ defmodule Plug.Session.Store do
   Specification for session stores.
   """
 
-  # Add function that interns the store from an atom
+  @doc """
+  Gets the store name from an atom or a module.
+
+      iex> Plug.Session.Store.get(CustomStore)
+      CustomStore
+
+      iex> Plug.Session.Store.get(:cookie)
+      Plug.Session.COOKIE
+
+  """
+  def get(store) do
+    case Atom.to_string(store) do
+      "Elixir." <> _ -> store
+      reference -> Module.concat(Plug.Session, String.upcase(reference))
+    end
+  end
 
   @typedoc """
   The internal reference to the session in the store.

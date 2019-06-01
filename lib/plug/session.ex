@@ -43,7 +43,7 @@ defmodule Plug.Session do
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra]
 
   def init(opts) do
-    store = convert_store(Keyword.fetch!(opts, :store))
+    store = Plug.Session.Store.get(Keyword.fetch!(opts, :store))
     key = Keyword.fetch!(opts, :key)
     cookie_opts = Keyword.take(opts, @cookie_opts)
     store_opts = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
@@ -59,13 +59,6 @@ defmodule Plug.Session do
 
   def call(conn, config) do
     Conn.put_private(conn, :plug_session_fetch, fetch_session(config))
-  end
-
-  defp convert_store(store) do
-    case Atom.to_string(store) do
-      "Elixir." <> _ -> store
-      reference -> Module.concat(Plug.Session, String.upcase(reference))
-    end
   end
 
   defp fetch_session(config) do
