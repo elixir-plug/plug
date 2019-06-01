@@ -107,7 +107,9 @@ defmodule Plug.CSRFProtection do
   @behaviour Plug
   @unprotected_methods ~w(HEAD GET OPTIONS)
   @digest Base.url_encode64("HS256", padding: false) <> "."
-  @token_size 16
+
+  # The token size value should not generate padding
+  @token_size 18
   @encoded_token_size 24
   @double_encoded_token_size 32
 
@@ -339,10 +341,16 @@ defmodule Plug.CSRFProtection do
 
   defp valid_csrf_token?(_conn, _csrf_token, _user_token, _allowed_host), do: false
 
+  # TODO: We should change the generator to use url_encode64
+  # and then reverse the clauses here. In a future release,
+  # we can then remove the decode64 variant as the tokens here
+  # are meant to be short-lived anyway.
   defp valid_masked_token?(csrf_token, user_token, mask) do
-    case Base.decode64(user_token) do
+    with :error <- Base.decode64(user_token),
+         :error <- Base.url_decode64(user_token) do
+      false
+    else
       {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
-      :error -> false
     end
   end
 
@@ -408,6 +416,6 @@ defmodule Plug.CSRFProtection do
   end
 
   defp generate_token do
-    Base.encode64(:crypto.strong_rand_bytes(@token_size))
+    Base.url_encode64(:crypto.strong_rand_bytes(@token_size))
   end
 end

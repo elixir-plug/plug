@@ -80,6 +80,10 @@ defmodule Plug.CSRFProtectionTest do
     end
   end
 
+  test "token has no padding" do
+    refute CSRFProtection.get_csrf_token() =~ "="
+  end
+
   test "token is stored in process dictionary" do
     assert CSRFProtection.get_csrf_token() == CSRFProtection.get_csrf_token()
 
