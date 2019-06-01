@@ -217,12 +217,12 @@ defmodule Plug.CSRFProtectionTest do
   test "generated tokens are always masked" do
     conn1 = call(conn(:get, "/?token=get"))
     assert byte_size(conn1.resp_body) == 56
-    state = CSRFProtection.dump_state_from_conn(conn1, "_csrf_token")
+    state = CSRFProtection.dump_state_from_session(get_session(conn1, "_csrf_token"))
     assert CSRFProtection.valid_state_and_csrf_token?(state, conn1.resp_body)
 
     conn2 = call(conn(:get, "/?token=get"))
     assert byte_size(conn2.resp_body) == 56
-    state = CSRFProtection.dump_state_from_conn(conn2, "_csrf_token")
+    state = CSRFProtection.dump_state_from_session(get_session(conn2, "_csrf_token"))
     assert CSRFProtection.valid_state_and_csrf_token?(state, conn2.resp_body)
 
     assert conn1.resp_body != conn2.resp_body

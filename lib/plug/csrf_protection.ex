@@ -161,16 +161,12 @@ defmodule Plug.CSRFProtection do
   @doc """
   Dumps the CSRF state from the connection.
 
-  It expects the `conn` and the `session_key` the token
-  must be stored under. It returns `nil` if there is no
-  state in the connection. The session muts be fetched
-  before invoking this function.
+  It expects the value of `get_session(conn, session_key)`.
+  It returns `nil` if there is no state in the session.
   """
-  def dump_state_from_conn(conn, session_key) do
-    csrf_token = get_session(conn, session_key)
-
-    if is_binary(csrf_token) and byte_size(csrf_token) == @encoded_token_size do
-      csrf_token
+  def dump_state_from_session(session_token) do
+    if is_binary(session_token) and byte_size(session_token) == @encoded_token_size do
+      session_token
     end
   end
 
@@ -270,7 +266,7 @@ defmodule Plug.CSRFProtection do
   end
 
   def call(conn, {session_key, mode, allow_hosts}) do
-    csrf_token = dump_state_from_conn(conn, session_key)
+    csrf_token = dump_state_from_session(get_session(conn, session_key))
     load_state(conn.secret_key_base, csrf_token)
 
     conn =
