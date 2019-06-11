@@ -21,10 +21,10 @@ defmodule Plug.Adapters.Cowboy2 do
   end
 
   @doc false
-  def shutdown(ref) do
+  def shutdown(ref, opts \\ []) do
     unless using_plug_cowboy?(), do: warn_and_raise()
     plug_cowboy_deprecation_warning()
-    Plug.Cowboy.shutdown(ref)
+    Plug.Cowboy.shutdown(ref, opts)
   end
 
   @doc false

@@ -19,9 +19,9 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   @doc false
-  def shutdown(ref) do
+  def shutdown(ref, opts \\ []) do
     unless using_plug_cowboy?(), do: warn_and_raise()
-    Plug.Cowboy.shutdown(ref)
+    Plug.Cowboy.shutdown(ref, opts)
   end
 
   @doc false
