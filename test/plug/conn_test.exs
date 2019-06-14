@@ -878,6 +878,22 @@ defmodule Plug.ConnTest do
     assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", secure: false}
   end
 
+  test "delete_resp_cookie/3 ignores max_age, universal_time" do
+    cookie_opts = [
+      path: "/baz",
+      max_age: 1000,
+      universal_time: {{4000, 1, 1}, {0, 0, 0}}
+    ]
+
+    conn =
+      conn(:get, "/")
+      |> delete_resp_cookie("foo", cookie_opts)
+      |> send_resp(200, "ok")
+
+    assert conn.resp_cookies["foo"].max_age == 0
+    assert conn.resp_cookies["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
+  end
+
   test "put_req_cookie/3 and delete_req_cookie/2" do
     conn = conn(:get, "/")
     assert get_req_header(conn, "cookie") == []
