@@ -1371,7 +1371,7 @@ defmodule Plug.Conn do
   @spec delete_resp_cookie(t, binary, Keyword.t()) :: t
   def delete_resp_cookie(%Conn{resp_cookies: resp_cookies} = conn, key, opts \\ [])
       when is_binary(key) and is_list(opts) do
-    opts = [universal_time: @epoch, max_age: 0] ++ opts
+    opts = opts ++ [universal_time: @epoch, max_age: 0]
     resp_cookies = Map.put(resp_cookies, key, :maps.from_list(opts))
     update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.delete(&1, key))
   end
