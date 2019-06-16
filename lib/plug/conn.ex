@@ -629,7 +629,8 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
-  It is recommended for header keys to be in lowercase, to avoid sending
+  Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
+  it is recommended for header keys to be in lowercase, to avoid sending
   duplicate keys in a request.
   Additionally, requests with mixed-case headers served over HTTP/2 are not
   considered valid by common clients, resulting in dropped requests.
@@ -741,7 +742,8 @@ defmodule Plug.Conn do
   Adds a new response header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
-  It is recommended for header keys to be in lowercase, to avoid sending
+  Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
+  it is recommended for header keys to be in lowercase, to avoid sending
   duplicate keys in a request.
   Additionally, responses with mixed-case headers served over HTTP/2 are not
   considered valid by common clients, resulting in dropped responses.
