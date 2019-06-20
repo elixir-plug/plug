@@ -141,8 +141,7 @@ defmodule Plug.Static do
     %{
       gzip?: Keyword.get(opts, :gzip, false),
       brotli?: Keyword.get(opts, :brotli, false),
-      only: Keyword.get(opts, :only, []),
-      prefix: Keyword.get(opts, :only_matching, []),
+      only_rules: {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, [])},
       qs_cache: Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000"),
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
       et_generation: Keyword.get(opts, :etag_generation, nil),
@@ -155,13 +154,12 @@ defmodule Plug.Static do
 
   def call(
         conn = %Conn{method: meth},
-        %{at: at, only: only, prefix: prefix, from: from, gzip?: gzip?, brotli?: brotli?} =
-          options
+        %{at: at, only_rules: only_rules, from: from, gzip?: gzip?, brotli?: brotli?} = options
       )
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
-    if allowed?(only, prefix, segments) do
+    if allowed?(only_rules, segments) do
       segments = Enum.map(segments, &uri_decode/1)
 
       if invalid_path?(segments) do
@@ -190,11 +188,11 @@ defmodule Plug.Static do
     end
   end
 
-  defp allowed?(_only, _prefix, []), do: false
-  defp allowed?([], [], _list), do: true
+  defp allowed?(_only_rules, []), do: false
+  defp allowed?({[], []}, _list), do: true
 
-  defp allowed?(only, prefix, [h | _]) do
-    h in only or match?({0, _}, prefix != [] and :binary.match(h, prefix))
+  defp allowed?({full, prefix}, [h | _]) do
+    h in full or (prefix != [] and match?({0, _}, :binary.match(h, prefix)))
   end
 
   defp serve_static({content_encoding, file_info, path}, conn, segments, range, options) do
