@@ -826,6 +826,13 @@ defmodule Plug.Conn do
   @doc """
   Merges a series of response headers into the connection.
 
+  It is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request.
+  Additionally, responses with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped responses.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
+
   ## Example
 
       Plug.Conn.merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
