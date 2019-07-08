@@ -143,15 +143,14 @@ defmodule Plug.Upload do
             "could not find process Plug.Upload. Have you started the :plug application?"
   end
 
-  @doc """
-  Starts the upload handling server.
-  """
+  @doc false
   def start_link() do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   ## Callbacks
 
+  @impl true
   def init(:ok) do
     Process.flag(:trap_exit, true)
     tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1)
@@ -160,11 +159,13 @@ defmodule Plug.Upload do
     {:ok, [tmp, cwd]}
   end
 
+  @impl true
   def handle_call(:upload, {pid, _ref}, dirs) do
     Process.monitor(pid)
     {:reply, {:ok, dirs}, dirs}
   end
 
+  @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     case :ets.lookup(@table, pid) do
       [{pid, _tmp, paths}] ->
@@ -182,6 +183,7 @@ defmodule Plug.Upload do
     {:noreply, state}
   end
 
+  @impl true
   def terminate(_reason, _state) do
     folder = fn {_pid, _tmp, paths}, _ -> delete_paths(paths) end
     :ets.foldl(folder, :ok, @table)
