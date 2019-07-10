@@ -21,8 +21,10 @@ defmodule Plug.SSL do
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
 
-  The command above will effectively change the value of `conn.scheme` to
-  the one sent in `x-forwarded-proto`.
+  The command above will effectively change the value of `conn.scheme` to the
+  one sent in `x-forwarded-proto`. If the incoming request comes into a
+  standard port (80 for HTTP or 443 for HTTPS), the command above will also
+  change the value of `conn.port` to match the new scheme.
 
   Since rewriting the scheme based on `x-forwarded-proto` can open up
   security vulnerabilities, only provide the option above if:
