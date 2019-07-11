@@ -21,8 +21,10 @@ defmodule Plug.SSL do
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
 
-  The command above will effectively change the value of `conn.scheme` to
-  the one sent in `x-forwarded-proto`.
+  The command above will effectively change the value of `conn.scheme` to the
+  one sent in `x-forwarded-proto`. If the incoming request comes into a
+  standard port (80 for HTTP or 443 for HTTPS), the command above will also
+  change the value of `conn.port` to match the new scheme.
 
   Since rewriting the scheme based on `x-forwarded-proto` can open up
   security vulnerabilities, only provide the option above if:
@@ -303,15 +305,32 @@ defmodule Plug.SSL do
   defp rewrite_on(conn, rewrites) do
     Enum.reduce(rewrites, conn, fn
       :x_forwarded_proto, acc ->
-        case get_req_header(acc, "x-forwarded-proto") do
-          ["https"] -> %{acc | scheme: :https}
-          ["http"] -> %{acc | scheme: :http}
-          _ -> acc
-        end
+        scheme = get_req_header(acc, "x-forwarded-proto")
+        set_scheme(acc, scheme)
 
       other, _acc ->
         raise "unknown rewrite: #{inspect(other)}"
     end)
+  end
+
+  defp set_scheme(%{scheme: :http, port: 80} = conn, ["https"]) do
+    %{conn | scheme: :https, port: 443}
+  end
+
+  defp set_scheme(conn, ["https"]) do
+    %{conn | scheme: :https}
+  end
+
+  defp set_scheme(%{scheme: :https, port: 443} = conn, ["http"]) do
+    %{conn | scheme: :http, port: 80}
+  end
+
+  defp set_scheme(conn, ["http"]) do
+    %{conn | scheme: :http}
+  end
+
+  defp set_scheme(conn, _scheme) do
+    conn
   end
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02

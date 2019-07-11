@@ -178,6 +178,19 @@ defmodule Plug.SSLTest do
         |> call(rewrite_on: [:x_forwarded_proto])
 
       assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]
+      assert conn.scheme == :https
+      assert conn.port == 443
+      refute conn.halted
+    end
+
+    test "doesn't change the port when it doesn't match the scheme" do
+      conn =
+        conn(:get, "http://example.com:1234/")
+        |> put_req_header("x-forwarded-proto", "https")
+        |> call(rewrite_on: [:x_forwarded_proto])
+
+      assert conn.scheme == :https
+      assert conn.port == 1234
       refute conn.halted
     end
   end
