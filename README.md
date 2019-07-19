@@ -62,7 +62,6 @@ end
 | v1.4   | Unsupported from 12/2018 |
 | v1.3   | Unsupported from 12/2018 |
 | v1.2   | Unsupported from 06/2018 |
-| v1.2   | Unsupported from 06/2018 |
 | v1.1   | Unsupported from 01/2018 |
 | v1.0   | Unsupported from 05/2017 |
 
