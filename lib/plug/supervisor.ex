@@ -6,13 +6,11 @@ defmodule Plug.Supervisor do
   end
 
   def init(:ok) do
-    import Supervisor.Spec
-
     children = [
-      worker(Plug.Upload, [])
+      Plug.Upload
     ]
 
     Plug.Keys = :ets.new(Plug.Keys, [:named_table, :public, read_concurrency: true])
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
