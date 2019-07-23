@@ -144,7 +144,7 @@ defmodule Plug.Upload do
   end
 
   @doc false
-  def start_link(_) do
+  def start_link(_ \\ []) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
