@@ -1,7 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-  @version "1.8.2"
+  @version "1.9.0-dev"
   @description "A specification and conveniences for composable modules between web applications"
   @xref_exclude [Plug.Cowboy, :telemetry]
 
@@ -9,7 +9,7 @@ defmodule Plug.MixProject do
     [
       app: :plug,
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.5",
       deps: deps(),
       package: package(),
       description: @description,
