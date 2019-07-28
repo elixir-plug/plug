@@ -178,6 +178,8 @@ defmodule Plug.Builder do
 
   """
   defmacro plug(plug, opts \\ []) do
+    plug = Macro.expand(plug, %{__CALLER__ | function: {:init, 1}})
+
     quote do
       @plugs {unquote(plug), unquote(opts), true}
     end
