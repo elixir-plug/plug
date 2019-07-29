@@ -10,6 +10,18 @@ Plug is:
 
 [Documentation for Plug is available online](http://hexdocs.pm/plug/).
 
+## Installation
+
+In order to use Plug, you need a webserver and its bindings for Plug. The Cowboy webserver is the most common one, which can be installed by adding `plug_cowboy` as a dependency to your `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:plug_cowboy, "~> 2.0"}
+  ]
+end
+```
+
 ## Hello world
 
 ```elixir
@@ -37,19 +49,39 @@ The snippet above shows a very simple example on how to use Plug. Save that snip
     iex> {:ok, _} = Plug.Cowboy.http MyPlug, []
     {:ok, #PID<...>}
 
-Access [http://localhost:4000/](http://localhost:4000/) and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section below.
+Access [http://localhost:4000/](http://localhost:4000/) and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section next.
 
-## Installation
+## Supervised handlers
 
-In order to use Plug, you need a webserver and its bindings for Plug. For example, to use the Cowboy webserver with Plug, just add the `plug_cowboy` dependency to your `mix.exs`:
+On a production system, you likely want to start your Plug pipeline under your application's supervision tree. Start a new Elixir project with the `--sup` flag:
+
+    $ mix new my_app --sup
+
+and then update `lib/my_app/application.ex` as follows:
 
 ```elixir
-def deps do
-  [
-    {:plug_cowboy, "~> 2.0"}
-  ]
+defmodule MyApp do
+  # See https://hexdocs.pm/elixir/Application.html
+  # for more information on OTP Applications
+  @moduledoc false
+
+  use Application
+
+  def start(_type, _args) do
+    # List all child processes to be supervised
+    children = [
+      {Plug.Cowboy, scheme: :http, plug: MyPlug, options: [port: 4001]}
+    ]
+
+    # See https://hexdocs.pm/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
 end
 ```
+
+Now run `mix run --no-halt` and it will start your application with a web server running at `localhost:4001`.
 
 ## Supported Versions
 
@@ -146,38 +178,6 @@ Note `Plug.Router` compiles all of your routes into a single function and relies
 This also means that a catch all `match` block is recommended to be defined as in the example above, otherwise routing fails with a function clause error (as it would in any regular Elixir function).
 
 Each route needs to return the connection as per the Plug specification. See the `Plug.Router` docs for more information.
-
-## Supervised handlers
-
-On a production system, you likely want to start your Plug pipeline under your application's supervision tree. Plug provides the `child_spec/3` function to do just that. Start a new Elixir project with the `--sup` flag:
-
-```elixir
-$ mix new my_app --sup
-```
-
-and then update `lib/my_app/application.ex` as follows:
-
-```elixir
-defmodule MyApp do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
-  @moduledoc false
-
-  use Application
-
-  def start(_type, _args) do
-    # List all child processes to be supervised
-    children = [
-      Plug.Cowboy.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001])
-    ]
-
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
-    Supervisor.start_link(children, opts)
-  end
-end
-```
 
 ## Testing plugs
 
