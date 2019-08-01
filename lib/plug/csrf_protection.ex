@@ -163,8 +163,8 @@ defmodule Plug.CSRFProtection do
       end)
 
   """
-  def load_state(secret_key_base, csrf_token) when is_binary(csrf_token) or is_nil(csrf_token) do
-    Process.put(:plug_unmasked_csrf_token, csrf_token)
+  def load_state(secret_key_base, csrf_state) when is_binary(csrf_state) or is_nil(csrf_state) do
+    Process.put(:plug_unmasked_csrf_token, csrf_state)
     Process.put(:plug_csrf_token_per_host, %{secret_key_base: secret_key_base})
     :ok
   end
