@@ -140,7 +140,28 @@ defmodule Plug.CSRFProtection do
   Load CSRF state into the process dictionary.
 
   This can be used to load CSRF state into another process.
-  See `dump_state/0` and `dump_state_from_conn/2` for dumping it.
+  See `dump_state/0` and `dump_state_from_session/2` for dumping it.
+
+  ## Examples
+
+  To dump the state from the current process and load into another one:
+
+      csrf_state = Plug.CSRFProtection.dump_state()
+      secret_key_base = conn.secret_key_base
+
+      Task.async(fn ->
+        Plug.CSRFProtection.load_state(secret_key_base, csrf_state)
+      end)
+
+  If you have a session but the CSRF state was not loaded into the
+  current process, you can dump the state from the session:
+
+      csrf_state = Plug.CSRFProtection.dump_state_from_session(session["_csrf_token"])
+
+      Task.async(fn ->
+        Plug.CSRFProtection.load_state(secret_key_base, csrf_state)
+      end)
+
   """
   def load_state(secret_key_base, csrf_token) when is_binary(csrf_token) or is_nil(csrf_token) do
     Process.put(:plug_unmasked_csrf_token, csrf_token)
