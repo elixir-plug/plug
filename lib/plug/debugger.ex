@@ -84,6 +84,9 @@ defmodule Plug.Debugger do
 
       txmt://open/?url=file://__FILE__&line=__LINE__
 
+  Or, using Visual Studio Code:
+
+      vscode://file/__FILE__:__LINE__
   """
 
   @already_sent {:plug_conn, :sent}
