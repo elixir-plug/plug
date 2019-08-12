@@ -39,7 +39,7 @@ defmodule Plug.Conn.CookiesTest do
 
     assert encode("foo", %{value: "bar", same_site: nil}) == "foo=bar; path=/; HttpOnly"
 
-    assert_raise Plug.Conn.Cookies.InvalidOptionError, fn ->
+    assert_raise ArgumentError, fn ->
       encode("foo", %{value: "bar", same_site: true})
     end
   end
