@@ -28,6 +28,8 @@ defmodule Plug.Parsers.MULTIPART do
       For instance, `include_unnamed_parts_at: "_parts"` would result in
       a body parameter `"_parts"`, containing a list of parts, each with `:body`
       and `:headers` fields, like `[%{ body: "{}", headers: [{"content-type", "application/json"}]}]`.
+  * `:validate_utf8` - specifies whether multipart body parts should be validated
+      as utf8 binaries. Defaults to true.
   """
 
   @behaviour Plug.Parsers
@@ -98,7 +100,10 @@ defmodule Plug.Parsers.MULTIPART do
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
 
-        Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+        if Keyword.get(opts, :validate_utf8, true) do
+          Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+        end
+
         {conn, limit, [{name, body} | acc]}
 
       {:part, name} ->
