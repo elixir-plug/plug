@@ -218,6 +218,43 @@ defmodule Plug.ParsersTest do
     assert part3.headers == []
   end
 
+  test "validates utf8 in multipart body" do
+    latin1_binary = :unicode.characters_to_binary('hello©', :utf8, :latin1)
+
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    #{latin1_binary}\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    assert_raise Plug.Parsers.BadEncodingError, fn ->
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse()
+    end
+  end
+
+  test "does not validate utf8 in multipart body opt" do
+    latin1_binary = :unicode.characters_to_binary('hello©', :utf8, :latin1)
+
+    multipart = """
+    ------w58EW1cEpjzydSCq\r
+    Content-Disposition: form-data; name=\"name\"\r
+    \r
+    #{latin1_binary}\r
+    ------w58EW1cEpjzydSCq--\r
+    """
+
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> parse(validate_utf8: false)
+
+    assert params["name"] == latin1_binary
+  end
+
   test "parses empty multipart body" do
     %{params: params} =
       conn(:post, "/", "")
