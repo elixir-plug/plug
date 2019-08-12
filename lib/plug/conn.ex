@@ -1350,9 +1350,11 @@ defmodule Plug.Conn do
     * `:max_age` - the cookie max-age, in seconds. Providing a value for this
       option will set both the _max-age_ and _expires_ cookie attributes
     * `:path` - the path the cookie applies to
-    * `:http_only` - when `false`, the cookie is accessible beyond HTTP
+    * `:http_only` - when `false`, the cookie is accessible beyond HTTP (eg, from JavaScript)
     * `:secure` - if the cookie must be sent only over https. Defaults
       to true when the connection is HTTPS
+    * `:same_site` - determines which cross-site requests, if any, may include the cookie.
+      Valid values are :lax and :strict
     * `:extra` - string to append to cookie. Use this to take advantage of
       non-standard cookie attributes.
 

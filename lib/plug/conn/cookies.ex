@@ -3,6 +3,14 @@ defmodule Plug.Conn.Cookies do
   Conveniences for encoding and decoding cookies.
   """
 
+  defmodule InvalidOptionError do
+    defexception message: "header is invalid"
+
+    @moduledoc ~S"""
+    Error raised when trying to set an invalid cookie header option, such as "SameSite=true".
+    """
+  end
+
   @doc """
   Decodes the given cookies as given in a request header.
 
@@ -62,6 +70,7 @@ defmodule Plug.Conn.Cookies do
       emit_if(opts[:max_age], &encode_max_age(&1, opts)),
       emit_if(Map.get(opts, :secure, false), "; secure"),
       emit_if(Map.get(opts, :http_only, true), "; HttpOnly"),
+      emit_if(Map.get(opts, :same_site), &encode_same_site(&1)),
       emit_if(opts[:extra], &["; ", &1])
     ])
   end
@@ -71,6 +80,13 @@ defmodule Plug.Conn.Cookies do
     time = add_seconds(time, max_age)
     ["; expires=", rfc2822(time), "; max-age=", Integer.to_string(max_age)]
   end
+
+  defp encode_same_site(:lax), do: "; SameSite=Lax"
+  defp encode_same_site(:strict), do: "; SameSite=Strict"
+  defp encode_same_site(nil), do: nil
+
+  defp encode_same_site(_),
+    do: raise(InvalidOptionError, "same_site cookie option must be one of :lax, :strict, or nil")
 
   defp emit_if(value, fun_or_string) do
     cond do

@@ -30,6 +30,20 @@ defmodule Plug.Conn.CookiesTest do
              "foo=bar; path=/; domain=google.com; HttpOnly"
   end
 
+  test "encodes with :same_site option" do
+    assert encode("foo", %{value: "bar", same_site: :lax}) ==
+             "foo=bar; path=/; HttpOnly; SameSite=Lax"
+
+    assert encode("foo", %{value: "bar", same_site: :strict}) ==
+             "foo=bar; path=/; HttpOnly; SameSite=Strict"
+
+    assert encode("foo", %{value: "bar", same_site: nil}) == "foo=bar; path=/; HttpOnly"
+
+    assert_raise Plug.Conn.Cookies.InvalidOptionError, fn ->
+      encode("foo", %{value: "bar", same_site: true})
+    end
+  end
+
   test "encodes with :secure option" do
     assert encode("foo", %{value: "bar", secure: true}) == "foo=bar; path=/; secure; HttpOnly"
   end

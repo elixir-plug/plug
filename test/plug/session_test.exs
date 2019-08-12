@@ -20,6 +20,7 @@ defmodule Plug.SessionTest do
         key: "foobar",
         secure: true,
         path: "some/path",
+        same_site: :strict,
         extra: "extra"
       )
 
@@ -27,8 +28,15 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
 
-    assert %{"foobar" => %{value: _, secure: true, path: "some/path", extra: "extra"}} =
-             conn.resp_cookies
+    assert %{
+             "foobar" => %{
+               value: _,
+               secure: true,
+               path: "some/path",
+               extra: "extra",
+               same_site: :strict
+             }
+           } = conn.resp_cookies
 
     refute Map.has_key?(conn.resp_cookies["foobar"], :http_only)
 
@@ -39,6 +47,7 @@ defmodule Plug.SessionTest do
         store: ProcessStore,
         key: "unsafe_foobar",
         http_only: false,
+        same_site: nil,
         path: "some/path"
       )
 
@@ -46,7 +55,7 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
 
-    assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} =
+    assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path", same_site: nil}} =
              conn.resp_cookies
   end
 

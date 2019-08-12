@@ -829,9 +829,13 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/"), 200, "ok")
     assert get_resp_header(conn, "set-cookie") == []
 
-    conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
-    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz"}
-    assert get_resp_header(conn, "set-cookie") == ["foo=baz; path=/baz; HttpOnly"]
+    conn =
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "baz", path: "/baz", same_site: :lax)
+      |> send_resp(200, "ok")
+
+    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", same_site: :lax}
+    assert get_resp_header(conn, "set-cookie") == ["foo=baz; path=/baz; HttpOnly; SameSite=Lax"]
 
     conn =
       conn(:get, "/")
