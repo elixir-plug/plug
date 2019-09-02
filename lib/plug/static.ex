@@ -72,9 +72,14 @@ defmodule Plug.Static do
     * `:only` - filters which requests to serve. This is useful to avoid
       file system traversals on every request when this plug is mounted
       at `"/"`. For example, if `only: ["images", "favicon.ico"]` is
-      specified, only files in the "images" directory and the exact
-      "favicon.ico" file will be served by `Plug.Static`. Defaults
-      to `nil` (no filtering).
+      specified, only files in the "images" directory and the
+      "favicon.ico" file will be served by `Plug.Static`.
+      Note that `Plug.Static` matches these filters against request
+      uri and not against the filesystem. When requesting
+      a file with name containing non-ascii or special characters,
+      you should use urlencoded form. For example, you should write
+      `only: ["file%20name"]` instead of `only: ["file name"]`.
+      Defaults to `nil` (no filtering).
 
     * `:only_matching` - a relaxed version of `:only` that will
       serve any request as long as one of the given values matches the
