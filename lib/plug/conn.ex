@@ -978,7 +978,9 @@ defmodule Plug.Conn do
 
     if byte_size(query_string) > length do
       raise InvalidQueryError,
-            "maximum query string length is #{length}, got a query with #{byte_size(query_string)} bytes"
+        message:
+          "maximum query string length is #{length}, got a query with #{byte_size(query_string)} bytes",
+        plug_status: 414
     end
 
     query_params = Plug.Conn.Query.decode(query_string)

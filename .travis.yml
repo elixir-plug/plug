@@ -13,7 +13,7 @@ jobs:
     - stage: test
 
     - elixir: '1.5.0'
-      otp_release: '19.1'
+      otp_release: '19.3'
 
     - stage: check formatted
       script: mix format --check-formatted
