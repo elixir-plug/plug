@@ -44,12 +44,12 @@ defmodule Plug.Conn.Query do
   Encoding named lists:
 
       iex> encode(%{foo: ["bar", "baz"]})
-      "foo[]=bar&foo[]=baz"
+      "foo%5B%5D=bar&foo%5B%5D=baz"
 
   Encoding nested structures:
 
       iex> encode(%{foo: %{bar: "baz"}})
-      "foo[bar]=baz"
+      "foo%5Bbar%5D=baz"
 
   """
 
@@ -201,7 +201,7 @@ defmodule Plug.Conn.Query do
                 "got: #{inspect(value)}"
 
       value ->
-        [?&, encode_pair(parent_field <> "[]", value, encoder)]
+        [?&, encode_pair(parent_field <> "%5B%5D", value, encoder)]
     end
 
     list
@@ -229,7 +229,7 @@ defmodule Plug.Conn.Query do
           if parent_field == "" do
             encode_key(field)
           else
-            parent_field <> "[" <> encode_key(field) <> "]"
+            parent_field <> "%5B" <> encode_key(field) <> "%5D"
           end
 
         [?&, encode_pair(field, value, encoder)]

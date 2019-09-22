@@ -106,43 +106,46 @@ defmodule Plug.Conn.QueryTest do
     assert encode(%{foo: nil}) == "foo="
     assert encode(%{foo: "bå®"}) == "foo=b%C3%A5%C2%AE"
     assert encode(%{foo: 1337}) == "foo=1337"
-    assert encode(%{foo: ["bar", "baz"]}) == "foo[]=bar&foo[]=baz"
+    assert encode(%{foo: ["bar", "baz"]}) == "foo%5B%5D=bar&foo%5B%5D=baz"
 
-    assert encode(%{users: %{name: "hello", age: 17}}) == "users[age]=17&users[name]=hello"
-    assert encode(%{users: [name: "hello", age: 17]}) == "users[name]=hello&users[age]=17"
+    assert encode(%{users: %{name: "hello", age: 17}}) ==
+             "users%5Bage%5D=17&users%5Bname%5D=hello"
+
+    assert encode(%{users: [name: "hello", age: 17]}) == "users%5Bname%5D=hello&users%5Bage%5D=17"
 
     assert encode(%{users: [name: "hello", age: 17, name: "goodbye"]}) ==
-             "users[name]=hello&users[age]=17"
+             "users%5Bname%5D=hello&users%5Bage%5D=17"
 
     assert encode(%{"my weird field": "q1!2\"'w$5&7/z8)?"}) ==
              "my+weird+field=q1%212%22%27w%245%267%2Fz8%29%3F"
 
     assert encode(%{foo: %{"my weird field": "q1!2\"'w$5&7/z8)?"}}) ==
-             "foo[my+weird+field]=q1%212%22%27w%245%267%2Fz8%29%3F"
+             "foo%5Bmy+weird+field%5D=q1%212%22%27w%245%267%2Fz8%29%3F"
 
     assert encode(%{}) == ""
     assert encode([]) == ""
 
-    assert encode(%{foo: [""]}) == "foo[]="
+    assert encode(%{foo: [""]}) == "foo%5B%5D="
 
-    assert encode(%{foo: ["bar", "baz"], bat: [1, 2]}) == "bat[]=1&bat[]=2&foo[]=bar&foo[]=baz"
+    assert encode(%{foo: ["bar", "baz"], bat: [1, 2]}) ==
+             "bat%5B%5D=1&bat%5B%5D=2&foo%5B%5D=bar&foo%5B%5D=baz"
 
-    assert encode(%{x: %{y: %{z: 1}}}) == "x[y][z]=1"
-    assert encode(%{x: %{y: %{z: [1]}}}) == "x[y][z][]=1"
-    assert encode(%{x: %{y: %{z: [1, 2]}}}) == "x[y][z][]=1&x[y][z][]=2"
-    assert encode(%{x: %{y: [%{z: 1}]}}) == "x[y][][z]=1"
-    assert encode(%{x: %{y: [%{z: [1]}]}}) == "x[y][][z][]=1"
+    assert encode(%{x: %{y: %{z: 1}}}) == "x%5By%5D%5Bz%5D=1"
+    assert encode(%{x: %{y: %{z: [1]}}}) == "x%5By%5D%5Bz%5D%5B%5D=1"
+    assert encode(%{x: %{y: %{z: [1, 2]}}}) == "x%5By%5D%5Bz%5D%5B%5D=1&x%5By%5D%5Bz%5D%5B%5D=2"
+    assert encode(%{x: %{y: [%{z: 1}]}}) == "x%5By%5D%5B%5D%5Bz%5D=1"
+    assert encode(%{x: %{y: [%{z: [1]}]}}) == "x%5By%5D%5B%5D%5Bz%5D%5B%5D=1"
   end
 
   test "encode nested lists" do
-    assert encode(%{"x" => [[[1]]]}) == "x[][][]=1"
+    assert encode(%{"x" => [[[1]]]}) == "x%5B%5D%5B%5D%5B%5D=1"
   end
 
   test "encode with custom encoder" do
     encoder = &(&1 |> to_string |> String.duplicate(2))
 
     assert encode(%{foo: "bar", baz: "bat"}, encoder) == "baz=batbat&foo=barbar"
-    assert encode(%{foo: ["bar", "baz"]}, encoder) == "foo[]=barbar&foo[]=bazbaz"
+    assert encode(%{foo: ["bar", "baz"]}, encoder) == "foo%5B%5D=barbar&foo%5B%5D=bazbaz"
     assert encode(%{foo: URI.parse("/bar")}, encoder) == "foo=%2Fbar%2Fbar"
   end
 
