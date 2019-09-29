@@ -21,7 +21,7 @@ defmodule Plug do
 
   The result returned by `init/1` is passed as second argument to `call/2`. Note
   that `init/1` may be called during compilation and as such it must not return
-  pids, ports or values that are not specific to the runtime.
+  pids, ports or values that are specific to the runtime.
 
   The API expected by a module plug is defined as a behaviour by the
   `Plug` module (this module).
