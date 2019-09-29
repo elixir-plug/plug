@@ -63,7 +63,7 @@ defmodule Plug.Debugger do
   You may pass an MFA (`{module, function, args}`) to be invoked when an
   error is rendered which provides a custom banner at the top of the
   debugger page. The function receives the following arguments, with the
-  passed `args` concentated at the end:
+  passed `args` concatenated at the end:
 
       [conn, status, kind, reason, stacktrace]
 
