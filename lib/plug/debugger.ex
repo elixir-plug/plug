@@ -194,13 +194,7 @@ defmodule Plug.Debugger do
 
       send_resp(conn, status, template_html(assigns))
     else
-      # TODO: Remove exported check once we depend on Elixir v1.5 only
-      {reason, stack} =
-        if function_exported?(Exception, :blame, 3) do
-          apply(Exception, :blame, [kind, reason, stack])
-        else
-          {reason, stack}
-        end
+      {reason, stack} = Exception.blame(kind, reason, stack)
 
       conn = put_resp_content_type(conn, "text/markdown")
 
@@ -352,9 +346,8 @@ defmodule Plug.Debugger do
   end
 
   defp get_clauses(module, fun, args) do
-    # TODO: Remove exported check once we depend on Elixir v1.5 only
-    with true <- is_list(args) and function_exported?(Exception, :blame_mfa, 3),
-         {:ok, kind, clauses} <- apply(Exception, :blame_mfa, [module, fun, args]) do
+    with true <- is_list(args),
+         {:ok, kind, clauses} <- Exception.blame_mfa(module, fun, args) do
       top_10 =
         clauses
         |> Enum.take(10)
