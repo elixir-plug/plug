@@ -186,11 +186,9 @@ If no custom parameters are specified, Erlang's `:ssl` uses its built-in default
 
 Whenever a certificate is about to expire, when the contents of the certificate have been updated, or when the certificate is 're-keyed', the HTTPS server needs to be updated with the new certificate and/or key.
 
-When using the `:certfile` and `:keyfile` parameters to reference PEM files on disk, replacing the certificate and key is as simple as overwriting the files. Erlang's `:ssl` application periodically checks the timestamps of such files, and reloads them if it detects a change. It may be best to use symbolic links that point to versioned copies of the files, to allow for quick rollback in case of problems.
+When using the `:certfile` and `:keyfile` parameters to reference PEM files on disk, replacing the certificate and key is as simple as overwriting the files. Erlang's `:ssl` application periodically reloads any referenced files, with changes taking effect in subsequent handshakes. It may be best to use symbolic links that point to versioned copies of the files, to allow for quick rollback in case of problems.
 
-Note that there is a potential race condition when both the certificate and the key need to be replaced at the same time: if the `:ssl` application detects the change of one file before the other file is updated, the partial update can leave the HTTPS server with a mismatched private key. This can be avoiding by placing the private key in the same PEM file as the certificate, and omitting the `:keyfile` option. This configuration allows atomic updates, and it works because `:ssl` looks for a private key entry in the `:certfile` PEM file if no `:key` or `:keyfile` option is specified.
-
-Also note that some filesystems, such as network and container filesystems or VM-mounted volumes, may not support reliable detection of file changes through metadata.
+Note that there is a potential race condition when both the certificate and the key need to be replaced at the same time: if the `:ssl` application reloads one file before the other file is updated, the partial update can leave the HTTPS server with a mismatched private key. This can be avoiding by placing the private key in the same PEM file as the certificate, and omitting the `:keyfile` option. This configuration allows atomic updates, and it works because `:ssl` looks for a private key entry in the `:certfile` PEM file if no `:key` or `:keyfile` option is specified.
 
 While it is possible to update the DER binaries passed in the `:cert` or `:key` options (as well as any other TLS protocol parameters) at runtime, this requires knowledge of the internals of the Plug adapter being used, and is therefore beyond the scope of this document.
 
