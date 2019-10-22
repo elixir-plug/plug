@@ -122,7 +122,23 @@ defmodule Plug.Debugger do
 
       def call(conn, opts) do
         try do
-          super(conn, opts)
+          case conn do
+            %Plug.Conn{path_info: ["__debug__", "action"], params: params} ->
+              %Plug.Conn{params: params} = Plug.Parsers.call(conn, Plug.Parsers.init(parsers: [:urlencoded]))
+
+              {module, function, args} = 
+                params["encoded_action"] 
+                |> Base.decode64!() 
+                |> :erlang.binary_to_term()
+                
+              apply(module, function, args)
+
+              conn
+              |> Plug.Conn.put_resp_header("location", params["last_path"])
+              |> send_resp(302, ~s|<html><body>You are being <a href="#{params["last_path"]}">redirected</a>.</body></html>|)
+            _ ->
+              super(conn, opts)
+          end
         rescue
           e in Plug.Conn.WrapperError ->
             %{conn: conn, kind: kind, reason: reason, stack: stack} = e
@@ -180,6 +196,23 @@ defmodule Plug.Debugger do
 
     if accepts_html?(get_req_header(conn, "accept")) do
       conn = put_resp_content_type(conn, "text/html")
+      impl = Plug.Exception.impl_for(reason)
+
+      actions =
+        if Code.ensure_loaded?(impl) && function_exported?(impl, :actions, 1) do
+          reason
+          |> Plug.Exception.actions()
+          |> Enum.map(fn {action_key, metadata} ->
+            encoded_action =
+              metadata[:action]
+              |> :erlang.term_to_binary()
+              |> Base.encode64()
+
+            {action_key, Map.put(metadata, :encoded_action, encoded_action)}
+          end)
+        else
+          %{}
+        end
 
       assigns = [
         conn: conn,
@@ -189,7 +222,9 @@ defmodule Plug.Debugger do
         session: session,
         params: params,
         style: style,
-        banner: banner
+        banner: banner,
+        actions: actions,
+        last_path: conn.request_path
       ]
 
       send_resp(conn, status, template_html(assigns))

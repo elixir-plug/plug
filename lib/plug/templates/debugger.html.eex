@@ -659,6 +659,14 @@
             <% end %>
         </header>
 
+        <%= for {_action_key, %{label: action_label, encoded_action: encoded_action}} <- @actions do %>
+            <form action="/__debug__/action" method="POST">
+                <input type="hidden" name="encoded_action" value="<%= encoded_action %>">
+                <input type="hidden" name="last_path" value="<%= @last_path %>">
+                <button type="submit"> <%= action_label %> </button>
+            </form>
+        <% end %>
+
     <%= if @banner do %>
         </div>
         <div class="banner"><%= @banner %></div>
