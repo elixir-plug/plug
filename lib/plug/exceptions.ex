@@ -12,16 +12,45 @@ defprotocol Plug.Exception do
 
   @fallback_to_any true
 
+  @type action :: %{label: String.t(), handler: {module(), atom(), list()}}
+
   @doc """
   Receives an exception and returns its HTTP status code.
   """
   @spec status(t) :: Plug.Conn.status()
   def status(exception)
+
+  @doc """
+  Receives an exception and returns the possible actions that could be triggered for that error.
+  Should return a list of actions in the following structure:
+
+      %{
+        label: "Text that will be displayed in the button",
+        handler: {Module, :function, [args]}
+      }
+
+  Where:
+
+    * `label` a string/binary that names this action
+    * `handler` a MFArgs that will be executed when this action is triggered
+
+  It will be rendered in the `Plug.Debugger` generated error page as buttons showing the `label`
+  that upon pressing executes the MFArgs defined in the `handler`.
+
+  ## Examples
+
+       defimpl Plug.Exception, for: ActionableExample do
+        def actions(_), do: %{label: "Print HI", handler: {IO, :puts, ["Hi!"]}}}
+       end
+  """
+  @spec actions(t) :: [action()]
+  def actions(exception)
 end
 
 defimpl Plug.Exception, for: Any do
   def status(%{plug_status: status}) when is_integer(status), do: status
   def status(_), do: 500
+  def actions(_exception), do: []
 end
 
 defmodule Plug.BadRequestError do

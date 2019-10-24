@@ -122,7 +122,13 @@ defmodule Plug.Debugger do
 
       def call(conn, opts) do
         try do
-          super(conn, opts)
+          case conn do
+            %Plug.Conn{path_info: ["__plug__", "debugger", "action"], method: "POST"} ->
+              Plug.Debugger.run_action(conn)
+
+            %Plug.Conn{} ->
+              super(conn, opts)
+          end
         rescue
           e in Plug.Conn.WrapperError ->
             %{conn: conn, kind: kind, reason: reason, stack: stack} = e
@@ -180,6 +186,8 @@ defmodule Plug.Debugger do
 
     if accepts_html?(get_req_header(conn, "accept")) do
       conn = put_resp_content_type(conn, "text/html")
+      actions = encoded_actions_for_exception(reason, conn)
+      last_path = actions_redirect_path(conn)
 
       assigns = [
         conn: conn,
@@ -189,7 +197,9 @@ defmodule Plug.Debugger do
         session: session,
         params: params,
         style: style,
-        banner: banner
+        banner: banner,
+        actions: actions,
+        last_path: last_path
       ]
 
       send_resp(conn, status, template_html(assigns))
@@ -208,6 +218,64 @@ defmodule Plug.Debugger do
 
       send_resp(conn, status, template_markdown(assigns))
     end
+  end
+
+  def run_action(%Plug.Conn{} = conn) do
+    with %Plug.Conn{body_params: params} <- fetch_body_params(conn),
+         secret <- generate_actions_secret(conn),
+         {:ok, verified_encoded_action_handler} <-
+           Plug.Crypto.MessageVerifier.verify(params["encoded_handler"], secret) do
+      {module, function, args} = Plug.Crypto.safe_binary_to_term(verified_encoded_action_handler)
+      apply(module, function, args)
+
+      conn
+      |> Plug.Conn.put_resp_header("location", params["last_path"] || "/")
+      |> send_resp(302, "")
+      |> halt()
+    else
+      _ -> raise "could not run Plug.Debugger action"
+    end
+  end
+
+  def encoded_actions_for_exception(exception, conn) do
+    exception_implementation = Plug.Exception.impl_for(exception)
+
+    implements_actions? =
+      Code.ensure_loaded?(exception_implementation) &&
+        function_exported?(exception_implementation, :actions, 1)
+
+    # TODO: Remove this check in future Plug versions
+    # TODO: Remove implements_actions? in future Plug versions
+    if implements_actions? && conn.secret_key_base do
+      actions_secret = generate_actions_secret(conn)
+      actions = Plug.Exception.actions(exception)
+
+      Enum.map(actions, fn %{label: label, handler: handler} ->
+        encoded_handler =
+          handler
+          |> :erlang.term_to_binary()
+          |> Plug.Crypto.MessageVerifier.sign(actions_secret)
+
+        %{label: label, encoded_handler: encoded_handler}
+      end)
+    else
+      []
+    end
+  end
+
+  def actions_redirect_path(%Plug.Conn{method: "GET", request_path: request_path}),
+    do: request_path
+
+  def actions_redirect_path(conn) do
+    case get_req_header(conn, "referer") do
+      [referer] -> referer
+      [] -> "/"
+    end
+  end
+
+  def generate_actions_secret(%Plug.Conn{secret_key_base: secret_key_base}) do
+    actions_secret_salt = "plug-debugger-actions"
+    Plug.Crypto.KeyGenerator.generate(secret_key_base, actions_secret_salt, cache: Plug.Keys)
   end
 
   defp accepts_html?(_accept_header = []), do: false
@@ -230,6 +298,9 @@ defmodule Plug.Debugger do
         params -> params
       end
   end
+
+  @parsers_opts Plug.Parsers.init(parsers: [:urlencoded])
+  defp fetch_body_params(conn), do: Plug.Parsers.call(conn, @parsers_opts)
 
   defp status(:error, error), do: Plug.Exception.status(error)
   defp status(_, _), do: 500
