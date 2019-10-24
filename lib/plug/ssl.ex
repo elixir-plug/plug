@@ -37,7 +37,7 @@ defmodule Plug.SSL do
 
     * `:rewrite_on` - rewrites the scheme to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
-    * `:expires` - seconds to expires for HSTS, defaults to `7884000` (three months)
+    * `:expires` - seconds to expires for HSTS, defaults to `31_536_000` (1 year)
     * `:preload` - a boolean to request inclusion on the HSTS preload list
        (for full set of required flags, see: [Chromium HSTS submission site](https://hstspreload.org)),
       defaults to `false`
