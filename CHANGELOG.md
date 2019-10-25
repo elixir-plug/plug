@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.9.0-dev
+
+### Bug fixes
+
+  * [Plug.SSL] Rewrite port when rewriting a request coming to a standard port
+  * [Plug.CSRFProtection] Generate url safe CSRF masks
+
+### Enhancements
+
+  * [Plug] Make Plug fully compatible with new Elixir child specs
+  * [Plug.Parsers] Add option to skip utf8 validation
+  * [Plug.Parsers] Use HTTP status code 414 when query string is too long
+
+## v1.8.3 (2019-07-28)
+
+### Bug fixes
+
+  * [Plug.Builder] Ensure init_mode option is respected within the Plug.Builder DSL itself
+  * [Plug.Session] Fix dropping session with custom max_age
+
 ## v1.8.2 (2019-06-01)
 
 ### Enhancements
