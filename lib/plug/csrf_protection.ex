@@ -362,13 +362,11 @@ defmodule Plug.CSRFProtection do
 
   defp valid_csrf_token?(_conn, _csrf_token, _user_token, _allowed_host), do: false
 
-  # TODO: We should change the generator to use url_encode64
-  # and then reverse the clauses here. In a future release,
-  # we can then remove the decode64 variant as the tokens here
-  # are meant to be short-lived anyway.
+  # TODO: Remove the decode64 variant in future releases
+  # as the tokens here are meant to be short-lived anyway.
   defp valid_masked_token?(csrf_token, user_token, mask) do
-    with :error <- Base.decode64(user_token),
-         :error <- Base.url_decode64(user_token) do
+    with :error <- Base.url_decode64(user_token),
+         :error <- Base.decode64(user_token) do
       false
     else
       {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
@@ -421,7 +419,7 @@ defmodule Plug.CSRFProtection do
 
   defp mask(token) do
     mask = generate_token()
-    Base.encode64(Plug.Crypto.mask(token, mask)) <> mask
+    Base.url_encode64(Plug.Crypto.mask(token, mask)) <> mask
   end
 
   defp unmasked_csrf_token do
