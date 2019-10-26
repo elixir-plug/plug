@@ -8,11 +8,11 @@ defmodule Plug.DebuggerTest do
     defexception plug_status: 403, message: "oops"
   end
 
-  defmodule ActionableException do
+  defmodule ActionableError do
     defexception message: "Actionable Exception Error"
   end
 
-  defimpl Plug.Exception, for: ActionableException do
+  defimpl Plug.Exception, for: ActionableError do
     def status(_), do: 418
 
     def actions(_),
@@ -66,7 +66,7 @@ defmodule Plug.DebuggerTest do
 
     match "/actionable_exception" do
       _ = conn
-      raise ActionableException
+      raise ActionableError
     end
   end
 
@@ -352,14 +352,14 @@ defmodule Plug.DebuggerTest do
   end
 
   test "render actions when an implementation of `Plug.Exception` has it" do
-    [%{label: action_label}] = Plug.Exception.actions(%ActionableException{})
+    [%{label: action_label}] = Plug.Exception.actions(%ActionableError{})
 
     conn =
       conn(:get, "/actionable_exception")
       |> put_req_header("accept", "text/html")
       |> Map.put(:secret_key_base, "secret")
 
-    capture_log(fn -> assert_raise(ActionableException, fn -> Router.call(conn, []) end) end)
+    capture_log(fn -> assert_raise(ActionableError, fn -> Router.call(conn, []) end) end)
 
     {_status, _headers, body} = sent_resp(conn)
     assert body =~ ~s|action="/__plug__/debugger/action" method="POST"|
@@ -382,7 +382,7 @@ defmodule Plug.DebuggerTest do
     conn = put_req_header(conn(:get, "/actionable_exception"), "accept", "text/html")
 
     capture_log(fn ->
-      assert_raise(ActionableException, fn ->
+      assert_raise(ActionableError, fn ->
         Router.call(conn, [])
       end)
     end)
@@ -398,7 +398,7 @@ defmodule Plug.DebuggerTest do
       |> Map.put(:secret_key_base, "secret")
 
     capture_log(fn ->
-      assert_raise(ActionableException, fn ->
+      assert_raise(ActionableError, fn ->
         Router.call(conn, [])
       end)
     end)
@@ -416,7 +416,7 @@ defmodule Plug.DebuggerTest do
       |> put_req_header("accept", "text/html")
       |> Map.put(:secret_key_base, "secret")
 
-    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableError end)
     assert body =~ ~s|<input type="hidden" name="last_path" value="#{path}">|
   end
 
@@ -430,7 +430,7 @@ defmodule Plug.DebuggerTest do
       |> put_req_header("referer", referer)
       |> Map.put(:secret_key_base, "secret")
 
-    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableError end)
     assert body =~ ~s|<input type="hidden" name="last_path" value="#{referer}">|
   end
 
@@ -440,7 +440,7 @@ defmodule Plug.DebuggerTest do
       |> put_req_header("accept", "text/html")
       |> Map.put(:secret_key_base, "secret")
 
-    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableError end)
     assert body =~ ~s|<input type="hidden" name="last_path" value="/">|
   end
 
@@ -449,7 +449,7 @@ defmodule Plug.DebuggerTest do
 
     [%{encoded_handler: encoded_handler}] =
       Plug.Debugger.encoded_actions_for_exception(
-        %ActionableException{},
+        %ActionableError{},
         %Plug.Conn{secret_key_base: secret_key_base}
       )
 

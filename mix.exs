@@ -15,6 +15,7 @@ defmodule Plug.MixProject do
       description: @description,
       name: "Plug",
       xref: [exclude: @xref_exclude],
+      consolidate_protocols: Mix.env() != :test,
       docs: [
         extras: [
           "README.md",
