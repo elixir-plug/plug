@@ -638,6 +638,22 @@
             font-size: <%= :math.pow(1.1, -1) %>em;
         }
     }
+
+    .action-form { margin: 10px; }
+
+    .action-button {
+        border-color: <%= @style.primary %>;
+        color: <%= @style.primary %>;
+        border-radius: 3px;
+        padding-left: 20px;
+        padding-right: 20px;
+        box-shadow: 2px 2px 2px <%= @style.accent %>
+    }
+
+    .action-button:active {
+        box-shadow: none;
+        transform: translate(2px, 2px);
+    }
     </style>
 </head>
 <body>
@@ -658,6 +674,14 @@
             <p class="detail"><%= h detail %></p>
             <% end %>
         </header>
+
+        <%= for %{label: label, encoded_handler: encoded_handler} <- @actions do %>
+            <form class="action-form" action="/__plug__/debugger/action" method="POST">
+                <input type="hidden" name="encoded_handler" value="<%= encoded_handler %>">
+                <input type="hidden" name="last_path" value="<%= @last_path %>">
+                <button class="action-button" type="submit"> <%= label %> </button>
+            </form>
+        <% end %>
 
     <%= if @banner do %>
         </div>

@@ -8,6 +8,17 @@ defmodule Plug.DebuggerTest do
     defexception plug_status: 403, message: "oops"
   end
 
+  defmodule ActionableException do
+    defexception message: "Actionable Exception Error"
+  end
+
+  defimpl Plug.Exception, for: ActionableException do
+    def status(_), do: 418
+
+    def actions(_),
+      do: [%{label: "Send message", handler: {Process, :send, [self(), :actionable_error, []]}}]
+  end
+
   defmodule Router do
     use Plug.Router
     use Plug.Debugger, otp_app: :plug
@@ -51,6 +62,11 @@ defmodule Plug.DebuggerTest do
         kind: :error,
         stack: stack,
         reason: Exception.exception([])
+    end
+
+    match "/actionable_exception" do
+      _ = conn
+      raise ActionableException
     end
   end
 
@@ -333,6 +349,142 @@ defmodule Plug.DebuggerTest do
 
     assert conn.resp_body =~ "# Plug.Parsers.UnsupportedMediaTypeError at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
+  end
+
+  test "render actions when an implementation of `Plug.Exception` has it" do
+    [%{label: action_label}] = Plug.Exception.actions(%ActionableException{})
+
+    conn =
+      conn(:get, "/actionable_exception")
+      |> put_req_header("accept", "text/html")
+      |> Map.put(:secret_key_base, "secret")
+
+    capture_log(fn -> assert_raise(ActionableException, fn -> Router.call(conn, []) end) end)
+
+    {_status, _headers, body} = sent_resp(conn)
+    assert body =~ ~s|action="/__plug__/debugger/action" method="POST"|
+    assert body =~ action_label
+  end
+
+  test "does not render actions when the exception don't implement `Plug.Exception`" do
+    conn =
+      conn(:get, "/soft_boom")
+      |> put_req_header("accept", "text/html")
+      |> Map.put(:secret_key_base, "secret")
+
+    capture_log(fn -> assert_raise(Exception, fn -> Router.call(conn, []) end) end)
+    {_status, _headers, body} = sent_resp(conn)
+
+    refute body =~ ~s|<form action="/__plug__/debugger/action" method="POST">|
+  end
+
+  test "does not render actions when no secret_key_base is present" do
+    conn = put_req_header(conn(:get, "/actionable_exception"), "accept", "text/html")
+
+    capture_log(fn ->
+      assert_raise(ActionableException, fn ->
+        Router.call(conn, [])
+      end)
+    end)
+
+    {_status, _headers, body} = sent_resp(conn)
+
+    refute body =~ ~s|<form action="/__plug__/debugger/action" method="POST">|
+  end
+
+  test "only render actions if request is html" do
+    conn =
+      conn(:get, "/actionable_exception")
+      |> Map.put(:secret_key_base, "secret")
+
+    capture_log(fn ->
+      assert_raise(ActionableException, fn ->
+        Router.call(conn, [])
+      end)
+    end)
+
+    {_status, _headers, body} = sent_resp(conn)
+
+    refute body =~ ~s|<form action="/__plug__/debugger/action" method="POST">|
+  end
+
+  test "sets last path as the current request path when is a GET" do
+    path = "/actionable_exception"
+
+    conn =
+      conn(:get, path)
+      |> put_req_header("accept", "text/html")
+      |> Map.put(:secret_key_base, "secret")
+
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    assert body =~ ~s|<input type="hidden" name="last_path" value="#{path}">|
+  end
+
+  test "sets last path as the referer header when request is not a GET" do
+    path = "/actionable_exception"
+    referer = "/referer"
+
+    conn =
+      conn(:post, path)
+      |> put_req_header("accept", "text/html")
+      |> put_req_header("referer", referer)
+      |> Map.put(:secret_key_base, "secret")
+
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    assert body =~ ~s|<input type="hidden" name="last_path" value="#{referer}">|
+  end
+
+  test "sets last path as / when request is not a GET and tehre is no referer" do
+    conn =
+      conn(:post, "/actionable_exception")
+      |> put_req_header("accept", "text/html")
+      |> Map.put(:secret_key_base, "secret")
+
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableException end)
+    assert body =~ ~s|<input type="hidden" name="last_path" value="/">|
+  end
+
+  test "executes an action" do
+    secret_key_base = "secret"
+
+    [%{encoded_handler: encoded_handler}] =
+      Plug.Debugger.encoded_actions_for_exception(
+        %ActionableException{},
+        %Plug.Conn{secret_key_base: secret_key_base}
+      )
+
+    conn =
+      conn(:post, "/__plug__/debugger/action", %{"encoded_handler" => encoded_handler})
+      |> Map.put(:secret_key_base, secret_key_base)
+
+    Router.call(conn, [])
+
+    assert_received :actionable_error
+  end
+
+  test "does not execute an action that was tampered" do
+    secret_key_base = "test"
+    invalid_secret_key_base = "invalid"
+
+    invalid_secret =
+      Plug.Debugger.generate_actions_secret(%Plug.Conn{secret_key_base: invalid_secret_key_base})
+
+    invalid_encoded_handler =
+      {Process, :send, [self(), :tampered, []]}
+      |> :erlang.term_to_binary()
+      |> Plug.Crypto.MessageVerifier.sign(invalid_secret)
+
+    conn =
+      conn(:post, "/__plug__/debugger/action", %{"encoded_handler" => invalid_encoded_handler})
+      |> Map.put(:secret_key_base, secret_key_base)
+
+    capture_log(fn ->
+      assert_raise(RuntimeError, fn ->
+        Router.call(conn, [])
+      end)
+    end)
+
+    refute_received :tampered
   end
 
   test "stacktrace from otp_app" do
