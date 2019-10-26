@@ -244,7 +244,6 @@ defmodule Plug.Debugger do
       Code.ensure_loaded?(exception_implementation) &&
         function_exported?(exception_implementation, :actions, 1)
 
-    # TODO: Remove this check in future Plug versions
     # TODO: Remove implements_actions? in future Plug versions
     if implements_actions? && conn.secret_key_base do
       actions_secret = generate_actions_secret(conn)
