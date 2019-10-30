@@ -241,7 +241,7 @@ Finally, remember all interactions in our official spaces follow our [Code of Co
 
 ## License
 
-Plug source code is released under Apache 2 License.
+Plug source code is released under Apache License 2.0.
 Check LICENSE file for more information.
 
   [issues]: https://github.com/elixir-plug/plug/issues

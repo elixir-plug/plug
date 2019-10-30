@@ -50,7 +50,7 @@ defmodule Plug.MixProject do
 
   defp package do
     %{
-      licenses: ["Apache 2"],
+      licenses: ["Apache-2.0"],
       maintainers: ["Gary Rennie", "José Valim"],
       links: %{"GitHub" => "https://github.com/elixir-plug/plug"},
       files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "src", ".formatter.exs"]
