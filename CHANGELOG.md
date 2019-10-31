@@ -12,6 +12,7 @@
   * [Plug] Make Plug fully compatible with new Elixir child specs
   * [Plug.Parsers] Add option to skip utf8 validation
   * [Plug.Parsers] Use HTTP status code 414 when query string is too long
+  * [Plug.Conn.Cookies] Make `decode` split on `;` only, add `:backwards` option
 
 ## v1.8.3 (2019-07-28)
 

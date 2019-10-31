@@ -4,18 +4,36 @@ defmodule Plug.Conn.Cookies do
   """
 
   @doc """
-  Decodes the given cookies as given in a request header.
+  Decodes the given cookies as given in either a request or response header.
 
   If a cookie is invalid, it is automatically discarded from the result.
 
+  ## Options
+
+    * `:backwards` (boolean) - If `true`, comma is included in the pattern for
+      splitting the content. Otherwise, only semi-colon is used.
+
   ## Examples
 
-      iex> decode("key1=value1, key2=value2")
+      iex> decode("key1=value1;key2=value2")
       %{"key1" => "value1", "key2" => "value2"}
 
+      iex> decode("key1=value1, key2=value2", backwards: true)
+      %{"key1" => "value1", "key2" => "value2"}
+
+      iex> decode("key1=value1, key2=value2", backwards: false)
+      %{"key1" => "value1, key2=value2"}
   """
-  def decode(cookie) do
-    do_decode(:binary.split(cookie, [";", ","], [:global]), %{})
+  def decode(cookie, options \\ []) do
+    pattern =
+      options
+      |> Keyword.get(:backwards)
+      |> case do
+        true -> [";", ","]
+        _ -> ";"
+      end
+
+    do_decode(:binary.split(cookie, pattern, [:global]), %{})
   end
 
   defp do_decode([], acc), do: acc
