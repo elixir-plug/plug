@@ -8,32 +8,14 @@ defmodule Plug.Conn.Cookies do
 
   If a cookie is invalid, it is automatically discarded from the result.
 
-  ## Options
-
-    * `:backwards` (boolean) - If `true`, comma is included in the pattern for
-      splitting the content. Otherwise, only semi-colon is used.
-
   ## Examples
 
       iex> decode("key1=value1;key2=value2")
       %{"key1" => "value1", "key2" => "value2"}
 
-      iex> decode("key1=value1, key2=value2", backwards: true)
-      %{"key1" => "value1", "key2" => "value2"}
-
-      iex> decode("key1=value1, key2=value2", backwards: false)
-      %{"key1" => "value1, key2=value2"}
   """
-  def decode(cookie, options \\ []) do
-    pattern =
-      options
-      |> Keyword.get(:backwards)
-      |> case do
-        true -> [";", ","]
-        _ -> ";"
-      end
-
-    do_decode(:binary.split(cookie, pattern, [:global]), %{})
+  def decode(cookie) do
+    do_decode(:binary.split(cookie, ";", [:global]), %{})
   end
 
   defp do_decode([], acc), do: acc
@@ -46,7 +28,6 @@ defmodule Plug.Conn.Cookies do
   end
 
   defp decode_kv(""), do: false
-  defp decode_kv(<<?$, _::binary>>), do: false
   defp decode_kv(<<h, t::binary>>) when h in [?\s, ?\t], do: decode_kv(t)
   defp decode_kv(kv), do: decode_key(kv, "")
 

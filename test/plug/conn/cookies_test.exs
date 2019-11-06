@@ -4,51 +4,21 @@ defmodule Plug.Conn.CookiesTest do
   import Plug.Conn.Cookies
   doctest Plug.Conn.Cookies
 
-  @cookies %{
-    "key1=value1, key2=value2" => %{"key1" => "value1, key2=value2"},
-    "key1=value1; key2=value2" => %{"key1" => "value1", "key2" => "value2"},
-    "key space=value, key=value space" => %{},
-    "  key1=value1 , key2=value2  " => %{"key1" => "value1 , key2=value2"},
-    "$key1=value1, key2=value2; $key3=value3" => %{},
-    "" => %{},
-    "key, =, value" => %{},
-    "key=" => %{"key" => ""},
-    "key1=;;key2=" => %{"key1" => "", "key2" => ""},
-    "key1=value, with, commas;key2=" => %{"key1" => "value, with, commas", "key2" => ""}
-  }
-
   test "decode cookies" do
-    Enum.each(@cookies, fn {content, expected} ->
-      assert decode(content) == expected
-    end)
+    assert decode("key1=value1, key2=value2") == %{"key1" => "value1, key2=value2"}
+    assert decode("key1=value1; key2=value2") == %{"key1" => "value1", "key2" => "value2"}
 
-    Enum.each(@cookies, fn {content, expected} ->
-      assert decode(content, backwards: false) == expected
-    end)
-
-    Enum.each(@cookies, fn {content, expected} ->
-      assert decode(content, other: true) == expected
-    end)
-  end
-
-  test "decodes cookies backwards option" do
-    assert decode("key1=value1, key2=value2", backwards: true) == %{
-             "key1" => "value1",
-             "key2" => "value2"
+    assert decode("$key1=value1, key2=value2; $key3=value3") == %{
+             "$key1" => "value1, key2=value2",
+             "$key3" => "value3"
            }
 
-    assert decode("$key1=value1, key2=value2; $key3=value3", backwards: true) == %{
-             "key2" => "value2"
-           }
-
-    assert decode("key space=value, key=value space", backwards: true) == %{
-             "key" => "value space"
-           }
-
-    assert decode("  key1=value1 , key2=value2  ", backwards: true) == %{
-             "key1" => "value1",
-             "key2" => "value2"
-           }
+    assert decode("key space=value, key=value space") == %{}
+    assert decode("  key1=value1 , key2=value2  ") == %{"key1" => "value1 , key2=value2"}
+    assert decode("") == %{}
+    assert decode("key, =, value") == %{}
+    assert decode("key=") == %{"key" => ""}
+    assert decode("key1=;;key2=") == %{"key1" => "", "key2" => ""}
   end
 
   test "decodes encoded cookie" do
