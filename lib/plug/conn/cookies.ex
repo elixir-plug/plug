@@ -4,18 +4,18 @@ defmodule Plug.Conn.Cookies do
   """
 
   @doc """
-  Decodes the given cookies as given in a request header.
+  Decodes the given cookies as given in either a request or response header.
 
   If a cookie is invalid, it is automatically discarded from the result.
 
   ## Examples
 
-      iex> decode("key1=value1, key2=value2")
+      iex> decode("key1=value1;key2=value2")
       %{"key1" => "value1", "key2" => "value2"}
 
   """
   def decode(cookie) do
-    do_decode(:binary.split(cookie, [";", ","], [:global]), %{})
+    do_decode(:binary.split(cookie, ";", [:global]), %{})
   end
 
   defp do_decode([], acc), do: acc
@@ -28,7 +28,6 @@ defmodule Plug.Conn.Cookies do
   end
 
   defp decode_kv(""), do: false
-  defp decode_kv(<<?$, _::binary>>), do: false
   defp decode_kv(<<h, t::binary>>) when h in [?\s, ?\t], do: decode_kv(t)
   defp decode_kv(kv), do: decode_key(kv, "")
 
