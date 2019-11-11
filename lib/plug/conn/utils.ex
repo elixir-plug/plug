@@ -3,7 +3,7 @@ defmodule Plug.Conn.Utils do
   Utilities for working with connection data
   """
 
-  @type params :: %{binary => binary}
+  @type params :: %{optional(binary) => binary}
 
   @upper ?A..?Z
   @lower ?a..?z

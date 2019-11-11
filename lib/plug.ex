@@ -54,7 +54,15 @@ defmodule Plug do
   pipelines.
   """
 
-  @type opts :: binary | tuple | atom | integer | float | [opts] | %{opts => opts} | MapSet.t()
+  @type opts ::
+          binary
+          | tuple
+          | atom
+          | integer
+          | float
+          | [opts]
+          | %{optional(opts) => opts}
+          | MapSet.t()
 
   use Application
 

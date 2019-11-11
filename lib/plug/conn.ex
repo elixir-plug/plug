@@ -123,22 +123,22 @@ defmodule Plug.Conn do
   """
 
   @type adapter :: {module, term}
-  @type assigns :: %{atom => any}
+  @type assigns :: %{optional(atom) => any}
   @type before_send :: [(t -> t)]
   @type body :: iodata
-  @type cookies :: %{binary => binary}
+  @type cookies :: %{optional(binary) => binary}
   @type halted :: boolean
   @type headers :: [{binary, binary}]
   @type host :: binary
   @type int_status :: non_neg_integer | nil
   @type owner :: pid
   @type method :: binary
-  @type query_param :: binary | %{binary => query_param} | [query_param]
-  @type query_params :: %{binary => query_param}
-  @type params :: %{binary => term}
+  @type query_param :: binary | %{optional(binary) => query_param} | [query_param]
+  @type query_params :: %{optional(binary) => query_param}
+  @type params :: %{optional(binary) => term}
   @type port_number :: :inet.port_number()
   @type query_string :: String.t()
-  @type resp_cookies :: %{binary => %{}}
+  @type resp_cookies :: %{optional(binary) => %{}}
   @type scheme :: :http | :https
   @type secret_key_base :: binary | nil
   @type segments :: [binary]
@@ -1437,7 +1437,7 @@ defmodule Plug.Conn do
 
   Raises if the session was not yet fetched.
   """
-  @spec get_session(t) :: %{String.t() => any}
+  @spec get_session(t) :: %{optional(String.t()) => any}
   def get_session(%Conn{private: private}) do
     if session = Map.get(private, :plug_session) do
       session
