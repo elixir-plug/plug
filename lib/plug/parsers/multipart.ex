@@ -27,7 +27,7 @@ defmodule Plug.Parsers.MULTIPART do
       hold a lists of body parts that didn't have a 'Content-Disposition' header.
       For instance, `include_unnamed_parts_at: "_parts"` would result in
       a body parameter `"_parts"`, containing a list of parts, each with `:body`
-      and `:headers` fields, like `[%{ body: "{}", headers: [{"content-type", "application/json"}]}]`.
+      and `:headers` fields, like `[%{body: "{}", headers: [{"content-type", "application/json"}]}]`.
   * `:validate_utf8` - specifies whether multipart body parts should be validated
       as utf8 binaries. Defaults to true.
   """
@@ -35,12 +35,24 @@ defmodule Plug.Parsers.MULTIPART do
   @behaviour Plug.Parsers
 
   def init(opts) do
-    opts
+    # Remove the length from options as it would attempt
+    # to eagerly read the body on the limit value.
+    {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
+
+    # The read length is now our effective length per call.
+    {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
+    opts = [length: read_length, read_length: read_length] ++ opts
+
+    # The header options are handled individually.
+    {headers_opts, opts} = Keyword.pop(opts, :headers, [])
+
+    {limit, headers_opts, opts}
   end
 
-  def parse(conn, "multipart", subtype, _headers, opts) when subtype in ["form-data", "mixed"] do
+  def parse(conn, "multipart", subtype, _headers, opts_tuple)
+      when subtype in ["form-data", "mixed"] do
     try do
-      parse_multipart(conn, opts)
+      parse_multipart(conn, opts_tuple)
     rescue
       # Do not ignore upload errors
       e in [Plug.UploadError, Plug.Parsers.BadEncodingError] ->
@@ -58,18 +70,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   ## Multipart
 
-  defp parse_multipart(conn, opts) do
-    # Remove the length from options as it would attempt
-    # to eagerly read the body on the limit value.
-    {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
-
-    # The read length is now our effective length per call.
-    {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
-    opts = [length: read_length, read_length: read_length] ++ opts
-
-    # The header options are handled individually.
-    {headers_opts, opts} = Keyword.pop(opts, :headers, [])
-
+  defp parse_multipart(conn, {limit, headers_opts, opts}) do
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)
     {:ok, limit, acc, conn} = parse_multipart(read_result, limit, opts, headers_opts, [])
 

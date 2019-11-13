@@ -28,9 +28,7 @@ defmodule Plug.Parsers.JSON do
   def init(opts) do
     {decoder, opts} = Keyword.pop(opts, :json_decoder)
     {body_reader, opts} = Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
-
     validate_decoder!(decoder)
-
     {body_reader, decoder, opts}
   end
 
