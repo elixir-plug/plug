@@ -36,7 +36,7 @@ defmodule Plug.DebuggerTest do
 
     get "/nil" do
       _ = conn
-      nil.id()
+      returns_nil().id()
     end
 
     get "/soft_boom" do
@@ -68,6 +68,8 @@ defmodule Plug.DebuggerTest do
       _ = conn
       raise ActionableError
     end
+
+    defp returns_nil, do: nil
   end
 
   defmodule StyledRouter do
