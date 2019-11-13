@@ -57,7 +57,7 @@ defmodule Plug.Conn.Query do
   Decodes the given binary.
 
   The binary is assumed to be encoded in "x-www-form-urlencoded" format.
-  The format is decoded and then validated for proper utf-8 encoding.
+  The format is decoded and then validated for proper UTF-8 encoding.
   """
   def decode(query, initial \\ %{}, invalid_exception \\ Plug.Conn.InvalidQueryError)
 
