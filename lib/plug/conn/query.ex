@@ -55,6 +55,8 @@ defmodule Plug.Conn.Query do
 
   @doc """
   Decodes the given binary.
+
+  The binary is assumed to be encoded in "x-www-form-urlencoded" format.
   """
   def decode(query, initial \\ %{})
 
@@ -97,8 +99,10 @@ defmodule Plug.Conn.Query do
 
   @doc """
   Decodes the given tuple and stores it in the accumulator.
+
   It parses the key and stores the value into the current
-  accumulator.
+  accumulator. The keys and values are not assumed to be
+  encoded in "x-www-form-urlencoded".
 
   Parameter lists are added to the accumulator in reverse
   order, so be sure to pass the parameters in reverse order.

@@ -306,7 +306,7 @@ defmodule Plug.Builder do
     if function_exported?(plug, :call, 2) do
       {:module, plug, escape(initialized_opts), guards}
     else
-      raise ArgumentError, message: "#{inspect(plug)} plug must implement call/2"
+      raise ArgumentError, "#{inspect(plug)} plug must implement call/2"
     end
   end
 
