@@ -28,8 +28,7 @@ defmodule Plug.Parsers.URLENCODED do
   def parse(conn, "application", "x-www-form-urlencoded", _headers, {{mod, fun, args}, opts}) do
     case apply(mod, fun, [conn, opts | args]) do
       {:ok, body, conn} ->
-        Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "urlencoded body")
-        {:ok, Plug.Conn.Query.decode(body), conn}
+        {:ok, Plug.Conn.Query.decode(body, %{}, Plug.Parsers.BadEncodingError), conn}
 
       {:more, _data, conn} ->
         {:error, :too_large, conn}

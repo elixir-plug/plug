@@ -973,7 +973,6 @@ defmodule Plug.Conn do
 
   def fetch_query_params(%Conn{query_params: %Unfetched{}} = conn, opts) do
     %{params: params, query_string: query_string} = conn
-    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
     length = Keyword.get(opts, :length, 1_000_000)
 
     if byte_size(query_string) > length do
@@ -983,7 +982,7 @@ defmodule Plug.Conn do
         plug_status: 414
     end
 
-    query_params = Plug.Conn.Query.decode(query_string)
+    query_params = Plug.Conn.Query.decode(query_string, %{}, Plug.Conn.InvalidQueryError)
 
     case params do
       %Unfetched{} -> %{conn | query_params: query_params, params: query_params}

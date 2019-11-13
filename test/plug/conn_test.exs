@@ -799,7 +799,13 @@ defmodule Plug.ConnTest do
   test "fetch_query_params/1 with invalid utf-8" do
     conn = conn(:get, "/foo?a=" <> <<139>>)
 
-    assert_raise Plug.Conn.InvalidQueryError, "invalid UTF-8 on query string, got byte 139", fn ->
+    assert_raise Plug.Conn.InvalidQueryError, "invalid UTF-8 on urlencoded params, got byte 139", fn ->
+      fetch_query_params(conn)
+    end
+
+    conn = conn(:get, "/foo?a=" <> URI.encode_www_form(<<139>>))
+
+    assert_raise Plug.Conn.InvalidQueryError, "invalid UTF-8 on urlencoded params, got byte 139", fn ->
       fetch_query_params(conn)
     end
   end

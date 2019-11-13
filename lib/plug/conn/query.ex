@@ -57,43 +57,47 @@ defmodule Plug.Conn.Query do
   Decodes the given binary.
 
   The binary is assumed to be encoded in "x-www-form-urlencoded" format.
+  The format is decoded and then validated for proper utf-8 encoding.
   """
-  def decode(query, initial \\ %{})
+  def decode(query, initial \\ %{}, invalid_exception \\ Plug.Conn.InvalidQueryError)
 
-  def decode("", initial) do
+  def decode("", initial, _invalid_exception) do
     initial
   end
 
-  def decode(query, initial) do
+  def decode(query, initial, invalid_exception) do
     parts = :binary.split(query, "&", [:global])
 
-    Enum.reduce(Enum.reverse(parts), initial, &decode_www_pair(&1, &2))
+    Enum.reduce(Enum.reverse(parts), initial, &decode_www_pair(&1, &2, invalid_exception))
   end
 
-  defp decode_www_pair("", acc) do
+  defp decode_www_pair("", acc, _invalid_exception) do
     acc
   end
 
-  defp decode_www_pair(binary, acc) do
+  defp decode_www_pair(binary, acc, invalid_exception) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->
-          {decode_www_form(key), decode_www_form(value)}
+          {decode_www_form(key, invalid_exception), decode_www_form(value, invalid_exception)}
 
         [key] ->
-          {decode_www_form(key), nil}
+          {decode_www_form(key, invalid_exception), nil}
       end
 
     decode_pair(current, acc)
   end
 
-  defp decode_www_form(value) do
+  defp decode_www_form(value, invalid_exception) do
     try do
       URI.decode_www_form(value)
     rescue
       ArgumentError ->
-        raise Plug.Conn.InvalidQueryError,
-          message: "invalid www-form encoding on query-string, got #{value}"
+        raise invalid_exception, "invalid urlencoded params, got #{value}"
+    else
+      binary ->
+        Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+        binary
     end
   end
 

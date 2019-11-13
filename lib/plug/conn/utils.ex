@@ -273,7 +273,7 @@ defmodule Plug.Conn.Utils do
   end
 
   def validate_utf8!(<<h, _::binary>>, exception, context) do
-    raise exception, message: "invalid UTF-8 on #{context}, got byte #{h}"
+    raise exception, "invalid UTF-8 on #{context}, got byte #{h}"
   end
 
   def validate_utf8!(<<>>, _exception, _context) do
