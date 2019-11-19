@@ -184,7 +184,7 @@ defmodule Plug.CSRFProtection do
   @doc """
   Dumps the CSRF state from the connection.
 
-  It expects the value of `get_session(conn, session_key)`.
+  It expects the value of `get_session(conn, "_csrf_token")`.
   It returns `nil` if there is no state in the session.
   """
   def dump_state_from_session(session_token) do
