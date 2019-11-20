@@ -138,7 +138,8 @@ defmodule Plug.Parsers.JSONTest do
   end
 
   test "validates the json decoder (expressed as a MFA tuple)" do
-    message = "invalid :json_decoder option. The module Plug.Parsers.JSONTest.JSON must implement test/2"
+    message =
+      "invalid :json_decoder option. The module Plug.Parsers.JSONTest.JSON must implement test/2"
 
     assert_raise ArgumentError, message, fn ->
       nil |> json_conn() |> parse(json_decoder: {JSON, :test, [[capitalize_keys: true]]})

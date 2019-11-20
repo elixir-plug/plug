@@ -93,7 +93,6 @@ defmodule Plug.Parsers.JSON do
       terms ->
         {:ok, %{"_json" => terms}, conn}
     end
-
   end
 
   defp decode({:more, _, conn}, _decoder) do
