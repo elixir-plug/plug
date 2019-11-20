@@ -241,7 +241,9 @@ defmodule Plug.Parsers do
           reference -> Module.concat(Plug.Parsers, String.upcase(reference))
         end
 
-      if Code.ensure_compiled?(module) and function_exported?(module, :init, 1) do
+      # TODO: Remove this check in future releases once all parsers implement init/1 accordingly
+      if Code.ensure_compiled(module) == {:module, module} and
+           function_exported?(module, :init, 1) do
         {module, module.init(opts)}
       else
         {module, opts}
