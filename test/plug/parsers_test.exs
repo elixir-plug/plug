@@ -357,6 +357,17 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 415
   end
 
+  test "raises when request cannot be processed and if mime is invalid" do
+    exception =
+      assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
+        conn(:post, "/?foo=bar", "foo=baz")
+        |> put_req_header("content-type", "invalid")
+        |> parse(pass: ["text/plain", "text/*"])
+      end
+
+    assert Plug.Exception.status(exception) == 415
+  end
+
   test "does not raise when request cannot be processed if accepts all mimes" do
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
