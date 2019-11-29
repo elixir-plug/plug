@@ -266,6 +266,7 @@ defmodule Plug.Parsers do
           :error ->
             reduce(conn, parsers, ct, "", %{}, pass, query_string_length)
         end
+
       _ ->
         merge_params(conn, %{}, query_string_length)
     end
