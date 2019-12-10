@@ -96,7 +96,9 @@ defmodule Plug.Parsers do
       `Plug.Conn.read_body/2` to provide a function that gives access to the
       raw body before it is parsed and discarded. It is in the standard format
       of `{Module, :function, [args]}` (MFA) and defaults to
-      `{Plug.Conn, :read_body, []}`.
+      `{Plug.Conn, :read_body, []}`. Note that this option is not used by
+      `Plug.Parsers.MULTIPART` which relies instead on other functions defined
+      in `Plug.Conn`.
 
   ## Examples
 
