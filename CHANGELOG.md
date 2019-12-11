@@ -5,14 +5,16 @@
 ### Bug fixes
 
   * [Plug.SSL] Rewrite port when rewriting a request coming to a standard port
+  * [Plug.Conn.Cookies] Make `decode` split on `;` only, remove `$`-prefix condition
   * [Plug.CSRFProtection] Generate url safe CSRF masks
+  * [Plug.Parsers] Treat invalid content-types as parsing errors unless :pass is given
+  * [Plug.Parsers] Use HTTP status code 414 when query string is too long
 
 ### Enhancements
 
   * [Plug] Make Plug fully compatible with new Elixir child specs
+  * [Plug.Exception] Add actions to exceptions that implement `Plug.Exception` and render actions in `Plug.Debugger` error page
   * [Plug.Parsers] Add option to skip utf8 validation
-  * [Plug.Parsers] Use HTTP status code 414 when query string is too long
-  * [Plug.Conn.Cookies] Make `decode` split on `;` only, remove `$`-prefix condition
 
 ## v1.8.3 (2019-07-28)
 
