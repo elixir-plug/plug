@@ -69,7 +69,6 @@ defmodule Plug.TelemetryTest do
     assert map_size(measurements) == 1
     assert %{duration: duration} = measurements
     assert is_integer(duration)
-    assert is_integer(time)
     assert map_size(metadata) == 2
     assert %{conn: conn, options: [extra_options: :hello]} = metadata
     assert conn.state == :set
