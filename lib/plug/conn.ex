@@ -1076,34 +1076,34 @@ defmodule Plug.Conn do
 
   """
   @spec read_part_headers(t, Keyword.t()) :: {:ok, headers, t} | {:done, t}
-  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
+  def read_part_headers(%Conn{} = conn, opts \\ []) do
     opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
 
     case init_multipart(conn) do
       {boundary, buffer} ->
-        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
-        read_part_headers(conn, data, boundary, adapter, state, opts)
+        {data, conn} = read_multipart_from_buffer_or_adapter(buffer, conn, opts)
+        read_part_headers(conn, data, boundary, opts)
 
       :done ->
         {:done, conn}
     end
   end
 
-  defp read_part_headers(conn, data, boundary, adapter, state, opts) do
+  defp read_part_headers(conn, data, boundary, opts) do
     case :plug_multipart.parse_headers(data, boundary) do
       {:ok, headers, rest} ->
-        {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
+        {:ok, headers, store_multipart(conn, {boundary, rest})}
 
       :more ->
-        {_, next, state} = next_multipart(adapter, state, opts)
-        read_part_headers(conn, data <> next, boundary, adapter, state, opts)
+        {_, next, conn} = next_multipart(conn, opts)
+        read_part_headers(conn, data <> next, boundary, opts)
 
       {:more, rest} ->
-        {_, next, state} = next_multipart(adapter, state, opts)
-        read_part_headers(conn, rest <> next, boundary, adapter, state, opts)
+        {_, next, conn} = next_multipart(conn, opts)
+        read_part_headers(conn, rest <> next, boundary, opts)
 
       {:done, _} ->
-        {:done, store_multipart(conn, :done, adapter, state)}
+        {:done, store_multipart(conn, :done)}
     end
   end
 
@@ -1117,46 +1117,46 @@ defmodule Plug.Conn do
   It accepts the same options as `read_body/2`.
   """
   @spec read_part_body(t, Keyword.t()) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
-  def read_part_body(%Conn{adapter: {adapter, state}} = conn, opts) do
+  def read_part_body(%Conn{} = conn, opts) do
     case init_multipart(conn) do
       {boundary, buffer} ->
         # Note we will read the whole length from the socket
         # and then break it apart as necessary.
         length = Keyword.get(opts, :length, 8_000_000)
-        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
-        read_part_body(conn, data, "", length, boundary, adapter, state, opts)
+        {data, conn} = read_multipart_from_buffer_or_adapter(buffer, conn, opts)
+        read_part_body(conn, data, "", length, boundary, opts)
 
       :done ->
         {:done, conn}
     end
   end
 
-  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, adapter, state, _opts)
+  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, _opts)
        when byte_size(acc) > length do
-    {:more, acc, store_multipart(conn, {boundary, data}, adapter, state)}
+    {:more, acc, store_multipart(conn, {boundary, data})}
   end
 
-  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, adapter, state, opts) do
+  defp read_part_body(%Conn{} = conn, data, acc, length, boundary, opts) do
     case :plug_multipart.parse_body(data, boundary) do
       {:ok, body} ->
-        {_, next, state} = next_multipart(adapter, state, opts)
+        {_, next, conn} = next_multipart(conn, opts)
         acc = prepend_unless_empty(acc, body)
-        read_part_body(conn, next, acc, length, boundary, adapter, state, opts)
+        read_part_body(conn, next, acc, length, boundary, opts)
 
       {:ok, body, rest} ->
-        {_, next, state} = next_multipart(adapter, state, opts)
+        {_, next, conn} = next_multipart(conn, opts)
         next = prepend_unless_empty(rest, next)
         acc = prepend_unless_empty(acc, body)
-        read_part_body(conn, next, acc, length, boundary, adapter, state, opts)
+        read_part_body(conn, next, acc, length, boundary, opts)
 
       :done ->
-        {:ok, acc, store_multipart(conn, {boundary, ""}, adapter, state)}
+        {:ok, acc, store_multipart(conn, {boundary, ""})}
 
       {:done, body} ->
-        {:ok, acc <> body, store_multipart(conn, {boundary, ""}, adapter, state)}
+        {:ok, acc <> body, store_multipart(conn, {boundary, ""})}
 
       {:done, body, rest} ->
-        {:ok, acc <> body, store_multipart(conn, {boundary, rest}, adapter, state)}
+        {:ok, acc <> body, store_multipart(conn, {boundary, rest})}
     end
   end
 
@@ -1178,24 +1178,28 @@ defmodule Plug.Conn do
     end
   end
 
-  defp next_multipart(adapter, state, opts) do
-    case adapter.read_req_body(state, opts) do
+  defp next_multipart(conn, opts) do
+    body_reader = Keyword.get(opts, :body_reader, Plug.BodyReader.Deflate)
+
+    case body_reader.read_body(conn, opts) do
       {:ok, "", _} -> raise "invalid multipart, body terminated too soon"
       valid -> valid
     end
   end
 
-  defp store_multipart(conn, multipart, adapter, state) do
-    %{put_in(conn.private[:plug_multipart], multipart) | adapter: {adapter, state}}
+  defp store_multipart(conn, multipart) do
+    put_in(conn.private[:plug_multipart], multipart)
   end
 
-  defp read_multipart_from_buffer_or_adapter("", adapter, state, opts) do
-    {_, data, state} = adapter.read_req_body(state, opts)
-    {data, state}
+  defp read_multipart_from_buffer_or_adapter("", conn, opts) do
+    body_reader = Keyword.get(opts, :body_reader, Plug.BodyReader.Deflate)
+
+    {_, data, conn} = body_reader.read_body(conn, opts)
+    {data, conn}
   end
 
-  defp read_multipart_from_buffer_or_adapter(buffer, _adapter, state, _opts) do
-    {buffer, state}
+  defp read_multipart_from_buffer_or_adapter(buffer, conn, _opts) do
+    {buffer, conn}
   end
 
   @doc """

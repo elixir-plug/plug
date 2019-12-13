@@ -43,6 +43,19 @@ defmodule Plug.Parsers do
     end
   end
 
+  defmodule ContentEncodingNotSupportedError do
+    @moduledoc """
+    Error raised when the request body is compressed using an encoding that is
+    not supported.
+    """
+
+    defexception [:encoding]
+
+    def message(%{encoding: encoding}) do
+      "content encoding not supported: #{encoding}"
+    end
+  end
+
   @moduledoc """
   A plug for parsing the request body.
 

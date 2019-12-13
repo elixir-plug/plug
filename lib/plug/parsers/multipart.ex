@@ -39,9 +39,11 @@ defmodule Plug.Parsers.MULTIPART do
     # to eagerly read the body on the limit value.
     {limit, opts} = Keyword.pop(opts, :length, 8_000_000)
 
+    {body_reader, opts} = Keyword.pop(opts, :body_reader, Plug.BodyReader.Deflate)
+
     # The read length is now our effective length per call.
     {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
-    opts = [length: read_length, read_length: read_length] ++ opts
+    opts = [length: read_length, read_length: read_length, body_reader: body_reader] ++ opts
 
     # The header options are handled individually.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
@@ -49,8 +51,11 @@ defmodule Plug.Parsers.MULTIPART do
     {limit, headers_opts, opts}
   end
 
-  def parse(conn, "multipart", subtype, _headers, opts_tuple)
+  def parse(conn, "multipart", subtype, _headers, {_, _, opts} = opts_tuple)
       when subtype in ["form-data", "mixed"] do
+    body_reader = Keyword.fetch!(opts, :body_reader)
+    {:ok, conn} = body_reader.init(conn, opts)
+
     try do
       parse_multipart(conn, opts_tuple)
     rescue
@@ -61,6 +66,8 @@ defmodule Plug.Parsers.MULTIPART do
       # All others are wrapped
       e ->
         reraise Plug.Parsers.ParseError.exception(exception: e), System.stacktrace()
+    after
+      body_reader.close(conn, opts)
     end
   end
 
