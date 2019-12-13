@@ -20,6 +20,7 @@ defmodule Plug.BodyReader.Deflate do
 
   def close(%Plug.Conn{private: %{__MODULE__ => zlib_stream}} = conn, _opts) do
     if !is_nil(zlib_stream) do
+      :zlib.inflateEnd(zlib_stream)
       :zlib.close(zlib_stream)
     end
 
