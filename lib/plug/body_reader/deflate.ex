@@ -1,4 +1,7 @@
 defmodule Plug.BodyReader.Deflate do
+  @behaviour Plug.BodyReader
+
+  @spec init(Plug.Conn.t(), Keyword.t()) :: {:ok, Plug.Conn.t()} | {:error, term}
   def init(%Plug.Conn{} = conn, _opts) do
     zlib_stream =
       case content_encoding(conn) do
@@ -18,6 +21,7 @@ defmodule Plug.BodyReader.Deflate do
     {:ok, %Plug.Conn{conn | private: private}}
   end
 
+  @spec close(Plug.Conn.t(), Keyword.t()) :: {:ok, Plug.Conn.t()} | {:error, term}
   def close(%Plug.Conn{private: %{__MODULE__ => zlib_stream}} = conn, _opts) do
     if !is_nil(zlib_stream) do
       :ok = :zlib.inflateEnd(zlib_stream)
@@ -27,6 +31,8 @@ defmodule Plug.BodyReader.Deflate do
     {:ok, %Plug.Conn{conn | private: Map.delete(conn.private, __MODULE__)}}
   end
 
+  @spec read_body(Plug.Conn.t(), Keyword.t()) ::
+          {:ok, binary, Plug.Conn.t()} | {:more, binary, Plug.Conn.t()} | {:error, term}
   def read_body(%Plug.Conn{private: %{__MODULE__ => nil}} = conn, opts) do
     Plug.Conn.read_body(conn, opts)
   end
