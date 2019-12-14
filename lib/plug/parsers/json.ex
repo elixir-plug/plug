@@ -27,7 +27,7 @@ defmodule Plug.Parsers.JSON do
 
   def init(opts) do
     {decoder, opts} = Keyword.pop(opts, :json_decoder)
-    {body_reader, opts} = Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
+    {body_reader, opts} = Keyword.pop(opts, :body_reader, Plug.BodyReader.Deflate)
     decoder = validate_decoder!(decoder)
     {body_reader, decoder, opts}
   end
@@ -65,9 +65,15 @@ defmodule Plug.Parsers.JSON do
             "tuple in the form of {module, function, extra_args}, got: #{inspect(decoder)}"
   end
 
-  def parse(conn, "application", subtype, _headers, {{mod, fun, args}, decoder, opts}) do
+  def parse(conn, "application", subtype, _headers, {body_reader, decoder, opts}) do
     if subtype == "json" or String.ends_with?(subtype, "+json") do
-      apply(mod, fun, [conn, opts | args]) |> decode(decoder)
+      {:ok, conn} = body_reader.init(conn, opts)
+
+      try do
+        body_reader.read_body(conn, opts) |> decode(decoder)
+      after
+        body_reader.close(conn, opts)
+      end
     else
       {:next, conn}
     end

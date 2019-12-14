@@ -4,6 +4,10 @@ defmodule Plug.ParsersTest do
   use Plug.Test
 
   defmodule BodyReader do
+    def init(conn, _opts), do: {:ok, conn}
+
+    def close(conn, _opts), do: {:ok, conn}
+
     def read_body(conn, opts) do
       {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
       {:ok, body <> "BAR", conn}
@@ -291,22 +295,10 @@ defmodule Plug.ParsersTest do
     conn =
       conn
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
-      |> parse(body_reader: {BodyReader, :read_body, []})
+      |> parse(body_reader: BodyReader)
 
     assert conn.params["query"] == "elixir"
     assert conn.params["body"] == "fooBAR"
-  end
-
-  test "parses with custom body reader and extra args" do
-    conn = conn(:post, "/?query=elixir", "body=foo")
-
-    conn =
-      conn
-      |> put_req_header("content-type", "application/x-www-form-urlencoded")
-      |> parse(body_reader: {BodyReader, :read_body, ["test", "read body"]})
-
-    assert conn.params["query"] == "elixir"
-    assert conn.params["body"] == "fooBAZ"
   end
 
   test "raises on invalid url encoded" do
