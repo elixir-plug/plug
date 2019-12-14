@@ -119,69 +119,88 @@ defmodule Plug.ParsersTest do
     assert conn.params == %{"foo" => "baz"}
   end
 
-  test "parses multipart bodies with test body" do
-    multipart = """
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"name\"\r
-    \r
-    hello\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
-    Content-Type: text/plain\r
-    \r
-    hello
+  Enum.each([:none, :gzip, :deflate], fn encoding ->
+    test "parses multipart bodies with test body (encoding: #{encoding})" do
+      multipart = """
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name=\"name\"\r
+      \r
+      hello\r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name=\"pic\"; filename=\"foo.txt\"\r
+      Content-Type: text/plain\r
+      \r
+      hello
 
-    \r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"doc\"; filename*=\"utf-8''%C5%BC%C3%B3%C5%82%C4%87.txt\"\r
-    Content-Type: text/plain\r
-    \r
-    hello
+      \r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name=\"doc\"; filename*=\"utf-8''%C5%BC%C3%B3%C5%82%C4%87.txt\"\r
+      Content-Type: text/plain\r
+      \r
+      hello
 
-    \r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data\r
-    \r
-    skipped\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"empty\"; filename=\"\"\r
-    Content-Type: application/octet-stream\r
-    \r
-    \r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name="status[]"\r
-    \r
-    choice1\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name="status[]"\r
-    \r
-    choice2\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"commit\"\r
-    \r
-    Create User\r
-    ------w58EW1cEpjzydSCq--\r
-    """
+      \r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data\r
+      \r
+      skipped\r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name=\"empty\"; filename=\"\"\r
+      Content-Type: application/octet-stream\r
+      \r
+      \r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name="status[]"\r
+      \r
+      choice1\r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name="status[]"\r
+      \r
+      choice2\r
+      ------w58EW1cEpjzydSCq\r
+      Content-Disposition: form-data; name=\"commit\"\r
+      \r
+      Create User\r
+      ------w58EW1cEpjzydSCq--\r
+      """
 
-    %{params: params} =
-      conn(:post, "/", multipart)
-      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
-      |> parse()
+      content =
+        case unquote(encoding) do
+          :none -> multipart
+          :gzip -> :zlib.gzip(multipart)
+          :deflate -> :zlib.compress(multipart)
+        end
 
-    assert params["name"] == "hello"
-    assert params["status"] == ["choice1", "choice2"]
-    assert params["empty"] == nil
+      conn =
+        conn(:post, "/", content)
+        |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
 
-    assert %Plug.Upload{} = file = params["pic"]
-    assert File.read!(file.path) == "hello\n\n"
-    assert file.content_type == "text/plain"
-    assert file.filename == "foo.txt"
+      conn =
+        case unquote(encoding) do
+          :none -> conn
+          :gzip -> put_req_header(conn, "content-encoding", "gzip")
+          :deflate -> put_req_header(conn, "content-encoding", "deflate")
+        end
 
-    assert %Plug.Upload{} = file = params["doc"]
-    assert File.read!(file.path) == "hello\n\n"
-    assert file.content_type == "text/plain"
-    assert file.filename == "żółć.txt"
-  end
+      %{params: params} =
+        conn
+        |> parse()
+
+      assert params["name"] == "hello"
+      assert params["status"] == ["choice1", "choice2"]
+      assert params["empty"] == nil
+
+      assert %Plug.Upload{} = file = params["pic"]
+      assert File.read!(file.path) == "hello\n\n"
+      assert file.content_type == "text/plain"
+      assert file.filename == "foo.txt"
+
+      assert %Plug.Upload{} = file = params["doc"]
+      assert File.read!(file.path) == "hello\n\n"
+      assert file.content_type == "text/plain"
+      assert file.filename == "żółć.txt"
+    end
+  end)
 
   test "multipart bodies with unnamed body parts opt" do
     multipart = """
@@ -264,86 +283,6 @@ defmodule Plug.ParsersTest do
       |> parse()
 
     assert params == %{}
-  end
-
-  test "parses multipart body compressed with gzip" do
-    multipart = """
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"name\"\r
-    \r
-    hello\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/json\r
-    \r
-    {"indisposed": "json"}\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/octet-stream\r
-    X-My-Foo: bar\r
-    \r
-    foo\r
-    ------w58EW1cEpjzydSCq\r
-    \r
-    No content-type? No problem!\r
-    ------w58EW1cEpjzydSCq--\r
-    """
-
-    encoded_body = :zlib.gzip(multipart)
-
-    %{params: params} =
-      conn(:post, "/", encoded_body)
-      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
-      |> put_req_header("content-encoding", "gzip")
-      |> parse(include_unnamed_parts_at: "_parts")
-
-    assert params["name"] == "hello"
-
-    assert [part1, part2, part3] = params["_parts"]
-    assert part1.body == "{\"indisposed\": \"json\"}"
-    assert part1.headers == [{"content-type", "application/json"}]
-    assert part2.body == "foo"
-    assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
-    assert part3.body == "No content-type? No problem!"
-    assert part3.headers == []
-  end
-
-  test "parses multipart body compressed with zlib" do
-    multipart = """
-    ------w58EW1cEpjzydSCq\r
-    Content-Disposition: form-data; name=\"name\"\r
-    \r
-    hello\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/json\r
-    \r
-    {"indisposed": "json"}\r
-    ------w58EW1cEpjzydSCq\r
-    Content-Type: application/octet-stream\r
-    X-My-Foo: bar\r
-    \r
-    foo\r
-    ------w58EW1cEpjzydSCq\r
-    \r
-    No content-type? No problem!\r
-    ------w58EW1cEpjzydSCq--\r
-    """
-
-    encoded_body = :zlib.compress(multipart)
-
-    %{params: params} =
-      conn(:post, "/", encoded_body)
-      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
-      |> put_req_header("content-encoding", "deflate")
-      |> parse(include_unnamed_parts_at: "_parts")
-
-    assert params["name"] == "hello"
-
-    assert [part1, part2, part3] = params["_parts"]
-    assert part1.body == "{\"indisposed\": \"json\"}"
-    assert part1.headers == [{"content-type", "application/json"}]
-    assert part2.body == "foo"
-    assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
-    assert part3.body == "No content-type? No problem!"
-    assert part3.headers == []
   end
 
   test "parses with custom body reader" do
