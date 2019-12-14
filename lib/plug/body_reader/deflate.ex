@@ -2,7 +2,7 @@ defmodule Plug.BodyReader.Deflate do
   def init(%Plug.Conn{} = conn, _opts) do
     zlib_stream =
       case content_encoding(conn) do
-        encoding when encoding in [:zlib, :gzip] ->
+        encoding when encoding in [:deflate, :gzip] ->
           zlib_stream = :zlib.open()
           :ok = :zlib.inflateInit(zlib_stream, window_bits_for_encoding(encoding))
           zlib_stream
@@ -20,8 +20,8 @@ defmodule Plug.BodyReader.Deflate do
 
   def close(%Plug.Conn{private: %{__MODULE__ => zlib_stream}} = conn, _opts) do
     if !is_nil(zlib_stream) do
-      :zlib.inflateEnd(zlib_stream)
-      :zlib.close(zlib_stream)
+      :ok = :zlib.inflateEnd(zlib_stream)
+      :ok = :zlib.close(zlib_stream)
     end
 
     {:ok, %Plug.Conn{conn | private: Map.delete(conn.private, __MODULE__)}}
@@ -34,7 +34,8 @@ defmodule Plug.BodyReader.Deflate do
   def read_body(%Plug.Conn{private: %{__MODULE__ => zlib_stream}} = conn, opts) do
     with {:ok, body, conn} <- Plug.Conn.read_body(conn, opts) do
       case :zlib.safeInflate(zlib_stream, body) do
-        {_, data} -> {:ok, IO.iodata_to_binary(data), conn}
+        {status, data} when status in [:continue, :finished] ->
+          {:ok, IO.iodata_to_binary(data), conn}
       end
     end
   end
@@ -48,6 +49,6 @@ defmodule Plug.BodyReader.Deflate do
     end
   end
 
-  defp window_bits_for_encoding(:zlib), do: 15
+  defp window_bits_for_encoding(:deflate), do: 15
   defp window_bits_for_encoding(:gzip), do: 47
 end
