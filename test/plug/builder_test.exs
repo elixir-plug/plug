@@ -145,30 +145,54 @@ defmodule Plug.BuilderTest do
   test "compile and runtime init modes" do
     {:ok, _agent} = Agent.start_link(fn -> :compile end, name: :plug_init)
 
-    defmodule Assigner do
+    defmodule CompileInitCheck do
       use Plug.Builder
 
       def init(agent), do: {:init, Agent.get(agent, & &1)}
-      def call(conn, opts), do: Plug.Conn.assign(conn, :opts, opts)
+
+      def call(conn, {:init, init_mode}) do
+        Plug.Conn.assign(conn, :compile_init_check, init_mode == :compile)
+      end
+    end
+
+    defmodule RuntimeInitCheck do
+      use Plug.Builder
+
+      def init(agent), do: {:init, Agent.get(agent, & &1)}
+
+      def call(conn, {:init, init_mode}) do
+        Plug.Conn.assign(conn, :runtime_init_check, init_mode == :runtime)
+      end
     end
 
     defmodule CompileInit do
       use Plug.Builder
 
       var = :plug_init
-      plug Assigner, var
+      plug CompileInitCheck, var
     end
 
     defmodule RuntimeInit do
       use Plug.Builder, init_mode: :runtime
 
       var = :plug_init
-      plug Assigner, var
+      plug RuntimeInitCheck, var
+    end
+
+    defmodule RuntimeAndCompileInit do
+      use Plug.Builder
+
+      var = :plug_init
+      plug CompileInitCheck, var
+      plug(RuntimeInitCheck, var, :runtime)
     end
 
     :ok = Agent.update(:plug_init, fn :compile -> :runtime end)
 
-    assert CompileInit.call(%Plug.Conn{}, :plug_init).assigns.opts == {:init, :compile}
-    assert RuntimeInit.call(%Plug.Conn{}, :plug_init).assigns.opts == {:init, :runtime}
+    assert CompileInit.call(%Plug.Conn{}, :plug_init).assigns.compile_init_check
+    assert RuntimeInit.call(%Plug.Conn{}, :plug_init).assigns.runtime_init_check
+
+    assert %{runtime_init_check: true, compile_init_check: true} =
+             RuntimeAndCompileInit.call(%Plug.Conn{}, :plug_init).assigns
   end
 end

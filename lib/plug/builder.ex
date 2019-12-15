@@ -118,7 +118,7 @@ defmodule Plug.Builder do
       defoverridable init: 1, call: 2
 
       import Plug.Conn
-      import Plug.Builder, only: [plug: 1, plug: 2, builder_opts: 0]
+      import Plug.Builder, only: [plug: 1, plug: 2, plug: 3, builder_opts: 0]
 
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
       @before_compile Plug.Builder
@@ -166,7 +166,7 @@ defmodule Plug.Builder do
 
   @doc """
   A macro that stores a new plug. `opts` will be passed unchanged to the new
-  plug.
+  plug. `init_mode` will override the module-wide option.
 
   This macro doesn't add any guards when adding the new plug to the pipeline;
   for more information about adding plugs with guards see `compile/3`.
@@ -177,11 +177,13 @@ defmodule Plug.Builder do
       plug :foo, some_options: true  # plug function
 
   """
-  defmacro plug(plug, opts \\ []) do
+  defmacro plug(plug, opts \\ [], init_mode \\ nil) do
     plug = Macro.expand(plug, %{__CALLER__ | function: {:init, 1}})
 
+    if init_mode, do: validate_init_mode!(__CALLER__, init_mode)
+
     quote do
-      @plugs {unquote(plug), unquote(opts), true}
+      @plugs {unquote(plug), unquote(opts), true, unquote(init_mode)}
     end
   end
 
@@ -254,6 +256,10 @@ defmodule Plug.Builder do
 
       {plug_name, options, guards}
 
+  or
+
+      {plug_name, options, guards, init_mode}
+
   Note that this function expects a reversed pipeline (with the last plug that
   has to be called coming first in the pipeline).
 
@@ -274,6 +280,27 @@ defmodule Plug.Builder do
     conn = quote do: conn
     init_mode = builder_opts[:init_mode] || :compile
 
+    validate_init_mode!(env, init_mode)
+
+    ast =
+      Enum.reduce(pipeline, conn, fn plug_tuple, acc ->
+        {local_init_mode, normalized_plug_tuple} =
+          case plug_tuple do
+            {_plug, _opts, _guards} = plug_tuple -> {nil, plug_tuple}
+            {plug, opts, guards, local_init_mode} -> {local_init_mode, {plug, opts, guards}}
+          end
+
+        init_mode = local_init_mode || init_mode
+
+        normalized_plug_tuple
+        |> init_plug(init_mode)
+        |> quote_plug(acc, env, builder_opts)
+      end)
+
+    {conn, ast}
+  end
+
+  defp validate_init_mode!(env, init_mode) do
     unless init_mode in [:compile, :runtime] do
       raise ArgumentError, """
       invalid :init_mode when compiling #{inspect(env.module)}.
@@ -281,15 +308,6 @@ defmodule Plug.Builder do
       Supported values include :compile or :runtime. Got: #{inspect(init_mode)}
       """
     end
-
-    ast =
-      Enum.reduce(pipeline, conn, fn {plug, opts, guards}, acc ->
-        {plug, opts, guards}
-        |> init_plug(init_mode)
-        |> quote_plug(acc, env, builder_opts)
-      end)
-
-    {conn, ast}
   end
 
   # Initializes the options of a plug in the configured init_mode.
