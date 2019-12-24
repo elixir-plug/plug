@@ -81,7 +81,8 @@ defmodule Plug.MixProject do
         Plug.RequestId,
         Plug.SSL,
         Plug.Session,
-        Plug.Static
+        Plug.Static,
+        Plug.Telemetry
       ],
       "Plug.Conn": [
         Plug.Conn.Adapter,
