@@ -8,7 +8,10 @@ defmodule Plug.Parsers.MULTIPART do
   They are repeated here for convenience:
 
     * `:length` - sets the maximum number of bytes to read from the request,
-      defaults to 8_000_000 bytes
+      defaults to 8_000_000 bytes. Unlike `Plug.Conn.read_body/2` supports
+      passing an MFA (`{module, function, args}`) which will be evaluated
+      on every request to determine the value.
+
     * `:read_length` - sets the amount of bytes to read at one time from the
       underlying socket to fill the chunk, defaults to 1_000_000 bytes
     * `:read_timeout` - sets the timeout for each socket read, defaults to
@@ -49,6 +52,33 @@ defmodule Plug.Parsers.MULTIPART do
     {limit, headers_opts, opts}
   end
 
+  defp validate_length!(length) when is_number(length), do: length
+
+  defp validate_length!({module, fun, args} = mfa)
+       when is_atom(module) and is_atom(fun) and is_list(args) do
+    arity = length(args)
+
+    if Code.ensure_compiled(module) != {:module, module} do
+      raise ArgumentError,
+            "invalid :length option. The module #{inspect(module)} is not " <>
+              "loaded and could not be found"
+    end
+
+    if not function_exported?(module, fun, arity) do
+      raise ArgumentError,
+            "invalid :length option. The module #{inspect(module)} must " <>
+              "implement #{fun}/#{arity}"
+    end
+
+    mfa
+  end
+
+  defp validate_length!(length) do
+    raise ArgumentError,
+          "the :length option expects a number, or a three-element " <>
+            "tuple in the form of {module, function, extra_args}, got: #{inspect(length)}"
+  end
+
   def parse(conn, "multipart", subtype, _headers, opts_tuple)
       when subtype in ["form-data", "mixed"] do
     try do
@@ -69,6 +99,11 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   ## Multipart
+
+  defp parse_multipart(conn, {{module, fun, args}, header_opts, opts}) do
+    limit = apply(module, fun, args)
+    parse_multipart(conn, {limit, header_opts, opts})
+  end
 
   defp parse_multipart(conn, {limit, headers_opts, opts}) do
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)
