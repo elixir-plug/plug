@@ -48,6 +48,7 @@ defmodule Plug.Conn.Status do
     416 => "Requested Range Not Satisfiable",
     417 => "Expectation Failed",
     418 => "I'm a teapot",
+    420 => "Enchance Your Calm",
     421 => "Misdirected Request",
     422 => "Unprocessable Entity",
     423 => "Locked",
