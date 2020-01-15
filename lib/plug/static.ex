@@ -89,7 +89,9 @@ defmodule Plug.Static do
       or "/favicon-high.ico". Such matches are useful when serving
       digested files at the root. Defaults to `nil` (no filtering).
 
-    * `:headers` - other headers to be set when serving static assets.
+    * `:headers` - other headers to be set when serving static assets. Specify either
+      an enum of key-value pairs or a `{module, function, args}` to return an enum. The
+      `conn` will be passed to the function, as well as the `args`.
 
     * `:content_types` - custom MIME type mapping. As a map with filename as key
       and content type as value. For example:
@@ -218,7 +220,7 @@ defmodule Plug.Static do
         |> put_resp_header("content-type", content_type)
         |> put_resp_header("accept-ranges", "bytes")
         |> maybe_add_encoding(content_encoding)
-        |> merge_resp_headers(headers)
+        |> merge_headers(headers)
         |> serve_range(file_info, path, range, options)
 
       {:fresh, conn} ->
@@ -403,4 +405,12 @@ defmodule Plug.Static do
   defp invalid_path?([h | _], _match) when h in [".", "..", ""], do: true
   defp invalid_path?([h | t], match), do: String.contains?(h, match) or invalid_path?(t)
   defp invalid_path?([], _match), do: false
+
+  defp merge_headers(conn, {module, function, args}) do
+    merge_headers(conn, apply(module, function, [conn | args]))
+  end
+
+  defp merge_headers(conn, headers) do
+    merge_resp_headers(conn, headers)
+  end
 end

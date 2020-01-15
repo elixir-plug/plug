@@ -561,4 +561,23 @@ defmodule Plug.StaticTest do
     conn = FilterPlug.call(conn(:get, "/file-deadbeef.txt"), [])
     assert conn.status == 200
   end
+
+  defmodule HeaderGenerator do
+    def generate(_conn, header) do
+      [header]
+    end
+  end
+
+  test "MFA headers" do
+    opts = [
+      at: "/public",
+      from: Path.expand("..", __DIR__),
+      headers: {HeaderGenerator, :generate, [{"x-custom", "x-value"}]}
+    ]
+
+    conn = Plug.Static.call(conn(:get, "/public/fixtures/static.txt"), Plug.Static.init(opts))
+
+    assert conn.status == 200
+    assert get_resp_header(conn, "x-custom") == ["x-value"]
+  end
 end
