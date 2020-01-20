@@ -17,6 +17,9 @@ defmodule Plug.RequestId do
   It is recommended to include this metadata configuration in your production
   configuration file.
 
+  This request id is not added to the `:req_headers` field. As such, one should
+  explicitly add the request id header when forwarding requests to other systems when needed.
+
   To use it, just plug it into the desired module:
 
       plug Plug.RequestId
