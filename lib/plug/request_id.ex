@@ -54,7 +54,10 @@ defmodule Plug.RequestId do
 
   defp set_request_id({conn, request_id}, header) do
     Logger.metadata(request_id: request_id)
-    Conn.put_resp_header(conn, header, request_id)
+
+    conn
+    |> Conn.put_resp_header(header, request_id)
+    |> Conn.put_req_header(header, request_id)
   end
 
   defp generate_request_id do

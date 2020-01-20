@@ -9,6 +9,7 @@ defmodule Plug.RequestIdTest do
   test "generates new request id if none exists" do
     conn = call(conn(:get, "/"), [])
     [res_request_id] = get_resp_header(conn, "x-request-id")
+    [res_request_id] = get_req_header(conn, "x-request-id")
     meta_request_id = Logger.metadata()[:request_id]
     assert generated_request_id?(res_request_id)
     assert res_request_id == meta_request_id
@@ -23,6 +24,7 @@ defmodule Plug.RequestIdTest do
       |> call([])
 
     [res_request_id] = get_resp_header(conn, "x-request-id")
+    [res_request_id] = get_req_header(conn, "x-request-id")
     meta_request_id = Logger.metadata()[:request_id]
     assert res_request_id != request_id
     assert generated_request_id?(res_request_id)
@@ -38,6 +40,7 @@ defmodule Plug.RequestIdTest do
       |> call([])
 
     [res_request_id] = get_resp_header(conn, "x-request-id")
+    [res_request_id] = get_req_header(conn, "x-request-id")
     meta_request_id = Logger.metadata()[:request_id]
     assert res_request_id == request_id
     assert res_request_id == meta_request_id
@@ -46,6 +49,7 @@ defmodule Plug.RequestIdTest do
   test "generates new request id in custom header" do
     conn = call(conn(:get, "/"), http_header: "custom-request-id")
     [res_request_id] = get_resp_header(conn, "custom-request-id")
+    [res_request_id] = get_req_header(conn, "custom-request-id")
     meta_request_id = Logger.metadata()[:request_id]
     assert generated_request_id?(res_request_id)
     assert res_request_id == meta_request_id
@@ -60,6 +64,7 @@ defmodule Plug.RequestIdTest do
       |> call(http_header: "custom-request-id")
 
     [res_request_id] = get_resp_header(conn, "custom-request-id")
+    [res_request_id] = get_req_header(conn, "custom-request-id")
     meta_request_id = Logger.metadata()[:request_id]
     assert res_request_id == request_id
     assert res_request_id == meta_request_id
