@@ -105,12 +105,26 @@ defmodule Plug.SSL do
   Plug users are not expected to invoke it directly, rather you pass
   the relevant SSL options to your adapter which then invokes this.
 
-  For further information, please refer to the adapter documentation and
-  the [HTTPS Guide](https.html).
+  ## Options
+
+  This function accepts all options defined
+  [in Erlang/OTP `:ssl` documentation](http://erlang.org/doc/man/ssl.html).
+
+  Besides the options from `:ssl`, this function adds on extra option:
+
+    * `:cypher_suite` - it may be `:strong` or `:compatible`,
+      as outlined in the following section
+
+  Furthermore, it sets the following defaults:
+
+    * `secure_renegotiate: true` - to avoid certain types of man-in-the-middle attacks
+    * `reuse_sessions: true` - for improved handshake performance of recurring connections
+
+  For a complete guide on HTTPS and best pratices, see [our Plug HTTPS Guide](https.html).
 
   ## Cipher Suites
 
-  To simplify configuration of TLS defaults Plug provides two preconfigured
+  To simplify configuration of TLS defaults, this function provides two preconfigured
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
   chosen and related configuration come from the [OWASP Cipher String Cheat
   Sheet](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet)
@@ -278,9 +292,7 @@ defmodule Plug.SSL do
     throw({:configure, message})
   end
 
-  @doc """
-  Plug initialization callback.
-  """
+  @impl true
   def init(opts) do
     host = Keyword.get(opts, :host)
     rewrite_on = Keyword.get(opts, :rewrite_on, [])
@@ -289,9 +301,7 @@ defmodule Plug.SSL do
     {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
-  @doc """
-  Plug pipeline callback.
-  """
+  @impl true
   def call(conn, {hsts, exclude, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
 
