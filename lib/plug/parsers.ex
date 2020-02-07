@@ -270,18 +270,22 @@ defmodule Plug.Parsers do
         end
 
       _ ->
-        merge_params(conn, %{}, query_string_length)
+        {conn, params} = merge_params(conn, %{}, query_string_length)
+        %{conn | params: params, body_params: %{}}
     end
   end
 
   def call(%{body_params: body_params} = conn, {_, _, query_string_length}) do
-    merge_params(conn, make_empty_if_unfetched(body_params), query_string_length)
+    body_params = make_empty_if_unfetched(body_params)
+    {conn, params} = merge_params(conn, body_params, query_string_length)
+    %{conn | params: params, body_params: body_params}
   end
 
   defp reduce(conn, [{parser, options} | rest], type, subtype, params, pass, query_string_length) do
     case parser.parse(conn, type, subtype, params, options) do
       {:ok, body, conn} ->
-        merge_params(conn, body, query_string_length)
+        {conn, params} = merge_params(conn, body, query_string_length)
+        %{conn | params: params, body_params: body}
 
       {:next, conn} ->
         reduce(conn, rest, type, subtype, params, pass, query_string_length)
@@ -291,32 +295,31 @@ defmodule Plug.Parsers do
     end
   end
 
-  defp reduce(conn, [], type, subtype, _params, pass, _query_string_length) do
-    ensure_accepted_mimes(conn, type, subtype, pass)
-  end
-
-  defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
-
-  defp ensure_accepted_mimes(conn, type, subtype, pass) do
-    if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
-      conn
+  defp reduce(conn, [], type, subtype, _params, pass, query_string_length) do
+    if accepted_mime?(type, subtype, pass) do
+      {conn, params} = merge_params(conn, %{}, query_string_length)
+      %{conn | params: params}
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
     end
   end
+
+  defp accepted_mime?(_type, _subtype, ["*/*"]),
+    do: true
+
+  defp accepted_mime?(type, subtype, pass),
+    do: "#{type}/#{subtype}" in pass || "#{type}/*" in pass
 
   defp merge_params(conn, body_params, query_string_length) do
     %{params: params, path_params: path_params} = conn
     params = make_empty_if_unfetched(params)
     conn = Plug.Conn.fetch_query_params(conn, length: query_string_length)
 
-    params =
-      conn.query_params
-      |> Map.merge(params)
-      |> Map.merge(body_params)
-      |> Map.merge(path_params)
-
-    %{conn | params: params, body_params: body_params}
+    {conn,
+     conn.query_params
+     |> Map.merge(params)
+     |> Map.merge(body_params)
+     |> Map.merge(path_params)}
   end
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}

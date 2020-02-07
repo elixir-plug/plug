@@ -407,9 +407,11 @@ defmodule Plug.ParsersTest do
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
       |> put_req_header("content-type", "text/plain")
+      |> Map.put(:path_params, %{"bar" => "baz"})
       |> parse(pass: ["*/*"])
 
     assert conn.params["foo"] == "bar"
+    assert conn.params["bar"] == "baz"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
 
