@@ -1,20 +1,23 @@
 # Changelog
 
-## v1.9.0-dev
+## v1.9.0 (2020-02-07)
 
 ### Bug fixes
 
-  * [Plug.SSL] Rewrite port when rewriting a request coming to a standard port
   * [Plug.Conn.Cookies] Make `decode` split on `;` only, remove `$`-prefix condition
   * [Plug.CSRFProtection] Generate url safe CSRF masks
-  * [Plug.Parsers] Treat invalid content-types as parsing errors unless :pass is given
+  * [Plug.Parsers] Treat invalid content-types as parsing errors unless `:pass` is given
+  * [Plug.Parsers] Ensure parameters are merged when falling back to `:pass` clause
   * [Plug.Parsers] Use HTTP status code 414 when query string is too long
+  * [Plug.SSL] Rewrite port when rewriting a request coming to a standard port
 
 ### Enhancements
 
   * [Plug] Make Plug fully compatible with new Elixir child specs
   * [Plug.Exception] Add actions to exceptions that implement `Plug.Exception` and render actions in `Plug.Debugger` error page
   * [Plug.Parsers] Add option to skip utf8 validation
+  * [Plug.Parsers] Make multipart support MFA for `:length` limit
+  * [Plug.Static] Accept MFA for `:header` option
 
 ## v1.8.3 (2019-07-28)
 
