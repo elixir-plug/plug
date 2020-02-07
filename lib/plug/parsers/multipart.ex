@@ -52,33 +52,6 @@ defmodule Plug.Parsers.MULTIPART do
     {limit, headers_opts, opts}
   end
 
-  defp validate_length!(length) when is_number(length), do: length
-
-  defp validate_length!({module, fun, args} = mfa)
-       when is_atom(module) and is_atom(fun) and is_list(args) do
-    arity = length(args)
-
-    if Code.ensure_compiled(module) != {:module, module} do
-      raise ArgumentError,
-            "invalid :length option. The module #{inspect(module)} is not " <>
-              "loaded and could not be found"
-    end
-
-    if not function_exported?(module, fun, arity) do
-      raise ArgumentError,
-            "invalid :length option. The module #{inspect(module)} must " <>
-              "implement #{fun}/#{arity}"
-    end
-
-    mfa
-  end
-
-  defp validate_length!(length) do
-    raise ArgumentError,
-          "the :length option expects a number, or a three-element " <>
-            "tuple in the form of {module, function, extra_args}, got: #{inspect(length)}"
-  end
-
   def parse(conn, "multipart", subtype, _headers, opts_tuple)
       when subtype in ["form-data", "mixed"] do
     try do

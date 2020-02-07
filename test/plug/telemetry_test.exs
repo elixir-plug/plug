@@ -63,7 +63,7 @@ defmodule Plug.TelemetryTest do
     assert %{time: time} = measurements
     assert is_integer(time)
     assert map_size(metadata) == 2
-    assert %{conn: conn, options: [extra_options: :hello]} = metadata
+    assert %{conn: %Plug.Conn{}, options: [extra_options: :hello]} = metadata
 
     assert_received {:event, [:pipeline, :stop], measurements, metadata}
     assert map_size(measurements) == 1
