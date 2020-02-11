@@ -131,7 +131,7 @@ defmodule Plug.Session.COOKIE do
   defp decode({:ok, binary}, :external_term_format, log) do
     {:term,
      try do
-       Plug.Crypto.safe_binary_to_term(binary)
+       Plug.Crypto.non_executable_binary_to_term(binary)
      rescue
        e ->
          Logger.log(

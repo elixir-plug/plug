@@ -104,6 +104,8 @@ defmodule Plug.Debugger do
     monospace_font: "menlo, consolas, monospace"
   }
 
+  @salt "plug-debugger-actions"
+
   import Plug.Conn
   require Logger
 
@@ -222,10 +224,8 @@ defmodule Plug.Debugger do
 
   def run_action(%Plug.Conn{} = conn) do
     with %Plug.Conn{body_params: params} <- fetch_body_params(conn),
-         secret <- generate_actions_secret(conn),
-         {:ok, verified_encoded_action_handler} <-
-           Plug.Crypto.MessageVerifier.verify(params["encoded_handler"], secret) do
-      {module, function, args} = Plug.Crypto.safe_binary_to_term(verified_encoded_action_handler)
+         {:ok, {module, function, args}} <-
+           Plug.Crypto.verify(conn.secret_key_base, @salt, params["encoded_handler"]) do
       apply(module, function, args)
 
       conn
@@ -246,15 +246,10 @@ defmodule Plug.Debugger do
 
     # TODO: Remove implements_actions? in future Plug versions
     if implements_actions? && conn.secret_key_base do
-      actions_secret = generate_actions_secret(conn)
       actions = Plug.Exception.actions(exception)
 
       Enum.map(actions, fn %{label: label, handler: handler} ->
-        encoded_handler =
-          handler
-          |> :erlang.term_to_binary()
-          |> Plug.Crypto.MessageVerifier.sign(actions_secret)
-
+        encoded_handler = Plug.Crypto.sign(conn.secret_key_base, @salt, handler)
         %{label: label, encoded_handler: encoded_handler}
       end)
     else
@@ -270,11 +265,6 @@ defmodule Plug.Debugger do
       [referer] -> referer
       [] -> "/"
     end
-  end
-
-  def generate_actions_secret(%Plug.Conn{secret_key_base: secret_key_base}) do
-    actions_secret_salt = "plug-debugger-actions"
-    Plug.Crypto.KeyGenerator.generate(secret_key_base, actions_secret_salt, cache: Plug.Keys)
   end
 
   defp accepts_html?(_accept_header = []), do: false

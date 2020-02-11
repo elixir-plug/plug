@@ -466,15 +466,13 @@ defmodule Plug.DebuggerTest do
 
   test "does not execute an action that was tampered" do
     secret_key_base = "test"
-    invalid_secret_key_base = "invalid"
-
-    invalid_secret =
-      Plug.Debugger.generate_actions_secret(%Plug.Conn{secret_key_base: invalid_secret_key_base})
 
     invalid_encoded_handler =
-      {Process, :send, [self(), :tampered, []]}
-      |> :erlang.term_to_binary()
-      |> Plug.Crypto.MessageVerifier.sign(invalid_secret)
+      Plug.Crypto.sign(
+        "invalid",
+        "plug-debugger-actions",
+        {Process, :send, [self(), :tampered, []]}
+      )
 
     conn =
       conn(:post, "/__plug__/debugger/action", %{"encoded_handler" => invalid_encoded_handler})
