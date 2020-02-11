@@ -18,6 +18,12 @@ defmodule Plug.Session.COOKIE do
 
   ## Options
 
+    * `:secret_key_base` - the secret key base to built the cookie
+      signing/encryption on top of. If one is given on initialization,
+      the cookie store can precompute all relevant values at compilation
+      time. Otherwise, the value is taken from `conn.secret_key_base`
+      and cached.
+
     * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
       a key for encrypting/decrypting a cookie, can be either a binary or
       an MFA returning a binary;
@@ -68,13 +74,14 @@ defmodule Plug.Session.COOKIE do
     length = Keyword.get(opts, :key_length, 32)
     digest = Keyword.get(opts, :key_digest, :sha256)
     log = Keyword.get(opts, :log, :debug)
+    secret_key_base = Keyword.get(opts, :secret_key_base)
     key_opts = [iterations: iterations, length: length, digest: digest, cache: Plug.Keys]
 
     serializer = check_serializer(opts[:serializer] || :external_term_format)
 
     %{
-      encryption_salt: encryption_salt,
-      signing_salt: signing_salt,
+      encryption_salt: prederive(secret_key_base, encryption_salt, key_opts),
+      signing_salt: prederive(secret_key_base, signing_salt, key_opts),
       key_opts: key_opts,
       serializer: serializer,
       log: log
@@ -86,13 +93,13 @@ defmodule Plug.Session.COOKIE do
 
     case opts do
       %{encryption_salt: nil} ->
-        MessageVerifier.verify(cookie, derive(conn, get_mfa(signing_salt), key_opts))
+        MessageVerifier.verify(cookie, derive(conn.secret_key_base, signing_salt, key_opts))
 
-      %{encryption_salt: key} ->
+      %{encryption_salt: encryption_salt} ->
         MessageEncryptor.decrypt(
           cookie,
-          derive(conn, get_mfa(key), key_opts),
-          derive(conn, get_mfa(signing_salt), key_opts)
+          derive(conn.secret_key_base, encryption_salt, key_opts),
+          derive(conn.secret_key_base, signing_salt, key_opts)
         )
     end
     |> decode(serializer, log)
@@ -104,13 +111,13 @@ defmodule Plug.Session.COOKIE do
 
     case opts do
       %{encryption_salt: nil} ->
-        MessageVerifier.sign(binary, derive(conn, get_mfa(signing_salt), key_opts))
+        MessageVerifier.sign(binary, derive(conn.secret_key_base, signing_salt, key_opts))
 
-      %{encryption_salt: key} ->
+      %{encryption_salt: encryption_salt} ->
         MessageEncryptor.encrypt(
           binary,
-          derive(conn, get_mfa(key), key_opts),
-          derive(conn, get_mfa(signing_salt), key_opts)
+          derive(conn.secret_key_base, encryption_salt, key_opts),
+          derive(conn.secret_key_base, signing_salt, key_opts)
         )
     end
   end
@@ -165,8 +172,25 @@ defmodule Plug.Session.COOKIE do
     {nil, %{}}
   end
 
-  defp derive(conn, key, key_opts) do
-    conn.secret_key_base
+  defp prederive(secret_key_base, value, key_opts)
+       when is_binary(secret_key_base) and is_binary(value) do
+    {:prederived, derive(secret_key_base, value, Keyword.delete(key_opts, :cache))}
+  end
+
+  defp prederive(_secret_key_base, value, _key_opts) do
+    value
+  end
+
+  defp derive(_secret_key_base, {:prederived, value}, _key_opts) do
+    value
+  end
+
+  defp derive(secret_key_base, {module, function, args}, key_opts) do
+    derive(secret_key_base, apply(module, function, args), key_opts)
+  end
+
+  defp derive(secret_key_base, key, key_opts) do
+    secret_key_base
     |> validate_secret_key_base()
     |> KeyGenerator.generate(key, key_opts)
   end
@@ -190,7 +214,4 @@ defmodule Plug.Session.COOKIE do
 
   defp check_serializer(_),
     do: raise(ArgumentError, "cookie store expects :serializer option to be a module")
-
-  defp get_mfa({module, function, arguments}), do: apply(module, function, arguments)
-  defp get_mfa(other), do: other
 end

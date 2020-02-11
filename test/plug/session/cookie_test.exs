@@ -15,6 +15,7 @@ defmodule Plug.Session.CookieTest do
   @secret String.duplicate("abcdef0123456789", 8)
   @signing_opts Plug.Session.init(Keyword.put(@default_opts, :encrypt, false))
   @encrypted_opts Plug.Session.init(@default_opts)
+  @prederived_opts Plug.Session.init([secret_key_base: @secret] ++ @default_opts)
 
   defmodule CustomSerializer do
     def encode(%{"foo" => "bar"}), do: {:ok, "encoded session"}
@@ -40,6 +41,12 @@ defmodule Plug.Session.CookieTest do
   defp encrypt_conn(conn) do
     put_in(conn.secret_key_base, @secret)
     |> Plug.Session.call(@encrypted_opts)
+    |> fetch_session
+  end
+
+  defp prederived_conn(conn) do
+    put_in(conn.secret_key_base, @secret)
+    |> Plug.Session.call(@prederived_opts)
     |> fetch_session
   end
 
@@ -73,6 +80,11 @@ defmodule Plug.Session.CookieTest do
     assert key_generator_opts[:iterations] == 1000
     assert key_generator_opts[:length] == 32
     assert key_generator_opts[:digest] == :sha256
+  end
+
+  test "prederives keys is secret_key_base is available" do
+    assert %{encryption_salt: {:prederived, _}, signing_salt: {:prederived, _}} =
+             CookieStore.init([secret_key_base: @secret] ++ @default_opts)
   end
 
   test "uses specified key generator opts" do
@@ -228,5 +240,20 @@ defmodule Plug.Session.CookieTest do
            |> recycle_cookies(conn)
            |> custom_serialize_conn()
            |> get_session("foo") == nil
+  end
+
+  # Prederivation
+
+  test "gets and sets prederived session cookie" do
+    conn =
+      conn(:get, "/")
+      |> prederived_conn()
+      |> put_session("foo", "bar")
+      |> send_resp(200, "")
+
+    assert conn(:get, "/")
+           |> recycle_cookies(conn)
+           |> prederived_conn()
+           |> get_session("foo") == "bar"
   end
 end
