@@ -42,7 +42,7 @@ defmodule Plug.MixProject do
   def deps do
     [
       {:mime, "~> 1.0"},
-      {:plug_crypto, "~> 1.1"},
+      {:plug_crypto, "~> 1.1.1 or ~> 1.2", github: "elixir-plug/plug_crypto"},
       {:telemetry, "~> 0.4", optional: true},
       {:ex_doc, "~> 0.21", only: :docs}
     ]
