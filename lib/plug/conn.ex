@@ -1363,7 +1363,7 @@ defmodule Plug.Conn do
         opts[:encrypted],
         req_cookies,
         cookies,
-        &Plug.Crypto.decrypt(secret_key_base, &1 <> "_cookie", "", &2, keys: Plug.Keys)
+        &Plug.Crypto.decrypt(secret_key_base, &1 <> "_cookie", &2, keys: Plug.Keys)
       )
 
     %{conn | cookies: cookies}
@@ -1462,8 +1462,7 @@ defmodule Plug.Conn do
         {Plug.Crypto.sign(conn.secret_key_base, key <> "_cookie", value, max_age(opts)), opts}
 
       {false, true} ->
-        {Plug.Crypto.encrypt(conn.secret_key_base, key <> "_cookie", "", value, max_age(opts)),
-         opts}
+        {Plug.Crypto.encrypt(conn.secret_key_base, key <> "_cookie", value, max_age(opts)), opts}
 
       {false, false} when is_binary(value) ->
         {value, opts}
