@@ -1437,7 +1437,8 @@ defmodule Plug.Conn do
       to true when the connection is HTTPS
     * `:extra` - string to append to cookie. Use this to take advantage of
       non-standard cookie attributes.
-    * `:signed` - when true, signs the
+    * `:signed` - when true, signs the cookie
+    * `:encrypted` - when true, encrypts the cookie
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t()) :: t
