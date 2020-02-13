@@ -1312,7 +1312,7 @@ defmodule Plug.Conn do
   ## Options
 
     * `:signed` - a list of one or more cookies that are signed and must
-      be unsigned accordingly
+      be verified accordingly
 
     * `:encrypted` - a list of one or more cookies that are encrypted and
       must be decrypted accordingly
@@ -1347,8 +1347,6 @@ defmodule Plug.Conn do
     conn
   end
 
-  @no_max_age [max_age: 0, keys: Plug.Keys]
-
   def fetch_cookies(%Conn{} = conn, opts) do
     %{req_cookies: req_cookies, cookies: cookies, secret_key_base: secret_key_base} = conn
 
@@ -1357,7 +1355,7 @@ defmodule Plug.Conn do
         opts[:signed],
         req_cookies,
         cookies,
-        &Plug.Crypto.verify(secret_key_base, &1, &2, @no_max_age)
+        &Plug.Crypto.verify(secret_key_base, &1 <> "_cookie", &2, keys: Plug.Keys)
       )
 
     cookies =
@@ -1365,20 +1363,20 @@ defmodule Plug.Conn do
         opts[:encrypted],
         req_cookies,
         cookies,
-        &Plug.Crypto.decrypt(secret_key_base, &1, &1, &2, @no_max_age)
+        &Plug.Crypto.decrypt(secret_key_base, &1 <> "_cookie", "", &2, keys: Plug.Keys)
       )
 
     %{conn | cookies: cookies}
   end
 
-  defp verify_or_decrypt(keys, req_cookies, cookies, fun) do
-    keys
+  defp verify_or_decrypt(names, req_cookies, cookies, fun) do
+    names
     |> List.wrap()
-    |> Enum.reduce(cookies, fn key, acc ->
-      if value = req_cookies[key] do
-        case fun.(key, value) do
-          {:ok, verified_value} -> Map.put(acc, key, verified_value)
-          {_, _} -> Map.delete(acc, key)
+    |> Enum.reduce(cookies, fn name, acc ->
+      if value = req_cookies[name] do
+        case fun.(name, value) do
+          {:ok, verified_value} -> Map.put(acc, name, verified_value)
+          {_, _} -> Map.delete(acc, name)
         end
       else
         acc
@@ -1405,7 +1403,7 @@ defmodule Plug.Conn do
   When signing or encryption is enabled, then any Elixir value can be
   stored in the cookie (except anonymous functions for security reasons).
   Once a value is signed or encrypted, you must also call `fetch_cookie/2`
-  with the cookies that are either signed or encrypted.
+  with the name of the cookies that are either signed or encrypted.
 
   To sign, you would do:
 
@@ -1457,13 +1455,15 @@ defmodule Plug.Conn do
 
     case {sign?, encrypt?} do
       {true, true} ->
-        raise ArgumentError, "only :sign or :encrypt may be given at the same time"
+        raise ArgumentError,
+              ":encrypt automatically implies :sign. Please pass only one or the other"
 
       {true, false} ->
-        {Plug.Crypto.sign(conn.secret_key_base, key, value, signed_at(opts)), opts}
+        {Plug.Crypto.sign(conn.secret_key_base, key <> "_cookie", value, max_age(opts)), opts}
 
       {false, true} ->
-        {Plug.Crypto.encrypt(conn.secret_key_base, key, key, value, signed_at(opts)), opts}
+        {Plug.Crypto.encrypt(conn.secret_key_base, key <> "_cookie", "", value, max_age(opts)),
+         opts}
 
       {false, false} when is_binary(value) ->
         {value, opts}
@@ -1473,11 +1473,8 @@ defmodule Plug.Conn do
     end
   end
 
-  defp signed_at(opts) do
-    [
-      keys: Plug.Keys,
-      signed_at: System.system_time(:second) + Keyword.get(opts, :max_age, 86400)
-    ]
+  defp max_age(opts) do
+    [keys: Plug.Keys, max_age: Keyword.get(opts, :max_age, 86400)]
   end
 
   defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
