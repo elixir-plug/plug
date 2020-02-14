@@ -1422,7 +1422,11 @@ defmodule Plug.Conn do
       fetch_cookie(conn, encrypted: ~w(my-cookie))
 
   By default a signed or encrypted cookie is only valid for a day, unless
-  a `:max_age` is specified.
+  a `:max_age` is specified. The signing salt and encryption secret will
+  be the cookie name followed by the `_cookie` prefix. Be careful to not
+  reuse those as salts and secrets in other parts of the application.
+  Similarly do not use the same cookie name to store different values with
+  distinct purposes.
 
   ## Options
 

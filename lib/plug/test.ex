@@ -206,8 +206,19 @@ defmodule Plug.Test do
   """
   @spec recycle_cookies(Conn.t(), Conn.t()) :: Conn.t()
   def recycle_cookies(new_conn, old_conn) do
-    Enum.reduce(Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn {key, value}, acc ->
-      put_req_cookie(acc, to_string(key), value)
+    req_cookies = Plug.Conn.fetch_cookies(old_conn).req_cookies
+
+    resp_cookies =
+      Enum.reduce(old_conn.resp_cookies, req_cookies, fn {key, opts}, acc ->
+        if value = Map.get(opts, :value) do
+          Map.put(acc, key, value)
+        else
+          Map.delete(acc, key)
+        end
+      end)
+
+    Enum.reduce(resp_cookies, new_conn, fn {key, value}, acc ->
+      put_req_cookie(acc, key, value)
     end)
   end
 
