@@ -42,8 +42,8 @@ defmodule Plug.Conn do
     * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
     * `query_params` - the request query params, populated through `fetch_query_params/2`
     * `path_params` - the request path params, populated by routers such as `Plug.Router`
-    * `params` - the request params, the result of merging the `:body_params` and
-      `:query_params` with `:path_params`
+    * `params` - the request params, the result of merging the `:path_params` on top of
+       `:body_params` on top of `:query_params`
     * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
@@ -126,7 +126,8 @@ defmodule Plug.Conn do
   @type assigns :: %{optional(atom) => any}
   @type before_send :: [(t -> t)]
   @type body :: iodata
-  @type cookies :: %{optional(binary) => binary}
+  @type req_cookies :: %{optional(binary) => binary}
+  @type cookies :: %{optional(binary) => term}
   @type halted :: boolean
   @type headers :: [{binary, binary}]
   @type host :: binary
@@ -162,7 +163,7 @@ defmodule Plug.Conn do
           query_params: query_params | Unfetched.t(),
           query_string: query_string,
           remote_ip: :inet.ip_address(),
-          req_cookies: cookies | Unfetched.t(),
+          req_cookies: req_cookies | Unfetched.t(),
           req_headers: headers,
           request_path: binary,
           resp_body: body | nil,
@@ -251,6 +252,7 @@ defmodule Plug.Conn do
   end
 
   alias Plug.Conn
+  @epoch {{1970, 1, 1}, {0, 0, 0}}
   @already_sent {:plug_conn, :sent}
   @unsent [:unset, :set, :set_chunked, :set_file]
 
@@ -1306,11 +1308,21 @@ defmodule Plug.Conn do
 
   @doc """
   Fetches cookies from the request headers.
+
+  ## Options
+
+    * `:signed` - a list of one or more cookies that are signed and must
+      be verified accordingly
+
+    * `:encrypted` - a list of one or more cookies that are encrypted and
+      must be decrypted accordingly
+
+  See `put_resp_cookie/4` for more information.
   """
   @spec fetch_cookies(t, Keyword.t()) :: t
   def fetch_cookies(conn, opts \\ [])
 
-  def fetch_cookies(%Conn{req_cookies: %Unfetched{}} = conn, _opts) do
+  def fetch_cookies(%Conn{req_cookies: %Unfetched{}} = conn, opts) do
     %{resp_cookies: resp_cookies, req_headers: req_headers} = conn
 
     req_cookies =
@@ -1328,49 +1340,150 @@ defmodule Plug.Conn do
         end
       end)
 
-    %{conn | req_cookies: req_cookies, cookies: cookies}
+    fetch_cookies(%{conn | req_cookies: req_cookies, cookies: cookies}, opts)
   end
 
-  def fetch_cookies(%Conn{} = conn, _opts) do
+  def fetch_cookies(%Conn{} = conn, []) do
     conn
+  end
+
+  def fetch_cookies(%Conn{} = conn, opts) do
+    %{req_cookies: req_cookies, cookies: cookies, secret_key_base: secret_key_base} = conn
+
+    cookies =
+      verify_or_decrypt(
+        opts[:signed],
+        req_cookies,
+        cookies,
+        &Plug.Crypto.verify(secret_key_base, &1 <> "_cookie", &2, keys: Plug.Keys)
+      )
+
+    cookies =
+      verify_or_decrypt(
+        opts[:encrypted],
+        req_cookies,
+        cookies,
+        &Plug.Crypto.decrypt(secret_key_base, &1 <> "_cookie", &2, keys: Plug.Keys)
+      )
+
+    %{conn | cookies: cookies}
+  end
+
+  defp verify_or_decrypt(names, req_cookies, cookies, fun) do
+    names
+    |> List.wrap()
+    |> Enum.reduce(cookies, fn name, acc ->
+      if value = req_cookies[name] do
+        case fun.(name, value) do
+          {:ok, verified_value} -> Map.put(acc, name, verified_value)
+          {_, _} -> Map.delete(acc, name)
+        end
+      else
+        acc
+      end
+    end)
   end
 
   @doc """
   Puts a response cookie in the connection.
 
-  The cookie value is not automatically escaped. Therefore, if you
-  want to store values with comma, quotes, and so on, you need to explicitly
-  escape them or use a function such as `Base.encode64(value, padding: false)`
-  when writing and `Base.decode64(encoded, padding: false)` when reading
-  the cookie. Padding needs to be disabled since `=` is not a valid character
-  in cookie values.
+  The cookie value must be a binary and that the cookie value is not
+  automatically escaped, unless signing or encryption is enabled.
+  Therefore if you want to store values with non-alphanumeric characters,
+  you must either sign or encrypt the cookie (see the upcoming section)
+  or consider explicitly escaping the cookie value by using a function
+  such as `Base.encode64(value, padding: false)` when writing and
+  `Base.decode64(encoded, padding: false)` when reading the cookie.
+  It is important for padding to be disabled since `=` is not a valid
+  character in cookie values.
+
+  ## Signing and encrypting cookies
+
+  This function allows you to automatically sign and encrypt cookies.
+  When signing or encryption is enabled, then any Elixir value can be
+  stored in the cookie (except anonymous functions for security reasons).
+  Once a value is signed or encrypted, you must also call `fetch_cookie/2`
+  with the name of the cookies that are either signed or encrypted.
+
+  To sign, you would do:
+
+      put_resp_cookie(conn, "my-cookie", %{user_id: user.id}, sign: true)
+
+  and then:
+
+      fetch_cookie(conn, signed: ~w(my-cookie))
+
+  To encrypt, you would do:
+
+      put_resp_cookie(conn, "my-cookie", %{user_id: user.id}, encrypt: true)
+
+  and then:
+
+      fetch_cookie(conn, encrypted: ~w(my-cookie))
+
+  By default a signed or encrypted cookie is only valid for a day, unless
+  a `:max_age` is specified.
+
+  The signing and encryption keys are derived from the connection's
+  `secret_key_base` using a salt that is built by appending "_cookie" to
+  the cookie name. Care should be taken not to derive other keys using
+  this value as the salt. Similarly do not use the same cookie name to
+  store different values with distinct purposes.
 
   ## Options
 
     * `:domain` - the domain the cookie applies to
     * `:max_age` - the cookie max-age, in seconds. Providing a value for this
-      option will set both the _max-age_ and _expires_ cookie attributes
+      option will set both the _max-age_ and _expires_ cookie attributes.
     * `:path` - the path the cookie applies to
     * `:http_only` - when `false`, the cookie is accessible beyond HTTP
     * `:secure` - if the cookie must be sent only over https. Defaults
       to true when the connection is HTTPS
     * `:extra` - string to append to cookie. Use this to take advantage of
       non-standard cookie attributes.
+    * `:signed` - when true, signs the cookie
+    * `:encrypted` - when true, encrypts the cookie
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t()) :: t
   def put_resp_cookie(%Conn{} = conn, key, value, opts \\ [])
-      when is_binary(key) and is_binary(value) and is_list(opts) do
+      when is_binary(key) and is_list(opts) do
     %{resp_cookies: resp_cookies, scheme: scheme} = conn
-    cookie = [{:value, value} | opts] |> :maps.from_list() |> maybe_secure_cookie(scheme)
+    {to_send_value, opts} = maybe_sign_or_encrypt_cookie(conn, key, value, opts)
+    cookie = [{:value, to_send_value} | opts] |> Map.new() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
     update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
   end
 
+  defp maybe_sign_or_encrypt_cookie(conn, key, value, opts) do
+    {sign?, opts} = Keyword.pop(opts, :sign, false)
+    {encrypt?, opts} = Keyword.pop(opts, :encrypt, false)
+
+    case {sign?, encrypt?} do
+      {true, true} ->
+        raise ArgumentError,
+              ":encrypt automatically implies :sign. Please pass only one or the other"
+
+      {true, false} ->
+        {Plug.Crypto.sign(conn.secret_key_base, key <> "_cookie", value, max_age(opts)), opts}
+
+      {false, true} ->
+        {Plug.Crypto.encrypt(conn.secret_key_base, key <> "_cookie", value, max_age(opts)), opts}
+
+      {false, false} when is_binary(value) ->
+        {value, opts}
+
+      {false, false} ->
+        raise ArgumentError, "cookie value must be a binary unless the cookie is signed/encrypted"
+    end
+  end
+
+  defp max_age(opts) do
+    [keys: Plug.Keys, max_age: Keyword.get(opts, :max_age, 86400)]
+  end
+
   defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
   defp maybe_secure_cookie(cookie, _), do: cookie
-
-  @epoch {{1970, 1, 1}, {0, 0, 0}}
 
   @doc """
   Deletes a response cookie.
