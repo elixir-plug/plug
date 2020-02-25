@@ -313,7 +313,7 @@ defmodule Plug.Debugger do
 
     doc = module && get_doc(module, fun, arity, app)
     clauses = module && get_clauses(module, fun, args)
-    source = get_source(module, file)
+    source = get_source(app, module, file)
     context = get_context(root, app)
     snippet = get_snippet(source, line)
 
@@ -433,10 +433,13 @@ defmodule Plug.Debugger do
   defp get_context(app, app) when app != nil, do: :app
   defp get_context(_app1, _app2), do: :all
 
-  defp get_source(module, file) do
+  defp get_source(app, module, file) do
     cond do
       File.regular?(file) ->
         file
+
+      File.regular?("apps/#{app}/#{file}") ->
+        "apps/#{app}/#{file}"
 
       source = module && Code.ensure_loaded?(module) && module.module_info(:compile)[:source] ->
         to_string(source)
