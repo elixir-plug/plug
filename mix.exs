@@ -33,7 +33,7 @@ defmodule Plug.MixProject do
   # Configuration for the OTP application
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :eex],
       mod: {Plug, []},
       env: [validate_header_keys_during_test: true]
     ]
