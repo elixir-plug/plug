@@ -259,7 +259,7 @@ defmodule Plug.Router do
           fun.(conn, opts)
         catch
           kind, reason ->
-            Plug.Conn.WrapperError.reraise(conn, kind, reason, System.stacktrace())
+            Plug.Conn.WrapperError.reraise(conn, kind, reason, __STACKTRACE__)
         end
       end
 

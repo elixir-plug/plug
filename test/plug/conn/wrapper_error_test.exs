@@ -28,7 +28,7 @@ defmodule Plug.Conn.WrapperErrorTest do
       try do
         raise "oops"
       rescue
-        _ -> System.stacktrace()
+        _ -> __STACKTRACE__
       end
 
     try do

@@ -79,6 +79,6 @@ defmodule Plug.Adapters.CowboyTest do
   defp unload_plug_cowboy() do
     :code.delete(Plug.Cowboy)
     :code.purge(Plug.Cowboy)
-    Code.unload_files([@plug_cowboy_path])
+    Code.unrequire_files([@plug_cowboy_path])
   end
 end

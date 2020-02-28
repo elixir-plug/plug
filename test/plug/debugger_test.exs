@@ -54,7 +54,7 @@ defmodule Plug.DebuggerTest do
         try do
           raise "oops"
         rescue
-          _ -> System.stacktrace()
+          _ -> __STACKTRACE__
         end
 
       raise Plug.Conn.WrapperError,

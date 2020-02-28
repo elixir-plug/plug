@@ -59,11 +59,11 @@ defmodule Plug.Parsers.MULTIPART do
     rescue
       # Do not ignore upload errors
       e in [Plug.UploadError, Plug.Parsers.BadEncodingError] ->
-        reraise e, System.stacktrace()
+        reraise e, __STACKTRACE__
 
       # All others are wrapped
       e ->
-        reraise Plug.Parsers.ParseError.exception(exception: e), System.stacktrace()
+        reraise Plug.Parsers.ParseError.exception(exception: e), __STACKTRACE__
     end
   end
 

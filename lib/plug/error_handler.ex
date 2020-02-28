@@ -68,8 +68,7 @@ defmodule Plug.ErrorHandler do
             Plug.ErrorHandler.__catch__(conn, kind, e, reason, stack, &handle_errors/2)
         catch
           kind, reason ->
-            stack = System.stacktrace()
-            Plug.ErrorHandler.__catch__(conn, kind, reason, reason, stack, &handle_errors/2)
+            Plug.ErrorHandler.__catch__(conn, kind, reason, reason, __STACKTRACE__, &handle_errors/2)
         end
       end
     end

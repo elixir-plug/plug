@@ -137,7 +137,7 @@ defmodule Plug.Debugger do
             Plug.Debugger.__catch__(conn, kind, reason, stack, @plug_debugger)
         catch
           kind, reason ->
-            Plug.Debugger.__catch__(conn, kind, reason, System.stacktrace(), @plug_debugger)
+            Plug.Debugger.__catch__(conn, kind, reason, __STACKTRACE__, @plug_debugger)
         end
       end
     end
