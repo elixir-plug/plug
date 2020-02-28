@@ -2,6 +2,10 @@ defmodule Plug.Router.InvalidSpecError do
   defexception message: "invalid route specification"
 end
 
+defmodule Plug.Router.MalformedURIError do
+  defexception message: "malformed URI", plug_status: 400
+end
+
 defmodule Plug.Router.Utils do
   @moduledoc false
 
