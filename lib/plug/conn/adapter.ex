@@ -71,7 +71,7 @@ defmodule Plug.Conn.Adapter do
   implementation returns the actual body and payload so
   it can be used during testing.
   """
-  @callback chunk(payload, Conn.status()) ::
+  @callback chunk(payload, Conn.body()) ::
               :ok | {:ok, sent_body :: binary, payload} | {:error, term}
 
   @doc """
