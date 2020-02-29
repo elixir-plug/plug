@@ -10,6 +10,19 @@ defmodule Plug.Router.Utils do
   @moduledoc false
 
   @doc """
+  Decodes path information for dispatching.
+  """
+  def decode_path_info!(conn) do
+    try do
+      Enum.map(conn.path_info, &URI.decode/1)
+    rescue
+      e in ArgumentError ->
+        reason = %Plug.Router.MalformedURIError{message: e.message}
+        Plug.Conn.WrapperError.reraise(conn, :error, reason, __STACKTRACE__)
+    end
+  end
+
+  @doc """
   Converts a given method to its connection representation.
 
   The request method is stored in the `Plug.Conn` struct as an uppercase string

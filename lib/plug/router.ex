@@ -248,13 +248,7 @@ defmodule Plug.Router do
 
       @doc false
       def match(conn, _opts) do
-        try do
-          do_match(conn, conn.method, Enum.map(conn.path_info, &URI.decode/1), conn.host)
-        catch
-          kind, %ArgumentError{message: "malformed URI " <> uri} = reason ->
-            reason = %Plug.Router.MalformedURIError{message: reason.message}
-            Plug.Conn.WrapperError.reraise(conn, kind, reason, __STACKTRACE__)
-        end
+        do_match(conn, conn.method, Plug.Router.Utils.decode_path_info!(conn), conn.host)
       end
 
       @doc false
