@@ -24,6 +24,10 @@ defmodule Plug.CSRFProtection do
   arbitrary content-type, making JSON exploitable. More info:
   https://bugs.chromium.org/p/chromium/issues/detail?id=490015
 
+  Finally, we recommend developers to invoke `delete_csrf_token/0`
+  every time after they log a user in, to avoid CSRF fixation
+  attacks.
+
   ## Token generation
 
   This plug won't generate tokens automatically. Instead, tokens
