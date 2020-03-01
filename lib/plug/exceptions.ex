@@ -48,7 +48,7 @@ defprotocol Plug.Exception do
 end
 
 defimpl Plug.Exception, for: Any do
-  def status(%{plug_status: status}) when is_integer(status), do: status
+  def status(%{plug_status: status}), do: Plug.Conn.Status.code(status)
   def status(_), do: 500
   def actions(_exception), do: []
 end

@@ -2,8 +2,12 @@ defmodule Plug.ErrorHandlerTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
-  defmodule Exception do
+  defmodule ForbiddenError do
     defexception plug_status: 403, message: "oops"
+  end
+
+  defmodule NotFoundError do
+    defexception plug_status: :not_found, message: "oops"
   end
 
   defmodule Router do
@@ -38,7 +42,12 @@ defmodule Plug.ErrorHandlerTest do
         conn: conn,
         kind: :error,
         stack: stack,
-        reason: Exception.exception([])
+        reason: ForbiddenError.exception([])
+    end
+
+    get "/status_as_atom" do
+      raise NotFoundError
+      send_resp(conn, 200, "ok")
     end
   end
 
@@ -67,11 +76,22 @@ defmodule Plug.ErrorHandlerTest do
   test "call/2 is overridden and does not unwrap wrapped errors" do
     conn = conn(:get, "/send_and_wrapped")
 
-    assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.Exception) oops", fn ->
+    assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.ForbiddenError) oops", fn ->
       Router.call(conn, [])
     end
 
     assert_received {:plug_conn, :sent}
     assert {403, _headers, "Something went wrong"} = sent_resp(conn)
+  end
+
+  test "call/2 supports statuses as atoms" do
+    conn = conn(:get, "/status_as_atom")
+
+    assert_raise Plug.Conn.WrapperError, "** (Plug.ErrorHandlerTest.NotFoundError) oops", fn ->
+      Router.call(conn, [])
+    end
+
+    assert_received {:plug_conn, :sent}
+    assert {404, _headers, "Something went wrong"} = sent_resp(conn)
   end
 end
