@@ -286,7 +286,7 @@ defmodule Plug.Builder do
       Enum.reduce(pipeline, conn, fn {plug, opts, guards}, acc ->
         {plug, opts, guards}
         |> init_plug(init_mode)
-        |> quote_plug(acc, env, builder_opts)
+        |> quote_plug(init_mode, acc, env, builder_opts)
       end)
 
     {conn, ast}
@@ -322,10 +322,22 @@ defmodule Plug.Builder do
     Macro.escape(opts, unquote: true)
   end
 
-  # `acc` is a series of nested plug calls in the form of
-  # plug3(plug2(plug1(conn))). `quote_plug` wraps a new plug around that series
-  # of calls.
-  defp quote_plug({plug_type, plug, opts, guards}, acc, env, builder_opts) do
+  defp quote_plug({:module, plug, opts, guards}, :compile, acc, env, builder_opts) do
+    call = quote_plug(:module, plug, opts, guards, acc, env, builder_opts)
+
+    quote do
+      require unquote(plug)
+      unquote(call)
+    end
+  end
+
+  defp quote_plug({plug_type, plug, opts, guards}, _init_mode, acc, env, builder_opts) do
+    quote_plug(plug_type, plug, opts, guards, acc, env, builder_opts)
+  end
+
+  # `acc` is a series of nested plug calls in the form of plug3(plug2(plug1(conn))).
+  # `quote_plug` wraps a new plug around that series of calls.
+  defp quote_plug(plug_type, plug, opts, guards, acc, env, builder_opts) do
     call = quote_plug_call(plug_type, plug, opts)
 
     error_message =
@@ -349,15 +361,9 @@ defmodule Plug.Builder do
         end
       end
 
-    generated? = :erlang.system_info(:otp_release) >= '19'
-
     clauses =
       Enum.map(clauses, fn {:->, meta, args} ->
-        if generated? do
-          {:->, [generated: true] ++ meta, args}
-        else
-          {:->, Keyword.put(meta, :line, -1), args}
-        end
+        {:->, [generated: true] ++ meta, args}
       end)
 
     {fun, meta, [arg, [do: clauses]]}
