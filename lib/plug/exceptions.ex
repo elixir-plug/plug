@@ -39,9 +39,9 @@ defprotocol Plug.Exception do
 
   ## Examples
 
-       defimpl Plug.Exception, for: ActionableExample do
+      defimpl Plug.Exception, for: ActionableExample do
         def actions(_), do: [%{label: "Print HI", handler: {IO, :puts, ["Hi!"]}}]
-       end
+      end
   """
   @spec actions(t) :: [action()]
   def actions(exception)
