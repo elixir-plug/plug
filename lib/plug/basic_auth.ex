@@ -14,7 +14,7 @@ defmodule Plug.BasicAuth do
       import Plug.BasicAuth
       plug :basic_auth, username: "hello", password: "secret"
 
-  Or if you would rather put those in an environment variable:
+  Or if you would rather put those in a config file:
 
       # lib/your_app.ex
       import Plug.BasicAuth
@@ -33,13 +33,15 @@ defmodule Plug.BasicAuth do
   If you want to provide your own authentication logic on top of
   Basic HTTP auth, you can use the low-level functions. For example:
 
-      import Plug.BasicAuth
+      plug :auth
 
-      with {user, pass} <- parse_basic_auth(conn),
-           %User{} = user <- MyApp.Accounts.find_by_username_and_password(user, pass) do
-        assign(conn, :current_user, user)
-      else
-        _ -> conn |> request_basic_auth(conn) |> halt()
+      defp auth(conn, _opts) do
+        with {user, pass} <- Plug.BasicAuth.parse_basic_auth(conn),
+             %User{} = user <- MyApp.Accounts.find_by_username_and_password(user, pass) do
+          assign(conn, :current_user, user)
+        else
+          _ -> conn |> Plug.BasicAuth.request_basic_auth(conn) |> halt()
+        end
       end
 
   Keep in mind that:
