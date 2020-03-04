@@ -1623,7 +1623,7 @@ defmodule Plug.Conn do
 
   ## Examples
 
-  To log the status of requests being sent:
+  To log the status of response being sent:
 
       require Logger
 
