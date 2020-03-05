@@ -14,7 +14,7 @@ defmodule Plug.BasicAuth do
       import Plug.BasicAuth
       plug :basic_auth, username: "hello", password: "secret"
 
-  Or if you would rather put those in an environment variable:
+  Or if you would rather put those in a config file:
 
       # lib/your_app.ex
       import Plug.BasicAuth
@@ -28,18 +28,27 @@ defmodule Plug.BasicAuth do
   prompt the user for username and password. If they match, then the
   request succeeds.
 
+  Both approaches shown above rely on static configuration. In the next section
+  we will explore using lower level API for a more dynamic solution where the
+  credentials might be stored in a database, environment variables etc.
+
   ## Low-level usage
 
-  If you want to provide your own authentication logic on top of
-  Basic HTTP auth, you can use the low-level functions. For example:
+  If you want to provide your own authentication logic on top of Basic HTTP
+  auth, you can use the low-level functions. As an example, we define `:auth`
+  plug that extracts username and password from the request headers, compares
+  them against the database, and either assigns a `:current_user` on success
+  or responds with an error on failure.
 
-      import Plug.BasicAuth
+      plug :auth
 
-      with {user, pass} <- parse_basic_auth(conn),
-           %User{} = user <- MyApp.Accounts.find_by_username_and_password(user, pass) do
-        assign(conn, :current_user, user)
-      else
-        _ -> conn |> request_basic_auth(conn) |> halt()
+      defp auth(conn, _opts) do
+        with {user, pass} <- Plug.BasicAuth.parse_basic_auth(conn),
+             %User{} = user <- MyApp.Accounts.find_by_username_and_password(user, pass) do
+          assign(conn, :current_user, user)
+        else
+          _ -> conn |> Plug.BasicAuth.request_basic_auth(conn) |> halt()
+        end
       end
 
   Keep in mind that:
@@ -116,7 +125,7 @@ defmodule Plug.BasicAuth do
   Requests basic authentication from the client.
 
   It sets the response to status 401 with "Unauthorized" as body.
-  The respone is not sent though (nor the connection is halted),
+  The response is not sent though (nor the connection is halted),
   allowing developers to further customize it.
 
   ## Options
