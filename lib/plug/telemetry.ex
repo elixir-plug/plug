@@ -13,9 +13,9 @@ defmodule Plug.Telemetry do
   In the example above, two events will be emitted:
 
     * `[:my, :plug, :start]` - emitted when the plug is invoked.
-      The event carries no measurement.  The metadata is the whole
-      `Plug.Conn` under the `:conn` key and any leftover options
-      given to the plug under `:options`.
+      The event carries the `system_time` as measurement. The metadata
+      is the whole `Plug.Conn` under the `:conn` key and any leftover
+      options given to the plug under `:options`.
 
     * `[:my, :plug, :stop]` - emitted right before the request is sent.
       The event carries a single measurement, `:duration`,  which is the
@@ -72,7 +72,8 @@ defmodule Plug.Telemetry do
   @impl true
   def call(conn, {start_event, stop_event, opts}) do
     start_time = System.monotonic_time()
-    :telemetry.execute(start_event, %{time: start_time}, %{conn: conn, options: opts})
+    metadata = %{conn: conn, options: opts}
+    :telemetry.execute(start_event, %{system_time: System.system_time()}, metadata)
 
     Plug.Conn.register_before_send(conn, fn conn ->
       duration = System.monotonic_time() - start_time
