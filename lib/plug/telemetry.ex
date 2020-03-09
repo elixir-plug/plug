@@ -6,13 +6,16 @@ defmodule Plug.Telemetry do
 
       plug Plug.Telemetry, event_prefix: [:my, :plug]
 
+  After the Plug is added, please be sure to add
+  [:telemetry](https://github.com/beam-telemetry/telemetry) as
+  project dependency.
+
   In the example above, two events will be emitted:
 
     * `[:my, :plug, :start]` - emitted when the plug is invoked.
-      The event carries a single measurement, `:time`, which is the
-      monotonic time in native units at the moment the event is emitted.
-      The metadata is the whole `Plug.Conn` under the `:conn` key and
-      any leftover options given to the plug under `:options`.
+      The event carries no measurement.  The metadata is the whole
+      `Plug.Conn` under the `:conn` key and any leftover options
+      given to the plug under `:options`.
 
     * `[:my, :plug, :stop]` - emitted right before the request is sent.
       The event carries a single measurement, `:duration`,  which is the
@@ -20,18 +23,14 @@ defmodule Plug.Telemetry do
       It has the same metadata as the start event, except the connection
       has been updated.
 
-  After the Plug is added, please be sure to add
-  [:telemetry](https://github.com/beam-telemetry/telemetry) as
-  project dependency.
-
-  Note that this plug measures only the time between its invocation and
-  the rest of the plug pipeline - this can be used to exclude some plugs
-  from measurement.
+  Note this plug measures the time between its invocation until a response
+  is sent. The `:stop` event is not guaranteed to be emitted in all error
+  cases, so this Plug cannot be used as a Telemetry spans.
 
   ## Time unit
 
-  Both `:time` and `:duration` measurements are presented in the `:native`
-  time unit. You can read more about it in the docs for `System.convert_time_unit/3`.
+  The `:duration` measurements are presented in the `:native` time unit.
+  You can read more about it in the docs for `System.convert_time_unit/3`.
 
   ## Example
 
