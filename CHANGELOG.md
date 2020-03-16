@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.10.0-dev
+
+### Enhancements
+
+  * [Plug.BasicAuth] Add `Plug.BasicAuth`
+  * [Plug.Conn] Add built-in support for signed and encrypted cookies
+  * [Plug.Exception] Allow to use atoms as statuses in the `plug_status` field for exceptions
+
+### Bug fixes
+
+  * [Plug.Router] Handle malformed URI as bad requests
+
 ## v1.9.0 (2020-02-07)
 
 ### Bug fixes

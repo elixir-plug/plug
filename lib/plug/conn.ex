@@ -51,7 +51,7 @@ defmodule Plug.Conn do
   These fields contain response information:
 
     * `resp_body` - the response body, by default is an empty string. It is set
-      to nil after the response is sent, except for test connections. The response 
+      to nil after the response is sent, except for test connections. The response
       charset used defaults to "utf-8".
     * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
