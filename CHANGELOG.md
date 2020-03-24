@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.10.0-dev
+## v1.10.0 (2020-03-24)
 
 ### Enhancements
 
