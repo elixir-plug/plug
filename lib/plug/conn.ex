@@ -1411,7 +1411,7 @@ defmodule Plug.Conn do
 
   and then:
 
-      fetch_cookie(conn, signed: ~w(my-cookie))
+      fetch_cookies(conn, signed: ~w(my-cookie))
 
   To encrypt, you would do:
 
@@ -1419,7 +1419,7 @@ defmodule Plug.Conn do
 
   and then:
 
-      fetch_cookie(conn, encrypted: ~w(my-cookie))
+      fetch_cookies(conn, encrypted: ~w(my-cookie))
 
   By default a signed or encrypted cookie is only valid for a day, unless
   a `:max_age` is specified.
@@ -1445,7 +1445,7 @@ defmodule Plug.Conn do
     * `:encrypted` - when true, encrypts the cookie
 
   """
-  @spec put_resp_cookie(t, binary, binary, Keyword.t()) :: t
+  @spec put_resp_cookie(t, binary, any(), Keyword.t()) :: t
   def put_resp_cookie(%Conn{} = conn, key, value, opts \\ [])
       when is_binary(key) and is_list(opts) do
     %{resp_cookies: resp_cookies, scheme: scheme} = conn
