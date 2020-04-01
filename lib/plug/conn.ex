@@ -1445,7 +1445,7 @@ defmodule Plug.Conn do
     * `:encrypted` - when true, encrypts the cookie
 
   """
-  @spec put_resp_cookie(t, binary, binary, Keyword.t()) :: t
+  @spec put_resp_cookie(t, binary, any(), Keyword.t()) :: t
   def put_resp_cookie(%Conn{} = conn, key, value, opts \\ [])
       when is_binary(key) and is_list(opts) do
     %{resp_cookies: resp_cookies, scheme: scheme} = conn
