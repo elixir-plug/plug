@@ -87,6 +87,12 @@ defmodule Plug.Debugger do
   Or, using Visual Studio Code:
 
       vscode://file/__FILE__:__LINE__
+
+  ## Links to docs
+
+  If a `PLUG_DOCS_URL` environment variable is set, `Plug.Debugger` will use
+  it as the base URL for links to your docs in place of the default
+  "https://hexdocs.pm".
   """
 
   @already_sent {:plug_conn, :sent}
@@ -371,9 +377,10 @@ defmodule Plug.Debugger do
   defp get_doc(module, fun, arity, app) do
     with true <- has_docs?(module, fun, arity),
          {:ok, vsn} <- :application.get_key(app, :vsn) do
+      url = System.get_env("PLUG_DOCS_URL") || "https://hexdocs.pm"
       vsn = vsn |> List.to_string() |> String.split("-") |> hd()
       fun = fun |> Atom.to_string() |> URI.encode()
-      "https://hexdocs.pm/#{app}/#{vsn}/#{inspect(module)}.html##{fun}/#{arity}"
+      "#{url}/#{app}/#{vsn}/#{inspect(module)}.html##{fun}/#{arity}"
     else
       _ -> nil
     end
