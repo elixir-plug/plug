@@ -1402,7 +1402,7 @@ defmodule Plug.Conn do
   This function allows you to automatically sign and encrypt cookies.
   When signing or encryption is enabled, then any Elixir value can be
   stored in the cookie (except anonymous functions for security reasons).
-  Once a value is signed or encrypted, you must also call `fetch_cookie/2`
+  Once a value is signed or encrypted, you must also call `fetch_cookies/2`
   with the name of the cookies that are either signed or encrypted.
 
   To sign, you would do:
