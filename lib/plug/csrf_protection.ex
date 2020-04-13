@@ -121,8 +121,9 @@ defmodule Plug.CSRFProtection do
     @moduledoc "Error raised when CSRF token is invalid."
 
     message =
-      "invalid CSRF (Cross Site Request Forgery) token, make sure all " <>
-        "requests include a valid '_csrf_token' param or 'x-csrf-token' header"
+      "invalid CSRF (Cross Site Request Forgery) token, please make sure that: " <>
+        "  * The session cookie is being sent and session is loaded " <>
+        "  * The CSRF token is sent either via request parameter or HTTP header"
 
     defexception message: message, plug_status: 403
   end
