@@ -116,6 +116,7 @@ defmodule Plug.CSRFProtection do
   @token_size 18
   @encoded_token_size 24
   @double_encoded_token_size 32
+  @valid_options [:exception, :clear_session]
 
   defmodule InvalidCSRFTokenError do
     @moduledoc "Error raised when CSRF token is invalid."
@@ -134,6 +135,14 @@ defmodule Plug.CSRFProtection do
       "security warning: an embedded <script> tag on another site requested " <>
         "protected JavaScript (if you know what you're doing, disable forgery " <>
         "protection for this route)"
+
+    defexception message: message, plug_status: 403
+  end
+
+  defmodule InvalidSessionError do
+    @moduledoc "Error raised when there is no user session."
+
+    message = "Session is required to validate a CSRF (Cross Site Request Forgery) token. "
 
     defexception message: message, plug_status: 403
   end
@@ -304,18 +313,28 @@ defmodule Plug.CSRFProtection do
         mode == :clear_session ->
           conn |> configure_session(ignore: true) |> clear_session()
 
-        mode == :exception ->
-          raise InvalidCSRFTokenError
-
-        true ->
+        mode not in @valid_options ->
           raise ArgumentError,
                 "option :with should be one of :exception or :clear_session, got #{inspect(mode)}"
+
+        invalid_session?(conn, csrf_token) ->
+          raise InvalidSessionError
+
+        true ->
+          raise InvalidCSRFTokenError
       end
 
     register_before_send(conn, &ensure_same_origin_and_csrf_token!(&1, session_key, csrf_token))
   end
 
   ## Verification
+
+  defp invalid_session?(%Plug.Conn{method: method}, nil)
+       when method not in @unprotected_methods do
+    true
+  end
+
+  defp invalid_session?(_, _), do: false
 
   defp verified_request?(conn, csrf_token, allow_hosts) do
     conn.method in @unprotected_methods ||

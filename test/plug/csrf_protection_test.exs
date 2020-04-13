@@ -5,6 +5,7 @@ defmodule Plug.CSRFProtectionTest do
   alias Plug.CSRFProtection
   alias Plug.CSRFProtection.InvalidCSRFTokenError
   alias Plug.CSRFProtection.InvalidCrossOriginRequestError
+  alias Plug.CSRFProtection.InvalidSessionError
 
   @default_opts Plug.Session.init(
                   store: :cookie,
@@ -111,11 +112,11 @@ defmodule Plug.CSRFProtectionTest do
   end
 
   test "raise error for missing authenticity token in session" do
-    assert_raise InvalidCSRFTokenError, fn ->
+    assert_raise InvalidSessionError, fn ->
       call(conn(:post, "/", %{}))
     end
 
-    assert_raise InvalidCSRFTokenError, fn ->
+    assert_raise InvalidSessionError, fn ->
       call(conn(:post, "/", %{_csrf_token: "foo"}))
     end
   end
@@ -123,11 +124,11 @@ defmodule Plug.CSRFProtectionTest do
   test "raise error for invalid authenticity token in params" do
     old_conn = call(conn(:get, "/"))
 
-    assert_raise InvalidCSRFTokenError, fn ->
+    assert_raise InvalidSessionError, fn ->
       call_with_old_conn(conn(:post, "/", %{_csrf_token: "foo"}), old_conn)
     end
 
-    assert_raise InvalidCSRFTokenError, fn ->
+    assert_raise InvalidSessionError, fn ->
       call_with_old_conn(conn(:post, "/", %{}), old_conn)
     end
   end
