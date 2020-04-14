@@ -122,7 +122,7 @@ defmodule Plug.CSRFProtection do
 
     message =
       "invalid CSRF (Cross Site Request Forgery) token, please make sure that:\n\n" <>
-        "  * The session cookie is being sent and session is loaded " <>
+        "  * The session cookie is being sent and session is loaded\n" <>
         "  * The request include a valid '_csrf_token' param or 'x-csrf-token' header"
 
     defexception message: message, plug_status: 403
