@@ -47,7 +47,8 @@ defmodule Plug.SSL do
       scheme. Defaults to `["localhost"]`
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
-      `{module, function, args}` that will be invoked on demand
+      `{module, function, args}` that will be invoked on demand. If the first element in args
+      list would be :conn atom, it will be replaced with an actual conn struct.
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
 
@@ -365,7 +366,7 @@ defmodule Plug.SSL do
   defp redirect_to_https(%{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    scheme_and_host = "https://" <> host(custom_host, host)
+    scheme_and_host = "https://" <> host(custom_host, host, conn)
     location = scheme_and_host <> conn.request_path <> qs(conn.query_string)
 
     log_level &&
@@ -388,11 +389,17 @@ defmodule Plug.SSL do
     |> halt
   end
 
-  defp host(nil, host), do: host
-  defp host(host, _) when is_binary(host), do: host
-  defp host({mod, fun, args}, host), do: host(apply(mod, fun, args), host)
+  defp host(nil, host, _), do: host
+  defp host(host, _, _) when is_binary(host), do: host
+
+  defp host({mod, fun, args}, host, conn),
+    do: host(apply(mod, fun, replace_conn_if_needed(args, conn)), host, conn)
+
   # TODO: Deprecate this format
-  defp host({:system, env}, host), do: host(System.get_env(env), host)
+  defp host({:system, env}, host, conn), do: host(System.get_env(env), host, conn)
+
+  defp replace_conn_if_needed([:conn | rest], conn), do: [conn | rest]
+  defp replace_conn_if_needed(args, _conn), do: args
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs

@@ -239,6 +239,21 @@ defmodule Plug.SSLTest do
       assert conn.halted
     end
 
+    test "to tuple host with a custom header on get" do
+      defmodule TestNamespace do
+        def get_host(conn, header_name), do: conn |> Plug.Conn.get_req_header(header_name) |> hd()
+      end
+
+      conn =
+        call(conn(:get, "http://example.com/", [], [{"x-forwarded-host", "truessl.example.com"}]),
+          host: {TestNamespace, :get_host, [:conn, "x-forwarded-host"]}
+        )
+
+      assert get_resp_header(conn, "location") == ["https://truessl.example.com/"]
+      assert conn.status == 301
+      assert conn.halted
+    end
+
     test "to host on head" do
       conn = call(conn(:head, "http://example.com/"))
       assert conn.status == 301
