@@ -239,6 +239,28 @@ defmodule Plug.SSLTest do
       assert conn.halted
     end
 
+    test "to host with a x-forwarder-host header on get" do
+      conn =
+        conn(:get, "http://example.com/")
+        |> put_req_header("x-forwarded-host", "truessl.example.com")
+        |> call(rewrite_host_on: [:x_forwarded_host])
+
+      assert get_resp_header(conn, "location") == ["https://truessl.example.com/"]
+      assert conn.status == 301
+      assert conn.halted
+    end
+
+    test "host have priority over rewrite_host_on option" do
+      conn =
+        conn(:get, "http://example.com/")
+        |> put_req_header("x-forwarded-host", "truessl.example.com")
+        |> call(rewrite_host_on: [:x_forwarded_host], host: "xyz.example.com")
+
+      assert get_resp_header(conn, "location") == ["https://xyz.example.com/"]
+      assert conn.status == 301
+      assert conn.halted
+    end
+
     test "to host on head" do
       conn = call(conn(:head, "http://example.com/"))
       assert conn.status == 301
