@@ -147,7 +147,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   defp body_or_params(params, query, headers, method)
        when is_map(params) and method in ["GET", "HEAD"] do
-    params = stringify_all_params(params)
+    params = stringify_params(params, &to_string/1)
     params = Map.merge(Plug.Conn.Query.decode(query), params)
 
     {"", nil, params, headers}
@@ -158,27 +158,26 @@ defmodule Plug.Adapters.Test.Conn do
     content_type = List.keyfind(headers, "content-type", 0, content_type_header)
 
     headers = List.keystore(headers, "content-type", 0, content_type)
-    body_params = stringify_params(params)
+    body_params = stringify_params(params, & &1)
     params = Map.merge(Plug.Conn.Query.decode(query), body_params)
     {"--plug_conn_test--", body_params, params, headers}
   end
 
-  defp stringify_params([{_, _} | _] = params), do: Enum.into(params, %{}, &stringify_kv/1)
-  defp stringify_params([_ | _] = params), do: Enum.map(params, &stringify_params/1)
-  defp stringify_params(%{__struct__: mod} = struct) when is_atom(mod), do: struct
-  defp stringify_params(%{} = params), do: Enum.into(params, %{}, &stringify_kv/1)
-  defp stringify_params(other), do: other
+  defp stringify_params([{_, _} | _] = params, value_fun),
+    do: Enum.into(params, %{}, &stringify_kv(&1, value_fun))
 
-  defp stringify_kv({k, v}), do: {to_string(k), stringify_params(v)}
+  defp stringify_params([_ | _] = params, value_fun),
+    do: Enum.map(params, &stringify_params(&1, value_fun))
 
-  defp stringify_all_params([{_, _} | _] = params), do: Enum.into(params, %{}, &stringify_pair/1)
-  defp stringify_all_params([_ | _] = params), do: Enum.map(params, &stringify_all_params/1)
-  defp stringify_all_params(%{__struct__: mod} = struct) when is_atom(mod), do: struct
-  defp stringify_all_params(%{} = params), do: Enum.into(params, %{}, &stringify_pair/1)
-  defp stringify_all_params(fun) when is_function(fun), do: fun
-  defp stringify_all_params(other), do: to_string(other)
+  defp stringify_params(%{__struct__: mod} = struct, _value_fun) when is_atom(mod), do: struct
+  defp stringify_params(fun, _value_fun) when is_function(fun), do: fun
 
-  defp stringify_pair({k, v}), do: {to_string(k), stringify_all_params(v)}
+  defp stringify_params(%{} = params, value_fun),
+    do: Enum.into(params, %{}, &stringify_kv(&1, value_fun))
+
+  defp stringify_params(other, value_fun), do: value_fun.(other)
+
+  defp stringify_kv({k, v}, value_fun), do: {to_string(k), stringify_params(v, value_fun)}
 
   defp split_path(nil), do: []
 
