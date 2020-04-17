@@ -13,7 +13,7 @@ defmodule Plug.Adapters.Test.Conn do
     owner = self()
 
     {body, body_params, params, req_headers} =
-      body_or_params(body_or_params, query, conn.req_headers)
+      body_or_params(body_or_params, query, conn.req_headers, method)
 
     state = %{
       method: method,
@@ -135,33 +135,49 @@ defmodule Plug.Adapters.Test.Conn do
     end
   end
 
-  defp body_or_params(nil, _query, headers), do: {"", nil, nil, headers}
+  defp body_or_params(nil, _query, headers, _method), do: {"", nil, nil, headers}
 
-  defp body_or_params(body, _query, headers) when is_binary(body) do
+  defp body_or_params(body, _query, headers, _method) when is_binary(body) do
     {body, nil, nil, headers}
   end
 
-  defp body_or_params(params, query, headers) when is_list(params) do
-    body_or_params(Enum.into(params, %{}), query, headers)
+  defp body_or_params(params, query, headers, method) when is_list(params) do
+    body_or_params(Enum.into(params, %{}), query, headers, method)
   end
 
-  defp body_or_params(params, query, headers) when is_map(params) do
+  defp body_or_params(params, query, headers, method)
+       when is_map(params) and method in ["GET", "HEAD"] do
+    params = stringify_params(params, &to_string/1)
+    params = Map.merge(Plug.Conn.Query.decode(query), params)
+
+    {"", nil, params, headers}
+  end
+
+  defp body_or_params(params, query, headers, _method) when is_map(params) do
     content_type_header = {"content-type", "multipart/mixed; boundary=plug_conn_test"}
     content_type = List.keyfind(headers, "content-type", 0, content_type_header)
 
     headers = List.keystore(headers, "content-type", 0, content_type)
-    body_params = stringify_params(params)
+    body_params = stringify_params(params, & &1)
     params = Map.merge(Plug.Conn.Query.decode(query), body_params)
     {"--plug_conn_test--", body_params, params, headers}
   end
 
-  defp stringify_params([{_, _} | _] = params), do: Enum.into(params, %{}, &stringify_kv/1)
-  defp stringify_params([_ | _] = params), do: Enum.map(params, &stringify_params/1)
-  defp stringify_params(%{__struct__: mod} = struct) when is_atom(mod), do: struct
-  defp stringify_params(%{} = params), do: Enum.into(params, %{}, &stringify_kv/1)
-  defp stringify_params(other), do: other
+  defp stringify_params([{_, _} | _] = params, value_fun),
+    do: Enum.into(params, %{}, &stringify_kv(&1, value_fun))
 
-  defp stringify_kv({k, v}), do: {to_string(k), stringify_params(v)}
+  defp stringify_params([_ | _] = params, value_fun),
+    do: Enum.map(params, &stringify_params(&1, value_fun))
+
+  defp stringify_params(%{__struct__: mod} = struct, _value_fun) when is_atom(mod), do: struct
+  defp stringify_params(fun, _value_fun) when is_function(fun), do: fun
+
+  defp stringify_params(%{} = params, value_fun),
+    do: Enum.into(params, %{}, &stringify_kv(&1, value_fun))
+
+  defp stringify_params(other, value_fun), do: value_fun.(other)
+
+  defp stringify_kv({k, v}, value_fun), do: {to_string(k), stringify_params(v, value_fun)}
 
   defp split_path(nil), do: []
 
