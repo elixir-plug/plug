@@ -17,9 +17,9 @@ defmodule Plug.SSL do
 
   If your Plug application is behind a proxy that handles HTTPS, you will
   need to tell Plug to parse the proper protocol from the `x-forwarded-proto`
-  header. This can be done using the `:rewrite_on` option:
+  header. This can be done using the `:rewrite_port_on` option:
 
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
+      plug Plug.SSL, rewrite_port_on: [:x_forwarded_proto]
 
   The command above will effectively change the value of `conn.scheme` to the
   one sent in `x-forwarded-proto`. If the incoming request comes into a
@@ -33,9 +33,34 @@ defmodule Plug.SSL do
     * your proxy strips `x-forwarded-proto` headers from all incoming requests
     * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
+
+  ## x-forwarded-host
+
+  Similarly to the x-forwarded-proto case, if you Plug application is behind
+  a proxy (for example in Kubernetes environment) an internal host may be different
+  then exposed to the internet. In that case, load balancer handling the request will
+  make an internal call to your Plug application using some internal hostname
+  (like some.service.svc.cluster.local). Then redirect based on `host` header will be wrong.
+
+  Fortunately load balancers provide host used by end-user to make a request in
+  `x-forwarder-host` header. To do such redirect based on that header use
+  `:rewrite_host_on` option:
+
+      plug Plug.SSL, rewrite_host_on: [:x_forwarded_host]
+
+  The command above will effectively change the value of `conn.host` to the
+  one sent in `x-forwarded-host`.
+
+  Same as with x-forwarded-proto, only provide the option above if:
+
+    * your app is behind a proxy
+    * your proxy strips `x-forwarded-host` headers from all incoming requests
+    * your proxy sets the `x-forwarded-host` and sends it to Plug
+
   ## Plug Options
 
-    * `:rewrite_on` - rewrites the scheme to https based on the given headers
+    * `:rewrite_port_on` - rewrites the scheme to https based on the given headers
+    * `:rewrite_host_on` - rewrites the host while redirecting to https based on the given headers
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
     * `:expires` - seconds to expires for HSTS, defaults to `31_536_000` (1 year)
     * `:preload` - a boolean to request inclusion on the HSTS preload list
@@ -47,8 +72,8 @@ defmodule Plug.SSL do
       scheme. Defaults to `["localhost"]`
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
-      `{module, function, args}` that will be invoked on demand. If the first element in args
-      list would be :conn atom, it will be replaced with an actual conn struct.
+      `{module, function, args}` that will be invoked on demand. This setting overrides
+      rewrite_host_on option.
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
 
@@ -296,15 +321,20 @@ defmodule Plug.SSL do
   @impl true
   def init(opts) do
     host = Keyword.get(opts, :host)
-    rewrite_on = Keyword.get(opts, :rewrite_on, [])
+    deprecated_rewrite_on = Keyword.get(opts, :rewrite_on, [])
+    rewrite_port_on = Keyword.get(opts, :rewrite_port_on, deprecated_rewrite_on)
+    rewrite_host_on = Keyword.get(opts, :rewrite_host_on, [])
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
-    {hsts_header(opts), exclude, host, rewrite_on, log}
+    {hsts_header(opts), exclude, host, rewrite_port_on, rewrite_host_on, log}
   end
 
   @impl true
-  def call(conn, {hsts, exclude, host, rewrites, log_level}) do
-    conn = rewrite_on(conn, rewrites)
+  def call(conn, {hsts, exclude, host, rewrites_scheme, rewrites_host, log_level}) do
+    conn =
+      conn
+      |> rewrite_port_on(rewrites_scheme)
+      |> rewrite_host_on(rewrites_host)
 
     cond do
       :lists.member(conn.host, exclude) -> conn
@@ -313,7 +343,7 @@ defmodule Plug.SSL do
     end
   end
 
-  defp rewrite_on(conn, rewrites) do
+  defp rewrite_port_on(conn, rewrites) do
     Enum.reduce(rewrites, conn, fn
       :x_forwarded_proto, acc ->
         scheme = get_req_header(acc, "x-forwarded-proto")
@@ -344,6 +374,23 @@ defmodule Plug.SSL do
     conn
   end
 
+  defp rewrite_host_on(conn, rewrites) do
+    Enum.reduce(rewrites, conn, fn
+      :x_forwarded_host, acc ->
+        scheme = get_req_header(acc, "x-forwarded-host")
+        set_host(acc, scheme)
+
+      other, _acc ->
+        raise "unknown rewrite: #{inspect(other)}"
+    end)
+  end
+
+  defp set_host(conn, [proper_host]) do
+    %{conn | host: proper_host}
+  end
+
+  defp set_host(conn, _), do: conn
+
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
     if Keyword.get(opts, :hsts, true) do
@@ -366,7 +413,7 @@ defmodule Plug.SSL do
   defp redirect_to_https(%{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    scheme_and_host = "https://" <> host(custom_host, host, conn)
+    scheme_and_host = "https://" <> host(custom_host, host)
     location = scheme_and_host <> conn.request_path <> qs(conn.query_string)
 
     log_level &&
@@ -389,17 +436,11 @@ defmodule Plug.SSL do
     |> halt
   end
 
-  defp host(nil, host, _), do: host
-  defp host(host, _, _) when is_binary(host), do: host
-
-  defp host({mod, fun, args}, host, conn),
-    do: host(apply(mod, fun, replace_conn_if_needed(args, conn)), host, conn)
-
+  defp host(nil, host), do: host
+  defp host(host, _) when is_binary(host), do: host
+  defp host({mod, fun, args}, host), do: host(apply(mod, fun, args), host)
   # TODO: Deprecate this format
-  defp host({:system, env}, host, conn), do: host(System.get_env(env), host, conn)
-
-  defp replace_conn_if_needed([:conn | rest], conn), do: [conn | rest]
-  defp replace_conn_if_needed(args, _conn), do: args
+  defp host({:system, env}, host), do: host(System.get_env(env), host)
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs

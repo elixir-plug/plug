@@ -61,13 +61,8 @@ defmodule Plug.Test do
 
   """
   @spec conn(String.Chars.t(), binary, params) :: Conn.t()
-  def conn(method, path, params_or_body \\ nil, req_headers \\ []) do
-    Plug.Adapters.Test.Conn.conn(
-      %Plug.Conn{req_headers: req_headers},
-      method,
-      path,
-      params_or_body
-    )
+  def conn(method, path, params_or_body \\ nil) do
+    Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, method, path, params_or_body)
   end
 
   @doc """
