@@ -15,17 +15,22 @@ defmodule Plug.Adapters.Test.ConnTest do
   end
 
   test "custom params" do
-    conn = conn(:get, "/", a: "b", c: [%{d: "e"}])
-    assert conn.body_params == %{"a" => "b", "c" => [%{"d" => "e"}]}
-    assert conn.params == %{"a" => "b", "c" => [%{"d" => "e"}]}
+    conn = conn(:head, "/posts", page: 2)
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.params == %{"page" => "2"}
+    assert conn.req_headers == []
 
-    conn = conn(:get, "/", a: "b", c: [d: "e"])
-    assert conn.body_params == %{"a" => "b", "c" => %{"d" => "e"}}
-    assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}}
+    conn = conn(:get, "/", a: [b: 0, c: 5], d: [%{e: "f"}])
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.params == %{"a" => %{"b" => "0", "c" => "5"}, "d" => [%{"e" => "f"}]}
 
-    conn = conn(:post, "/?foo=bar", %{foo: "baz"})
-    assert conn.body_params == %{"foo" => "baz"}
-    assert conn.params == %{"foo" => "baz"}
+    conn = conn(:get, "/?f=g", a: "b", c: [d: "e"])
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}, "f" => "g"}
+
+    conn = conn(:post, "/?foo=bar", %{foo: "baz", answer: 42})
+    assert conn.body_params == %{"foo" => "baz", "answer" => 42}
+    assert conn.params == %{"foo" => "baz", "answer" => 42}
 
     conn = conn(:post, "/?foo=bar", %{biz: "baz"})
     assert conn.body_params == %{"biz" => "baz"}
@@ -56,8 +61,17 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert conn.path_info == []
   end
 
-  test "custom params sets content-type to multipart/mixed when content-type is not set" do
+  test "custom params sets no content-type for GET/HEAD requests" do
+    conn = conn(:head, "/")
+    assert conn.req_headers == []
+    conn = conn(:get, "/")
+    assert conn.req_headers == []
     conn = conn(:get, "/", foo: "bar")
+    assert conn.req_headers == []
+  end
+
+  test "custom params sets content-type to multipart/mixed when content-type is not set" do
+    conn = conn(:post, "/", foo: "bar")
     assert conn.req_headers == [{"content-type", "multipart/mixed; boundary=plug_conn_test"}]
   end
 

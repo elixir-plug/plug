@@ -13,7 +13,7 @@ defmodule Plug.Adapters.Test.Conn do
     owner = self()
 
     {body, body_params, params, req_headers} =
-      body_or_params(body_or_params, query, conn.req_headers)
+      body_or_params(body_or_params, query, conn.req_headers, method)
 
     state = %{
       method: method,
@@ -135,17 +135,25 @@ defmodule Plug.Adapters.Test.Conn do
     end
   end
 
-  defp body_or_params(nil, _query, headers), do: {"", nil, nil, headers}
+  defp body_or_params(nil, _query, headers, _method), do: {"", nil, nil, headers}
 
-  defp body_or_params(body, _query, headers) when is_binary(body) do
+  defp body_or_params(body, _query, headers, _method) when is_binary(body) do
     {body, nil, nil, headers}
   end
 
-  defp body_or_params(params, query, headers) when is_list(params) do
-    body_or_params(Enum.into(params, %{}), query, headers)
+  defp body_or_params(params, query, headers, method) when is_list(params) do
+    body_or_params(Enum.into(params, %{}), query, headers, method)
   end
 
-  defp body_or_params(params, query, headers) when is_map(params) do
+  defp body_or_params(params, query, headers, method)
+       when is_map(params) and method in ["GET", "HEAD"] do
+    params = stringify_all_params(params)
+    params = Map.merge(Plug.Conn.Query.decode(query), params)
+
+    {"", nil, params, headers}
+  end
+
+  defp body_or_params(params, query, headers, _method) when is_map(params) do
     content_type_header = {"content-type", "multipart/mixed; boundary=plug_conn_test"}
     content_type = List.keyfind(headers, "content-type", 0, content_type_header)
 
@@ -162,6 +170,14 @@ defmodule Plug.Adapters.Test.Conn do
   defp stringify_params(other), do: other
 
   defp stringify_kv({k, v}), do: {to_string(k), stringify_params(v)}
+
+  defp stringify_all_params([{_, _} | _] = params), do: Enum.into(params, %{}, &stringify_pair/1)
+  defp stringify_all_params([_ | _] = params), do: Enum.map(params, &stringify_all_params/1)
+  defp stringify_all_params(%{__struct__: mod} = struct) when is_atom(mod), do: struct
+  defp stringify_all_params(%{} = params), do: Enum.into(params, %{}, &stringify_pair/1)
+  defp stringify_all_params(other), do: to_string(other)
+
+  defp stringify_pair({k, v}), do: {to_string(k), stringify_all_params(v)}
 
   defp split_path(nil), do: []
 
