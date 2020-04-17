@@ -33,17 +33,16 @@ defmodule Plug.SSL do
     * your proxy strips `x-forwarded-proto` headers from all incoming requests
     * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
-
   ## x-forwarded-host
 
-  Similarly to the x-forwarded-proto case, if you Plug application is behind
+  Similarly to the `x-forwarded-proto` case, if you Plug application is behind
   a proxy (for example in Kubernetes environment) an internal host may be different
   then exposed to the internet. In that case, load balancer handling the request will
   make an internal call to your Plug application using some internal hostname
   (like some.service.svc.cluster.local). Then redirect based on `host` header will be wrong.
 
   Fortunately load balancers provide host used by end-user to make a request in
-  `x-forwarder-host` header. To do such redirect based on that header use
+  `x-forwarded-host` header. To do such redirect based on that header use
   `:rewrite_host_on` option:
 
       plug Plug.SSL, rewrite_host_on: [:x_forwarded_host]
@@ -51,7 +50,7 @@ defmodule Plug.SSL do
   The command above will effectively change the value of `conn.host` to the
   one sent in `x-forwarded-host`.
 
-  Same as with x-forwarded-proto, only provide the option above if:
+  Same as with `x-forwarded-proto`, only provide the option above if:
 
     * your app is behind a proxy
     * your proxy strips `x-forwarded-host` headers from all incoming requests
@@ -64,7 +63,7 @@ defmodule Plug.SSL do
     * `:hsts` - a boolean on enabling HSTS or not, defaults to `true`
     * `:expires` - seconds to expires for HSTS, defaults to `31_536_000` (1 year)
     * `:preload` - a boolean to request inclusion on the HSTS preload list
-       (for full set of required flags, see: [Chromium HSTS submission site](https://hstspreload.org)),
+      (for full set of required flags, see: [Chromium HSTS submission site](https://hstspreload.org)),
       defaults to `false`
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
