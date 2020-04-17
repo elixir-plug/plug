@@ -24,6 +24,14 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.params == %{"a" => %{"b" => "0", "c" => "5"}, "d" => [%{"e" => "f"}]}
 
+    conn = conn(:get, "/?foo=bar", %{foo: "baz"})
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.params == %{"foo" => "baz"}
+
+    conn = conn(:get, "/?foo=bar", %{biz: "baz"})
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.params == %{"foo" => "bar", "biz" => "baz"}
+
     conn = conn(:get, "/?f=g", a: "b", c: [d: "e"])
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}, "f" => "g"}
