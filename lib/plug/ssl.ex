@@ -33,7 +33,6 @@ defmodule Plug.SSL do
     * your proxy strips `x-forwarded-proto` headers from all incoming requests
     * your proxy sets the `x-forwarded-proto` and sends it to Plug
 
-
   ## x-forwarded-host
 
   Similarly to the x-forwarded-proto case, if you Plug application is behind
@@ -321,7 +320,18 @@ defmodule Plug.SSL do
   @impl true
   def init(opts) do
     host = Keyword.get(opts, :host)
-    deprecated_rewrite_on = Keyword.get(opts, :rewrite_on, [])
+
+    deprecated_rewrite_on =
+      if rewrite_on = Keyword.get(opts, :rewrite_on) do
+        IO.warn(
+          ":rewrite_on on Plug.SSL/force_ssl is deprecated, please use :rewrite_port_on instead"
+        )
+
+        rewrite_on
+      else
+        []
+      end
+
     rewrite_port_on = Keyword.get(opts, :rewrite_port_on, deprecated_rewrite_on)
     rewrite_host_on = Keyword.get(opts, :rewrite_host_on, [])
     log = Keyword.get(opts, :log, :info)

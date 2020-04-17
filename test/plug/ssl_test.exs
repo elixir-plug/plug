@@ -170,12 +170,12 @@ defmodule Plug.SSLTest do
     end
   end
 
-  describe ":rewrite_on" do
+  describe ":rewrite_port_on" do
     test "rewrites conn http to https based on x-forwarded-proto" do
       conn =
         conn(:get, "http://example.com/")
         |> put_req_header("x-forwarded-proto", "https")
-        |> call(rewrite_on: [:x_forwarded_proto])
+        |> call(rewrite_port_on: [:x_forwarded_proto])
 
       assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]
       assert conn.scheme == :https
@@ -187,7 +187,7 @@ defmodule Plug.SSLTest do
       conn =
         conn(:get, "http://example.com:1234/")
         |> put_req_header("x-forwarded-proto", "https")
-        |> call(rewrite_on: [:x_forwarded_proto])
+        |> call(rewrite_port_on: [:x_forwarded_proto])
 
       assert conn.scheme == :https
       assert conn.port == 1234
@@ -210,7 +210,7 @@ defmodule Plug.SSLTest do
       conn =
         conn(:get, "https://example.com/")
         |> put_req_header("x-forwarded-proto", "http")
-        |> call(rewrite_on: [:x_forwarded_proto])
+        |> call(rewrite_port_on: [:x_forwarded_proto])
 
       assert get_resp_header(conn, "location") == ["https://example.com/"]
       assert conn.halted
@@ -218,7 +218,7 @@ defmodule Plug.SSLTest do
       conn =
         conn(:get, "https://example.com/foo?bar=baz")
         |> put_req_header("x-forwarded-proto", "http")
-        |> call(rewrite_on: [:x_forwarded_proto])
+        |> call(rewrite_port_on: [:x_forwarded_proto])
 
       assert get_resp_header(conn, "location") == ["https://example.com/foo?bar=baz"]
       assert conn.halted
