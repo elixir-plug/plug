@@ -49,6 +49,13 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert conn.params == %{"a" => "b", "file" => %{"__struct__" => "Foo"}}
   end
 
+  test "custom function params" do
+    conn = conn(:get, "/", action: fn -> "this is fine" end)
+
+    assert %{"action" => action} = conn.params
+    assert conn.params["action"].() == "this is fine"
+  end
+
   test "no body or params" do
     conn = conn(:get, "/")
     {adapter, state} = conn.adapter

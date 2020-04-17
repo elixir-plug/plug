@@ -175,6 +175,7 @@ defmodule Plug.Adapters.Test.Conn do
   defp stringify_all_params([_ | _] = params), do: Enum.map(params, &stringify_all_params/1)
   defp stringify_all_params(%{__struct__: mod} = struct) when is_atom(mod), do: struct
   defp stringify_all_params(%{} = params), do: Enum.into(params, %{}, &stringify_pair/1)
+  defp stringify_all_params(fun) when is_function(fun), do: fun
   defp stringify_all_params(other), do: to_string(other)
 
   defp stringify_pair({k, v}), do: {to_string(k), stringify_all_params(v)}
