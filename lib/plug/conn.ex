@@ -1387,7 +1387,7 @@ defmodule Plug.Conn do
   @doc """
   Puts a response cookie in the connection.
 
-  If the `:signed` or `:encrypted` flag are given, than the cookie
+  If the `:signed` or `:encrypted` flag are given, then the cookie
   value can be any term.
 
   If the cookie not signed nor encrypted, then the value must be a binary.
