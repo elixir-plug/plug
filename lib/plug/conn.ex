@@ -1387,12 +1387,14 @@ defmodule Plug.Conn do
   @doc """
   Puts a response cookie in the connection.
 
-  The cookie value must be a binary and that the cookie value is not
-  automatically escaped, unless signing or encryption is enabled.
-  Therefore if you want to store values with non-alphanumeric characters,
-  you must either sign or encrypt the cookie (see the upcoming section)
-  or consider explicitly escaping the cookie value by using a function
-  such as `Base.encode64(value, padding: false)` when writing and
+  If the `:signed` or `:encrypted` flag are given, than the cookie
+  value can be any term.
+
+  If the cookie not signed nor encrypted, then the value must be a binary.
+  Note the is not automatically escaped.  Therefore if you want to store
+  values with non-alphanumeric characters, you must either sign or encrypt
+  the cookie or consider explicitly escaping the cookie value by using a
+  function such as `Base.encode64(value, padding: false)` when writing and
   `Base.decode64(encoded, padding: false)` when reading the cookie.
   It is important for padding to be disabled since `=` is not a valid
   character in cookie values.
