@@ -59,36 +59,46 @@ defmodule Plug.Conn.Query do
   The binary is assumed to be encoded in "x-www-form-urlencoded" format.
   The format is decoded and then validated for proper UTF-8 encoding.
   """
-  def decode(query, initial \\ %{}, invalid_exception \\ Plug.Conn.InvalidQueryError)
+  def decode(
+        query,
+        initial \\ %{},
+        invalid_exception \\ Plug.Conn.InvalidQueryError,
+        validate_utf8 \\ true
+      )
 
-  def decode("", initial, _invalid_exception) do
+  def decode("", initial, _invalid_exception, _validate_utf8) do
     initial
   end
 
-  def decode(query, initial, invalid_exception) do
+  def decode(query, initial, invalid_exception, validate_utf8) do
     parts = :binary.split(query, "&", [:global])
 
-    Enum.reduce(Enum.reverse(parts), initial, &decode_www_pair(&1, &2, invalid_exception))
+    Enum.reduce(
+      Enum.reverse(parts),
+      initial,
+      &decode_www_pair(&1, &2, invalid_exception, validate_utf8)
+    )
   end
 
-  defp decode_www_pair("", acc, _invalid_exception) do
+  defp decode_www_pair("", acc, _invalid_exception, _validate_utf8) do
     acc
   end
 
-  defp decode_www_pair(binary, acc, invalid_exception) do
+  defp decode_www_pair(binary, acc, invalid_exception, validate_utf8) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->
-          {decode_www_form(key, invalid_exception), decode_www_form(value, invalid_exception)}
+          {decode_www_form(key, invalid_exception, validate_utf8),
+           decode_www_form(value, invalid_exception, validate_utf8)}
 
         [key] ->
-          {decode_www_form(key, invalid_exception), nil}
+          {decode_www_form(key, invalid_exception, validate_utf8), nil}
       end
 
     decode_pair(current, acc)
   end
 
-  defp decode_www_form(value, invalid_exception) do
+  defp decode_www_form(value, invalid_exception, validate_utf8) do
     try do
       URI.decode_www_form(value)
     rescue
@@ -96,7 +106,10 @@ defmodule Plug.Conn.Query do
         raise invalid_exception, "invalid urlencoded params, got #{value}"
     else
       binary ->
-        Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+        if validate_utf8 do
+          Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+        end
+
         binary
     end
   end

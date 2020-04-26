@@ -92,6 +92,9 @@ defmodule Plug.Parsers do
 
     * `:query_string_length` - the maximum allowed size for query strings
 
+    * `:validate_utf8` - boolean that tells whether or not we want to 
+        validate that parsed binaries are utf8 strings.
+
     * `:body_reader` - an optional replacement (or wrapper) for
       `Plug.Conn.read_body/2` to provide a function that gives access to the
       raw body before it is parsed and discarded. It is in the standard format
@@ -218,12 +221,13 @@ defmodule Plug.Parsers do
     {parsers, opts} = Keyword.pop(opts, :parsers)
     {pass, opts} = Keyword.pop(opts, :pass, [])
     {query_string_length, opts} = Keyword.pop(opts, :query_string_length, 1_000_000)
+    validate_utf8 = Keyword.get(opts, :validate_utf8, true)
 
     unless parsers do
       raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
     end
 
-    {convert_parsers(parsers, opts), pass, query_string_length}
+    {convert_parsers(parsers, opts), pass, query_string_length, validate_utf8}
   end
 
   defp convert_parsers(parsers, root_opts) do
@@ -255,49 +259,73 @@ defmodule Plug.Parsers do
 
   def call(%{method: method, body_params: %Plug.Conn.Unfetched{}} = conn, options)
       when method in @methods do
-    {parsers, pass, query_string_length} = options
+    {parsers, pass, query_string_length, validate_utf8} = options
     %{req_headers: req_headers} = conn
-    conn = Conn.fetch_query_params(conn, length: query_string_length)
+
+    conn =
+      Conn.fetch_query_params(conn,
+        length: query_string_length,
+        validate_utf8: validate_utf8
+      )
 
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
         case Conn.Utils.content_type(ct) do
           {:ok, type, subtype, params} ->
-            reduce(conn, parsers, type, subtype, params, pass, query_string_length)
+            reduce(
+              conn,
+              parsers,
+              type,
+              subtype,
+              params,
+              pass,
+              query_string_length,
+              validate_utf8
+            )
 
           :error ->
-            reduce(conn, parsers, ct, "", %{}, pass, query_string_length)
+            reduce(conn, parsers, ct, "", %{}, pass, query_string_length, validate_utf8)
         end
 
       _ ->
-        {conn, params} = merge_params(conn, %{}, query_string_length)
+        {conn, params} = merge_params(conn, %{}, query_string_length, validate_utf8)
+
         %{conn | params: params, body_params: %{}}
     end
   end
 
-  def call(%{body_params: body_params} = conn, {_, _, query_string_length}) do
+  def call(%{body_params: body_params} = conn, {_, _, query_string_length, validate_utf8}) do
     body_params = make_empty_if_unfetched(body_params)
-    {conn, params} = merge_params(conn, body_params, query_string_length)
+    {conn, params} = merge_params(conn, body_params, query_string_length, validate_utf8)
     %{conn | params: params, body_params: body_params}
   end
 
-  defp reduce(conn, [{parser, options} | rest], type, subtype, params, pass, query_string_length) do
+  defp reduce(
+         conn,
+         [{parser, options} | rest],
+         type,
+         subtype,
+         params,
+         pass,
+         query_string_length,
+         validate_utf8
+       ) do
     case parser.parse(conn, type, subtype, params, options) do
       {:ok, body, conn} ->
-        {conn, params} = merge_params(conn, body, query_string_length)
+        {conn, params} = merge_params(conn, body, query_string_length, validate_utf8)
         %{conn | params: params, body_params: body}
 
       {:next, conn} ->
-        reduce(conn, rest, type, subtype, params, pass, query_string_length)
+        reduce(conn, rest, type, subtype, params, pass, query_string_length, validate_utf8)
 
       {:error, :too_large, _conn} ->
         raise RequestTooLargeError
     end
   end
 
-  defp reduce(conn, [], type, subtype, _params, pass, query_string_length) do
+  defp reduce(conn, [], type, subtype, _params, pass, query_string_length, validate_utf8) do
     if accepted_mime?(type, subtype, pass) do
-      {conn, params} = merge_params(conn, %{}, query_string_length)
+      {conn, params} = merge_params(conn, %{}, query_string_length, validate_utf8)
       %{conn | params: params}
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
@@ -310,10 +338,15 @@ defmodule Plug.Parsers do
   defp accepted_mime?(type, subtype, pass),
     do: "#{type}/#{subtype}" in pass || "#{type}/*" in pass
 
-  defp merge_params(conn, body_params, query_string_length) do
+  defp merge_params(conn, body_params, query_string_length, validate_utf8) do
     %{params: params, path_params: path_params} = conn
     params = make_empty_if_unfetched(params)
-    conn = Plug.Conn.fetch_query_params(conn, length: query_string_length)
+
+    conn =
+      Plug.Conn.fetch_query_params(conn,
+        length: query_string_length,
+        validate_utf8: validate_utf8
+      )
 
     {conn,
      conn.query_params
