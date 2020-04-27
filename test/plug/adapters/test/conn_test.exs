@@ -60,7 +60,7 @@ defmodule Plug.Adapters.Test.ConnTest do
   test "custom function params" do
     conn = conn(:get, "/", action: fn -> "this is fine" end)
 
-    assert %{"action" => action} = conn.params
+    assert %{"action" => _action} = conn.params
     assert conn.params["action"].() == "this is fine"
   end
 
