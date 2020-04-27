@@ -1445,6 +1445,8 @@ defmodule Plug.Conn do
       non-standard cookie attributes.
     * `:signed` - when true, signs the cookie
     * `:encrypted` - when true, encrypts the cookie
+    * `:same_site` - set the cookie SameSite attribute to a string value.
+      If no string value is set, the attribute is omitted.
 
   """
   @spec put_resp_cookie(t, binary, any(), Keyword.t()) :: t
