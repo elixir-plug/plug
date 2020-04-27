@@ -51,6 +51,25 @@ defmodule Plug.Conn.CookiesTest do
     assert encode("foo", %{value: "bar", secure: true}) == "foo=bar; path=/; secure; HttpOnly"
   end
 
+  test "encodes without :same_site option if not set" do
+    assert encode("foo", %{value: "bar"}) == "foo=bar; path=/; HttpOnly"
+  end
+
+  test "encodes with :same_site option :lax" do
+    assert encode("foo", %{value: "bar", same_site: "Lax"}) ==
+             "foo=bar; path=/; HttpOnly; SameSite=Lax"
+  end
+
+  test "encodes with :same_site option :strict" do
+    assert encode("foo", %{value: "bar", same_site: "Strict"}) ==
+             "foo=bar; path=/; HttpOnly; SameSite=Strict"
+  end
+
+  test "encodes with :same_site option :none" do
+    assert encode("foo", %{value: "bar", same_site: "None"}) ==
+             "foo=bar; path=/; HttpOnly; SameSite=None"
+  end
+
   test "encodes with :http_only option, which defaults to true" do
     assert encode("foo", %{value: "bar", http_only: false}) == "foo=bar; path=/"
   end
