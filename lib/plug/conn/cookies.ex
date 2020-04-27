@@ -61,6 +61,7 @@ defmodule Plug.Conn.Cookies do
       emit_if(opts[:max_age], &encode_max_age(&1, opts)),
       emit_if(Map.get(opts, :secure, false), "; secure"),
       emit_if(Map.get(opts, :http_only, true), "; HttpOnly"),
+      emit_if(Map.get(opts, :same_site, nil), &same_site/1),
       emit_if(opts[:extra], &["; ", &1])
     ])
   end
@@ -70,6 +71,10 @@ defmodule Plug.Conn.Cookies do
     time = add_seconds(time, max_age)
     ["; expires=", rfc2822(time), "; max-age=", Integer.to_string(max_age)]
   end
+
+  defp same_site(:lax), do: "; SameSite=Lax"
+  defp same_site(:strict), do: "; SameSite=Strict"
+  defp same_site(:none), do: "; SameSite=None"
 
   defp emit_if(value, fun_or_string) do
     cond do
