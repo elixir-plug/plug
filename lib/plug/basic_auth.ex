@@ -47,7 +47,7 @@ defmodule Plug.BasicAuth do
              %User{} = user <- MyApp.Accounts.find_by_username_and_password(user, pass) do
           assign(conn, :current_user, user)
         else
-          _ -> conn |> Plug.BasicAuth.request_basic_auth(conn) |> halt()
+          _ -> conn |> Plug.BasicAuth.request_basic_auth() |> halt()
         end
       end
 
