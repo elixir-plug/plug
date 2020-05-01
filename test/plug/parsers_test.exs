@@ -335,6 +335,11 @@ defmodule Plug.ParsersTest do
     end
   end
 
+  test "does not raise when url contains invalid utf-8 and validate_utf8 is false" do
+    conn(:post, "/foo", "a=" <> <<139>>)
+    |> parse(validate_utf8: false)
+  end
+
   test "raises on too large bodies with root option" do
     exception =
       assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->

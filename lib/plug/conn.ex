@@ -984,7 +984,13 @@ defmodule Plug.Conn do
         plug_status: 414
     end
 
-    query_params = Plug.Conn.Query.decode(query_string, %{}, Plug.Conn.InvalidQueryError)
+    query_params =
+      Plug.Conn.Query.decode(
+        query_string,
+        %{},
+        Plug.Conn.InvalidQueryError,
+        Keyword.get(opts, :validate_utf8, true)
+      )
 
     case params do
       %Unfetched{} -> %{conn | query_params: query_params, params: query_params}
