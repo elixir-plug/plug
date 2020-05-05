@@ -30,6 +30,9 @@
   * [Plug.Parsers] Add option to skip utf8 validation
   * [Plug.Parsers] Make multipart support MFA for `:length` limit
   * [Plug.Static] Accept MFA for `:header` option
+  
+### Notes
+  * When implementing the `Plug.Exception` protocol, if the new `actions` function is not implemented, a warning will printed during compilation.
 
 ## v1.8.3 (2019-07-28)
 
