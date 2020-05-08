@@ -1,3 +1,5 @@
+Application.ensure_all_started(:telemetry)
+
 defmodule Plug.RouterTest do
   defmodule Forward do
     use Plug.Router
