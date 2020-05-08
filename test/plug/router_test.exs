@@ -507,6 +507,36 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == ":hello"
   end
 
+  test "emit start and stop event when router dispatches" do
+    start_router_id = {:start, :rand.uniform(100)}
+    stop_router_id = {:stop, :rand.uniform(100)}
+
+    on_exit(fn ->
+      :telemetry.detach(start_router_id)
+      :telemetry.detach(stop_router_id)
+    end)
+
+    attach(start_router_id, [:plug, :router_dispatch, :start])
+    attach(stop_router_id, [:plug, :router_dispatch, :stop])
+
+    conn = call(Sample, conn(:get, "/"))
+    assert conn.status == 200
+
+    assert_received {:event, [:plug, :router_dispatch, :start], _, _}
+    assert_received {:event, [:plug, :router_dispatch, :stop], _, _}
+  end
+
+  defp attach(handler_id, event) do
+    :telemetry.attach(
+      handler_id,
+      event,
+      fn event, measurements, metadata, _ ->
+        send(self(), {:event, event, measurements, metadata})
+      end,
+      nil
+    )
+  end
+
   defp call(mod, conn) do
     mod.call(conn, [])
   end

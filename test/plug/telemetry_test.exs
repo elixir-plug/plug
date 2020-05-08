@@ -15,23 +15,6 @@ defmodule Plug.TelemetryTest do
     end
   end
 
-  defmodule MyRoutePlug do
-    use Plug.Router
-
-    plug :match
-    plug :dispatch
-
-    def call(conn, opts) do
-      super(conn, opts)
-    after
-      Process.put(:plug_forward_call, true)
-    end
-
-    get "/" do
-      resp(conn, 200, "Response")
-    end
-  end
-
   defmodule MyNoSendPlug do
     use Plug.Builder
 
@@ -57,21 +40,13 @@ defmodule Plug.TelemetryTest do
   setup do
     start_handler_id = {:start, :rand.uniform(100)}
     stop_handler_id = {:stop, :rand.uniform(100)}
-    start_router_id = {:start, :rand.uniform(100)}
-    stop_router_id = {:stop, :rand.uniform(100)}
 
     on_exit(fn ->
       :telemetry.detach(start_handler_id)
       :telemetry.detach(stop_handler_id)
-      :telemetry.detach(start_router_id)
-      :telemetry.detach(stop_router_id)
     end)
 
-    {:ok,
-     start_handler: start_handler_id,
-     stop_handler: stop_handler_id,
-     start_router: start_router_id,
-     stop_router: stop_router_id}
+    {:ok, start_handler: start_handler_id, stop_handler: stop_handler_id}
   end
 
   test "emits an event before the pipeline and before sending the response", %{
@@ -138,19 +113,6 @@ defmodule Plug.TelemetryTest do
 
     assert_received {:event, [:crashing, :pipeline, :start], _, _}
     refute_received {:event, [:crashing, :pipeline, :stop], _, _}
-  end
-
-  test "emit start and stop event when router dispatches", %{
-    start_router: start_router,
-    stop_router: stop_router
-  } do
-    attach(start_router, [:plug, :router_dispatch, :start])
-    attach(stop_router, [:plug, :router_dispatch, :stop])
-
-    MyRoutePlug.call(conn(:get, "/"), [])
-
-    assert_received {:event, [:plug, :router_dispatch, :start], _, _}
-    assert_received {:event, [:plug, :router_dispatch, :stop], _, _}
   end
 
   defp attach(handler_id, event) do

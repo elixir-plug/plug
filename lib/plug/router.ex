@@ -253,9 +253,9 @@ defmodule Plug.Router do
 
       @doc false
       def dispatch(%Plug.Conn{} = conn, opts) do
-        metadata = %{conn: conn, path: path}
         start = System.monotonic_time()
         {path, fun} = Map.fetch!(conn.private, :plug_route)
+        metadata = %{conn: conn, route: path}
 
         :telemetry.execute(
           [:plug, :router_dispatch, :start],
