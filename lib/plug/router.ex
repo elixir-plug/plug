@@ -253,12 +253,35 @@ defmodule Plug.Router do
 
       @doc false
       def dispatch(%Plug.Conn{} = conn, opts) do
-        {_path, fun} = Map.fetch!(conn.private, :plug_route)
+        start = System.monotonic_time()
+        {path, fun} = Map.fetch!(conn.private, :plug_route)
+        metadata = %{conn: conn, route: path}
+
+        :telemetry.execute(
+          [:plug, :router_dispatch, :start],
+          %{system_time: System.system_time()},
+          metadata
+        )
 
         try do
           fun.(conn, opts)
+        else
+          conn ->
+            duration = System.monotonic_time() - start
+            metadata = %{metadata | conn: conn}
+            :telemetry.execute([:plug, :router_dispatch, :stop], %{duration: duration}, metadata)
+            conn
         catch
           kind, reason ->
+            duration = System.monotonic_time() - start
+            metadata = %{kind: kind, error: reason, stacktrace: __STACKTRACE__}
+
+            :telemetry.execute(
+              [:plug, :router_dispatch, :exception],
+              %{duration: duration},
+              metadata
+            )
+
             Plug.Conn.WrapperError.reraise(conn, kind, reason, __STACKTRACE__)
         end
       end
