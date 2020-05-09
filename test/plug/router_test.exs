@@ -1,5 +1,3 @@
-Application.ensure_all_started(:telemetry)
-
 defmodule Plug.RouterTest do
   defmodule Forward do
     use Plug.Router
@@ -522,8 +520,11 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/"))
     assert conn.status == 200
 
-    assert_received {:event, [:plug, :router_dispatch, :start], _, _}
-    assert_received {:event, [:plug, :router_dispatch, :stop], _, _}
+    assert_received {:event, [:plug, :router_dispatch, :start], %{system_time: _},
+                     %{route: "/", conn: %Plug.Conn{}, router: Sample}}
+
+    assert_received {:event, [:plug, :router_dispatch, :stop], %{duration: _},
+                     %{route: "/", conn: %Plug.Conn{}, router: Sample}}
   end
 
   defp attach(handler_id, event) do

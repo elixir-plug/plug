@@ -236,6 +236,23 @@ defmodule Plug.Router do
 
   In a nutshell, `builder_opts()` allows us to pass the options given
   when initializing the router to a `dispatch`.
+
+  ## Telemetry
+
+  The router emits the following telemetry events:
+
+    * `[:plug, :router_dispatch, :start]` - dispatched before dispatching to a matched route
+      * Measurement: `%{system_time: System.system_time}`
+      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+
+    * `[:plug, :router_dispatch, :exception]` - dispatched after exceptions on dispatching a route
+      * Measurement: `%{duration: native_time}`
+      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+
+    * `[:plug, :router_dispatch, :stop]` - dispatched after successfully dispatching a matched route
+      * Measurement: `%{duration: native_time}`
+      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+
   """
 
   @doc false
@@ -255,7 +272,7 @@ defmodule Plug.Router do
       def dispatch(%Plug.Conn{} = conn, opts) do
         start = System.monotonic_time()
         {path, fun} = Map.fetch!(conn.private, :plug_route)
-        metadata = %{conn: conn, route: path}
+        metadata = %{conn: conn, route: path, router: __MODULE__}
 
         :telemetry.execute(
           [:plug, :router_dispatch, :start],
