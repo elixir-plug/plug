@@ -102,7 +102,7 @@ defmodule Plug.ParsersTest do
                  end
   end
 
-  test "error on invalid utf-8 in body params when validate_utf8 true (by default)" do
+  test "errors on invalid utf-8 in body params when validate_utf8 true (by default)" do
     conn =
       conn(:post, "/", "foo=#{<<139>>}")
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
