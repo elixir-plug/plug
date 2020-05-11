@@ -102,6 +102,30 @@ defmodule Plug.ParsersTest do
                  end
   end
 
+  test "error on invalid utf-8 in body params when validate_utf8 true (by default)" do
+    conn =
+      conn(:post, "/", "foo=#{<<139>>}")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+
+    assert_raise(
+      Plug.Parsers.BadEncodingError,
+      "invalid UTF-8 on urlencoded params, got byte 139",
+      fn ->
+        parse(conn, validate_utf8: true)
+      end
+    )
+  end
+
+  test "parsez invalid utf-8 in body params when validate_utf8 false" do
+    conn =
+      conn(:post, "/", "foo=#{<<139>>}")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(validate_utf8: false)
+
+    assert conn.params["foo"] == <<139>>
+    assert conn.body_params["foo"] == <<139>>
+  end
+
   test "parses url encoded bodies" do
     conn =
       conn(:post, "/?foo=bar", "foo=baz")
