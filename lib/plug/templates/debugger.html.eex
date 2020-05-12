@@ -167,7 +167,7 @@
 
     .exception-info > .detail {
         margin-top: 1.3em;
-        white-space: pre;
+        white-space: pre-wrap;
     }
 
     /*
