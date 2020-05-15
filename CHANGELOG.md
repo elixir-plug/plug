@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.10.1 (2020-05-15)
+
+### Enhancements
+
+  * [Plug.Conn] Add option to disable uft-8 validation on query strings
+  * [Plug.Conn] Support `:same_site` option when writing cookies
+  * [Plug.Router] Add router dispatch events to plug router like phoenix router
+  * [Plug.SSL] Support `:x_forwarded_host` and `:x_forwarded_port` on `:rewrite_on`
+
+### Bug fixes
+
+  * [Plug.Test] Ensure parameters are converted to string keys
+
 ## v1.10.0 (2020-03-24)
 
 ### Enhancements
