@@ -73,4 +73,44 @@ defmodule Plug do
   def start(_type, _args) do
     Plug.Supervisor.start_link()
   end
+
+  @doc """
+  Forwards requests to another Plug at a new path.
+
+  The `path_info` on the forwarded connection will only include the trailing segments
+  of the request path supplied to forward, while `conn.script_name` will
+  retain the correct base path for e.g. url generation.
+
+  ## Example
+
+      defmodule Router do
+        def init(opts), do: opts
+
+        def call(conn, opts) do
+          case conn do
+            # Match subdomain
+            %{host: "admin." <> _} ->
+              AdminRouter.call(conn, opts)
+
+            # Match path on localhost
+            %{host: "localhost", path_info: ["admin" | rest]} ->
+              Plug.forward(conn, rest, AdminRouter, opts)
+
+            _ ->
+              MainRouter.call(conn, opts)
+          end
+        end
+      end
+
+  """
+  @spec forward(Plug.Conn.t(), [String.t()], atom, Plug.opts()) :: Plug.Conn.t()
+  def forward(%Plug.Conn{path_info: path, script_name: script} = conn, new_path, target, opts) do
+    {base, split_path} = Enum.split(path, length(path) - length(new_path))
+
+    conn = do_forward(target, %{conn | path_info: split_path, script_name: script ++ base}, opts)
+    %{conn | path_info: path, script_name: script}
+  end
+
+  defp do_forward({mod, fun}, conn, opts), do: apply(mod, fun, [conn, opts])
+  defp do_forward(mod, conn, opts), do: mod.call(conn, opts)
 end

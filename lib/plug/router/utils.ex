@@ -103,15 +103,10 @@ defmodule Plug.Router.Utils do
   @doc """
   Forwards requests to another Plug at a new path.
   """
-  def forward(%Plug.Conn{path_info: path, script_name: script} = conn, new_path, target, opts) do
-    {base, split_path} = Enum.split(path, length(path) - length(new_path))
-
-    conn = do_forward(target, %{conn | path_info: split_path, script_name: script ++ base}, opts)
-    %{conn | path_info: path, script_name: script}
+  @deprecated "Use Plug.forward/4 instead"
+  def forward(conn, new_path, target, opts) do
+    Plug.forward(conn, new_path, target, opts)
   end
-
-  defp do_forward({mod, fun}, conn, opts), do: apply(mod, fun, [conn, opts])
-  defp do_forward(mod, conn, opts), do: mod.call(conn, opts)
 
   @doc """
   Splits the given path into several segments.

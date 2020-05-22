@@ -52,22 +52,6 @@ defmodule Plug.RouterTest do
     end
   end
 
-  defmodule RuntimeForward do
-    def init(opts) do
-      Forward.init(opts)
-    end
-
-    def call(conn, opts) do
-      case conn do
-        %{path_info: ["prefix" | rest]} ->
-          Plug.Router.runtime_forward(conn, rest, Forward, opts)
-
-        _ ->
-          Forward.call(conn, opts)
-      end
-    end
-  end
-
   defmodule Reforward do
     use Plug.Router
     use Plug.ErrorHandler
@@ -541,11 +525,6 @@ defmodule Plug.RouterTest do
 
     assert_received {:event, [:plug, :router_dispatch, :stop], %{duration: _},
                      %{route: "/", conn: %Plug.Conn{}, router: Sample}}
-  end
-
-  test "forward at runtime, allowing custom code to assert which segments to strip" do
-    conn = call(RuntimeForward, conn(:get, "/prefix/"))
-    assert conn.resp_body == "forwarded"
   end
 
   defp attach(handler_id, event) do
