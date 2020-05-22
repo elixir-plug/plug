@@ -75,7 +75,7 @@ defmodule Plug do
   end
 
   @doc """
-  Forwards requests to another Plug at a new path.
+  Forwards requests to another Plug setting the connection to a trailing subpath of the request.
 
   The `path_info` on the forwarded connection will only include the trailing segments
   of the request path supplied to forward, while `conn.script_name` will
