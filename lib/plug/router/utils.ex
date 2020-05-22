@@ -101,14 +101,6 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
-  Forwards requests to another Plug at a new path.
-  """
-  @deprecated "Use Plug.forward/4 instead"
-  def forward(conn, new_path, target, opts) do
-    Plug.forward(conn, new_path, target, opts)
-  end
-
-  @doc """
   Splits the given path into several segments.
   It ignores both leading and trailing slashes in the path.
 

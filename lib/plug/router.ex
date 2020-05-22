@@ -483,7 +483,7 @@ defmodule Plug.Router do
       # Delegate the matching to the match/3 macro along with the options
       # specified by Keyword.split/2.
       match path <> "/*glob", options do
-        Plug.Router.Utils.forward(
+        Plug.forward(
           var!(conn),
           var!(glob),
           @plug_forward_target,
