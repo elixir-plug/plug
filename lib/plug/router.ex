@@ -327,6 +327,47 @@ defmodule Plug.Router do
     path
   end
 
+  @doc """
+  Forwards requests to another Plug with runtime arguments.
+
+  The `path_info` on the forwared connection will only include the trailing segments
+  of the request path supplied to `runtime_forward`, while `conn.script_name` will
+  retain the correct base path for e.g. url generation.
+
+  ## Example
+
+      defmodule TenantRouter do
+        def init(opts) do
+          %{
+            common_router: CommonRouter.init(opts[:common_router])
+            tenant_router: TenantRouter.init(opts[:tenant_router])
+          }
+        end
+
+        def call(conn, opts) do
+          # Normalize the following to all be served by a single router matching
+          # on `path`, even if the request paths are different.
+          # * http://service.some-company.com/*path
+          # * http://company.my-service.com/*path
+          # * http://www.my-service.com/company/*path
+          #
+          with :unmatched <- tenant_cname(conn),
+               :unmatched <- tenant_host(conn, allowed_root_host),
+               :unmatched <- tenant_path(conn) do
+            CommonRouter.call(conn, opts.common_router)
+          else
+            {:match, path} ->
+              Plug.Router.runtime_forward(conn, path, TenantRouter, opts.tenant_router)
+          end
+        end
+      end
+
+  """
+  @spec runtime_forward(Plug.Conn.t(), [String.t()], atom, Plug.opts()) :: Plug.Conn.t()
+  def runtime_forward(%Plug.Conn{} = conn, path, plug, opts \\ []) when is_list(path) do
+    Plug.Router.Utils.forward(conn, path, plug, opts)
+  end
+
   ## Match
 
   @doc """
