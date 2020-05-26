@@ -17,51 +17,49 @@ defmodule Plug.Adapters.Test.ConnTest do
   test "custom params" do
     conn = conn(:head, "/posts", page: 2)
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == "page=2"
     assert conn.params == %{"page" => "2"}
     assert conn.req_headers == []
 
     conn = conn(:get, "/", a: [b: 0, c: 5], d: [%{e: "f"}])
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == "a[b]=0&a[c]=5&d[][e]=f"
     assert conn.params == %{"a" => %{"b" => "0", "c" => "5"}, "d" => [%{"e" => "f"}]}
 
     conn = conn(:get, "/?foo=bar", %{foo: "baz"})
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == "foo=bar"
     assert conn.params == %{"foo" => "baz"}
 
     conn = conn(:get, "/?foo=bar", %{biz: "baz"})
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == "biz=baz&foo=bar"
     assert conn.params == %{"foo" => "bar", "biz" => "baz"}
 
     conn = conn(:get, "/?f=g", a: "b", c: [d: "e"])
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == "a=b&c[d]=e&f=g"
     assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}, "f" => "g"}
+
+    conn = conn(:get, "/", %{})
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+    assert conn.query_string == ""
+    assert conn.params == %{}
 
     conn = conn(:post, "/?foo=bar", %{foo: "baz", answer: 42})
     assert conn.body_params == %{"foo" => "baz", "answer" => 42}
+    assert conn.query_string == "foo=bar"
     assert conn.params == %{"foo" => "baz", "answer" => 42}
 
     conn = conn(:post, "/?foo=bar", %{biz: "baz"})
     assert conn.body_params == %{"biz" => "baz"}
+    assert conn.query_string == "foo=bar"
     assert conn.params == %{"foo" => "bar", "biz" => "baz"}
-  end
 
-  test "custom struct params" do
-    conn = conn(:get, "/", a: "b", file: %Plug.Upload{})
-
-    assert conn.params == %{
-             "a" => "b",
-             "file" => %Plug.Upload{content_type: nil, filename: nil, path: nil}
-           }
-
-    conn = conn(:get, "/", a: "b", file: %{__struct__: "Foo"})
-    assert conn.params == %{"a" => "b", "file" => %{"__struct__" => "Foo"}}
-  end
-
-  test "custom function params" do
-    conn = conn(:get, "/", action: fn -> "this is fine" end)
-
-    assert %{"action" => _action} = conn.params
-    assert conn.params["action"].() == "this is fine"
+    conn = conn(:post, "/", %{})
+    assert conn.body_params == %{}
+    assert conn.query_string == ""
+    assert conn.params == %{}
   end
 
   test "no body or params" do
