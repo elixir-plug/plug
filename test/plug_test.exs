@@ -72,14 +72,14 @@ defmodule PlugTest do
 
     test "logs when halting" do
       assert capture_log(fn ->
-        assert Plug.run(conn(:get, "/"), [{Halter, :opts}], log_on_halt: :error).halted
-      end) =~ "[error] Plug halted in PlugTest.Halter.call/2"
+               assert Plug.run(conn(:get, "/"), [{Halter, :opts}], log_on_halt: :error).halted
+             end) =~ "[error] Plug halted in PlugTest.Halter.call/2"
 
       halter = &%{&1 | halted: true}
 
       assert capture_log(fn ->
-        assert Plug.run(conn(:get, "/"), [halter], log_on_halt: :error).halted
-      end) =~ "[error] Plug halted in #{inspect(halter)}"
+               assert Plug.run(conn(:get, "/"), [halter], log_on_halt: :error).halted
+             end) =~ "[error] Plug halted in #{inspect(halter)}"
     end
   end
 end
