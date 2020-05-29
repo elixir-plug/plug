@@ -34,7 +34,7 @@ defmodule Plug.MixProject do
   def application do
     [
       extra_applications: [:logger, :eex],
-      mod: {Plug, []},
+      mod: {Plug.Application, []},
       env: [validate_header_keys_during_test: true]
     ]
   end

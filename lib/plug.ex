@@ -64,15 +64,8 @@ defmodule Plug do
           | %{optional(opts) => opts}
           | MapSet.t()
 
-  use Application
-
   @callback init(opts) :: opts
   @callback call(Plug.Conn.t(), opts) :: Plug.Conn.t()
-
-  @doc false
-  def start(_type, _args) do
-    Plug.Supervisor.start_link()
-  end
 
   @doc """
   Forwards requests to another Plug setting the connection to a trailing subpath of the request.

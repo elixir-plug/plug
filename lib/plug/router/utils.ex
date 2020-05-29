@@ -120,6 +120,9 @@ defmodule Plug.Router.Utils do
     for segment <- String.split(bin, "/"), segment != "", do: segment
   end
 
+  @deprecated "Use Plug.forward/4 instead"
+  defdelegate forward(conn, new_path, target, opts), to: Plug
+
   ## Helpers
 
   # Loops each segment checking for matches.
