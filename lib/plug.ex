@@ -67,6 +67,71 @@ defmodule Plug do
   @callback init(opts) :: opts
   @callback call(Plug.Conn.t(), opts) :: Plug.Conn.t()
 
+  require Logger
+
+  @doc """
+  Run a series of Plugs at runtime.
+
+  The plugs given here can be either a tuple, representing a module plug
+  and their options, or a simple function that receives a connection and
+  returns a connection.
+
+  If any of the plugs halt, the remaining plugs are not invoked. If the
+  given connection was already halted, none of the plugs are invoked
+  either.
+
+  While `Plug.Builder` works at compile-time, this is a straight-forward
+  alternative that works at runtime.
+
+  ## Examples
+
+      Plug.run(conn, [{Plug.Head, []}, IO.inspect/1])
+
+  ## Options
+
+    * `:log_on_halt` - a log level to be used if a Plug halts
+
+  """
+  @spec run(Plug.Conn.t(), [{module, opts} | (Plug.Conn.t() -> Plug.Conn.t())], Keyword.t()) ::
+          Plug.Conn.t()
+  def run(conn, plugs, opts \\ [])
+
+  def run(%Plug.Conn{halted: true} = conn, _plugs, _opts),
+    do: conn
+
+  def run(%Plug.Conn{} = conn, plugs, opts),
+    do: do_run(conn, plugs, Keyword.get(opts, :log_on_halt))
+
+  defp do_run(conn, [{mod, opts} | plugs], level) when is_atom(mod) do
+    case mod.call(conn, mod.init(opts)) do
+      %Plug.Conn{halted: true} = conn ->
+        level && Logger.log(level, "Plug halted in #{inspect(mod)}.call/2")
+        conn
+
+      %Plug.Conn{} = conn ->
+        do_run(conn, plugs, level)
+
+      other ->
+        raise "expected #{inspect(mod)} to return Plug.Conn, got: #{inspect(other)}"
+    end
+  end
+
+  defp do_run(conn, [fun | plugs], level) when is_function(fun, 1) do
+    case fun.(conn) do
+      %Plug.Conn{halted: true} = conn ->
+        level && Logger.log(level, "Plug halted in #{inspect(fun)}")
+        conn
+
+      %Plug.Conn{} = conn ->
+        do_run(conn, plugs, level)
+
+      other ->
+        raise "expected #{inspect(fun)} to return Plug.Conn, got: #{inspect(other)}"
+    end
+  end
+
+  defp do_run(conn, [], _level), do: conn
+
   @doc """
   Forwards requests to another Plug setting the connection to a trailing subpath of the request.
 

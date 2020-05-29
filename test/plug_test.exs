@@ -2,6 +2,8 @@ defmodule PlugTest do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  import ExUnit.CaptureLog
+
   defmodule Response do
     use Plug.Router
 
@@ -35,9 +37,49 @@ defmodule PlugTest do
     end
   end
 
-  test "forward can strip segments of the path affecting path matching for the called plug" do
-    conn = Forward.call(conn(:get, "/prefix/more/segments"), [])
-    assert conn.resp_body =~ "script_name: prefix"
-    assert conn.resp_body =~ "path_info: more/segments"
+  describe "forward" do
+    test "strips segments of the path affecting path matching for the called plug" do
+      conn = Forward.call(conn(:get, "/prefix/more/segments"), [])
+      assert conn.resp_body =~ "script_name: prefix"
+      assert conn.resp_body =~ "path_info: more/segments"
+    end
+  end
+
+  defmodule Halter do
+    def init(:opts), do: :inited
+    def call(conn, :inited), do: %{conn | halted: true}
+  end
+
+  describe "run" do
+    test "invokes plugs" do
+      conn = Plug.run(conn(:head, "/"), [{Plug.Head, []}])
+      assert conn.method == "GET"
+
+      conn = Plug.run(conn(:head, "/"), [{Plug.Head, []}, &send_resp(&1, 200, "ok")])
+      assert conn.method == "GET"
+      assert conn.status == 200
+    end
+
+    test "does not invoke plugs if halted" do
+      conn = Plug.run(%{conn(:get, "/") | halted: true}, [&raise(inspect(&1))])
+      assert conn.halted
+    end
+
+    test "aborts if plug halts" do
+      conn = Plug.run(conn(:get, "/"), [&%{&1 | halted: true}, &raise(inspect(&1))])
+      assert conn.halted
+    end
+
+    test "logs when halting" do
+      assert capture_log(fn ->
+        assert Plug.run(conn(:get, "/"), [{Halter, :opts}], log_on_halt: :error).halted
+      end) =~ "[error] Plug halted in PlugTest.Halter.call/2"
+
+      halter = &%{&1 | halted: true}
+
+      assert capture_log(fn ->
+        assert Plug.run(conn(:get, "/"), [halter], log_on_halt: :error).halted
+      end) =~ "[error] Plug halted in #{inspect(halter)}"
+    end
   end
 end
