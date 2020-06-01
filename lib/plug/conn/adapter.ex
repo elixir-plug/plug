@@ -1,11 +1,6 @@
 defmodule Plug.Conn.Adapter do
   @moduledoc """
   Specification of the connection adapter API implemented by webservers.
-
-  All adapters are required to emit the proper `plug_adapter.call.start`,
-  `plug_adapter.call.stop` and `plug_adapter.call.exception` telemetry
-  events on every request, with the `%{conn: Plug.Conn, adapter: adapter_name}`
-  as metadata.
   """
   alias Plug.Conn
 
