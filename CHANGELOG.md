@@ -1,12 +1,24 @@
 # Changelog
 
+## v1.10.2 (2020-06-06)
+
+### Bug fixes
+
+  * [Plug] Make `:telemetry` a required dependency
+  * [Plug.Test] Populate `:query_string` when params are passed in
+
+### Enhancements
+
+  * [Plug] Add `Plug.run/3` for running multiple Plugs at runtime
+  * [Plug] Add `Plug.forward/4` for forwarding between Plugs
+
 ## v1.10.1 (2020-05-15)
 
 ### Enhancements
 
   * [Plug.Conn] Add option to disable uft-8 validation on query strings
   * [Plug.Conn] Support `:same_site` option when writing cookies
-  * [Plug.Router] Add router dispatch events to plug router like phoenix router
+  * [Plug.Router] Add router dispatch telemetry events
   * [Plug.SSL] Support `:x_forwarded_host` and `:x_forwarded_port` on `:rewrite_on`
 
 ### Bug fixes
