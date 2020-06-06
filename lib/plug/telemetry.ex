@@ -25,7 +25,7 @@ defmodule Plug.Telemetry do
 
   Note this plug measures the time between its invocation until a response
   is sent. The `:stop` event is not guaranteed to be emitted in all error
-  cases, so this Plug cannot be used as a Telemetry spans.
+  cases, so this Plug cannot be used as a Telemetry span.
 
   ## Time unit
 
