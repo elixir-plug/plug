@@ -274,7 +274,7 @@ defmodule Plug.Router do
         {path, fun} = Map.fetch!(conn.private, :plug_route)
         metadata = %{conn: conn, route: path, router: __MODULE__}
 
-        :telemetry.execute(
+        emit_event(
           [:plug, :router_dispatch, :start],
           %{system_time: System.system_time()},
           metadata
@@ -286,14 +286,14 @@ defmodule Plug.Router do
           conn ->
             duration = System.monotonic_time() - start
             metadata = %{metadata | conn: conn}
-            :telemetry.execute([:plug, :router_dispatch, :stop], %{duration: duration}, metadata)
+            emit_event([:plug, :router_dispatch, :stop], %{duration: duration}, metadata)
             conn
         catch
           kind, reason ->
             duration = System.monotonic_time() - start
             metadata = %{kind: kind, error: reason, stacktrace: __STACKTRACE__}
 
-            :telemetry.execute(
+            emit_event(
               [:plug, :router_dispatch, :exception],
               %{duration: duration},
               metadata
@@ -620,4 +620,15 @@ defmodule Plug.Router do
 
   defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
   defp extract_path(path), do: path
+
+  ## Telemetry Helper
+
+  @doc false
+  defmacro emit_event(event_name, measurements, metadata) do
+    if Code.ensure_loaded?(:telemetry) do
+      quote bind_quoted: [event_name: event_name, measurements: measurements, metadata: metadata] do
+        :telemetry.execute(event_name, measurements, metadata)
+      end
+    end
+  end
 end
