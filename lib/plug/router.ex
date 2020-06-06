@@ -239,7 +239,8 @@ defmodule Plug.Router do
 
   ## Telemetry
 
-  The router emits the following telemetry events:
+  The router emits the following telemetry events when
+  [:telemetry](https://github.com/beam-telemetry/telemetry) is a project dependency:
 
     * `[:plug, :router_dispatch, :start]` - dispatched before dispatching to a matched route
       * Measurement: `%{system_time: System.system_time}`
