@@ -6,10 +6,6 @@ defmodule Plug.Telemetry do
 
       plug Plug.Telemetry, event_prefix: [:my, :plug]
 
-  After the Plug is added, please be sure to add
-  [:telemetry](https://github.com/beam-telemetry/telemetry) as
-  project dependency.
-
   In the example above, two events will be emitted:
 
     * `[:my, :plug, :start]` - emitted when the plug is invoked.
