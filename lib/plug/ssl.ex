@@ -45,8 +45,8 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
     * `:exclude` - exclude the given hosts from redirecting to the `https`
-      scheme. Defaults to `["localhost"]`. It may be set to a binary or a tuple
-      `{module, function, args}` that will be invoked on demand
+      scheme. Defaults to `["localhost"]`. It may be set to a list of binaries
+      or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -59,6 +59,26 @@ defmodule Plug.SSL do
   HSTS expects the port to be 443 for SSL. If you are not using HSTS and
   want to redirect to HTTPS on another port, you can sneak it alongside
   the host, for example: `host: "example.com:443"`.
+
+  ## Excluded hosts tuple
+
+  In case list needs to be populated during runtime, tuple
+  `{module, function, args}` can be passed to be invoked when checking
+  whether to redirect. The specified function needs to return the list.
+
+  For example, `config/prod.exs` of a Phoenix app can contain:
+
+      config :sample_app, SampleAppWeb.Endpoint,
+        force_ssl: [
+          rewrite_on: [:x_forwarded_proto],
+          exclude: {Application, :get_env, [:sample_app, :ssl_excluded_hosts]}
+        ]
+
+  and `config/releases.exs`:
+
+      config :sample_app,
+        ssl_excluded_hosts: ["localhost", System.get_env("EXCLUDED_HOST")]
+
   """
   @behaviour Plug
 
@@ -299,7 +319,7 @@ defmodule Plug.SSL do
     host = Keyword.get(opts, :host)
     rewrite_on = List.wrap(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
-    exclude = excluded_hosts(opts)
+    exclude = Keyword.get(opts, :exclude, ["localhost"])
     {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
@@ -308,11 +328,14 @@ defmodule Plug.SSL do
     conn = rewrite_on(conn, rewrite_on)
 
     cond do
-      MapSet.member?(exclude, conn.host) -> conn
+      excluded?(conn.host, exclude) -> conn
       conn.scheme == :https -> put_hsts_header(conn, hsts)
       true -> redirect_to_https(conn, host, log_level)
     end
   end
+
+  defp excluded?(host, {mod, fun, args}), do: excluded?(host, apply(mod, fun, args))
+  defp excluded?(host, list), do: :lists.member(host, list)
 
   defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
     conn
@@ -423,14 +446,4 @@ defmodule Plug.SSL do
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs
-
-  defp excluded_hosts(opts) do
-    opts
-    |> Keyword.get(:exclude, ["localhost"])
-    |> Enum.map(fn host -> exclude(host) end)
-    |> MapSet.new()
-  end
-
-  defp exclude(host) when is_binary(host), do: host
-  defp exclude({mod, fun, args}), do: apply(mod, fun, args)
 end
