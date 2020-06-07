@@ -127,6 +127,13 @@ defmodule Plug.SSLTest do
       refute conn.halted
     end
 
+    test "excludes tuple" do
+      System.put_env("EXCLUDED_HOST", "10.0.0.1")
+      conn = call(conn(:get, "https://10.0.0.1/"), exclude: [{System, :get_env, ["EXCLUDED_HOST"]}])
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
     test "when true" do
       conn = call(conn(:get, "https://example.com/"), hsts: true)
       assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]

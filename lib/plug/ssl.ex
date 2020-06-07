@@ -45,7 +45,8 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
     * `:exclude` - exclude the given hosts from redirecting to the `https`
-      scheme. Defaults to `["localhost"]`
+      scheme. Defaults to `["localhost"]`. It may be set to a binary or a tuple
+      `{module, function, args}` that will be invoked on demand
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -298,7 +299,7 @@ defmodule Plug.SSL do
     host = Keyword.get(opts, :host)
     rewrite_on = List.wrap(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
-    exclude = Keyword.get(opts, :exclude, ["localhost"])
+    exclude = excluded_hosts(opts)
     {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
@@ -307,7 +308,7 @@ defmodule Plug.SSL do
     conn = rewrite_on(conn, rewrite_on)
 
     cond do
-      :lists.member(conn.host, exclude) -> conn
+      MapSet.member?(exclude, conn.host) -> conn
       conn.scheme == :https -> put_hsts_header(conn, hsts)
       true -> redirect_to_https(conn, host, log_level)
     end
@@ -422,4 +423,14 @@ defmodule Plug.SSL do
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs
+
+  defp excluded_hosts(opts) do
+    opts
+    |> Keyword.get(:exclude, ["localhost"])
+    |> Enum.map(fn host -> exclude(host) end)
+    |> MapSet.new()
+  end
+
+  defp exclude(host) when is_binary(host), do: host
+  defp exclude({mod, fun, args}), do: apply(mod, fun, args)
 end
