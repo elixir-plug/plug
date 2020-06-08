@@ -103,6 +103,10 @@ defmodule Plug.SSLTest do
     end
   end
 
+  def excluded_host?(host) do
+    host == System.get_env("EXCLUDED_HOST")
+  end
+
   defp call(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :log, false)
     Plug.SSL.call(conn, Plug.SSL.init(opts))
@@ -123,6 +127,17 @@ defmodule Plug.SSLTest do
 
     test "excludes custom" do
       conn = call(conn(:get, "https://example.com/"), exclude: ["example.com"])
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes tuple" do
+      System.put_env("EXCLUDED_HOST", "10.0.0.1")
+
+      conn =
+        conn(:get, "https://10.0.0.1/")
+        |> call(exclude: {__MODULE__, :excluded_host?, []})
+
       assert get_resp_header(conn, "strict-transport-security") == []
       refute conn.halted
     end

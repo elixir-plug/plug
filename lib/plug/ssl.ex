@@ -45,7 +45,8 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
     * `:exclude` - exclude the given hosts from redirecting to the `https`
-      scheme. Defaults to `["localhost"]`
+      scheme. Defaults to `["localhost"]`. It may be set to a list of binaries
+      or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -58,6 +59,25 @@ defmodule Plug.SSL do
   HSTS expects the port to be 443 for SSL. If you are not using HSTS and
   want to redirect to HTTPS on another port, you can sneak it alongside
   the host, for example: `host: "example.com:443"`.
+
+  ## Excluded hosts tuple
+
+  Tuple `{module, function, args}` can be passed to be invoked each time
+  the plug is checking whether to redirect host. Provided function needs
+  to receive at least one argument (`host`).
+
+  For example, you may define it as:
+
+      plug Plug.SSL,
+        rewrite_on: [:x_forwarded_proto],
+        exclude: {__MODULE__, :excluded_host?, []}
+
+  where:
+
+      def excluded_host?(host) do
+        # Custom logic
+      end
+
   """
   @behaviour Plug
 
@@ -307,11 +327,14 @@ defmodule Plug.SSL do
     conn = rewrite_on(conn, rewrite_on)
 
     cond do
-      :lists.member(conn.host, exclude) -> conn
+      excluded?(conn.host, exclude) -> conn
       conn.scheme == :https -> put_hsts_header(conn, hsts)
       true -> redirect_to_https(conn, host, log_level)
     end
   end
+
+  defp excluded?(host, list) when is_list(list), do: :lists.member(host, list)
+  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
 
   defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
     conn
