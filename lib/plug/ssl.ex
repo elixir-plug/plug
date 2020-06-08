@@ -335,7 +335,7 @@ defmodule Plug.SSL do
     end
   end
 
-  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host|args])
+  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
   defp excluded?(host, list), do: :lists.member(host, list)
 
   defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
