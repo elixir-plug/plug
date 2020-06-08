@@ -62,22 +62,23 @@ defmodule Plug.SSL do
 
   ## Excluded hosts tuple
 
-  In case list needs to be populated during runtime, tuple
-  `{module, function, args}` can be passed to be invoked when checking
-  whether to redirect. The specified function needs to return the list.
+  Tuple `{module, function, args}` can be passed to be invoked each time
+  the plug is checking whether to redirect host. Provided function needs
+  to receive at least one argument (`host`).
 
   For example, `config/prod.exs` of a Phoenix app can contain:
 
       config :sample_app, SampleAppWeb.Endpoint,
         force_ssl: [
           rewrite_on: [:x_forwarded_proto],
-          exclude: {Application, :get_env, [:sample_app, :ssl_excluded_hosts]}
+          exclude: {SampleAppWeb, :excluded_host?, []}
         ]
 
-  and `config/releases.exs`:
+  and `lib/sample_app_web.ex`:
 
-      config :sample_app,
-        ssl_excluded_hosts: ["localhost", System.get_env("EXCLUDED_HOST")]
+      def excluded_host?(host) do
+        # Custom logic
+      end
 
   """
   @behaviour Plug
@@ -334,7 +335,7 @@ defmodule Plug.SSL do
     end
   end
 
-  defp excluded?(host, {mod, fun, args}), do: excluded?(host, apply(mod, fun, args))
+  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host|args])
   defp excluded?(host, list), do: :lists.member(host, list)
 
   defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
