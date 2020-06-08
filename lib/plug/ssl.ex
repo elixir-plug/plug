@@ -66,15 +66,13 @@ defmodule Plug.SSL do
   the plug is checking whether to redirect host. Provided function needs
   to receive at least one argument (`host`).
 
-  For example, `config/prod.exs` of a Phoenix app can contain:
+  For example, you may define it as:
 
-      config :sample_app, SampleAppWeb.Endpoint,
-        force_ssl: [
-          rewrite_on: [:x_forwarded_proto],
-          exclude: {SampleAppWeb, :excluded_host?, []}
-        ]
+      plug Plug.SSL,
+        rewrite_on: [:x_forwarded_proto],
+        exclude: {__MODULE__, :excluded_host?, []}
 
-  and `lib/sample_app_web.ex`:
+  where:
 
       def excluded_host?(host) do
         # Custom logic
@@ -335,8 +333,8 @@ defmodule Plug.SSL do
     end
   end
 
+  defp excluded?(host, list) when is_list(list), do: :lists.member(host, list)
   defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
-  defp excluded?(host, list), do: :lists.member(host, list)
 
   defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
     conn
