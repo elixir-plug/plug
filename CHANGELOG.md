@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.10.3 (2020-06-10)
+
+### Enhancements
+
+  * [Plug.SSL] Allow host exclusion to be checked dynamically
+
+### Bug fixes
+
+  * [Plug.Router] Fix router telemetry event to follow Telemetry specification. This corrects the telemetry event added on v1.10.1.
+
 ## v1.10.2 (2020-06-06)
 
 ### Bug fixes

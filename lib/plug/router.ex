@@ -291,7 +291,7 @@ defmodule Plug.Router do
         catch
           kind, reason ->
             duration = System.monotonic_time() - start
-            metadata = %{kind: kind, error: reason, stacktrace: __STACKTRACE__}
+            metadata = %{kind: kind, reason: reason, stacktrace: __STACKTRACE__}
 
             :telemetry.execute(
               [:plug, :router_dispatch, :exception],
