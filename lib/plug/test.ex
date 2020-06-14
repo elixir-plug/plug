@@ -16,7 +16,7 @@ defmodule Plug.Test do
   include uppercase letters, and raises a `Plug.Conn.InvalidHeaderError` when it finds one.
   To disable it, set :validate_header_keys_during_test to false on the app config.
 
-      config :plug, :validate_header_keys_during_test, true
+      config :plug, :validate_header_keys_during_test, false
 
   """
 
