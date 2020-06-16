@@ -222,14 +222,29 @@ defmodule Plug.ParsersTest do
       def get() do
         Agent.get(:multipart_length, & &1)
       end
+
+      def stateful_get(%Plug.Conn{}, 10) do
+        Agent.get(:multipart_length, & &1)
+      end
     end
 
     opts = Plug.Parsers.init(parsers: [{:multipart, length: {LengthGetter, :get, []}}])
+
+    stateful_opts =
+      Plug.Parsers.init(
+        parsers: [{:multipart, length: {:stateful, LengthGetter, :stateful_get, [10]}}]
+      )
 
     assert_raise Plug.Parsers.RequestTooLargeError, fn ->
       conn(:post, "/", multipart)
       |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
       |> Plug.Parsers.call(opts)
+    end
+
+    assert_raise Plug.Parsers.RequestTooLargeError, fn ->
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> Plug.Parsers.call(stateful_opts)
     end
 
     Agent.update(:multipart_length, fn _ -> 10_000 end)
@@ -238,6 +253,13 @@ defmodule Plug.ParsersTest do
       conn(:post, "/", multipart)
       |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
       |> Plug.Parsers.call(opts)
+
+    assert params["name"] == "hello"
+
+    %{params: params} =
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
+      |> Plug.Parsers.call(stateful_opts)
 
     assert params["name"] == "hello"
   end
