@@ -379,30 +379,22 @@ defmodule Plug.Debugger do
     end
   end
 
-  # TODO: Remove exported check once we depend on Elixir v1.7+
-  if Code.ensure_loaded?(Code) and function_exported?(Code, :fetch_docs, 1) do
-    def has_docs?(module, name, arity) do
-      case Code.fetch_docs(module) do
-        {:docs_v1, _, _, _, module_doc, _, docs} when module_doc != :hidden ->
-          Enum.any?(docs, has_doc_matcher?(name, arity))
+  def has_docs?(module, name, arity) do
+    case Code.fetch_docs(module) do
+      {:docs_v1, _, _, _, module_doc, _, docs} when module_doc != :hidden ->
+        Enum.any?(docs, has_doc_matcher?(name, arity))
 
-        _ ->
-          false
-      end
+      _ ->
+        false
     end
+  end
 
-    defp has_doc_matcher?(name, arity) do
-      &match?(
-        {{kind, ^name, ^arity}, _, _, doc, _}
-        when kind in [:function, :macro] and doc != :hidden,
-        &1
-      )
-    end
-  else
-    def has_docs?(module, fun, arity) do
-      docs = Code.get_docs(module, :docs)
-      not is_nil(docs) and List.keymember?(docs, {fun, arity}, 0)
-    end
+  defp has_doc_matcher?(name, arity) do
+    &match?(
+      {{kind, ^name, ^arity}, _, _, doc, _}
+      when kind in [:function, :macro] and doc != :hidden,
+      &1
+    )
   end
 
   defp get_clauses(module, fun, args) do
