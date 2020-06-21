@@ -8,12 +8,11 @@ defmodule Plug.Parsers.MULTIPART do
   They are repeated here for convenience:
 
     * `:length` - sets the maximum number of bytes to read from the request,
-      defaults to 8_000_000 bytes. Unlike `Plug.Conn.read_body/2` supports
-      passing an MFA (`{module, function, args}`) which will be evaluated
-      on every request to determine the value.
+      defaults to 8_000_000 bytes
 
     * `:read_length` - sets the amount of bytes to read at one time from the
       underlying socket to fill the chunk, defaults to 1_000_000 bytes
+
     * `:read_timeout` - sets the timeout for each socket read, defaults to
       15_000ms
 
@@ -25,14 +24,41 @@ defmodule Plug.Parsers.MULTIPART do
 
     * `:headers` - containing the same `:length`, `:read_length`
       and `:read_timeout` options which are used explicitly for parsing multipart
-      headers.
+      headers
+
     * `:include_unnamed_parts_at` - string specifying a body parameter that can
       hold a lists of body parts that didn't have a 'Content-Disposition' header.
       For instance, `include_unnamed_parts_at: "_parts"` would result in
       a body parameter `"_parts"`, containing a list of parts, each with `:body`
-      and `:headers` fields, like `[%{body: "{}", headers: [{"content-type", "application/json"}]}]`.
+      and `:headers` fields, like `[%{body: "{}", headers: [{"content-type", "application/json"}]}]`
+
   * `:validate_utf8` - specifies whether multipart body parts should be validated
-      as utf8 binaries. Defaults to true.
+      as utf8 binaries. Defaults to true
+
+  ## Dynamic configuration
+
+  If you need to dynamically configure how `Plug.Parsers.MULTIPART` behave,
+  for example, based on the connection or another system parmameter, one option
+  is to create your own parser that wraps it:
+
+      defmodule MyMultipart do
+        @multipart Plug.Parsers.MULTIPART
+
+        def init(opts) do
+          opts
+        end
+
+        def parse(conn, "multipart", subtype, headers, opts) do
+          limit = [limit: System.fetch_env!("UPLOAD_LIMIT")]
+          opts = @multipart.init([limit: limit] ++ opts)
+          @multipart.parse(conn, "multipart", subtype, headers, opts)
+        end
+
+        def parse(conn, _type, _subtype, _headers, _opts) do
+          {:next, conn}
+        end
+      end
+
   """
 
   @behaviour Plug.Parsers
@@ -48,6 +74,13 @@ defmodule Plug.Parsers.MULTIPART do
 
     # The header options are handled individually.
     {headers_opts, opts} = Keyword.pop(opts, :headers, [])
+
+    with {_, _, _} <- limit do
+      IO.warn(
+        "passing a {module, function, args} tuple to Plug.Parsers.MULTIPART is deprecated. " <>
+          "Please see Plug.Parsers.MULTIPART module docs for better approaches to configuration"
+      )
+    end
 
     {limit, headers_opts, opts}
   end
@@ -74,6 +107,7 @@ defmodule Plug.Parsers.MULTIPART do
   ## Multipart
 
   defp parse_multipart(conn, {{module, fun, args}, header_opts, opts}) do
+    # TODO: Remove me on 2.0.
     limit = apply(module, fun, args)
     parse_multipart(conn, {limit, header_opts, opts})
   end
