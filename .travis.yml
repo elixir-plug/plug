@@ -1,22 +1,26 @@
 language: elixir
 sudo: false
-
-elixir: '1.10.1'
-otp_release: '21.1'
-
-stages:
-  - check formatted
-  - test
-
-jobs:
+script:
+  - if [[ $(elixir --version) =~ "1.(8|9|10)." ]]; then mix format --check-formatted; fi
+  - mix test
+matrix:
   include:
-    - stage: test
-
-    - elixir: '1.7.0'
-      otp_release: '19.3'
-
-    - stage: check formatted
-      script: mix format --check-formatted
+    - elixir: "1.7.4"
+      otp_release: "19.3"
+    - elixir: "1.7.4"
+      otp_release: "22.3"
+    - elixir: "1.8.2"
+      otp_release: "20.3"
+    - elixir: "1.8.2"
+      otp_release: "22.3"
+    - elixir: "1.9.4"
+      otp_release: "20.3"
+    - elixir: "1.9.4"
+      otp_release: "22.3"
+    - elixir: "1.10.3"
+      otp_release: "21.3"
+    - elixir: "1.10.3"
+      otp_release: "22.3"
 
 notifications:
   recipients:
