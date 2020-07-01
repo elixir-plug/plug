@@ -1,6 +1,6 @@
 # Plug
 
-[![Build Status](https://travis-ci.org/elixir-plug/plug.svg?branch=master)](https://travis-ci.org/elixir-plug/plug)
+[![Build Status](https://github.com/elixir-plug/plug/workflows/CI/badge.svg)](https://github.com/elixir-plug/plug/actions?query=workflow%3A%22CI%22)
 [![Inline docs](https://inch-ci.org/github/elixir-plug/plug.svg?branch=master)](http://inch-ci.org/github/elixir-plug/plug)
 
 Plug is:
