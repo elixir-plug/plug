@@ -38,7 +38,7 @@ defmodule Plug.Parsers.MULTIPART do
   ## Dynamic configuration
 
   If you need to dynamically configure how `Plug.Parsers.MULTIPART` behave,
-  for example, based on the connection or another system parmameter, one option
+  for example, based on the connection or another system parameter, one option
   is to create your own parser that wraps it:
 
       defmodule MyMultipart do
