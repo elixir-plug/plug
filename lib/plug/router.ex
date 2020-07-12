@@ -382,6 +382,14 @@ defmodule Plug.Router do
   end
 
   @doc """
+  Dispatches to the path only if the request is a HEAD request.
+  See `match/3` for more examples.
+  """
+  defmacro head(path, options, contents \\ []) do
+    compile(:head, path, options, contents)
+  end
+
+  @doc """
   Dispatches to the path only if the request is a POST request.
   See `match/3` for more examples.
   """
