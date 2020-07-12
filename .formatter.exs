@@ -9,6 +9,8 @@ export_locals_without_parens = [
   match: 3,
   get: 2,
   get: 3,
+  head: 2,
+  head: 3,
   post: 2,
   post: 3,
   put: 2,
