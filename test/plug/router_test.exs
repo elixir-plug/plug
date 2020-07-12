@@ -144,6 +144,10 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(conn.assigns))
     end
 
+    head "/head" do
+      resp(conn, 200, "")
+    end
+
     post "/post" do
       resp(conn, 200, "")
     end
@@ -449,6 +453,11 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/options/assigns"))
     assert conn.assigns[:an_option] == :a_value
     assert conn.resp_body =~ ~s(an_option: :a_value)
+  end
+
+  test "declare and call HEAD requests" do
+    conn = call(Sample, conn(:head, "/head"))
+    assert conn.status == 200
   end
 
   test "declare and call POST requests" do
