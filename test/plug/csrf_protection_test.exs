@@ -120,6 +120,18 @@ defmodule Plug.CSRFProtectionTest do
     end
   end
 
+  test "raise error for missing authenticity token with empty body" do
+    assert_raise InvalidCSRFTokenError, fn ->
+      call(conn(:post, "/", ""))
+    end
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      conn(:post, "/", "")
+      |> put_req_header("x-csrf-token", "foo")
+      |> call()
+    end
+  end
+
   test "raise error for invalid authenticity token in params" do
     old_conn = call(conn(:get, "/"))
 
