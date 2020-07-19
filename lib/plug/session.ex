@@ -6,7 +6,12 @@ defmodule Plug.Session do
   session have to be fetched with `Plug.Conn.fetch_session/1` before the
   session can be accessed.
 
-  Consider using `Plug.CSRFProtection` when using `Plug.Session`.
+  The session is also lazy. Once configured, a cookie header with the
+  session will only be sent to the client if something is written to the
+  session in the first place.
+
+  When using `Plug.Session`, also consider using `Plug.CSRFProtection`
+  to avoid Cross Site Request Forgery attacks.
 
   ## Session stores
 
