@@ -320,14 +320,15 @@ defmodule Plug.CSRFProtection do
 
   defp verified_request?(conn, csrf_token, allow_hosts) do
     conn.method in @unprotected_methods ||
-      valid_csrf_token?(conn, csrf_token, conn.body_params["_csrf_token"], allow_hosts) ||
-      valid_csrf_token?(conn, csrf_token, first_x_csrf_token(conn), allow_hosts) ||
+      valid_csrf_token?(conn, csrf_token, body_csrf_token(conn), allow_hosts) ||
+      valid_csrf_token?(conn, csrf_token, header_csrf_token(conn), allow_hosts) ||
       skip_csrf_protection?(conn)
   end
 
-  defp first_x_csrf_token(conn) do
-    List.first(get_req_header(conn, "x-csrf-token"))
-  end
+  defp header_csrf_token(conn), do: List.first(get_req_header(conn, "x-csrf-token"))
+
+  defp body_csrf_token(%{body_params: %{"_csrf_token" => csrf_token}}), do: csrf_token
+  defp body_csrf_token(_), do: nil
 
   defp valid_csrf_token?(
          _conn,

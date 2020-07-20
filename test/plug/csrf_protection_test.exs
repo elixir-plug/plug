@@ -124,6 +124,10 @@ defmodule Plug.CSRFProtectionTest do
     old_conn = call(conn(:get, "/"))
 
     assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:post, "/", ""), old_conn)
+    end
+
+    assert_raise InvalidCSRFTokenError, fn ->
       call_with_old_conn(conn(:post, "/", %{_csrf_token: "foo"}), old_conn)
     end
 
