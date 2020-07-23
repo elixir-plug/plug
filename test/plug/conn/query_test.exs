@@ -17,10 +17,11 @@ defmodule Plug.Conn.QueryTest do
     assert params["my weird field"] == "q1!2\"'w$5&7/z8)?"
 
     assert decode("=")[""] == ""
+    assert decode("key")["key"] == ""
     assert decode("key=")["key"] == ""
     assert decode("=value")[""] == "value"
 
-    assert decode("foo[]")["foo"] == []
+    assert decode("foo[]")["foo"] == [""]
     assert decode("foo[]=")["foo"] == [""]
     assert decode("foo[]=bar&foo[]=baz")["foo"] == ["bar", "baz"]
     assert decode("foo[]=bar&foo[]=baz")["foo"] == ["bar", "baz"]

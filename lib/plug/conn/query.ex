@@ -92,7 +92,7 @@ defmodule Plug.Conn.Query do
            decode_www_form(value, invalid_exception, validate_utf8)}
 
         [key] ->
-          {decode_www_form(key, invalid_exception, validate_utf8), nil}
+          {decode_www_form(key, invalid_exception, validate_utf8), ""}
       end
 
     decode_pair(current, acc)
