@@ -133,7 +133,7 @@ defmodule Plug.SSL do
 
   Besides the options from `:ssl`, this function adds on extra option:
 
-    * `:cypher_suite` - it may be `:strong` or `:compatible`,
+    * `:cipher_suite` - it may be `:strong` or `:compatible`,
       as outlined in the following section
 
   Furthermore, it sets the following defaults:
