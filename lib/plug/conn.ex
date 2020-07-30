@@ -1394,7 +1394,7 @@ defmodule Plug.Conn do
   @doc """
   Puts a response cookie in the connection.
 
-  If the `:signed` or `:encrypted` flag are given, then the cookie
+  If the `:sign` or `:encrypt` flag are given, then the cookie
   value can be any term.
 
   If the cookie not signed nor encrypted, then the value must be a binary.
@@ -1450,8 +1450,8 @@ defmodule Plug.Conn do
       to true when the connection is HTTPS
     * `:extra` - string to append to cookie. Use this to take advantage of
       non-standard cookie attributes.
-    * `:signed` - when true, signs the cookie
-    * `:encrypted` - when true, encrypts the cookie
+    * `:sign` - when true, signs the cookie
+    * `:encrypt` - when true, encrypts the cookie
     * `:same_site` - set the cookie SameSite attribute to a string value.
       If no string value is set, the attribute is omitted.
 
