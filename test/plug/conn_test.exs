@@ -924,6 +924,23 @@ defmodule Plug.ConnTest do
     assert conn.resp_cookies["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
   end
 
+  test "delete_resp_cookie/3 uses connection scheme to detect secure" do
+    cookie_opts = [
+      path: "/baz",
+      max_age: 1000,
+      universal_time: {{4000, 1, 1}, {0, 0, 0}}
+    ]
+
+    conn =
+      conn(:get, "https://example.com/")
+      |> delete_resp_cookie("foo", cookie_opts)
+      |> send_resp(200, "ok")
+
+    assert conn.resp_cookies["foo"].secure == true
+    assert conn.resp_cookies["foo"].max_age == 0
+    assert conn.resp_cookies["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
+  end
+
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection was already sent" do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
