@@ -969,6 +969,8 @@ defmodule Plug.Conn do
   ## Options
 
     * `:length` - the maximum query string length. Defaults to `1_000_000` bytes.
+    * `:validate_utf8` - boolean that tells whether or not we want to validate that the
+        keys and values of the decoded query string are utf8 strings. Defaults to `true`.
 
   """
   @spec fetch_query_params(t, Keyword.t()) :: t
