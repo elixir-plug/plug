@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.10.4 (2020-08-07)
+
+### Bug fixes
+
+  * [Plug.Conn] Automatically set secure when deleting cookies to fix compatibility with SameSite
+
 ## v1.10.3 (2020-06-10)
 
 ### Enhancements
