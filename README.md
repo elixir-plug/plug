@@ -216,6 +216,7 @@ This project aims to ship with different plugs that can be re-used across applic
   * `Plug.Parsers` - responsible for parsing the request body given its content-type;
   * `Plug.RequestId` - sets up a request ID to be used in logs;
   * `Plug.Session` - handles session management and storage;
+  * `Plug.BasicAuth` - provides Basic HTTP authentication;
   * `Plug.SSL` - enforces requests through SSL;
   * `Plug.Static` - serves static files;
   * `Plug.Telemetry` - instruments the plug pipeline with `:telemetry` events;
