@@ -79,6 +79,7 @@ defmodule Plug.MixProject do
         Plug.MethodOverride,
         Plug.Parsers,
         Plug.RequestId,
+        Plug.BasicAuth,
         Plug.SSL,
         Plug.Session,
         Plug.Static,
