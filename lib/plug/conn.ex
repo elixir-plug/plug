@@ -1399,7 +1399,7 @@ defmodule Plug.Conn do
   If the `:sign` or `:encrypt` flag are given, then the cookie
   value can be any term.
 
-  If the cookie not signed nor encrypted, then the value must be a binary.
+  If the cookie is not signed nor encrypted, then the value must be a binary.
   Note the value is not automatically escaped. Therefore if you want to store
   values with non-alphanumeric characters, you must either sign or encrypt
   the cookie or consider explicitly escaping the cookie value by using a
