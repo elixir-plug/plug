@@ -6,7 +6,7 @@ defmodule Plug.BasicAuth do
   if SSL is enabled and enforced. See `Plug.SSL` for more
   information.
 
-  ## High-level usage
+  ## Compile-time usage
 
   If you have a single username and password, you can use
   the `basic_auth/2` plug:
@@ -28,9 +28,26 @@ defmodule Plug.BasicAuth do
   prompt the user for username and password. If they match, then the
   request succeeds.
 
-  Both approaches shown above rely on static configuration. In the next section
-  we will explore using lower level API for a more dynamic solution where the
-  credentials might be stored in a database, environment variables etc.
+  Both approaches shown above rely on static configuration. Let's see
+  alternatives.
+
+  ## Runtime-time usage
+
+  As any other Plug, we can use the `basic_auth` at runtime by simply
+  wrapping it in a function:
+
+      plug :auth
+
+      defp auth(conn, opts) do
+        username = System.fetch_env!("AUTH_USERNAME")
+        password = System.fetch_env!("AUTH_PASSWORD")
+        Plug.BasicAuth.basic_auth(conn, username: username, password: password)
+      end
+
+  This approach is useful when both username and password are specified
+  upfront and available at runtime. However, you may also want to compute
+  a different password for each different user. In those cases, we can use
+  the low-level API.
 
   ## Low-level usage
 
