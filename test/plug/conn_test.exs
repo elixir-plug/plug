@@ -175,7 +175,7 @@ defmodule Plug.ConnTest do
   test "status, resp_headers and resp_body" do
     conn = conn(:get, "/foo")
     assert conn.status == nil
-    assert conn.resp_headers == [{"cache-control", "max-age=0, private, must-revalidate"}]
+    assert conn.resp_headers == [{"cache-control", "no-store"}]
     assert conn.resp_body == nil
   end
 

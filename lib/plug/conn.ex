@@ -55,7 +55,7 @@ defmodule Plug.Conn do
       charset used defaults to "utf-8".
     * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
-      is set to `"max-age=0, private, must-revalidate"`. Note, response headers
+      is set to `"no-store"`. Note, response headers
       are expected to have lowercase keys.
     * `status` - the response status
 
@@ -199,7 +199,7 @@ defmodule Plug.Conn do
             request_path: "",
             resp_body: nil,
             resp_cookies: %{},
-            resp_headers: [{"cache-control", "max-age=0, private, must-revalidate"}],
+            resp_headers: [{"cache-control", "no-store"}],
             scheme: :http,
             script_name: [],
             secret_key_base: nil,

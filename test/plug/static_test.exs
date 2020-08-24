@@ -163,7 +163,7 @@ defmodule Plug.StaticTest do
     conn = Plug.Static.call(conn(:get, "/public/fixtures/static.txt"), Plug.Static.init(opts))
 
     assert conn.status == 200
-    assert get_resp_header(conn, "cache-control") == ["max-age=0, private, must-revalidate"]
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "etag") == []
     assert get_resp_header(conn, "x-custom") == ["x-value"]
   end
@@ -521,7 +521,7 @@ defmodule Plug.StaticTest do
       assert conn.resp_body == "HE"
       assert get_resp_header(conn, "accept-ranges") == ["bytes"]
       assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
-      assert get_resp_header(conn, "cache-control") == ["max-age=0, private, must-revalidate"]
+      assert get_resp_header(conn, "cache-control") == ["no-store"]
       assert get_resp_header(conn, "etag") == []
       assert get_resp_header(conn, "x-custom") == ["x-value"]
     end
