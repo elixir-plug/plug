@@ -218,7 +218,7 @@ defmodule Plug.Conn.Query do
     mapper = fn
       value when is_map(value) and map_size(value) != 1 ->
         raise ArgumentError,
-              "cannot encode maps inside lists when the map has 0 or more than 1 elements, " <>
+              "cannot encode maps inside lists when the map has 0 or more than 1 element, " <>
                 "got: #{inspect(value)}"
 
       value ->
