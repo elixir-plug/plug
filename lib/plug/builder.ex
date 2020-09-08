@@ -115,7 +115,7 @@ defmodule Plug.Builder do
         plug_builder_call(conn, opts)
       end
 
-      defoverridable init: 1, call: 2
+      defoverridable Plug
 
       import Plug.Conn
       import Plug.Builder, only: [plug: 1, plug: 2, builder_opts: 0]
