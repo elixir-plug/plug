@@ -19,20 +19,9 @@ defmodule Plug.SSL do
   need to tell Plug to parse the proper protocol from the `x-forwarded-*`
   header. This can be done using the `:rewrite_on` option:
 
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port]
+      plug Plug.SSL, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
 
-  The supported values are:
-
-    * `:x_forwarded_host` - to override the host based on on the "x-forwarded-host" header
-    * `:x_forwarded_port` - to override the port based on on the "x-forwarded-port" header
-    * `:x_forwarded_proto` - to override the protocol based on on the "x-forwarded-proto" header
-
-  Since rewriting the scheme based on `x-forwarded-*` headers can open up
-  security vulnerabilities, only provide the option above if:
-
-    * your app is behind a proxy
-    * your proxy strips the given `x-forwarded-*` headers from all incoming requests
-    * your proxy sets the `x-forwarded-*` headers and sends it to Plug
+  For further details refer to `Plug.RewriteOn`.
 
   ## Plug Options
 
@@ -316,7 +305,7 @@ defmodule Plug.SSL do
   @impl true
   def init(opts) do
     host = Keyword.get(opts, :host)
-    rewrite_on = List.wrap(Keyword.get(opts, :rewrite_on))
+    rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
     {hsts_header(opts), exclude, host, rewrite_on, log}
@@ -324,7 +313,7 @@ defmodule Plug.SSL do
 
   @impl true
   def call(conn, {hsts, exclude, host, rewrite_on, log_level}) do
-    conn = rewrite_on(conn, rewrite_on)
+    conn = Plug.RewriteOn.call(conn, rewrite_on)
 
     cond do
       excluded?(conn.host, exclude) -> conn
@@ -335,62 +324,6 @@ defmodule Plug.SSL do
 
   defp excluded?(host, list) when is_list(list), do: :lists.member(host, list)
   defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
-
-  defp rewrite_on(conn, [:x_forwarded_proto | rewrite_on]) do
-    conn
-    |> put_scheme(get_req_header(conn, "x-forwarded-proto"))
-    |> rewrite_on(rewrite_on)
-  end
-
-  defp rewrite_on(conn, [:x_forwarded_port | rewrite_on]) do
-    conn
-    |> put_port(get_req_header(conn, "x-forwarded-port"))
-    |> rewrite_on(rewrite_on)
-  end
-
-  defp rewrite_on(conn, [:x_forwarded_host | rewrite_on]) do
-    conn
-    |> put_host(get_req_header(conn, "x-forwarded-host"))
-    |> rewrite_on(rewrite_on)
-  end
-
-  defp rewrite_on(_conn, [other | _rewrite_on]) do
-    raise "unknown rewrite: #{inspect(other)}"
-  end
-
-  defp rewrite_on(conn, []) do
-    conn
-  end
-
-  defp put_scheme(%{scheme: :http, port: 80} = conn, ["https"]),
-    do: %{conn | scheme: :https, port: 443}
-
-  defp put_scheme(conn, ["https"]),
-    do: %{conn | scheme: :https}
-
-  defp put_scheme(%{scheme: :https, port: 443} = conn, ["http"]),
-    do: %{conn | scheme: :http, port: 80}
-
-  defp put_scheme(conn, ["http"]),
-    do: %{conn | scheme: :http}
-
-  defp put_scheme(conn, _scheme),
-    do: conn
-
-  defp put_host(conn, [proper_host]),
-    do: %{conn | host: proper_host}
-
-  defp put_host(conn, _),
-    do: conn
-
-  defp put_port(conn, headers) do
-    with [header] <- headers,
-         {port, ""} <- Integer.parse(header) do
-      %{conn | port: port}
-    else
-      _ -> conn
-    end
-  end
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
