@@ -19,20 +19,9 @@ defmodule Plug.SSL do
   need to tell Plug to parse the proper protocol from the `x-forwarded-*`
   header. This can be done using the `:rewrite_on` option:
 
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port]
+      plug Plug.SSL, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
 
-  The supported values are:
-
-    * `:x_forwarded_host` - to override the host based on on the "x-forwarded-host" header
-    * `:x_forwarded_port` - to override the port based on on the "x-forwarded-port" header
-    * `:x_forwarded_proto` - to override the protocol based on on the "x-forwarded-proto" header
-
-  Since rewriting the scheme based on `x-forwarded-*` headers can open up
-  security vulnerabilities, only provide the option above if:
-
-    * your app is behind a proxy
-    * your proxy strips the given `x-forwarded-*` headers from all incoming requests
-    * your proxy sets the `x-forwarded-*` headers and sends it to Plug
+  For further details refer to `Plug.RewriteOn`.
 
   ## Plug Options
 
