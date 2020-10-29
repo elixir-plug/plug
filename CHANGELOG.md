@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.11.0 (2020-10-29)
+
+### Enhancements
+
+  * [Plug.RewriteOn] Add a new public to handle `x-forwarded` headers
+  * [Plug.Router] Add macro for `head` requests
+
+### Bug fixes
+
+  * [Plug.CSRFProtection] Do not crash if request body params are not available
+  * [Plug.Conn.Query] Conform `www-url-encoded` parsing to whatwg spec
+
+### Deprecations
+
+  * [Plug.Parsers.MULTIPART] Deprecate passing MFA to MULTIPART in favor of a more composable approach
+
 ## v1.10.4 (2020-08-07)
 
 ### Bug fixes

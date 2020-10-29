@@ -209,6 +209,7 @@ end
 
 This project aims to ship with different plugs that can be re-used across applications:
 
+  * `Plug.BasicAuth` - provides Basic HTTP authentication;
   * `Plug.CSRFProtection` - adds Cross-Site Request Forgery protection to your application. Typically required if you are using `Plug.Session`;
   * `Plug.Head` - converts HEAD requests to GET requests;
   * `Plug.Logger` - logs requests;
@@ -216,7 +217,6 @@ This project aims to ship with different plugs that can be re-used across applic
   * `Plug.Parsers` - responsible for parsing the request body given its content-type;
   * `Plug.RequestId` - sets up a request ID to be used in logs;
   * `Plug.Session` - handles session management and storage;
-  * `Plug.BasicAuth` - provides Basic HTTP authentication;
   * `Plug.SSL` - enforces requests through SSL;
   * `Plug.Static` - serves static files;
   * `Plug.Telemetry` - instruments the plug pipeline with `:telemetry` events;
