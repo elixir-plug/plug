@@ -15,6 +15,10 @@ defmodule Plug.Debugger do
   that `Plug.Debugger` is used before `Plug.ErrorHandler` and only in
   particular environments, like `:dev`.
 
+  In case of an error, the rendered page drops the `content-security-policy`
+  header before rendering the error to ensure that the error is displayed
+  correctly.
+
   ## Examples
 
       defmodule MyApp do
@@ -187,7 +191,11 @@ defmodule Plug.Debugger do
     banner = banner(conn, status, kind, reason, stack, opts)
 
     if accepts_html?(get_req_header(conn, "accept")) do
-      conn = put_resp_content_type(conn, "text/html")
+      conn =
+        conn
+        |> put_resp_content_type("text/html")
+        |> delete_resp_header("content-security-policy")
+
       actions = encoded_actions_for_exception(reason, conn)
       last_path = actions_redirect_path(conn)
 
