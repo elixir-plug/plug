@@ -23,6 +23,8 @@ defmodule Plug.DebuggerTest do
     use Plug.Router
     use Plug.Debugger, otp_app: :plug
 
+    plug :add_csp
+
     plug :match
     plug :dispatch
 
@@ -70,6 +72,9 @@ defmodule Plug.DebuggerTest do
     end
 
     defp returns_nil, do: nil
+
+    defp add_csp(conn, _opts),
+      do: Plug.Conn.put_resp_header(conn, "content-security-policy", "abcdef")
   end
 
   defmodule StyledRouter do
@@ -158,6 +163,8 @@ defmodule Plug.DebuggerTest do
 
     assert List.keyfind(headers, "content-type", 0) ==
              {"content-type", "text/html; charset=utf-8"}
+
+    refute List.keymember?(headers, "content-security-policy", 0)
 
     assert body =~ "<title>Plug.DebuggerTest.Exception at GET /send_and_wrapped</title>"
   end
@@ -340,7 +347,10 @@ defmodule Plug.DebuggerTest do
   end
 
   test "if the Accept header is something else than text/html, Markdown is rendered" do
-    conn = put_req_header(conn(:get, "/"), "accept", "application/json")
+    conn =
+      conn(:get, "/")
+      |> put_req_header("accept", "application/json")
+      |> put_resp_header("content-security-policy", "abcdef")
 
     conn =
       render(conn, [], fn ->
@@ -348,6 +358,8 @@ defmodule Plug.DebuggerTest do
       end)
 
     assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
+
+    assert get_resp_header(conn, "content-security-policy") == ["abcdef"]
 
     assert conn.resp_body =~ "# Plug.Parsers.UnsupportedMediaTypeError at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
