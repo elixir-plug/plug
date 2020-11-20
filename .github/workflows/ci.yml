@@ -23,8 +23,8 @@ jobs:
             otp: 20.3.8.26
           - elixir: 1.10.3
             otp: 21.3.8.16
-          - elixir: 1.10.3
-            otp: 23.0.2
+          - elixir: 1.11.2
+            otp: 21.3.8.16
           - elixir: 1.11.2
             otp: 23.0.2
     steps:
