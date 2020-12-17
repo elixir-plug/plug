@@ -59,25 +59,66 @@ defmodule Plug.Upload do
     end
   end
 
+  @doc """
+  Assign ownership of the given upload file to another process.
+
+  Useful if you want to do some work on an uploaded file in another process
+  since it means that the file will survive the end of the request.
+  """
+  @spec give_away(t | binary, pid, pid) :: :ok | {:error, binary}
+  def give_away(path, to_pid, from_pid \\ self())
+
+  def give_away(%__MODULE__{path: path}, to_pid, from_pid) do
+    give_away(path, to_pid, from_pid)
+  end
+
+  def give_away(path, to_pid, from_pid)
+      when is_binary(path) and is_pid(to_pid) and is_pid(from_pid) do
+    case :ets.lookup(@table, from_pid) do
+      [{^from_pid, _tmp, paths}] ->
+        updated_paths = Enum.reject(paths, &(&1 == path))
+
+        case :ets.lookup(@table, to_pid) do
+          [{^to_pid, _tmp, paths}] ->
+            true = :ets.update_element(@table, to_pid, {3, [path | paths]})
+
+          [] ->
+            {:ok, _tmp, _paths} = insert_pid(to_pid, [path])
+        end
+
+        true = :ets.update_element(@table, from_pid, {3, updated_paths})
+
+        :ok
+
+      [] ->
+        {:error, "PID #{inspect(from_pid)} does not own path #{inspect(path)}"}
+    end
+  end
+
   defp ensure_tmp() do
     pid = self()
-    server = plug_server()
 
     case :ets.lookup(@table, pid) do
       [{^pid, tmp, paths}] ->
         {:ok, tmp, paths}
 
       [] ->
-        {:ok, tmps} = GenServer.call(server, :upload)
-        {mega, _, _} = :os.timestamp()
-        subdir = "/plug-" <> i(mega)
+        insert_pid(pid, [])
+    end
+  end
 
-        if tmp = Enum.find_value(tmps, &make_tmp_dir(&1 <> subdir)) do
-          true = :ets.insert_new(@table, {pid, tmp, []})
-          {:ok, tmp, []}
-        else
-          {:no_tmp, tmps}
-        end
+  defp insert_pid(pid, paths) do
+    server = plug_server()
+
+    {:ok, tmps} = GenServer.call(server, {:upload, pid})
+    {mega, _, _} = :os.timestamp()
+    subdir = "/plug-" <> i(mega)
+
+    if tmp = Enum.find_value(tmps, &make_tmp_dir(&1 <> subdir)) do
+      true = :ets.insert_new(@table, {pid, tmp, paths})
+      {:ok, tmp, paths}
+    else
+      {:no_tmp, tmps}
     end
   end
 
@@ -160,7 +201,7 @@ defmodule Plug.Upload do
   end
 
   @impl true
-  def handle_call(:upload, {pid, _ref}, dirs) do
+  def handle_call({:upload, pid}, _from, dirs) do
     Process.monitor(pid)
     {:reply, {:ok, dirs}, dirs}
   end
