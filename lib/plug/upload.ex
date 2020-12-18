@@ -179,6 +179,8 @@ defmodule Plug.Upload do
         |> :ets.lookup(pid)
         |> Enum.each(&delete_path/1)
 
+        :ets.delete(@path_table, pid)
+
       [] ->
         :ok
     end
@@ -198,6 +200,5 @@ defmodule Plug.Upload do
 
   defp delete_path({_pid, path}) do
     :file.delete(path)
-    :ok
   end
 end
