@@ -60,25 +60,74 @@ defmodule Plug.Upload do
     end
   end
 
+  @doc """
+  Assign ownership of the given upload file to another process.
+
+  Useful if you want to do some work on an uploaded file in another process
+  since it means that the file will survive the end of the request.
+  """
+  @spec give_away(t | binary, pid, pid) :: :ok | {:error, binary}
+  def give_away(upload, to_pid, from_pid \\ self())
+
+  def give_away(%__MODULE__{path: path}, to_pid, from_pid) do
+    give_away(path, to_pid, from_pid)
+  end
+
+  def give_away(path, to_pid, from_pid)
+      when is_binary(path) and is_pid(to_pid) and is_pid(from_pid) do
+    with [{^from_pid, _tmp}] <- :ets.lookup(@dir_table, from_pid),
+         true <- is_path_owner?(from_pid, path) do
+      case :ets.lookup(@dir_table, to_pid) do
+        [{^to_pid, _tmp}] ->
+          :ets.insert(@path_table, {to_pid, path})
+          :ets.delete_object(@path_table, {from_pid, path})
+
+          :ok
+
+        [] ->
+          server = plug_server()
+
+          {:ok, tmps} = GenServer.call(server, :roots)
+          {:ok, tmp} = generate_tmp_dir(tmps)
+          :ok = GenServer.call(server, {:give_away, to_pid, tmp, path})
+
+          :ets.delete_object(@path_table, {from_pid, path})
+
+          :ok
+      end
+    else
+      _ ->
+        {:error, :unknown_path}
+    end
+  end
+
   defp ensure_tmp() do
     pid = self()
-    server = plug_server()
 
     case :ets.lookup(@dir_table, pid) do
       [{^pid, tmp}] ->
         {:ok, tmp}
 
       [] ->
-        {:ok, tmps} = GenServer.call(server, {:monitor, pid})
-        {mega, _, _} = :os.timestamp()
-        subdir = "/plug-" <> i(mega)
+        server = plug_server()
 
-        if tmp = Enum.find_value(tmps, &make_tmp_dir(&1 <> subdir)) do
+        {:ok, tmps} = GenServer.call(server, {:monitor, pid})
+
+        with {:ok, tmp} <- generate_tmp_dir(tmps) do
           true = :ets.insert_new(@dir_table, {pid, tmp})
           {:ok, tmp}
-        else
-          {:no_tmp, tmps}
         end
+    end
+  end
+
+  defp generate_tmp_dir(tmp_roots) do
+    {mega, _, _} = :os.timestamp()
+    subdir = "/plug-" <> i(mega)
+
+    if tmp = Enum.find_value(tmp_roots, &make_tmp_dir(&1 <> subdir)) do
+      {:ok, tmp}
+    else
+      {:no_tmp, tmp_roots}
     end
   end
 
@@ -111,6 +160,12 @@ defmodule Plug.Upload do
     rand = :rand.uniform(999_999_999_999_999)
     scheduler_id = :erlang.system_info(:scheduler_id)
     tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(rand) <> "-" <> i(scheduler_id)
+  end
+
+  defp is_path_owner?(pid, path) do
+    owned_paths = :ets.lookup(@path_table, pid)
+
+    Enum.any?(owned_paths, fn {_pid, p} -> p == path end)
   end
 
   @compile {:inline, i: 1}
@@ -169,6 +224,20 @@ defmodule Plug.Upload do
     {:reply, {:ok, dirs}, dirs}
   end
 
+  def handle_call(:roots, _from, dirs) do
+    {:reply, {:ok, dirs}, dirs}
+  end
+
+  def handle_call({:give_away, pid, tmp, path}, _from, dirs) do
+    # Since we are writing in behalf of another process, we need to make sure
+    # the monitor and writing to the tables happen within the same operation.
+    Process.monitor(pid)
+    :ets.insert_new(@dir_table, {pid, tmp})
+    :ets.insert(@path_table, {pid, path})
+
+    {:reply, :ok, dirs}
+  end
+
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     case :ets.lookup(@dir_table, pid) do
@@ -200,5 +269,6 @@ defmodule Plug.Upload do
 
   defp delete_path({_pid, path}) do
     :file.delete(path)
+    :ok
   end
 end
