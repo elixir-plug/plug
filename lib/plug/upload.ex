@@ -87,26 +87,17 @@ defmodule Plug.Upload do
         [] ->
           server = plug_server()
 
-          with {:ok, tmps} <- GenServer.call(server, :roots),
-               {:ok, tmp} <- generate_tmp_dir(tmps),
-               :ok <- GenServer.call(server, {:give_away, to_pid, tmp, path}) do
-            :ets.delete_object(@path_table, {from_pid, path})
-            :ok
-          else
-            {:no_tmp, _tmps} ->
-              # would be pretty extraordinary to fail at this point since we've already
-              # definitely created an upload
-              raise Plug.UploadError,
-                    "could not create a tmp directory to store uploads. " <>
-                      "Set PLUG_TMPDIR to a directory with write permission"
+          {:ok, tmps} = GenServer.call(server, :roots)
+          {:ok, tmp} = generate_tmp_dir(tmps)
+          :ok = GenServer.call(server, {:give_away, to_pid, tmp, path})
 
-            error ->
-              error
-          end
+          :ets.delete_object(@path_table, {from_pid, path})
+
+          :ok
       end
     else
       _ ->
-        {:error, "PID #{inspect(from_pid)} does not own path #{inspect(path)}"}
+        {:error, :unknown_path}
     end
   end
 
@@ -238,9 +229,8 @@ defmodule Plug.Upload do
   end
 
   def handle_call({:give_away, pid, tmp, path}, _from, dirs) do
-    # In the case of accepting a file from another process we need to be sure
-    # that the given file is definitely monitored before removing the original
-    # reference in the @path_table
+    # Since we are writing in behalf of another process, we need to make sure
+    # the monitor and writing to the tables happen within the same operation.
     Process.monitor(pid)
     :ets.insert_new(@dir_table, {pid, tmp})
     :ets.insert(@path_table, {pid, path})
