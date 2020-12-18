@@ -37,8 +37,8 @@ defmodule Plug.Upload do
           content_type: binary | nil
         }
 
-  @pid_table :"#{__MODULE__}_dir"
-  @path_table :"#{__MODULE__}_path"
+  @dir_table __MODULE__.Dir
+  @path_table __MODULE__.Path
   @max_attempts 10
   @temp_env_vars ~w(PLUG_TMPDIR TMPDIR TMP TEMP)s
 
@@ -64,7 +64,7 @@ defmodule Plug.Upload do
     pid = self()
     server = plug_server()
 
-    case :ets.lookup(@pid_table, pid) do
+    case :ets.lookup(@dir_table, pid) do
       [{^pid, tmp}] ->
         {:ok, tmp}
 
@@ -74,7 +74,7 @@ defmodule Plug.Upload do
         subdir = "/plug-" <> i(mega)
 
         if tmp = Enum.find_value(tmps, &make_tmp_dir(&1 <> subdir)) do
-          true = :ets.insert_new(@pid_table, {pid, tmp})
+          true = :ets.insert_new(@dir_table, {pid, tmp})
           {:ok, tmp}
         else
           {:no_tmp, tmps}
@@ -157,7 +157,7 @@ defmodule Plug.Upload do
     tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1)
     cwd = Path.join(File.cwd!(), "tmp")
 
-    :ets.new(@pid_table, [:named_table, :public, :set])
+    :ets.new(@dir_table, [:named_table, :public, :set])
     :ets.new(@path_table, [:named_table, :public, :duplicate_bag])
 
     {:ok, [tmp, cwd]}
@@ -171,14 +171,13 @@ defmodule Plug.Upload do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    case :ets.lookup(@pid_table, pid) do
+    case :ets.lookup(@dir_table, pid) do
       [{pid, _tmp}] ->
-        :ets.delete(@pid_table, pid)
+        :ets.delete(@dir_table, pid)
 
         @path_table
         |> :ets.lookup(pid)
-        |> Enum.map(&elem(&1, 1))
-        |> delete_paths()
+        |> Enum.each(&delete_path/1)
 
       [] ->
         :ok
@@ -193,11 +192,11 @@ defmodule Plug.Upload do
 
   @impl true
   def terminate(_reason, _state) do
-    folder = fn {_, path}, _ -> delete_paths([path]) end
+    folder = fn entry, :ok -> delete_path(entry) end
     :ets.foldl(folder, :ok, @path_table)
   end
 
-  defp delete_paths(paths) do
-    Enum.each(paths, &:file.delete/1)
+  defp delete_path({_pid, path}) do
+    :file.delete(path)
   end
 end
