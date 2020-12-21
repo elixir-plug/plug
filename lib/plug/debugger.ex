@@ -230,6 +230,7 @@ defmodule Plug.Debugger do
     end
   end
 
+  @doc false
   def run_action(%Plug.Conn{} = conn) do
     with %Plug.Conn{body_params: params} <- fetch_body_params(conn),
          {:ok, {module, function, args}} <-
@@ -245,6 +246,7 @@ defmodule Plug.Debugger do
     end
   end
 
+  @doc false
   def encoded_actions_for_exception(exception, conn) do
     exception_implementation = Plug.Exception.impl_for(exception)
 
@@ -265,10 +267,10 @@ defmodule Plug.Debugger do
     end
   end
 
-  def actions_redirect_path(%Plug.Conn{method: "GET", request_path: request_path}),
+  defp actions_redirect_path(%Plug.Conn{method: "GET", request_path: request_path}),
     do: request_path
 
-  def actions_redirect_path(conn) do
+  defp actions_redirect_path(conn) do
     case get_req_header(conn, "referer") do
       [referer] -> referer
       [] -> "/"
@@ -387,7 +389,7 @@ defmodule Plug.Debugger do
     end
   end
 
-  def has_docs?(module, name, arity) do
+  defp has_docs?(module, name, arity) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, module_doc, _, docs} when module_doc != :hidden ->
         Enum.any?(docs, has_doc_matcher?(name, arity))
