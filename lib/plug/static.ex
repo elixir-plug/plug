@@ -70,7 +70,7 @@ defmodule Plug.Static do
       `"public, max-age=31536000"`.
 
     * `:only` - filters which requests to serve. This is useful to avoid
-      file system traversals on every request when this plug is mounted
+      file system access on every request when this plug is mounted
       at `"/"`. For example, if `only: ["images", "favicon.ico"]` is
       specified, only files in the "images" directory and the
       "favicon.ico" file will be served by `Plug.Static`.
