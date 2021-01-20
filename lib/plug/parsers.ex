@@ -46,22 +46,24 @@ defmodule Plug.Parsers do
   @moduledoc """
   A plug for parsing the request body.
 
-  This module also specifies a behaviour that all the parsers to be used with
-  Plug should adopt.
+  It invokes a list of `:parsers`, which are activated based on the
+  request content-type. Custom parsers are also supported by defining
+  a module that implements the behaviour defined by this module.
 
-  This plug also fetches query params in the connection through
-  `Plug.Conn.fetch_query_params/2`.
-
-  Once a connection goes through this plug, it will have `:body_params` set to
-  the map of params parsed by one of the parsers listed in `:parsers` and
-  `:params` set to the result of merging the `:body_params` and `:query_params`.
+  Once a connection goes through this plug, it will have `:body_params`
+  set to the map of params parsed by one of the parsers listed in
+  `:parsers` and `:params` set to the result of merging the `:body_params`
+  and `:query_params`. In case `:query_params` have not yet been parsed,
+  `Plug.Conn.fetch_query_params/2` is automatically invoked.
 
   This plug will raise `Plug.Parsers.UnsupportedMediaTypeError` by default if
   the request cannot be parsed by any of the given types and the MIME type has
   not been explicitly accepted with the `:pass` option.
 
   `Plug.Parsers.RequestTooLargeError` will be raised if the request goes over
-  the given limit.
+  the given limit. The default length is 8MB and it can be customized by passing
+  the `:length` option to the Plug. `:read_timeout` and `:read_length`, as
+  described by `Plug.Conn.read_body/2`, are also supported.
 
   Parsers may raise a `Plug.Parsers.ParseError` if the request has a malformed
   body.
@@ -92,7 +94,7 @@ defmodule Plug.Parsers do
 
     * `:query_string_length` - the maximum allowed size for query strings
 
-    * `:validate_utf8` - boolean that tells whether or not we want to 
+    * `:validate_utf8` - boolean that tells whether or not we want to
         validate that parsed binaries are utf8 strings.
 
     * `:body_reader` - an optional replacement (or wrapper) for
@@ -103,17 +105,39 @@ defmodule Plug.Parsers do
       `Plug.Parsers.MULTIPART` which relies instead on other functions defined
       in `Plug.Conn`.
 
+  All other options given to this Plug are forwarded to the parsers.
+
   ## Examples
 
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+      plug Plug.Parsers,
+           parsers: [:urlencoded, :multipart],
+           pass: ["text/*"]
 
-      plug Plug.Parsers, parsers: [:urlencoded, :json],
-                         pass: ["text/*"],
-                         json_decoder: Jason
+  Any other option given to Plug.Parsers is forwarded to the underlying
+  parsers. Therefore, you can use a JSON parser and pass the `:json_decoder`
+  option at the root:
 
-  Each parser also accepts options to be given directly to it by using tuples.
-  For example, to support file uploads it is common to pass the `:length`,
-  `:read_length` and `:read_timeout` option to the multipart parser:
+      plug Plug.Parsers,
+           parsers: [:urlencoded, :json],
+           json_decoder: Jason
+
+  Or directly to the parser itself:
+
+      plug Plug.Parsers,
+           parsers: [:urlencoded, {:json, json_decoder: Jason}]
+
+  A common set of shared options given to Plug.Parsers is `:length`,
+  `:read_length` and `:read_timeout`, which customizes the maximum
+  request length you want to accept. For example, to support file
+  uploads, you can do:
+
+      plug Plug.Parsers,
+           parsers: [:url_encoded, :multipart],
+           length: 20_000_000
+
+  However, the above will increase the maximum length of all request
+  types. If you want to increase the limit only for multipart requests
+  (which is typically the ones used for file uploads), you can do:
 
       plug Plug.Parsers,
            parsers: [
