@@ -286,6 +286,7 @@ defmodule Plug.CSRFProtection do
 
   ## Plug
 
+  @impl true
   def init(opts) do
     session_key = Keyword.get(opts, :session_key, "_csrf_token")
     mode = Keyword.get(opts, :with, :exception)
@@ -293,6 +294,7 @@ defmodule Plug.CSRFProtection do
     {session_key, mode, allow_hosts}
   end
 
+  @impl true
   def call(conn, {session_key, mode, allow_hosts}) do
     csrf_token = dump_state_from_session(get_session(conn, session_key))
     load_state(conn.secret_key_base, csrf_token)

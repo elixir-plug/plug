@@ -48,10 +48,12 @@ defmodule Plug.Session.ETS do
 
   @max_tries 100
 
+  @impl true
   def init(opts) do
     Keyword.fetch!(opts, :table)
   end
 
+  @impl true
   def get(_conn, sid, table) do
     case :ets.lookup(table, sid) do
       [{^sid, data, _timestamp}] ->
@@ -63,6 +65,7 @@ defmodule Plug.Session.ETS do
     end
   end
 
+  @impl true
   def put(_conn, nil, data, table) do
     put_new(data, table)
   end
@@ -72,6 +75,7 @@ defmodule Plug.Session.ETS do
     sid
   end
 
+  @impl true
   def delete(_conn, sid, table) do
     :ets.delete(table, sid)
     :ok

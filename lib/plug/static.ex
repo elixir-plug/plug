@@ -136,6 +136,7 @@ defmodule Plug.Static do
     defexception message: "invalid path for static asset", plug_status: 400
   end
 
+  @impl true
   def init(opts) do
     from =
       case Keyword.fetch!(opts, :from) do
@@ -159,6 +160,7 @@ defmodule Plug.Static do
     }
   end
 
+  @impl true
   def call(
         conn = %Conn{method: meth},
         %{at: at, only_rules: only_rules, from: from, gzip?: gzip?, brotli?: brotli?} = options

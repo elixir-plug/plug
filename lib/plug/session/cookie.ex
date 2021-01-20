@@ -66,6 +66,7 @@ defmodule Plug.Session.COOKIE do
   alias Plug.Crypto.MessageVerifier
   alias Plug.Crypto.MessageEncryptor
 
+  @impl true
   def init(opts) do
     encryption_salt = opts[:encryption_salt]
     signing_salt = check_signing_salt(opts)
@@ -88,6 +89,7 @@ defmodule Plug.Session.COOKIE do
     }
   end
 
+  @impl true
   def get(conn, cookie, opts) do
     %{key_opts: key_opts, signing_salt: signing_salt, log: log, serializer: serializer} = opts
 
@@ -105,6 +107,7 @@ defmodule Plug.Session.COOKIE do
     |> decode(serializer, log)
   end
 
+  @impl true
   def put(conn, _sid, term, opts) do
     %{serializer: serializer, key_opts: key_opts, signing_salt: signing_salt} = opts
     binary = encode(term, serializer)
@@ -122,6 +125,7 @@ defmodule Plug.Session.COOKIE do
     end
   end
 
+  @impl true
   def delete(_conn, _sid, _opts) do
     :ok
   end

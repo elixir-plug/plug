@@ -23,8 +23,10 @@ defmodule Plug.MethodOverride do
 
   @allowed_methods ~w(DELETE PUT PATCH)
 
+  @impl true
   def init([]), do: []
 
+  @impl true
   def call(%Plug.Conn{method: "POST", body_params: body_params} = conn, []),
     do: override_method(conn, body_params)
 

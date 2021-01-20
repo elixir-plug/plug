@@ -217,6 +217,7 @@ defmodule Plug.Parsers do
   @behaviour Plug
   @methods ~w(POST PUT PATCH DELETE)
 
+  @impl true
   def init(opts) do
     {parsers, opts} = Keyword.pop(opts, :parsers)
     {pass, opts} = Keyword.pop(opts, :pass, [])
@@ -257,6 +258,7 @@ defmodule Plug.Parsers do
     end
   end
 
+  @impl true
   def call(%{method: method, body_params: %Plug.Conn.Unfetched{}} = conn, options)
       when method in @methods do
     {parsers, pass, query_string_length, validate_utf8} = options

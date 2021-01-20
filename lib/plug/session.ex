@@ -48,6 +48,7 @@ defmodule Plug.Session do
 
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra, :same_site]
 
+  @impl true
   def init(opts) do
     store = Plug.Session.Store.get(Keyword.fetch!(opts, :store))
     key = Keyword.fetch!(opts, :key)
@@ -63,6 +64,7 @@ defmodule Plug.Session do
     }
   end
 
+  @impl true
   def call(conn, config) do
     Conn.put_private(conn, :plug_session_fetch, fetch_session(config))
   end

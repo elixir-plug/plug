@@ -40,10 +40,12 @@ defmodule Plug.RequestId do
   alias Plug.Conn
   @behaviour Plug
 
+  @impl true
   def init(opts) do
     Keyword.get(opts, :http_header, "x-request-id")
   end
 
+  @impl true
   def call(conn, req_id_header) do
     conn
     |> get_request_id(req_id_header)
