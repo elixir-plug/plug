@@ -4,8 +4,8 @@ defmodule Plug.Conn do
   @moduledoc """
   The Plug connection.
 
-  This module defines a `t:Plug.Conn.t/0` struct and the main functions
-  for working with Plug connections.
+  This module defines a struct and the main functions for working with
+  requests and responses in a HTTP connection.
 
   Note request headers are normalized to lowercase and response
   headers are expected to have lowercase keys.
