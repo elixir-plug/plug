@@ -26,7 +26,8 @@ defmodule Plug.MixProject do
         groups_for_extras: groups_for_extras(),
         source_ref: "v#{@version}",
         source_url: "https://github.com/elixir-plug/plug"
-      ]
+      ],
+      preferred_cli_env: [docs: :docs]
     ]
   end
 
@@ -44,7 +45,7 @@ defmodule Plug.MixProject do
       {:mime, "~> 1.0"},
       {:plug_crypto, "~> 1.1.1 or ~> 1.2"},
       {:telemetry, "~> 0.4"},
-      {:ex_doc, "~> 0.21", only: :docs}
+      {:ex_doc, "~> 0.22.0", only: :docs, runtime: false}
     ]
   end
 
