@@ -5,7 +5,7 @@ defmodule Plug.Conn do
   The Plug connection.
 
   This module defines a struct and the main functions for working with
-  requests and responses in a HTTP connection.
+  requests and responses in an HTTP connection.
 
   Note request headers are normalized to lowercase and response
   headers are expected to have lowercase keys.
