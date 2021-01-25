@@ -44,7 +44,7 @@ defmodule Plug.MixProject do
       {:mime, "~> 1.0"},
       {:plug_crypto, "~> 1.1.1 or ~> 1.2"},
       {:telemetry, "~> 0.4"},
-      {:ex_doc, "~> 0.21", only: :docs}
+      {:ex_doc, "~> 0.22.0", only: :dev, runtime: false}
     ]
   end
 
