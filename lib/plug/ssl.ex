@@ -242,7 +242,7 @@ defmodule Plug.SSL do
   end
 
   defp set_secure_defaults(options) do
-    if List.keyfind(options, :versions, 0) == {:versions, [:"tlsv1.3"]} do
+    if options[:versions] == [:"tlsv1.3"] do
       # secure_renegotiate and reuse_sessions options are not supported
       # by the OTP SSL module when earlier versions of TLS are not being used.
       # (i.e. TLS1.2 or earlier versions must be specified as it's not supported in TLS1.3)
