@@ -85,7 +85,7 @@ defmodule Plug do
 
   ## Examples
 
-      Plug.run(conn, [{Plug.Head, []}, IO.inspect/1])
+      Plug.run(conn, [{Plug.Head, []}, &IO.inspect/1])
 
   ## Options
 
