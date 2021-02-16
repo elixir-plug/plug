@@ -16,11 +16,11 @@ defmodule Plug do
   A module plug is an extension of the function plug. It is a module that must
   export:
 
-    * a `call/2` function with the signature defined above
-    * an `init/1` function which takes a set of options and initializes it.
+    * a `c:call/2` function with the signature defined above
+    * an `c:init/1` function which takes a set of options and initializes it.
 
-  The result returned by `init/1` is passed as second argument to `call/2`. Note
-  that `init/1` may be called during compilation and as such it must not return
+  The result returned by `c:init/1` is passed as second argument to `c:call/2`. Note
+  that `c:init/1` may be called during compilation and as such it must not return
   pids, ports or values that are specific to the runtime.
 
   The API expected by a module plug is defined as a behaviour by the
@@ -65,7 +65,7 @@ defmodule Plug do
           | MapSet.t()
 
   @callback init(opts) :: opts
-  @callback call(Plug.Conn.t(), opts) :: Plug.Conn.t()
+  @callback call(conn :: Plug.Conn.t(), opts) :: Plug.Conn.t()
 
   require Logger
 
