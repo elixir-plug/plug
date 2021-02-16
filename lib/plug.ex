@@ -65,7 +65,7 @@ defmodule Plug do
           | MapSet.t()
 
   @callback init(opts) :: opts
-  @callback call(Plug.Conn.t(), opts) :: Plug.Conn.t()
+  @callback call(conn :: Plug.Conn.t(), opts) :: Plug.Conn.t()
 
   require Logger
 

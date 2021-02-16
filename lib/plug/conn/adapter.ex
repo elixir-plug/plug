@@ -24,7 +24,12 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  @callback send_resp(payload, Conn.status(), Conn.headers(), Conn.body()) ::
+  @callback send_resp(
+              payload,
+              status :: Conn.status(),
+              headers :: Conn.headers(),
+              body :: Conn.body()
+            ) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """
@@ -41,8 +46,8 @@ defmodule Plug.Conn.Adapter do
   """
   @callback send_file(
               payload,
-              Conn.status(),
-              Conn.headers(),
+              status :: Conn.status(),
+              headers :: Conn.headers(),
               file :: binary,
               offset :: integer,
               length :: integer | :all
@@ -57,7 +62,7 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
   """
-  @callback send_chunked(payload, Conn.status(), Conn.headers()) ::
+  @callback send_chunked(payload, status :: Conn.status(), headers :: Conn.headers()) ::
               {:ok, sent_body :: binary | nil, payload}
 
   @doc """
@@ -71,7 +76,7 @@ defmodule Plug.Conn.Adapter do
   implementation returns the actual body and payload so
   it can be used during testing.
   """
-  @callback chunk(payload, Conn.body()) ::
+  @callback chunk(payload, body :: Conn.body()) ::
               :ok | {:ok, sent_body :: binary, payload} | {:error, term}
 
   @doc """
@@ -99,7 +104,8 @@ defmodule Plug.Conn.Adapter do
   If the adapter does not support inform, then `{:error, :not_supported}`
   should be returned.
   """
-  @callback inform(payload, Conn.status(), headers :: Keyword.t()) :: :ok | {:error, term}
+  @callback inform(payload, status :: Conn.status(), headers :: Keyword.t()) ::
+              :ok | {:error, term}
 
   @doc """
   Returns peer information such as the address, port and ssl cert.
