@@ -121,6 +121,26 @@ defmodule Plug.RouterTest do
       resp(conn, 200, bat)
     end
 
+    get "/9/:bar.json" when bar != "value.json" do
+      resp(conn, 200, inspect(bar <> " guard"))
+    end
+
+    get "/9/:bar.json" do
+      resp(conn, 200, inspect(bar))
+    end
+
+    get "/10/foo-:bar.json" do
+      resp(conn, 200, inspect(bar))
+    end
+
+    get "/11/:bar.js.map" do
+      resp(conn, 200, inspect(bar))
+    end
+
+    get "/11/:foo/:bar.app/baz/:bat.js.map" do
+      resp(conn, 200, [inspect(foo), inspect(bar), inspect(bat)] |> Enum.join(" "))
+    end
+
     plug = SamplePlug
     opts = :hello
     get "/plug/match", to: SamplePlug
@@ -219,6 +239,46 @@ defmodule Plug.RouterTest do
   test "dispatch dynamic segment with prefix" do
     conn = call(Sample, conn(:get, "/3/bar-value"))
     assert conn.resp_body == ~s("value")
+  end
+
+  test "dispatch dynamic segment with .format identifier" do
+    conn = call(Sample, conn(:get, "/9/value.json"))
+    assert conn.resp_body == ~s("value.json")
+
+    conn = call(Sample, conn(:get, "/9/value"))
+    assert conn.resp_body == "oops"
+  end
+
+  test "dispatch dynamic segment with .format identifier and guard" do
+    conn = call(Sample, conn(:get, "/9/not_value.json"))
+    assert conn.resp_body == ~s("not_value.json guard")
+  end
+
+  test "dispatch dynamic segment with prefix and .format identifier" do
+    conn = call(Sample, conn(:get, "/10/foo-value.json"))
+    assert conn.resp_body == ~s("value.json")
+
+    conn = call(Sample, conn(:get, "/10/foo-value"))
+    assert conn.resp_body == "oops"
+  end
+
+  test "dispatch dynamic segment with multiple .format identifier" do
+    conn = call(Sample, conn(:get, "/11/value.js.map"))
+    assert conn.resp_body == ~s("value.js.map")
+  end
+
+  test "dispatch multiple dynamic segments with multiple .format identifier" do
+    conn = call(Sample, conn(:get, "/11/value/value.app/baz/value.js.map"))
+    assert conn.resp_body == ~s("value" "value.app" "value.js.map")
+
+    conn = call(Sample, conn(:get, "/11/value/value/baz/value.js.map"))
+    assert conn.resp_body == "oops"
+
+    conn = call(Sample, conn(:get, "/11/value/value.app/baz/value.js"))
+    assert conn.resp_body == "oops"
+
+    conn = call(Sample, conn(:get, "/11/value/value/baz/value"))
+    assert conn.resp_body == "oops"
   end
 
   test "dispatch glob segment" do

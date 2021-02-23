@@ -623,9 +623,61 @@ defmodule Plug.Router do
   defp join_guards(fst, snd), do: quote(do: unquote(fst) and unquote(snd))
 
   # Extract the path and guards from the path.
-  defp extract_path_and_guards({:when, _, [path, guards]}), do: {extract_path(path), guards}
-  defp extract_path_and_guards(path), do: {extract_path(path), true}
+  defp extract_path_and_guards({:when, _, [path, guards]}) do
+    {extract_path(path), extract_guards(guards, path)}
+  end
+
+  defp extract_path_and_guards(path), do: {extract_path(path), extract_guards(true, path)}
 
   defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
-  defp extract_path(path), do: path
+  defp extract_path(path), do: maybe_remove_extension(path, identifier_with_extension?(path))
+
+  defp extract_guards(guards, path) when is_binary(path) do
+    format_guards =
+      String.split(path, "/")
+      |> Enum.map(&Regex.run(~r/(.*):(.*?)\.(.*)$/, &1, capture: :all_but_first))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&build_format_extension_guard/1)
+
+    case format_guards do
+      [] ->
+        guards
+
+      [format_guard] ->
+        join_guards(format_guard, guards)
+
+      format_guards ->
+        Enum.reduce(tl(format_guards), hd(format_guards), fn guard, acc ->
+          quote(do: unquote(acc) and unquote(guard))
+        end)
+        |> join_guards(guards)
+    end
+  end
+
+  defp build_format_extension_guard([_buffer, identifier, format]) do
+    id_var = Macro.var(String.to_atom(identifier), nil)
+
+    quote do
+      binary_part(
+        unquote(id_var),
+        byte_size(unquote(id_var)) - byte_size(<<?., unquote(format)>>),
+        byte_size(<<?., unquote(format)>>)
+      ) == <<?., unquote(format)>>
+    end
+  end
+
+  defp extract_guards(guards, _path), do: guards
+
+  defp maybe_remove_extension(path, true) when is_binary(path) do
+    String.split(path, "/")
+    |> Enum.map_join("/", &Plug.Router.Utils.remove_format_extension(&1))
+  end
+
+  defp maybe_remove_extension(path, _), do: path
+
+  defp identifier_with_extension?(path) when is_binary(path) do
+    String.match?(path, ~r/(.*):(.*?)\.(.*)$/)
+  end
+
+  defp identifier_with_extension?(_path), do: false
 end
