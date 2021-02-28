@@ -630,14 +630,25 @@ defmodule Plug.Router do
   defp extract_path_and_guards(path), do: {extract_path(path), extract_guards(true, path)}
 
   defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
-  defp extract_path(path), do: maybe_remove_extension(path, identifier_with_extension?(path))
+
+  defp extract_path(path) when is_binary(path) do
+    path_list = Plug.Router.Utils.parse_suffix_identifier(path)
+
+    case has_suffix_id?(path_list) do
+      true -> Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_identifier_suffix(&1))
+      false -> path
+    end
+  end
+
+  defp extract_path(path), do: path
+
+  defp has_suffix_id?(path), do: Enum.any?(path, &is_tuple(&1))
 
   defp extract_guards(guards, path) when is_binary(path) do
     format_guards =
-      String.split(path, "/")
-      |> Enum.map(&Regex.run(~r/(.*):(.*?)\.(.*)$/, &1, capture: :all_but_first))
+      Plug.Router.Utils.parse_suffix_identifier(path)
+      |> Enum.map(&build_suffix_guard/1)
       |> Enum.reject(&is_nil/1)
-      |> Enum.map(&build_format_extension_guard/1)
 
     case format_guards do
       [] ->
@@ -654,30 +665,19 @@ defmodule Plug.Router do
     end
   end
 
-  defp build_format_extension_guard([_buffer, identifier, format]) do
+  defp extract_guards(guards, _path), do: guards
+
+  defp build_suffix_guard({_prefix, ":" <> identifier, suffix}) do
     id_var = Macro.var(String.to_atom(identifier), nil)
 
     quote do
       binary_part(
         unquote(id_var),
-        byte_size(unquote(id_var)) - byte_size(<<?., unquote(format)>>),
-        byte_size(<<?., unquote(format)>>)
-      ) == <<?., unquote(format)>>
+        byte_size(unquote(id_var)) - byte_size(unquote(suffix)),
+        byte_size(unquote(suffix))
+      ) == unquote(suffix)
     end
   end
 
-  defp extract_guards(guards, _path), do: guards
-
-  defp maybe_remove_extension(path, true) when is_binary(path) do
-    String.split(path, "/")
-    |> Enum.map_join("/", &Plug.Router.Utils.remove_format_extension(&1))
-  end
-
-  defp maybe_remove_extension(path, _), do: path
-
-  defp identifier_with_extension?(path) when is_binary(path) do
-    String.match?(path, ~r/(.*):(.*?)\.(.*)$/)
-  end
-
-  defp identifier_with_extension?(_path), do: false
+  defp build_suffix_guard(_), do: nil
 end

@@ -101,28 +101,6 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
-  Removes format extensions from path as these are transformed into
-  guard clauses
-
-  ## Examples
-
-      iex> Plug.Router.Utils.remove_format_extension(":id.json")
-      ":id"
-
-      iex> Plug.Router.Utils.remove_format_extension(":id.js.map")
-      ":id"
-
-      iex> Plug.Router.Utils.remove_format_extension("foo-:id.json")
-      "foo-:id"
-  """
-  def remove_format_extension(segment) do
-    case Regex.run(~r/(.*):(.*?)\.(.*)$/, segment, capture: :all_but_first) do
-      nil -> segment
-      [buffer, identifier, _format] -> [buffer, ?:, identifier] |> IO.iodata_to_binary()
-    end
-  end
-
-  @doc """
   Builds a list of path prefix, id, suffix info that can be used to
   transform paths and generate guards for suffix identifier matching.
 
