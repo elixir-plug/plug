@@ -129,6 +129,14 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(bar))
     end
 
+    get "/9/:bar-foo" do
+      resp(conn, 200, inspect(bar))
+    end
+
+    get "/9/:bar@foo" do
+      resp(conn, 200, inspect(bar))
+    end
+
     get "/10/foo-:bar.json" do
       resp(conn, 200, inspect(bar))
     end
@@ -137,7 +145,7 @@ defmodule Plug.RouterTest do
       resp(conn, 200, inspect(bar))
     end
 
-    get "/11/:foo/:bar.app/baz/:bat.js.map" do
+    get "/11/:foo/:bar@app/baz/:bat.js.map" do
       resp(conn, 200, [inspect(foo), inspect(bar), inspect(bat)] |> Enum.join(" "))
     end
 
@@ -241,43 +249,63 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == ~s("value")
   end
 
-  test "dispatch dynamic segment with .format identifier" do
+  test "dispatch dynamic segment with suffix" do
     conn = call(Sample, conn(:get, "/9/value.json"))
     assert conn.resp_body == ~s("value.json")
+    assert conn.params == %{"bar" => "value"}
+    assert conn.path_params == %{"bar" => "value"}
+
+    conn = call(Sample, conn(:get, "/9/value-foo"))
+    assert conn.resp_body == ~s("value-foo")
+    assert conn.params == %{"bar" => "value"}
+    assert conn.path_params == %{"bar" => "value"}
+
+    conn = call(Sample, conn(:get, "/9/value@foo"))
+    assert conn.resp_body == ~s("value@foo")
+    assert conn.params == %{"bar" => "value"}
+    assert conn.path_params == %{"bar" => "value"}
 
     conn = call(Sample, conn(:get, "/9/value"))
     assert conn.resp_body == "oops"
   end
 
-  test "dispatch dynamic segment with .format identifier and guard" do
-    conn = call(Sample, conn(:get, "/9/not_value.json"))
-    assert conn.resp_body == ~s("not_value.json guard")
+  test "dispatch dynamic segment with suffix and guard" do
+    conn = call(Sample, conn(:get, "/9/other_value.json"))
+    assert conn.resp_body == ~s("other_value.json guard")
+    assert conn.params == %{"bar" => "other_value"}
+    assert conn.path_params == %{"bar" => "other_value"}
   end
 
-  test "dispatch dynamic segment with prefix and .format identifier" do
+  test "dispatch dynamic segment with prefix and suffix" do
     conn = call(Sample, conn(:get, "/10/foo-value.json"))
     assert conn.resp_body == ~s("value.json")
+    assert conn.params == %{"bar" => "value"}
+    assert conn.path_params == %{"bar" => "value"}
 
     conn = call(Sample, conn(:get, "/10/foo-value"))
     assert conn.resp_body == "oops"
   end
 
-  test "dispatch dynamic segment with multiple .format identifier" do
+  test "dispatch dynamic segment with multiple suffixes" do
     conn = call(Sample, conn(:get, "/11/value.js.map"))
     assert conn.resp_body == ~s("value.js.map")
+    assert conn.params == %{"bar" => "value"}
+    assert conn.path_params == %{"bar" => "value"}
   end
 
-  test "dispatch multiple dynamic segments with multiple .format identifier" do
-    conn = call(Sample, conn(:get, "/11/value/value.app/baz/value.js.map"))
-    assert conn.resp_body == ~s("value" "value.app" "value.js.map")
+  test "dispatch multiple dynamic segments with multiple suffixes" do
+    conn = call(Sample, conn(:get, "/11/foo_value/bar_value@app/baz/bat_value.js.map"))
+    assert conn.resp_body == ~s("foo_value\" "bar_value@app" "bat_value.js.map")
+    assert conn.params == %{"bar" => "bar_value", "bat" => "bat_value", "foo" => "foo_value"}
+    assert conn.path_params == %{"bar" => "bar_value", "bat" => "bat_value", "foo" => "foo_value"}
 
-    conn = call(Sample, conn(:get, "/11/value/value/baz/value.js.map"))
+    conn = call(Sample, conn(:get, "/11/foo_value/bar_value/baz/bat_value.js.map"))
     assert conn.resp_body == "oops"
 
-    conn = call(Sample, conn(:get, "/11/value/value.app/baz/value.js"))
+    conn = call(Sample, conn(:get, "/11/foo_value/bar_value@app/baz/bat_value.js"))
     assert conn.resp_body == "oops"
 
-    conn = call(Sample, conn(:get, "/11/value/value/baz/value"))
+    conn = call(Sample, conn(:get, "/11/foo_value/bar_value/baz/bat_value"))
     assert conn.resp_body == "oops"
   end
 

@@ -561,11 +561,12 @@ defmodule Plug.Router do
           raise ArgumentError, message: "expected one of :to or :do to be given as option"
       end
 
-    {path, guards} = extract_path_and_guards(expr)
+    {{path, suffix}, guards} = extract_path_and_guards(expr)
 
     quote bind_quoted: [
             method: method,
             path: path,
+            suffix: suffix,
             options: options,
             guards: Macro.escape(guards, unquote: true),
             body: Macro.escape(body, unquote: true)
@@ -578,9 +579,25 @@ defmodule Plug.Router do
         unquote(private)
         unquote(assigns)
 
+        params =
+          case unquote(suffix) do
+            [] ->
+              unquote({:%{}, [], params})
+
+            suffix ->
+              suffix = Enum.into(suffix, %{})
+
+              for {param, value} <- unquote(params), into: %{} do
+                case suffix[param] do
+                  nil -> {param, value}
+                  suffix -> {param, String.trim_trailing(value, suffix)}
+                end
+              end
+          end
+
         merge_params = fn
-          %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
-          fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
+          %Plug.Conn.Unfetched{} -> params
+          fetched -> Map.merge(fetched, params)
         end
 
         conn = update_in(unquote(conn).params, merge_params)
@@ -629,18 +646,29 @@ defmodule Plug.Router do
 
   defp extract_path_and_guards(path), do: {extract_path(path), extract_guards(true, path)}
 
-  defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
+  defp extract_path({:_, _, var}) when is_atom(var), do: {"/*_path", []}
 
   defp extract_path(path) when is_binary(path) do
     path_list = Plug.Router.Utils.parse_suffix_identifier(path)
 
     case has_suffix_id?(path_list) do
-      true -> Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_identifier_suffix(&1))
-      false -> path
+      true ->
+        {
+          Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_identifier_suffix(&1)),
+          Enum.flat_map(path_list, fn segment ->
+            case segment do
+              {_prefix, ":" <> id, suffix} -> [{id, suffix}]
+              _ -> []
+            end
+          end)
+        }
+
+      false ->
+        {path, []}
     end
   end
 
-  defp extract_path(path), do: path
+  defp extract_path(path), do: {path, []}
 
   defp has_suffix_id?(path), do: Enum.any?(path, &is_tuple(&1))
 
