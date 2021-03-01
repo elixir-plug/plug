@@ -133,7 +133,7 @@ defmodule Plug.Router.Utils do
   def parse_suffix_identifier(path) when is_binary(path) do
     String.split(path, "/")
     |> Enum.map(fn segment ->
-      case Regex.run(~r/(.*):(.*?)([^a-zA-Z_\s])(.*)$/, segment, capture: :all_but_first) do
+      case Regex.run(~r/(.*):(.*?)([^a-zA-Z_])(.*)$/, segment, capture: :all_but_first) do
         nil -> segment
         [prefix, id, delimiter, suffix] -> {prefix, ":" <> id, delimiter <> suffix}
       end
