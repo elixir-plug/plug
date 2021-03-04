@@ -18,47 +18,56 @@ defmodule Plug.Adapters.Test.ConnTest do
     conn = conn(:head, "/posts", page: 2)
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == "page=2"
+    assert conn.query_params == conn.params
     assert conn.params == %{"page" => "2"}
     assert conn.req_headers == []
 
     conn = conn(:get, "/", a: [b: 0, c: 5], d: [%{e: "f"}])
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == "a[b]=0&a[c]=5&d[][e]=f"
+    assert conn.query_params == conn.params
     assert conn.params == %{"a" => %{"b" => "0", "c" => "5"}, "d" => [%{"e" => "f"}]}
 
     conn = conn(:get, "/?foo=bar", %{foo: "baz"})
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == "foo=bar"
+    assert conn.query_params == conn.params
     assert conn.params == %{"foo" => "baz"}
 
     conn = conn(:get, "/?foo=bar", %{biz: "baz"})
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == "biz=baz&foo=bar"
+    assert conn.query_params == conn.params
     assert conn.params == %{"foo" => "bar", "biz" => "baz"}
 
     conn = conn(:get, "/?f=g", a: "b", c: [d: "e"])
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == "a=b&c[d]=e&f=g"
+    assert conn.query_params == conn.params
     assert conn.params == %{"a" => "b", "c" => %{"d" => "e"}, "f" => "g"}
 
     conn = conn(:get, "/", %{})
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
     assert conn.query_string == ""
+    assert conn.query_params == conn.params
     assert conn.params == %{}
 
     conn = conn(:post, "/?foo=bar", %{foo: "baz", answer: 42})
     assert conn.body_params == %{"foo" => "baz", "answer" => 42}
     assert conn.query_string == "foo=bar"
+    assert conn.query_params == %{"foo" => "bar"}
     assert conn.params == %{"foo" => "baz", "answer" => 42}
 
     conn = conn(:post, "/?foo=bar", %{biz: "baz"})
     assert conn.body_params == %{"biz" => "baz"}
     assert conn.query_string == "foo=bar"
+    assert conn.query_params == %{"foo" => "bar"}
     assert conn.params == %{"foo" => "bar", "biz" => "baz"}
 
     conn = conn(:post, "/", %{})
     assert conn.body_params == %{}
     assert conn.query_string == ""
+    assert conn.query_params == %{}
     assert conn.params == %{}
   end
 

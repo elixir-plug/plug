@@ -12,7 +12,7 @@ defmodule Plug.Adapters.Test.Conn do
     query = uri.query || ""
     owner = self()
 
-    {body, body_params, params, query, req_headers} =
+    {params, {body, body_params}, {query, query_params}, req_headers} =
       body_or_params(body_or_params, query, conn.req_headers, method)
 
     state = %{
@@ -43,6 +43,7 @@ defmodule Plug.Adapters.Test.Conn do
         req_headers: req_headers,
         request_path: uri.path,
         query_string: query,
+        query_params: query_params || %Plug.Conn.Unfetched{aspect: :query_params},
         body_params: body_params || %Plug.Conn.Unfetched{aspect: :body_params},
         params: params || %Plug.Conn.Unfetched{aspect: :params},
         scheme: (uri.scheme || "http") |> String.downcase() |> String.to_atom()
@@ -135,10 +136,10 @@ defmodule Plug.Adapters.Test.Conn do
     end
   end
 
-  defp body_or_params(nil, query, headers, _method), do: {"", nil, nil, query, headers}
+  defp body_or_params(nil, query, headers, _method), do: {nil, {"", nil}, {query, nil}, headers}
 
   defp body_or_params(body, query, headers, _method) when is_binary(body) do
-    {body, nil, nil, query, headers}
+    {nil, {body, nil}, {query, nil}, headers}
   end
 
   defp body_or_params(params, query, headers, method) when is_list(params) do
@@ -149,25 +150,27 @@ defmodule Plug.Adapters.Test.Conn do
        when is_map(params) and method in ["GET", "HEAD"] do
     params = stringify_params(params, &to_string/1)
 
-    query = Plug.Conn.Query.decode(query)
-    params = Map.merge(query, params)
+    from_query = Plug.Conn.Query.decode(query)
+    params = Map.merge(from_query, params)
 
     query =
       params
-      |> Map.merge(query)
+      |> Map.merge(from_query)
       |> Plug.Conn.Query.encode()
 
-    {"", nil, params, query, headers}
+    {params, {"", nil}, {query, params}, headers}
   end
 
   defp body_or_params(params, query, headers, _method) when is_map(params) do
     content_type_header = {"content-type", "multipart/mixed; boundary=plug_conn_test"}
     content_type = List.keyfind(headers, "content-type", 0, content_type_header)
-
     headers = List.keystore(headers, "content-type", 0, content_type)
+
     body_params = stringify_params(params, & &1)
-    params = Map.merge(Plug.Conn.Query.decode(query), body_params)
-    {"--plug_conn_test--", body_params, params, query, headers}
+    query_params = Plug.Conn.Query.decode(query)
+    params = Map.merge(query_params, body_params)
+
+    {params, {"--plug_conn_test--", body_params}, {query, query_params}, headers}
   end
 
   defp stringify_params([{_, _} | _] = params, value_fun),
