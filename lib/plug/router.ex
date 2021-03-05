@@ -649,12 +649,12 @@ defmodule Plug.Router do
   defp extract_path({:_, _, var}) when is_atom(var), do: {"/*_path", []}
 
   defp extract_path(path) when is_binary(path) do
-    path_list = Plug.Router.Utils.parse_suffix_identifier(path)
+    path_list = Plug.Router.Utils.parse_segments(path)
 
     case has_suffix_id?(path_list) do
       true ->
         {
-          Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_identifier_suffix(&1)),
+          Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_suffix(&1)),
           Enum.flat_map(path_list, fn segment ->
             case segment do
               {_prefix, ":" <> id, suffix} -> [{id, suffix}]
@@ -674,7 +674,7 @@ defmodule Plug.Router do
 
   defp extract_guards(guards, path) when is_binary(path) do
     format_guards =
-      Plug.Router.Utils.parse_suffix_identifier(path)
+      Plug.Router.Utils.parse_segments(path)
       |> Enum.map(&build_suffix_guard/1)
       |> Enum.reject(&is_nil/1)
 

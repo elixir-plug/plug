@@ -102,35 +102,35 @@ defmodule Plug.Router.Utils do
 
   @doc """
   Builds a list of path prefix, id, suffix info that can be used to
-  transform paths and generate guards for suffix identifier matching.
+  transform paths and generate guards for suffix matching.
 
   ## Examples
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar.json")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar.json")
       ["", "foo", {"", ":bar", ".json"}]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar")
       ["", "foo", ":bar"]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar_baz")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar_baz")
       ["", "foo", ":bar_baz"]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar-json")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar-json")
       ["", "foo", {"", ":bar", "-json"}]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar@example.com")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar@example.com")
       ["", "foo", {"", ":bar", "@example.com"}]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/:bar.js.map")
+      iex> Plug.Router.Utils.parse_segments("/foo/:bar.js.map")
       ["", "foo", {"", ":bar", ".js.map"}]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/bat-:bar.json")
+      iex> Plug.Router.Utils.parse_segments("/foo/bat-:bar.json")
       ["", "foo", {"bat-", ":bar", ".json"}]
 
-      iex> Plug.Router.Utils.parse_suffix_identifier("/foo/bat-:id.app/baz/:bar.json")
+      iex> Plug.Router.Utils.parse_segments("/foo/bat-:id.app/baz/:bar.json")
       ["", "foo", {"bat-", ":id", ".app"}, "baz", {"", ":bar", ".json"}]
   """
-  def parse_suffix_identifier(path) when is_binary(path) do
+  def parse_segments(path) when is_binary(path) do
     String.split(path, "/")
     |> Enum.map(fn segment ->
       case Regex.run(~r/(.*):(.*?)([^a-zA-Z_])(.*)$/, segment, capture: :all_but_first) do
@@ -141,35 +141,35 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
-  Removes identifier suffix from segment as it is transformed into guards
+  Removes suffix from segment as it is transformed into guards
   for matching.
 
   ## Examples
 
-      iex> Plug.Router.Utils.remove_identifier_suffix("foo")
+      iex> Plug.Router.Utils.remove_suffix("foo")
       "foo"
 
-      iex> Plug.Router.Utils.remove_identifier_suffix(":foo")
+      iex> Plug.Router.Utils.remove_suffix(":foo")
       ":foo"
 
-      iex> Plug.Router.Utils.remove_identifier_suffix(":foo_json")
+      iex> Plug.Router.Utils.remove_suffix(":foo_json")
       ":foo_json"
 
-      iex> Plug.Router.Utils.remove_identifier_suffix({"foo-", ":bar", ".json"})
+      iex> Plug.Router.Utils.remove_suffix({"foo-", ":bar", ".json"})
       "foo-:bar"
 
-      iex> Plug.Router.Utils.remove_identifier_suffix({"", ":foo", ".json"})
+      iex> Plug.Router.Utils.remove_suffix({"", ":foo", ".json"})
       ":foo"
 
-      iex> Plug.Router.Utils.remove_identifier_suffix({"", ":foo", ".js.map"})
+      iex> Plug.Router.Utils.remove_suffix({"", ":foo", ".js.map"})
       ":foo"
   """
-  def remove_identifier_suffix(segment) when is_tuple(segment) do
+  def remove_suffix(segment) when is_tuple(segment) do
     {prefix, identifier, _suffix} = segment
     prefix <> identifier
   end
 
-  def remove_identifier_suffix(segment), do: segment
+  def remove_suffix(segment), do: segment
 
   @doc """
   Splits the given path into several segments.
