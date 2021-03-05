@@ -506,12 +506,12 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {vars, match} = Plug.Router.Utils.build_path_match(path)
+    {vars, match, guards, suffix} = Plug.Router.Utils.build_path_head(path, guards)
     params_match = Plug.Router.Utils.build_path_params_match(vars)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, params_match, host_match, guards, private, assigns}
+    {quote(do: conn), method, match, params_match, host_match, guards, suffix, private, assigns}
   end
 
   @doc false
@@ -561,18 +561,17 @@ defmodule Plug.Router do
           raise ArgumentError, message: "expected one of :to or :do to be given as option"
       end
 
-    {{path, suffix}, guards} = extract_path_and_guards(expr)
+    {path, guards} = extract_path_and_guards(expr)
 
     quote bind_quoted: [
             method: method,
             path: path,
-            suffix: suffix,
             options: options,
             guards: Macro.escape(guards, unquote: true),
             body: Macro.escape(body, unquote: true)
           ] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, params, host, guards, private, assigns} = route
+      {conn, method, match, params, host, guards, suffix, private, assigns} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host))
            when unquote(guards) do
@@ -640,72 +639,9 @@ defmodule Plug.Router do
   defp join_guards(fst, snd), do: quote(do: unquote(fst) and unquote(snd))
 
   # Extract the path and guards from the path.
-  defp extract_path_and_guards({:when, _, [path, guards]}) do
-    {extract_path(path), extract_guards(guards, path)}
-  end
+  defp extract_path_and_guards({:when, _, [path, guards]}), do: {extract_path(path), guards}
+  defp extract_path_and_guards(path), do: {extract_path(path), true}
 
-  defp extract_path_and_guards(path), do: {extract_path(path), extract_guards(true, path)}
-
-  defp extract_path({:_, _, var}) when is_atom(var), do: {"/*_path", []}
-
-  defp extract_path(path) when is_binary(path) do
-    path_list = Plug.Router.Utils.parse_segments(path)
-
-    case has_suffix_id?(path_list) do
-      true ->
-        {
-          Enum.map_join(path_list, "/", &Plug.Router.Utils.remove_suffix(&1)),
-          Enum.flat_map(path_list, fn segment ->
-            case segment do
-              {_prefix, ":" <> id, suffix} -> [{id, suffix}]
-              _ -> []
-            end
-          end)
-        }
-
-      false ->
-        {path, []}
-    end
-  end
-
-  defp extract_path(path), do: {path, []}
-
-  defp has_suffix_id?(path), do: Enum.any?(path, &is_tuple(&1))
-
-  defp extract_guards(guards, path) when is_binary(path) do
-    format_guards =
-      Plug.Router.Utils.parse_segments(path)
-      |> Enum.map(&build_suffix_guard/1)
-      |> Enum.reject(&is_nil/1)
-
-    case format_guards do
-      [] ->
-        guards
-
-      [format_guard] ->
-        join_guards(format_guard, guards)
-
-      format_guards ->
-        Enum.reduce(tl(format_guards), hd(format_guards), fn guard, acc ->
-          quote(do: unquote(acc) and unquote(guard))
-        end)
-        |> join_guards(guards)
-    end
-  end
-
-  defp extract_guards(guards, _path), do: guards
-
-  defp build_suffix_guard({_prefix, ":" <> identifier, suffix}) do
-    id_var = Macro.var(String.to_atom(identifier), nil)
-
-    quote do
-      binary_part(
-        unquote(id_var),
-        byte_size(unquote(id_var)) - byte_size(unquote(suffix)),
-        byte_size(unquote(suffix))
-      ) == unquote(suffix)
-    end
-  end
-
-  defp build_suffix_guard(_), do: nil
+  defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
+  defp extract_path(path), do: path
 end

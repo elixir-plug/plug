@@ -67,6 +67,34 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
+  Generates a representation that will match routes that
+  can include dynamic segments with path suffix.
+
+  Path suffixes are transformed into guard clauses and joint
+  with existing guards.
+
+  If a non-binary spec is given, it is assumed to be
+  custom match arguments and they are simply returned.
+  """
+  def build_path_head(spec, guards, context \\ nil) do
+    segments = parse_segments(spec)
+
+    suffix =
+      Enum.flat_map(segments, fn segment ->
+        case segment do
+          {_prefix, _id, ""} -> []
+          {_prefix, ":" <> id, suffix} -> [{id, suffix}]
+          _ -> []
+        end
+      end)
+
+    {vars, match} =
+      build_path_match("/" <> Enum.map_join(segments, "/", &remove_suffix(&1)), context)
+
+    {vars, match, inject_suffix_guard(segments, guards), suffix}
+  end
+
+  @doc """
   Generates a representation that will only match routes
   according to the given `spec`.
 
@@ -107,35 +135,35 @@ defmodule Plug.Router.Utils do
   ## Examples
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar.json")
-      ["", "foo", {"", ":bar", ".json"}]
+      ["foo", {"", ":bar", ".json"}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar")
-      ["", "foo", ":bar"]
+      ["foo", {"", ":bar", ""}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar_baz")
-      ["", "foo", ":bar_baz"]
+      ["foo", {"", ":bar_baz", ""}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar-json")
-      ["", "foo", {"", ":bar", "-json"}]
+      ["foo", {"", ":bar", "-json"}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar@example.com")
-      ["", "foo", {"", ":bar", "@example.com"}]
+      ["foo", {"", ":bar", "@example.com"}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/:bar.js.map")
-      ["", "foo", {"", ":bar", ".js.map"}]
+      ["foo", {"", ":bar", ".js.map"}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/bat-:bar.json")
-      ["", "foo", {"bat-", ":bar", ".json"}]
+      ["foo", {"bat-", ":bar", ".json"}]
 
       iex> Plug.Router.Utils.parse_segments("/foo/bat-:id.app/baz/:bar.json")
-      ["", "foo", {"bat-", ":id", ".app"}, "baz", {"", ":bar", ".json"}]
+      ["foo", {"bat-", ":id", ".app"}, "baz", {"", ":bar", ".json"}]
   """
   def parse_segments(path) when is_binary(path) do
-    String.split(path, "/")
-    |> Enum.map(fn segment ->
-      case Regex.run(~r/(.*):(.*?)([^a-zA-Z_])(.*)$/, segment, capture: :all_but_first) do
+    Enum.map(split(path), fn segment ->
+      case Regex.run(~r/(.*):(.*?)([^a-zA-Z_].*)?$/, segment, capture: :all_but_first) do
         nil -> segment
-        [prefix, id, delimiter, suffix] -> {prefix, ":" <> id, delimiter <> suffix}
+        [prefix, id] -> {prefix, ":" <> id, ""}
+        [prefix, id, suffix] -> {prefix, ":" <> id, suffix}
       end
     end)
   end
@@ -286,4 +314,41 @@ defmodule Plug.Router.Utils do
     raise Plug.Router.InvalidSpecError,
       message: "#{prefix} in routes must be followed by lowercase letters or underscore"
   end
+
+  defp inject_suffix_guard(segments, guards) do
+    suffix_guards = Enum.map(segments, &build_suffix_guard/1) |> Enum.reject(&is_nil/1)
+
+    case suffix_guards do
+      [] ->
+        guards
+
+      [suffix_guard] ->
+        join_guards(suffix_guard, guards)
+
+      suffix_guards ->
+        Enum.reduce(tl(suffix_guards), hd(suffix_guards), fn guard, acc ->
+          quote(do: unquote(acc) and unquote(guard))
+        end)
+        |> join_guards(guards)
+    end
+  end
+
+  defp build_suffix_guard({_prefix, _identifier, _suffix = ""}), do: nil
+
+  defp build_suffix_guard({_prefix, ":" <> identifier, suffix}) do
+    id_var = Macro.var(String.to_atom(identifier), nil)
+
+    quote do
+      binary_part(
+        unquote(id_var),
+        byte_size(unquote(id_var)) - byte_size(unquote(suffix)),
+        byte_size(unquote(suffix))
+      ) == unquote(suffix)
+    end
+  end
+
+  defp build_suffix_guard(_), do: nil
+
+  defp join_guards(fst, true), do: fst
+  defp join_guards(fst, snd), do: quote(do: unquote(fst) and unquote(snd))
 end
