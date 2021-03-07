@@ -33,6 +33,15 @@ defmodule Plug.Conn.Unfetched do
 
   defp raise_unfetched({access, _}, aspect, key) do
     raise ArgumentError,
-          "cannot #{access} key #{inspect(key)} from conn.#{aspect} because they were not fetched"
+          "cannot #{access} key #{inspect(key)} from conn.#{aspect} " <>
+            "because they were not fetched" <> hint(aspect)
   end
+
+  defp hint(aspect) when aspect in [:cookies, :query_params],
+    do: ". Call Plug.Conn.fetch_#{aspect}/2, either as a plug or directly, to fetch it"
+
+  defp hint(aspect) when aspect in [:params, :body_params],
+    do: ". Configure and invoke Plug.Parsers to set params based on the request"
+
+  defp hint(_), do: ""
 end
