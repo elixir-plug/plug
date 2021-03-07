@@ -79,19 +79,19 @@ defmodule Plug.Router.Utils do
   def build_path_head(spec, guards, context \\ nil) do
     segments = parse_segments(spec)
 
-    suffix =
+    id_suffix =
       Enum.flat_map(segments, fn segment ->
         case segment do
-          {_prefix, _id, ""} -> []
-          {_prefix, ":" <> id, suffix} -> [{id, suffix}]
+          {_prefix, ":" <> id, ""} -> [{String.to_atom(id), nil}]
+          {_prefix, ":" <> id, suffix} -> [{String.to_atom(id), suffix}]
           _ -> []
         end
       end)
 
-    {vars, match} =
+    {_vars, match} =
       build_path_match("/" <> Enum.map_join(segments, "/", &remove_suffix(&1)), context)
 
-    {vars, match, inject_suffix_guard(segments, guards), suffix}
+    {match, build_path_params_match(id_suffix), inject_suffix_guard(segments, guards)}
   end
 
   @doc """
@@ -122,15 +122,26 @@ defmodule Plug.Router.Utils do
       iex> Plug.Router.Utils.build_path_params_match([:id])
       [{"id", {:id, [], nil}}]
   """
-  def build_path_params_match(vars) do
+  def build_path_params_match(vars) when is_list(vars) do
     vars
-    |> Enum.map(&{Atom.to_string(&1), Macro.var(&1, nil)})
+    |> Enum.map(&build_path_params_match(&1))
     |> Enum.reject(&match?({"_" <> _var, _macro}, &1))
   end
 
+  def build_path_params_match({id, _suffix = nil}), do: build_path_params_match(id)
+
+  def build_path_params_match({id, suffix}) do
+    {
+      Atom.to_string(id),
+      quote(do: String.trim_trailing(unquote(Macro.var(id, nil)), unquote(suffix)))
+    }
+  end
+
+  def build_path_params_match(id), do: {Atom.to_string(id), Macro.var(id, nil)}
+
   @doc """
-  Builds a list of path prefix, id, suffix info that can be used to
-  transform paths and generate guards for suffix matching.
+  Builds a list of path prefix, id, suffix representation that can be 
+  used to transform paths and generate guard clauses for suffix matching.
 
   ## Examples
 
@@ -169,8 +180,8 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
-  Removes suffix from segment as it is transformed into guards
-  for matching.
+  Renders dynamic segment by removing suffix from a segment representation.
+  Dynamic segment suffix is transformed internally by Plug into guard clauses.
 
   ## Examples
 
@@ -192,11 +203,7 @@ defmodule Plug.Router.Utils do
       iex> Plug.Router.Utils.remove_suffix({"", ":foo", ".js.map"})
       ":foo"
   """
-  def remove_suffix(segment) when is_tuple(segment) do
-    {prefix, identifier, _suffix} = segment
-    prefix <> identifier
-  end
-
+  def remove_suffix({prefix, identifier, _suffix}), do: prefix <> identifier
   def remove_suffix(segment), do: segment
 
   @doc """

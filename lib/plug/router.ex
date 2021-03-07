@@ -506,12 +506,11 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {vars, match, guards, suffix} = Plug.Router.Utils.build_path_head(path, guards)
-    params_match = Plug.Router.Utils.build_path_params_match(vars)
+    {match, params_match, guards} = Plug.Router.Utils.build_path_head(path, guards)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, params_match, host_match, guards, suffix, private, assigns}
+    {quote(do: conn), method, match, params_match, host_match, guards, private, assigns}
   end
 
   @doc false
@@ -571,32 +570,16 @@ defmodule Plug.Router do
             body: Macro.escape(body, unquote: true)
           ] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, params, host, guards, suffix, private, assigns} = route
+      {conn, method, match, params, host, guards, private, assigns} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host))
            when unquote(guards) do
         unquote(private)
         unquote(assigns)
 
-        params =
-          case unquote(suffix) do
-            [] ->
-              unquote({:%{}, [], params})
-
-            suffix ->
-              suffix = Enum.into(suffix, %{})
-
-              for {param, value} <- unquote(params), into: %{} do
-                case suffix[param] do
-                  nil -> {param, value}
-                  suffix -> {param, String.trim_trailing(value, suffix)}
-                end
-              end
-          end
-
         merge_params = fn
-          %Plug.Conn.Unfetched{} -> params
-          fetched -> Map.merge(fetched, params)
+          %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
+          fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
         end
 
         conn = update_in(unquote(conn).params, merge_params)
