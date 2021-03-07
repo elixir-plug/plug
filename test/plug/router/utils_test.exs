@@ -85,4 +85,20 @@ defmodule Plug.Router.UtilsTest do
                  "cannot have a *glob followed by other segments",
                  fn -> build_path_match("/foo/*bar/baz") end
   end
+
+  test "parse invalid dynamic segments containing dynamic suffix" do
+    assert_raise Plug.Router.InvalidSpecError,
+                 "dynamic suffix (:json) is unsupported",
+                 fn -> R.parse_segments("/foo/:bar-:json") end
+
+    assert_raise Plug.Router.InvalidSpecError,
+                 "dynamic suffix (:location) is unsupported",
+                 fn -> R.parse_segments("/foo/:user@:location") end
+  end
+
+  test "parse invalid dynamic segments containing invalid suffix character" do
+    assert_raise Plug.Router.InvalidSpecError,
+                 "invalid character \":\" in suffix",
+                 fn -> R.parse_segments("/foo/:bar.js.:json") end
+  end
 end

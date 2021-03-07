@@ -171,10 +171,22 @@ defmodule Plug.Router.Utils do
   """
   def parse_segments(path) when is_binary(path) do
     Enum.map(split(path), fn segment ->
-      case Regex.run(~r/(.*):(.*?)([^a-zA-Z_].*)?$/, segment, capture: :all_but_first) do
-        nil -> segment
-        [prefix, id] -> {prefix, ":" <> id, ""}
-        [prefix, id, suffix] -> {prefix, ":" <> id, suffix}
+      case Regex.run(~r/([^:]*):(.*?)([^a-zA-Z_].*)?$/, segment, capture: :all_but_first) do
+        nil ->
+          segment
+
+        [prefix, id] ->
+          {prefix, ":" <> id, ""}
+
+        [_prefix, _id, <<_::binary-size(1), ?:, rest::binary>>] ->
+          raise Plug.Router.InvalidSpecError, message: "dynamic suffix (:#{rest}) is unsupported"
+
+        [prefix, id, suffix] ->
+          if String.contains?(suffix, ":") do
+            raise Plug.Router.InvalidSpecError, message: "invalid character \":\" in suffix"
+          else
+            {prefix, ":" <> id, suffix}
+          end
       end
     end)
   end
