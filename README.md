@@ -87,10 +87,13 @@ Now run `mix run --no-halt` and it will start your application with a web server
 
 | Branch | Support                  |
 | ------ | ------------------------ |
-| v1.8   | Bug fixes                |
+| v1.11  | Bug fixes                |
+| v1.10  | Security patches only    |
+| v1.9   | Security patches only    |
+| v1.8   | Security patches only    |
 | v1.7   | Security patches only    |
 | v1.6   | Security patches only    |
-| v1.5   | Security patches only    |
+| v1.5   | Unsupported from 03/2021 |
 | v1.4   | Unsupported from 12/2018 |
 | v1.3   | Unsupported from 12/2018 |
 | v1.2   | Unsupported from 06/2018 |
@@ -216,6 +219,7 @@ This project aims to ship with different plugs that can be re-used across applic
   * `Plug.MethodOverride` - overrides a request method with one specified in the request parameters;
   * `Plug.Parsers` - responsible for parsing the request body given its content-type;
   * `Plug.RequestId` - sets up a request ID to be used in logs;
+  * `Plug.RewriteOn` - rewrite the request's host/port/protocol from `x-forwarded-*` headers;
   * `Plug.Session` - handles session management and storage;
   * `Plug.SSL` - enforces requests through SSL;
   * `Plug.Static` - serves static files;

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.11.1 (2021-03-08)
+
+### Enhancements
+
+  * [Plug.Upload] Allow transfer of ownership in Plug.Upload
+
+### Bug fixes
+
+  * [Plug.Debugger] Drop CSP Header when showing error via Plug.Debugger
+  * [Plug.Test] Populate `query_params` from `Plug.Test.conn/3`
+
 ## v1.11.0 (2020-10-29)
 
 ### Enhancements
