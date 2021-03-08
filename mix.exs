@@ -63,9 +63,6 @@ defmodule Plug.MixProject do
     # Plug
     # Plug.Builder
     # Plug.Conn
-    # Plug.Debugger
-    # Plug.ErrorHandler
-    # Plug.Exception
     # Plug.HTML
     # Plug.Router
     # Plug.Test
@@ -73,17 +70,23 @@ defmodule Plug.MixProject do
 
     [
       Plugs: [
+        Plug.BasicAuth,
         Plug.CSRFProtection,
         Plug.Head,
         Plug.Logger,
         Plug.MethodOverride,
         Plug.Parsers,
         Plug.RequestId,
-        Plug.BasicAuth,
+        Plug.RewriteOn,
         Plug.SSL,
         Plug.Session,
         Plug.Static,
         Plug.Telemetry
+      ],
+      "Error handling": [
+        Plug.Debugger,
+        Plug.ErrorHandler,
+        Plug.Exception
       ],
       "Plug.Conn": [
         Plug.Conn.Adapter,

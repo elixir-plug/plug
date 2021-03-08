@@ -1,10 +1,5 @@
 defmodule Plug.Adapters.Cowboy2 do
-  @moduledoc """
-  This module is deprecated. To use Cowboy 2 With Plug please
-  include `plug_cowboy` version 2.0 or above in your `mix.exs`
-  file. It is recommended that you use the `Plug.Cowboy` module
-  directly instead of #{inspect(__MODULE__)}
-  """
+  @moduledoc false
 
   @doc false
   def http(plug, opts, cowboy_options \\ []) do
