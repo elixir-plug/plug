@@ -78,20 +78,10 @@ defmodule Plug.Router.Utils do
   """
   def build_path_head(spec, guards, context \\ nil) do
     segments = parse_segments(spec)
+    safe_spec = "/" <> Enum.map_join(segments, "/", &remove_suffix(&1))
 
-    id_suffix =
-      Enum.flat_map(segments, fn segment ->
-        case segment do
-          {_prefix, ":" <> id, ""} -> [{String.to_atom(id), nil}]
-          {_prefix, ":" <> id, suffix} -> [{String.to_atom(id), suffix}]
-          _ -> []
-        end
-      end)
-
-    {_vars, match} =
-      build_path_match("/" <> Enum.map_join(segments, "/", &remove_suffix(&1)), context)
-
-    {match, build_path_params_match(id_suffix), inject_suffix_guard(segments, guards)}
+    {_ids, match} = build_path_match(safe_spec, context)
+    {match, build_path_params_match(segments), inject_suffix_guard(segments, guards)}
   end
 
   @doc """
@@ -117,27 +107,51 @@ defmodule Plug.Router.Utils do
   otherwise, the compiler will warn about used underscored variables
   when they are unquoted in the macro.
 
+  This function also builds var match pairs from parsed segments
+  representation that consist of path prefix, var, suffix. It strips
+  suffix from dynamic segment values in accordance with Plug DSL design.
+
   ## Examples
 
       iex> Plug.Router.Utils.build_path_params_match([:id])
       [{"id", {:id, [], nil}}]
+
+      iex> Plug.Router.Utils.build_path_params_match(["foo", {"bat-", ":bar", ".json"}])
+      [
+        {
+          "bar",
+          {
+            {:., [], [{:__aliases__, [alias: false], [:String]}, :trim_trailing]}, [],[{:bar, [], nil}, ".json"]
+          }
+        }
+      ]
   """
   def build_path_params_match(vars) when is_list(vars) do
     vars
-    |> Enum.map(&build_path_params_match(&1))
+    |> Enum.flat_map(&build_path_params_match(&1))
     |> Enum.reject(&match?({"_" <> _var, _macro}, &1))
   end
 
-  def build_path_params_match({id, _suffix = nil}), do: build_path_params_match(id)
-
-  def build_path_params_match({id, suffix}) do
-    {
-      Atom.to_string(id),
-      quote(do: String.trim_trailing(unquote(Macro.var(id, nil)), unquote(suffix)))
-    }
+  def build_path_params_match(id) when is_atom(id) do
+    [{Atom.to_string(id), Macro.var(id, nil)}]
   end
 
-  def build_path_params_match(id), do: {Atom.to_string(id), Macro.var(id, nil)}
+  def build_path_params_match({_prefix, ":" <> id, _suffix = ""}) do
+    [{id, Macro.var(String.to_atom(id), nil)}]
+  end
+
+  def build_path_params_match({_prefix, ":" <> id, suffix}) do
+    [
+      {
+        id,
+        quote(
+          do: String.trim_trailing(unquote(Macro.var(String.to_atom(id), nil)), unquote(suffix))
+        )
+      }
+    ]
+  end
+
+  def build_path_params_match(_), do: []
 
   @doc """
   Builds a list of path prefix, id, suffix representation that can be 
@@ -189,6 +203,16 @@ defmodule Plug.Router.Utils do
           end
       end
     end)
+  end
+
+  @doc """
+  Rebinds variables and removes any suffix from dynamic segment values
+  by using the params var match pairs.
+  """
+  def rebind_vars(params_match) do
+    for {id, ast} <- params_match do
+      quote(do: unquote(Macro.var(String.to_atom(id), nil)) = unquote(ast))
+    end
   end
 
   @doc """

@@ -507,10 +507,11 @@ defmodule Plug.Router do
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {match, params_match, guards} = Plug.Router.Utils.build_path_head(path, guards)
+    vars = Plug.Router.Utils.rebind_vars(params_match)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, match, params_match, host_match, guards, private, assigns}
+    {quote(do: conn), method, vars, match, params_match, host_match, guards, private, assigns}
   end
 
   @doc false
@@ -570,10 +571,11 @@ defmodule Plug.Router do
             body: Macro.escape(body, unquote: true)
           ] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, match, params, host, guards, private, assigns} = route
+      {conn, method, vars, match, params, host, guards, private, assigns} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host))
            when unquote(guards) do
+        unquote(vars)
         unquote(private)
         unquote(assigns)
 
