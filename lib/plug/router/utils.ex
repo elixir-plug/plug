@@ -78,10 +78,28 @@ defmodule Plug.Router.Utils do
   """
   def build_path_head(spec, guards, context \\ nil) do
     segments = parse_segments(spec)
-    safe_spec = "/" <> Enum.map_join(segments, "/", &remove_suffix(&1))
 
-    {_ids, match} = build_path_match(safe_spec, context)
-    {match, build_path_params_match(segments), inject_suffix_guard(segments, guards)}
+    case path_with_suffix_var?(segments) do
+      true ->
+        safe_spec = "/" <> Enum.map_join(segments, "/", &remove_suffix(&1))
+        {_ids, match} = build_path_match(safe_spec, context)
+
+        {match, build_path_params_match(segments), inject_suffix_guard(segments, guards)}
+
+      false ->
+        {vars, match} = build_path_match(spec, context)
+        {match, build_path_params_match(vars), guards}
+    end
+  end
+
+  defp path_with_suffix_var?(segments) do
+    Enum.reduce_while(segments, false, fn segment, acc ->
+      case segment do
+        {_prefix, _id, ""} -> {:cont, acc}
+        {_prefix, _id, _suffix} -> {:halt, true}
+        _ -> {:cont, acc}
+      end
+    end)
   end
 
   @doc """
@@ -108,7 +126,7 @@ defmodule Plug.Router.Utils do
   when they are unquoted in the macro.
 
   This function also builds var match pairs from parsed segments
-  representation that consist of path prefix, var, suffix. It strips
+  representation that consists of path prefix, var, suffix. It strips
   suffix from dynamic segment values in accordance with Plug DSL design.
 
   ## Examples
@@ -154,7 +172,7 @@ defmodule Plug.Router.Utils do
   def build_path_params_match(_), do: []
 
   @doc """
-  Builds a list of path prefix, id, suffix representation that can be 
+  Builds a list of path prefix, id, suffix representation that can be
   used to transform paths and generate guard clauses for suffix matching.
 
   ## Examples
