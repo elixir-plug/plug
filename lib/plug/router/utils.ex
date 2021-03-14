@@ -79,25 +79,82 @@ defmodule Plug.Router.Utils do
   def build_path_head(spec, guards, context \\ nil) do
     segments = parse_segments(spec)
 
-    case path_with_suffix_var?(segments) do
-      true ->
-        safe_spec = "/" <> Enum.map_join(segments, "/", &remove_suffix(&1))
-        {_ids, match} = build_path_match(safe_spec, context)
+    if spec_with_suffix_var?(segments) do
+      safe_spec = "/" <> Enum.map_join(segments, "/", &remove_suffix(&1))
+      {_vars, match} = build_path_match(safe_spec, context)
+      guards = Macro.prewalk(guards, &inject_suffix_value(&1, suffix_vars(segments)))
 
-        {match, build_path_params_match(segments), inject_suffix_guard(segments, guards)}
-
-      false ->
-        {vars, match} = build_path_match(spec, context)
-        {match, build_path_params_match(vars), guards}
+      {match, build_path_params_match(segments), inject_suffix_guard(segments, guards)}
+    else
+      {vars, match} = build_path_match(spec, context)
+      {match, build_path_params_match(vars), guards}
     end
   end
 
-  defp path_with_suffix_var?(segments) do
-    Enum.reduce_while(segments, false, fn segment, acc ->
-      case segment do
-        {_prefix, _id, ""} -> {:cont, acc}
-        {_prefix, _id, _suffix} -> {:halt, true}
-        _ -> {:cont, acc}
+  defp spec_with_suffix_var?(segments), do: suffix_vars(segments) != []
+
+  defp suffix_vars(segments) do
+    Enum.flat_map(segments, fn
+      {_prefix, _var, ""} -> []
+      {_prefix, ":" <> var, suffix} -> [{String.to_atom(var), suffix}]
+      _ -> []
+    end)
+  end
+
+  # inject matching suffix into guard clause involving suffix identifier
+  # e.g. /:id.json when id in ["foo", "bar"]
+
+  defp inject_suffix_value({name, metadata, args} = node, suffix_vars) when is_list(args) do
+    case {name, parse_guard_args(args, suffix_vars)} do
+      {op, %{var: _} = guard_info} when op in [:==, :!=, :=~, :===, :!==] ->
+        inject_suffix_value(name, metadata, guard_info)
+
+      {op, %{var: _} = guard_info} when op in [:in] ->
+        inject_suffix_value(name, metadata, guard_info)
+
+      {op, %{var: _}} when op in [:is_binary] ->
+        node
+
+      {op, %{var: var}} ->
+        raise Plug.Router.InvalidSpecError,
+          message:
+            "#{inspect(op)} currently is an unsupported guard function for #{inspect(var)} suffix identifier"
+
+      {_, _} ->
+        node
+    end
+  end
+
+  defp inject_suffix_value(node, _suffix_vars), do: node
+
+  defp inject_suffix_value(name, metadata, %{var: var, context: c, suffix: s, value: [v]}) do
+    {name, metadata, [Macro.var(var, c), v <> s]}
+  end
+
+  defp inject_suffix_value(name, metadata, %{var: var, context: c, suffix: s, value: v}) do
+    {name, metadata, [Macro.var(var, c), Enum.map(v, &(&1 <> s))]}
+  end
+
+  # Parses guard ast and returns a map representation
+  # that provides function/op name, var, suffix, value
+  # for injecting suffix value
+
+  defp parse_guard_args(args, suffix_vars) do
+    Enum.reduce(args, %{}, fn arg, acc ->
+      case arg do
+        {var, _metadata, context} when is_nil(context) or is_atom(context) ->
+          if Keyword.has_key?(suffix_vars, var) do
+            acc
+            |> Map.update(:var, var, & &1)
+            |> Map.update(:context, context, & &1)
+            |> Map.update(:suffix, Keyword.get(suffix_vars, var), & &1)
+          else
+            acc
+          end
+
+        value ->
+          acc
+          |> Map.update(:value, List.wrap(value), &(&1 ++ value))
       end
     end)
   end
@@ -380,9 +437,6 @@ defmodule Plug.Router.Utils do
     suffix_guards = Enum.map(segments, &build_suffix_guard/1) |> Enum.reject(&is_nil/1)
 
     case suffix_guards do
-      [] ->
-        guards
-
       [suffix_guard] ->
         join_guards(suffix_guard, guards)
 

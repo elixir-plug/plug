@@ -121,8 +121,20 @@ defmodule Plug.RouterTest do
       resp(conn, 200, bat)
     end
 
-    get "/9/:bar.json" when bar != "value.json" do
-      resp(conn, 200, inspect(bar <> " != value"))
+    get "/9/:bar.json" when bar in ["foo", "bar"] or bar == "baz" do
+      if bar == "baz" do
+        resp(conn, 200, inspect(bar <> " from or boolean guard"))
+      else
+        resp(conn, 200, inspect(bar <> " from in guard"))
+      end
+    end
+
+    get "/9/:bar.json" when bar == "specific_value" do
+      resp(conn, 200, inspect(bar <> " from == guard"))
+    end
+
+    get "/9/:bar.json" when bar != "value" do
+      resp(conn, 200, inspect(bar <> " from != guard"))
     end
 
     get "/9/:bar.json" do
@@ -143,6 +155,15 @@ defmodule Plug.RouterTest do
 
     get "/11/:bar.js.map" do
       resp(conn, 200, inspect(bar))
+    end
+
+    get "/11/:foo/:bar@app/baz/:bat.js.map"
+        when foo in ["foo"] and bar == "bar" and bat == "bat" do
+      resp(
+        conn,
+        200,
+        ([inspect(foo), inspect(bar), inspect(bat)] |> Enum.join(" ")) <> " from boolean guards"
+      )
     end
 
     get "/11/:foo/:bar@app/baz/:bat.js.map" do
@@ -269,13 +290,6 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == "oops"
   end
 
-  test "dispatch dynamic segment with suffix and id guard" do
-    conn = call(Sample, conn(:get, "/9/other_value.json"))
-    assert conn.resp_body == ~s("other_value != value")
-    assert conn.params == %{"bar" => "other_value"}
-    assert conn.path_params == %{"bar" => "other_value"}
-  end
-
   test "dispatch dynamic segment with prefix and suffix" do
     conn = call(Sample, conn(:get, "/10/foo-value.json"))
     assert conn.resp_body == ~s("value")
@@ -306,6 +320,35 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == "oops"
 
     conn = call(Sample, conn(:get, "/11/foo_value/bar_value/baz/bat_value"))
+    assert conn.resp_body == "oops"
+  end
+
+  test "dispatch dynamic segment with suffix and var guard" do
+    conn = call(Sample, conn(:get, "/9/other_value.json"))
+    assert conn.resp_body == ~s("other_value from != guard")
+    assert conn.params == %{"bar" => "other_value"}
+    assert conn.path_params == %{"bar" => "other_value"}
+
+    conn = call(Sample, conn(:get, "/9/specific_value.json"))
+    assert conn.resp_body == ~s("specific_value from == guard")
+
+    conn = call(Sample, conn(:get, "/9/foo.json"))
+    assert conn.resp_body == ~s("foo from in guard")
+
+    conn = call(Sample, conn(:get, "/9/bar.json"))
+    assert conn.resp_body == ~s("bar from in guard")
+
+    conn = call(Sample, conn(:get, "/9/baz.json"))
+    assert conn.resp_body == ~s("baz from or boolean guard")
+  end
+
+  test "dispatch dynamic segment with/without suffix and guards" do
+    conn = call(Sample, conn(:get, "/11/foo/bar@app/baz/bat.js.map"))
+    assert conn.resp_body == ~s("foo\" "bar" "bat" from boolean guards)
+    assert conn.params == %{"bar" => "bar", "bat" => "bat", "foo" => "foo"}
+    assert conn.path_params == %{"bar" => "bar", "bat" => "bat", "foo" => "foo"}
+
+    conn = call(Sample, conn(:get, "/11/boo/boo-app/baz/boo.js.map"))
     assert conn.resp_body == "oops"
   end
 
