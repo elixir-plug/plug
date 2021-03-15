@@ -127,7 +127,8 @@ defmodule Plug.Router.Utils do
 
   defp inject_suffix_value(node, _suffix_vars), do: node
 
-  defp inject_suffix_value(name, metadata, %{var: var, context: c, suffix: s, value: [v]}) do
+  defp inject_suffix_value(name, metadata, %{var: var, context: c, suffix: s, value: v})
+       when is_binary(v) do
     {name, metadata, [Macro.var(var, c), v <> s]}
   end
 
@@ -152,9 +153,11 @@ defmodule Plug.Router.Utils do
             acc
           end
 
+        value when is_binary(value) ->
+          Map.update(acc, :value, value, & &1)
+
         value ->
-          acc
-          |> Map.update(:value, List.wrap(value), &(&1 ++ value))
+          Map.update(acc, :value, List.wrap(value), &(&1 ++ value))
       end
     end)
   end

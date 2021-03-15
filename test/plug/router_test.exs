@@ -129,7 +129,7 @@ defmodule Plug.RouterTest do
       end
     end
 
-    get "/9/:bar.json" when bar == "specific_value" do
+    get "/9/:bar.json" when bar == "specific_value" and bar not in ["other_value"] do
       resp(conn, 200, inspect(bar <> " from == guard"))
     end
 
