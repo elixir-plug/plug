@@ -451,12 +451,12 @@ defmodule Plug.Router.Utils do
   defp build_suffix_guard({_prefix, _identifier, _suffix = ""}), do: nil
 
   defp build_suffix_guard({_prefix, ":" <> identifier, suffix}) do
-    id_var = Macro.var(String.to_atom(identifier), nil)
+    var = Macro.var(String.to_atom(identifier), nil)
 
     quote do
       binary_part(
-        unquote(id_var),
-        byte_size(unquote(id_var)) - byte_size(unquote(suffix)),
+        unquote(var),
+        byte_size(unquote(var)) - byte_size(unquote(suffix)),
         byte_size(unquote(suffix))
       ) == unquote(suffix)
     end

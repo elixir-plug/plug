@@ -57,6 +57,16 @@ defmodule Plug.Router do
   The `:name` parameter will also be available in the function body as
   `conn.params["name"]` and `conn.path_params["name"]`.
 
+  A route parameter may also include a suffix such as a dot delimited
+  file extension:
+
+      get "/hello/:name.json" do
+        send_resp(conn, 200, "hello #{name}")
+      end
+
+  The above will match `/hello/foo.json` but not `/hello/foo`.
+  Other delimiters such as `-`, `@` may be used to denote suffixes.
+
   Routes allow for globbing which will match the remaining parts
   of a route and can be available as a parameter in the function
   body. Also note that a glob can't be followed by other segments:
@@ -188,7 +198,7 @@ defmodule Plug.Router do
 
   This means guards can be given to `match`:
 
-      match "/foo/bar/:baz" when size(baz) <= 3, via: :get do
+      match "/foo/bar/:baz" when byte_size(baz) <= 3, via: :get do
         send_resp(conn, 200, "hello world")
       end
 
