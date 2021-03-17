@@ -437,7 +437,7 @@ defmodule Plug.Conn do
   def send_file(conn, status, file, offset \\ 0, length \\ :all)
 
   def send_file(%Conn{state: state}, status, _file, _offset, _length)
-      when not (state in @unsent) do
+      when state not in @unsent do
     _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
@@ -479,7 +479,7 @@ defmodule Plug.Conn do
   """
   @spec send_chunked(t, status) :: t | no_return
   def send_chunked(%Conn{state: state}, status)
-      when not (state in @unsent) do
+      when state not in @unsent do
     _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
@@ -578,7 +578,7 @@ defmodule Plug.Conn do
   """
   @spec resp(t, status, body) :: t
   def resp(%Conn{state: state}, status, _body)
-      when not (state in @unsent) do
+      when state not in @unsent do
     _ = Plug.Conn.Status.code(status)
     raise AlreadySentError
   end
@@ -1257,7 +1257,7 @@ defmodule Plug.Conn do
   end
 
   defp adapter_inform(%Conn{state: state}, _status, _headers)
-       when not (state in @unsent) do
+       when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -1301,7 +1301,7 @@ defmodule Plug.Conn do
   end
 
   defp adapter_push(%Conn{state: state}, _path, _headers)
-       when not (state in @unsent) do
+       when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -1536,7 +1536,7 @@ defmodule Plug.Conn do
   on unsent `conn`s. Will raise otherwise.
   """
   @spec put_session(t, String.t() | atom, any) :: t
-  def put_session(%Conn{state: state}, _key, _value) when not (state in @unsent),
+  def put_session(%Conn{state: state}, _key, _value) when state not in @unsent,
     do: raise(AlreadySentError)
 
   def put_session(conn, key, value) when is_atom(key) or is_binary(key) do
@@ -1580,7 +1580,7 @@ defmodule Plug.Conn do
   automatically converted to strings.
   """
   @spec delete_session(t, String.t() | atom) :: t
-  def delete_session(%Conn{state: state}, _key) when not (state in @unsent),
+  def delete_session(%Conn{state: state}, _key) when state not in @unsent,
     do: raise(AlreadySentError)
 
   def delete_session(conn, key) when is_atom(key) or is_binary(key) do
@@ -1615,7 +1615,7 @@ defmodule Plug.Conn do
   @spec configure_session(t, Keyword.t()) :: t
   def configure_session(conn, opts)
 
-  def configure_session(%Conn{state: state}, _opts) when not (state in @unsent),
+  def configure_session(%Conn{state: state}, _opts) when state not in @unsent,
     do: raise(AlreadySentError)
 
   def configure_session(conn, opts) do
@@ -1652,7 +1652,7 @@ defmodule Plug.Conn do
   def register_before_send(conn, callback)
 
   def register_before_send(%Conn{state: state}, _callback)
-      when not (state in @unsent) do
+      when state not in @unsent do
     raise AlreadySentError
   end
 
