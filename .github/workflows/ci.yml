@@ -41,7 +41,4 @@ jobs:
 
       - run: mix deps.compile
 
-      - run: mix compile --warnings-as-errors
-        if: ${{ matrix.lint }}
-
       - run: mix test
