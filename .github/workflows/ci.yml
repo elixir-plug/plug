@@ -3,48 +3,42 @@ name: CI
 on:
   pull_request:
   push:
-      branches:
+    branches:
       - master
 
 jobs:
-  mix_test:
-    name: mix test (Erlang/OTP ${{matrix.otp}} | Elixir ${{matrix.elixir}})
-    runs-on: ubuntu-latest
-    container: hexpm/elixir:${{ matrix.elixir }}-erlang-${{ matrix.otp }}-alpine-3.11.6
+  test:
+    runs-on: ubuntu-16.04
+    env:
+      MIX_ENV: test
     strategy:
       fail-fast: false
       matrix:
         include:
-          - elixir: 1.7.4
-            otp: 19.3.6.13
-          - elixir: 1.8.2
-            otp: 20.3.8.26
-          - elixir: 1.9.4
-            otp: 20.3.8.26
-          - elixir: 1.10.3
-            otp: 21.3.8.16
-          - elixir: 1.11.2
-            otp: 21.3.8.16
-          - elixir: 1.11.2
-            otp: 23.0.2
+          - pair:
+              elixir: 1.7.4
+              otp: 19.3.6.13
+          - pair:
+              elixir: 1.11.4
+              otp: 23.2.7
+            lint: lint
     steps:
-      - uses: actions/checkout@v2.3.1
-      - name: Install Dependencies
-        run: |
-          mix local.rebar --force
-          mix local.hex --force
-          mix deps.get
-      - run: mix test
+      - uses: actions/checkout@v2
 
-  check_formatted:
-    name: Check formatted
-    runs-on: ubuntu-latest
-    container: hexpm/elixir:${{ matrix.elixir }}-erlang-${{ matrix.otp }}-alpine-3.11.6
-    strategy:
-      matrix:
-        include:
-          - elixir: 1.11.2
-            otp: 23.0.2
-    steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: erlef/setup-elixir@v1
+        with:
+          otp-version: ${{matrix.pair.otp}}
+          elixir-version: ${{matrix.pair.elixir}}
+
+      - name: Install Dependencies
+        run: mix deps.get --only test
+
       - run: mix format --check-formatted
+        if: ${{ matrix.lint }}
+
+      - run: mix deps.get && mix deps.unlock --check-unused
+        if: ${{ matrix.lint }}
+
+      - run: mix deps.compile
+
+      - run: mix test
