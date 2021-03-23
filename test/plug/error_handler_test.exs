@@ -94,4 +94,24 @@ defmodule Plug.ErrorHandlerTest do
     assert_received {:plug_conn, :sent}
     assert {404, _headers, "Something went wrong"} = sent_resp(conn)
   end
+
+  test "define a behaviour with a default implementation" do
+    assert ExUnit.CaptureIO.capture_io(:stderr, fn ->
+             Code.eval_string("""
+             defmodule Plug.ErrorHandlerTest.BadImplRouter do
+               use Plug.Router
+               use Plug.ErrorHandler
+
+               plug :match
+               plug :dispatch
+
+               match _, do: conn
+
+               @impl Plug.ErrorHandler
+               def handle_errors(_conn), do: :boom
+             end
+             """)
+           end) =~
+             "got \"@impl Plug.ErrorHandler\" for function handle_errors/1 but this behaviour does not specify such callback."
+  end
 end
