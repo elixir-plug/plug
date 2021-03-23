@@ -14,6 +14,7 @@ defmodule Plug.ErrorHandler do
           send_resp(conn, 200, "world")
         end
 
+        @impl Plug.ErrorHandler
         def handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
           send_resp(conn, conn.status, "Something went wrong")
         end
@@ -41,12 +42,22 @@ defmodule Plug.ErrorHandler do
   **Note:** If this module is used with `Plug.Debugger`, it must be used
   after `Plug.Debugger`.
   """
+
+  @doc """
+  Handle errors from plugs.
+
+  Called when an exception is raised during the processing of a plug.
+  """
+  @callback handle_errors(Plug.Conn.t(), map()) :: no_return()
+
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
       @before_compile Plug.ErrorHandler
 
-      @doc false
+      @behaviour Plug.ErrorHandler
+
+      @impl Plug.ErrorHandler
       def handle_errors(conn, assigns) do
         Plug.Conn.send_resp(conn, conn.status, "Something went wrong")
       end
