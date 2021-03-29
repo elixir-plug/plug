@@ -1606,10 +1606,14 @@ defmodule Plug.Conn do
 
   ## Options
 
-    * `:renew` - generates a new session id for the cookie
-    * `:drop` - drops the session, a session cookie will not be included in the
+    * `:renew` - When `true`, generates a new session id for the cookie
+    * `:drop` - When `true`, drops the session, a session cookie will not be included in the
       response
-    * `:ignore` - ignores all changes made to the session in this request cycle
+    * `:ignore` - When `true`, ignores all changes made to the session in this request cycle
+
+  ## Examples
+
+      configure_session(conn, renew: true)
 
   """
   @spec configure_session(t, Keyword.t()) :: t
