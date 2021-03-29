@@ -1611,6 +1611,10 @@ defmodule Plug.Conn do
       response
     * `:ignore` - When `true`, ignores all changes made to the session in this request cycle
 
+  ## Examples
+
+      configure_session(conn, renew: true)
+
   """
   @spec configure_session(t, Keyword.t()) :: t
   def configure_session(conn, opts)
