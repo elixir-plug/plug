@@ -13,6 +13,32 @@ defmodule Plug.Conn.Adapter do
         }
 
   @doc """
+  Function used by adapters to create a new connection.
+  """
+  def conn(adapter, method, uri, remote_ip, req_headers) do
+    %URI{path: path, host: host, port: port, query: qs, scheme: scheme} = uri
+
+    %Plug.Conn{
+      adapter: adapter,
+      host: host,
+      method: method,
+      owner: self(),
+      path_info: split_path(path),
+      port: port,
+      remote_ip: remote_ip,
+      query_string: qs || "",
+      req_headers: req_headers,
+      request_path: path,
+      scheme: String.to_atom(scheme)
+    }
+  end
+
+  defp split_path(path) do
+    segments = :binary.split(path, "/", [:global])
+    for segment <- segments, segment != "", do: segment
+  end
+
+  @doc """
   Sends the given status, headers and body as a response
   back to the client.
 

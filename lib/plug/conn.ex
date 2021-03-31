@@ -124,7 +124,6 @@ defmodule Plug.Conn do
 
   @type adapter :: {module, term}
   @type assigns :: %{optional(atom) => any}
-  @type before_send :: [(t -> t)]
   @type body :: iodata
   @type req_cookies :: %{optional(binary) => binary}
   @type cookies :: %{optional(binary) => term}
@@ -149,7 +148,6 @@ defmodule Plug.Conn do
   @type t :: %__MODULE__{
           adapter: adapter,
           assigns: assigns,
-          before_send: before_send,
           body_params: params | Unfetched.t(),
           cookies: cookies | Unfetched.t(),
           halted: halted,
@@ -179,7 +177,6 @@ defmodule Plug.Conn do
 
   defstruct adapter: {Plug.MissingAdapter, nil},
             assigns: %{},
-            before_send: [],
             body_params: %Unfetched{aspect: :body_params},
             cookies: %Unfetched{aspect: :cookies},
             halted: false,
@@ -1660,9 +1657,9 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def register_before_send(%Conn{before_send: before_send} = conn, callback)
+  def register_before_send(%Conn{} = conn, callback)
       when is_function(callback, 1) do
-    %{conn | before_send: [callback | before_send]}
+    update_in conn.private[:before_send], &[callback | (&1 || [])]
   end
 
   @doc """
@@ -1691,8 +1688,8 @@ defmodule Plug.Conn do
 
   ## Helpers
 
-  defp run_before_send(%Conn{before_send: before_send} = conn, new) do
-    conn = Enum.reduce(before_send, %{conn | state: new}, & &1.(&2))
+  defp run_before_send(%Conn{private: private} = conn, new) do
+    conn = Enum.reduce(private[:before_send] || [], %{conn | state: new}, & &1.(&2))
 
     if conn.state != new do
       raise ArgumentError, "cannot send/change response from run_before_send callback"
