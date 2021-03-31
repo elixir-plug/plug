@@ -29,7 +29,7 @@ defmodule Plug.MIME do
         Exception.format_stacktrace()
     )
 
-    MIME.valid?(type)
+    MIME.extensions(type) != []
   end
 
   @deprecated "Use MIME.extensions/1 instead"
