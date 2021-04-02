@@ -1659,7 +1659,7 @@ defmodule Plug.Conn do
 
   def register_before_send(%Conn{} = conn, callback)
       when is_function(callback, 1) do
-    update_in conn.private[:before_send], &[callback | (&1 || [])]
+    update_in(conn.private[:before_send], &[callback | &1 || []])
   end
 
   @doc """
