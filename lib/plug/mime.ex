@@ -21,11 +21,11 @@ defmodule Plug.MIME do
     """)
   end
 
-  @deprecated "Use MIME.valid?/1 instead"
+  @deprecated "Use MIME.extensions(type) != [] instead"
   def valid?(type) do
     IO.puts(
       :stderr,
-      "Plug.MIME.valid?/1 is deprecated, please use MIME.valid?/1 instead\n" <>
+      "Plug.MIME.valid?/1 is deprecated, please use MIME.extensions(type) != [] instead\n" <>
         Exception.format_stacktrace()
     )
 
