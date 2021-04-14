@@ -107,6 +107,15 @@ defmodule Plug.SSLTest do
     host == System.get_env("EXCLUDED_HOST")
   end
 
+  def custom_host(), do: "static.example.com"
+
+  def custom_host(host) do
+    case host do
+      "example.com" -> "my.example.com"
+      _ -> host
+    end
+  end
+
   defp call(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :log, false)
     Plug.SSL.call(conn, Plug.SSL.init(opts))
@@ -272,6 +281,25 @@ defmodule Plug.SSLTest do
       System.put_env("PLUG_SSL_HOST", "ssl.example.com:443")
       conn = call(conn(:get, "http://example.com/"), host: {System, :get_env, ["PLUG_SSL_HOST"]})
       assert get_resp_header(conn, "location") == ["https://ssl.example.com:443/"]
+      assert conn.status == 301
+      assert conn.halted
+    end
+
+    test "to dynamic tuple host on get" do
+      conn = call(conn(:get, "http://example.com/"), host: {__MODULE__, :custom_host, [:host]})
+      assert get_resp_header(conn, "location") == ["https://my.example.com/"]
+      assert conn.status == 301
+      assert conn.halted
+
+      conn = call(conn(:get, "http://example.de/"), host: {__MODULE__, :custom_host, [:host]})
+      assert get_resp_header(conn, "location") == ["https://example.de/"]
+      assert conn.status == 301
+      assert conn.halted
+    end
+
+    test "to static tuple host on get" do
+      conn = call(conn(:get, "http://example.com/"), host: {__MODULE__, :custom_host, []})
+      assert get_resp_header(conn, "location") == ["https://static.example.com/"]
       assert conn.status == 301
       assert conn.halted
     end

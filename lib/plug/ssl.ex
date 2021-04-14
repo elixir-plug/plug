@@ -38,7 +38,7 @@ defmodule Plug.SSL do
       or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
-      `{module, function, args}` that will be invoked on demand
+      `{module, function, args}` that will be invoked on demand. You can get conn.host in the callback by setting :host as the first argument of args. The param will be replaced with the request host.
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`. Can be `false` to disable logging.
 
@@ -372,6 +372,7 @@ defmodule Plug.SSL do
 
   defp host(nil, host), do: host
   defp host(host, _) when is_binary(host), do: host
+  defp host({mod, fun, [:host | args]}, host), do: host(apply(mod, fun, [host | args]), host)
   defp host({mod, fun, args}, host), do: host(apply(mod, fun, args), host)
   # TODO: Deprecate this format
   defp host({:system, env}, host), do: host(System.get_env(env), host)
