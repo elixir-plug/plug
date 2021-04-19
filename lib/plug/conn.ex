@@ -966,6 +966,9 @@ defmodule Plug.Conn do
   ## Options
 
     * `:length` - the maximum query string length. Defaults to `1_000_000` bytes.
+      Keep in mind the webserver you are using may have a more strict limit. For
+      example, for the Cowboy webserver, [please read](https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html#module-safety-limits).
+
     * `:validate_utf8` - boolean that tells whether or not to validate the keys and
       values of the decoded query string are UTF-8 encoded. Defaults to `true`.
 
