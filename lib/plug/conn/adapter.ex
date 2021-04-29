@@ -103,7 +103,7 @@ defmodule Plug.Conn.Adapter do
   it can be used during testing.
   """
   @callback chunk(payload, body :: Conn.body()) ::
-              :ok | {:ok, sent_body :: binary, payload} | {:error, term}
+              :ok | {:ok, sent_body :: binary | nil, payload} | {:error, term}
 
   @doc """
   Reads the request body.
