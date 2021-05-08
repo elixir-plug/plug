@@ -394,12 +394,13 @@ defmodule Plug.Static do
 
   defp path({module, function, arguments}, segments)
        when is_atom(module) and is_atom(function) and is_list(arguments),
-       do: Path.join([apply(module, function, arguments) | segments])
+       do: Enum.join([apply(module, function, arguments) | segments], "/")
 
   defp path({app, from}, segments) when is_atom(app) and is_binary(from),
-    do: Path.join([Application.app_dir(app), from | segments])
+    do: Enum.join([Application.app_dir(app), from | segments], "/")
 
-  defp path(from, segments), do: Path.join([from | segments])
+  defp path(from, segments),
+    do: Enum.join([from | segments], "/")
 
   defp subset([h | expected], [h | actual]), do: subset(expected, actual)
   defp subset([], actual), do: actual
