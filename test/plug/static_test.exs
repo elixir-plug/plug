@@ -580,4 +580,17 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert get_resp_header(conn, "x-custom") == ["x-value"]
   end
+
+  test "MFA from" do
+    opts = [
+      at: "/public",
+      from: {Path, :expand, ["..", __DIR__]}
+    ]
+
+    conn =
+      conn(:get, "/public/fixtures/static.txt")
+      |> Plug.Static.call(Plug.Static.init(opts))
+
+    assert conn.status == 200
+  end
 end

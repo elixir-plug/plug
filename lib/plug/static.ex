@@ -10,9 +10,9 @@ defmodule Plug.Static do
     * `:from` - the file system path to read static assets from.
       It can be either: a string containing a file system path, an
       atom representing the application name (where assets will
-      be served from `priv/static`), or a tuple containing the
+      be served from `priv/static`), a tuple containing the
       application name and the directory to serve assets from (besides
-      `priv/static`).
+      `priv/static`), or an MFA tuple.
 
   The preferred form is to use `:from` with an atom or tuple, since
   it will make your application independent from the starting directory.
@@ -141,6 +141,7 @@ defmodule Plug.Static do
     from =
       case Keyword.fetch!(opts, :from) do
         {_, _} = from -> from
+        {_, _, _} = from -> from
         from when is_atom(from) -> {from, "priv/static"}
         from when is_binary(from) -> from
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
@@ -390,6 +391,10 @@ defmodule Plug.Static do
       accept |> Plug.Conn.Utils.list() |> Enum.any?(encoding?)
     end)
   end
+
+  defp path({module, function, arguments}, segments)
+       when is_atom(module) and is_atom(function) and is_list(arguments),
+       do: Path.join([apply(module, function, arguments) | segments])
 
   defp path({app, from}, segments) when is_atom(app) and is_binary(from),
     do: Path.join([Application.app_dir(app), from | segments])
