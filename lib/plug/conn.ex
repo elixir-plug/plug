@@ -138,7 +138,7 @@ defmodule Plug.Conn do
   @type params :: %{optional(binary) => term}
   @type port_number :: :inet.port_number()
   @type query_string :: String.t()
-  @type resp_cookies :: %{optional(binary) => %{}}
+  @type resp_cookies :: %{optional(binary) => map()}
   @type scheme :: :http | :https
   @type secret_key_base :: binary | nil
   @type segments :: [binary]
