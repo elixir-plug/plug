@@ -243,15 +243,15 @@ defmodule Plug.Router do
 
     * `[:plug, :router_dispatch, :start]` - dispatched before dispatching to a matched route
       * Measurement: `%{system_time: System.system_time}`
-      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+      * Metadata: `%{telemetry_span_context: term(), conn: Plug.Conn.t, route: binary, router: module}`
 
     * `[:plug, :router_dispatch, :exception]` - dispatched after exceptions on dispatching a route
       * Measurement: `%{duration: native_time}`
-      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+      * Metadata: `%{telemetry_span_context: term(), conn: Plug.Conn.t, route: binary, router: module, kind: :throw | :error | :exit, reason: term(), stacktrace: list()}`
 
     * `[:plug, :router_dispatch, :stop]` - dispatched after successfully dispatching a matched route
       * Measurement: `%{duration: native_time}`
-      * Metadata: `%{conn: Plug.Conn.t, route: binary, router: module}`
+      * Metadata: `%{telemetry_span_context: term(), conn: Plug.Conn.t, route: binary, router: module}`
 
   """
 
@@ -270,35 +270,19 @@ defmodule Plug.Router do
 
       @doc false
       def dispatch(%Plug.Conn{} = conn, opts) do
-        start = System.monotonic_time()
         {path, fun} = Map.fetch!(conn.private, :plug_route)
-        metadata = %{conn: conn, route: path, router: __MODULE__}
-
-        :telemetry.execute(
-          [:plug, :router_dispatch, :start],
-          %{system_time: System.system_time()},
-          metadata
-        )
 
         try do
-          fun.(conn, opts)
-        else
-          conn ->
-            duration = System.monotonic_time() - start
-            metadata = %{metadata | conn: conn}
-            :telemetry.execute([:plug, :router_dispatch, :stop], %{duration: duration}, metadata)
-            conn
+          :telemetry.span(
+            [:plug, :router_dispatch],
+            %{conn: conn, route: path, router: __MODULE__},
+            fn ->
+              conn = fun.(conn, opts)
+              {conn, %{conn: conn, route: path, router: __MODULE__}}
+            end
+          )
         catch
           kind, reason ->
-            duration = System.monotonic_time() - start
-            metadata = %{kind: kind, reason: reason, stacktrace: __STACKTRACE__}
-
-            :telemetry.execute(
-              [:plug, :router_dispatch, :exception],
-              %{duration: duration},
-              metadata
-            )
-
             Plug.Conn.WrapperError.reraise(conn, kind, reason, __STACKTRACE__)
         end
       end
