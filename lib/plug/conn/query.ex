@@ -2,10 +2,9 @@ defmodule Plug.Conn.Query do
   @moduledoc """
   Conveniences for decoding and encoding url encoded queries.
 
-  Plug allows a developer to build query strings
-  that map to Elixir structures in order to make
-  manipulation of such structures easier on the server
-  side. Here are some examples:
+  Plug allows a developer to build query strings that map to
+  Elixir structures in order to make manipulation of such structures
+  easier on the server side. Here are some examples:
 
       iex> decode("foo=bar")["foo"]
       "bar"
@@ -24,6 +23,12 @@ defmodule Plug.Conn.Query do
 
       iex> decode("foo[]=bar&foo[]=baz")["foo"]
       ["bar", "baz"]
+
+  Keys without values are treated as empty strings,
+  according to https://url.spec.whatwg.org/#application/x-www-form-urlencoded:
+
+      iex> decode("foo")["foo"]
+      ""
 
   Maps can be encoded:
 
