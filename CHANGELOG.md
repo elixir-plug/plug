@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.12.0 (2021-07-22)
+
+### Enhancements
+
+  * [Plug] Accept mime v2.0
+  * [Plug] Accept telemetry v1.0
+  * [Plug.Conn] Improve performance of UTF-8 validation
+  * [Plug.Conn.Adapter] Add API for creating a connection
+  * [Plug.Static] Allow MFA in `:from`
+
 ## v1.11.1 (2021-03-08)
 
 ### Enhancements

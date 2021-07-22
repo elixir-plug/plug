@@ -190,6 +190,7 @@ defmodule Plug.Static do
   end
 
   defp uri_decode(path) do
+    # TODO: Remove rescue as this can't fail from Elixir v1.13
     try do
       URI.decode(path)
     rescue

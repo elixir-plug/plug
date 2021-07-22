@@ -104,6 +104,7 @@ defmodule Plug.Conn.Query do
   end
 
   defp decode_www_form(value, invalid_exception, validate_utf8) do
+    # TODO: Remove rescue as this can't fail from Elixir v1.13
     try do
       URI.decode_www_form(value)
     rescue

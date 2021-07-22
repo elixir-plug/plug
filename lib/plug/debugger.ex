@@ -414,8 +414,9 @@ defmodule Plug.Debugger do
         clauses
         |> Enum.take(10)
         |> Enum.map(fn {args, guards} ->
-          code = Enum.reduce(guards, {fun, [], args}, &{:when, [], [&2, &1]})
-          "#{kind} " <> Macro.to_string(code, &clause_match/2)
+          args = Enum.map_join(args, ", ", &blame_match/1)
+          base = "#{kind} #{fun}(#{args})"
+          Enum.reduce(guards, base, &"#{&2} when #{blame_clause(&1)}")
         end)
 
       {length(top_10), length(clauses), top_10}
@@ -424,13 +425,16 @@ defmodule Plug.Debugger do
     end
   end
 
-  defp clause_match(%{match?: true, node: node}, _),
+  defp blame_match(%{match?: true, node: node}),
     do: ~s(<i class="green">) <> h(Macro.to_string(node)) <> "</i>"
 
-  defp clause_match(%{match?: false, node: node}, _),
+  defp blame_match(%{match?: false, node: node}),
     do: ~s(<i class="red">) <> h(Macro.to_string(node)) <> "</i>"
 
-  defp clause_match(_, string), do: string
+  defp blame_clause({op, _, [left, right]}),
+    do: blame_clause(left) <> " #{op} " <> blame_clause(right)
+
+  defp blame_clause(node), do: blame_match(node)
 
   defp get_context(app, app) when app != nil, do: :app
   defp get_context(_app1, _app2), do: :all

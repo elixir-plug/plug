@@ -398,17 +398,6 @@ defmodule Plug.RouterTest do
     end
   end
 
-  test "handle malformed URI through error wrapper" do
-    try do
-      call(Sample, conn(:get, "/%"))
-      flunk("oops")
-    rescue
-      e in Plug.Conn.WrapperError ->
-        %{kind: :error, reason: %Plug.Router.MalformedURIError{}} = e
-        assert_received @already_sent
-    end
-  end
-
   test "match_path/1" do
     conn = call(Sample, conn(:get, "/params/get/a_value"))
     assert Plug.Router.match_path(conn) == "/params/get/:param"
