@@ -59,11 +59,6 @@ defmodule Plug.Conn do
       are expected to have lowercase keys.
     * `status` - the response status
 
-  Furthermore, the `before_send` field stores callbacks that are invoked
-  before the connection is sent. Callbacks are invoked in the reverse order
-  they are registered (callbacks registered first are invoked last) in order
-  to reproduce a pipeline ordering.
-
   ## Connection fields
 
     * `assigns` - shared user data as a map
