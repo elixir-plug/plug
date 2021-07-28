@@ -49,9 +49,9 @@ defmodule Plug.ErrorHandler do
   Called when an exception is raised during the processing of a plug.
   """
   @callback handle_errors(Plug.Conn.t(), %{
-              type: :error | :throw | :exit,
+              kind: :error | :throw | :exit,
               reason: Exception.t() | term(),
-              stacktrace: Exception.stacktrace()
+              stack: Exception.stacktrace()
             }) :: no_return()
 
   @doc false
