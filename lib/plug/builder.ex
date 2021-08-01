@@ -145,7 +145,7 @@ defmodule Plug.Builder do
       else
         for triplet <- plugs,
             {plug, _, _} = triplet,
-            match?(~c"Elixir." ++ _, Atom.to_charlist(plug)) do
+            module_plug?(plug) do
           quote(do: unquote(plug).__info__(:module))
         end
       end
@@ -192,12 +192,26 @@ defmodule Plug.Builder do
   defmacro plug(plug, opts \\ []) do
     # We always expand it but the @before_compile callback adds compile
     # time dependencies back depending on the builder's init mode.
-    plug = Macro.expand(plug, %{__CALLER__ | function: {:init, 1}})
+    plug = expand_alias(plug, __CALLER__)
+
+    # If we are sure we don't have a module plug, the options are all
+    # runtime options too.
+    opts =
+      if is_atom(plug) and not module_plug?(plug) and Macro.quoted_literal?(opts) do
+        Macro.prewalk(opts, &expand_alias(&1, __CALLER__))
+      else
+        opts
+      end
 
     quote do
       @plugs {unquote(plug), unquote(opts), true}
     end
   end
+
+  defp expand_alias({:__aliases__, _, _} = alias, env),
+    do: Macro.expand(alias, %{env | function: {:init, 1}})
+
+  defp expand_alias(other, _env), do: other
 
   @doc """
   Annotates a plug will receive the options given
@@ -306,11 +320,14 @@ defmodule Plug.Builder do
     {conn, ast}
   end
 
+  defp module_plug?(plug), do: match?(~c"Elixir." ++ _, Atom.to_charlist(plug))
+
   # Initializes the options of a plug in the configured init_mode.
   defp init_plug({plug, opts, guards}, init_mode) do
-    case Atom.to_charlist(plug) do
-      ~c"Elixir." ++ _ -> init_module_plug(plug, opts, guards, init_mode)
-      _ -> init_fun_plug(plug, opts, guards)
+    if module_plug?(plug) do
+      init_module_plug(plug, opts, guards, init_mode)
+    else
+      init_fun_plug(plug, opts, guards)
     end
   end
 
