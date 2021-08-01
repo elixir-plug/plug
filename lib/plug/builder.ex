@@ -139,7 +139,19 @@ defmodule Plug.Builder do
     builder_opts = Module.get_attribute(env.module, :plug_builder_opts)
     {conn, body} = Plug.Builder.compile(env, plugs, builder_opts)
 
+    compile_time =
+      if builder_opts[:init_mode] == :runtime do
+        []
+      else
+        for triplet <- plugs,
+            {plug, _, _} = triplet,
+            match?(~c"Elixir." ++ _, Atom.to_charlist(plug)) do
+          quote(do: unquote(plug).__info__(:module))
+        end
+      end
+
     quote do
+      unquote_splicing(compile_time)
       defp plug_builder_call(unquote(conn), opts), do: unquote(body)
     end
   end
@@ -178,6 +190,8 @@ defmodule Plug.Builder do
 
   """
   defmacro plug(plug, opts \\ []) do
+    # We always expand it but the @before_compile callback adds compile
+    # time dependencies back depending on the builder's init mode.
     plug = Macro.expand(plug, %{__CALLER__ | function: {:init, 1}})
 
     quote do
