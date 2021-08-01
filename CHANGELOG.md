@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.12.1 (2021-08-01)
+
+### Bug fixes
+
+  * [Plug] Make sure module plugs are compile time dependencies if init mode is compile-time
+
 ## v1.12.0 (2021-07-22)
 
 ### Enhancements
