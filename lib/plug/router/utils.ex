@@ -81,7 +81,7 @@ defmodule Plug.Router.Utils do
 
   """
   def build_path_match(path, context \\ nil) when is_binary(path) do
-    case build_path_clause(path, context) do
+    case build_path_clause(path, true, context) do
       {params, match, true, _post_match} ->
         {Enum.map(params, &String.to_atom(&1)), match}
 
@@ -114,14 +114,24 @@ defmodule Plug.Router.Utils do
   end
 
   @doc """
-  OMG.
+  Builds a clause with match, guards, and post matches,
+  including the known parameters.
   """
-  def build_path_clause(path, context \\ nil) when is_binary(path) do
+  def build_path_clause(path, guard, context \\ nil) when is_binary(path) do
     compiled = :binary.compile_pattern([":", "*"])
 
-    path
-    |> split()
-    |> build_path_clause([], [], [], [], context, compiled)
+    {params, match, guards, post_match} =
+      path
+      |> split()
+      |> build_path_clause([], [], [], [], context, compiled)
+
+    if guard != true and guards != [] do
+      raise ArgumentError, "cannot use \"when\" guards in route when using suffix matches"
+    end
+
+    params = params |> Enum.uniq() |> Enum.reverse()
+    guards = Enum.reduce(guards, guard, &quote(do: unquote(&1) and unquote(&2)))
+    {params, match, guards, post_match}
   end
 
   defp build_path_clause([segment | rest], params, match, guards, post_match, context, compiled) do
@@ -167,7 +177,7 @@ defmodule Plug.Router.Utils do
                   Enum.reverse([quote(do: unquote(last) | unquote(submatch)) | match])
               end
 
-            {params |> Enum.uniq() |> Enum.reverse(), match, join_guards(guards), post_match}
+            {params, match, guards, post_match}
 
           ?: ->
             match =
@@ -206,12 +216,8 @@ defmodule Plug.Router.Utils do
   end
 
   defp build_path_clause([], params, match, guards, post_match, _context, _compiled) do
-    {params |> Enum.uniq() |> Enum.reverse(), Enum.reverse(match), join_guards(guards),
-     post_match}
+    {params, Enum.reverse(match), guards, post_match}
   end
-
-  defp join_guards([]), do: true
-  defp join_guards([h | t]), do: Enum.reduce(t, h, &quote(do: unquote(&1) and unquote(&2)))
 
   defp parse_suffix(<<h, t::binary>>) when h in ?a..?z or h == ?_,
     do: parse_suffix(t, <<h>>)

@@ -518,14 +518,8 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {params, match, path_guards, post_match} = Plug.Router.Utils.build_path_clause(path)
+    {params, match, guards, post_match} = Plug.Router.Utils.build_path_clause(path, guards)
     params = Plug.Router.Utils.build_path_params(params)
-
-    if guards != true and path_guards != true do
-      raise ArgumentError, "cannot use \"when\" guards in route when using suffix matches"
-    end
-
-    guards = join_guards(guards, path_guards)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
@@ -640,7 +634,6 @@ defmodule Plug.Router do
     {var, guards}
   end
 
-  defp join_guards(true, snd), do: snd
   defp join_guards(fst, true), do: fst
   defp join_guards(fst, snd), do: quote(do: unquote(fst) and unquote(snd))
 
