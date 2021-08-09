@@ -54,11 +54,19 @@ defmodule Plug.Router do
         send_resp(conn, 200, "hello #{name}")
       end
 
+  This means the name can also be used in guards:
+
+      get "/hello/:name" when name in ~w(foo bar) do
+        send_resp(conn, 200, "hello #{name}")
+      end
+
   The `:name` parameter will also be available in the function body as
   `conn.params["name"]` and `conn.path_params["name"]`.
 
-  A route parameter may also include a suffix such as a dot delimited
-  file extension:
+  The identifier always starts with `:` and must be followed by letters,
+  numbers, and underscores, like any Elixir variable. It is possible for
+  identifiers to be either prefixed or suffixed by other words. For example,
+  you can include a suffix such as a dot delimited file extension:
 
       get "/hello/:name.json" do
         send_resp(conn, 200, "hello #{name}")
@@ -68,16 +76,23 @@ defmodule Plug.Router do
   Other delimiters such as `-`, `@` may be used to denote suffixes.
 
   Routes allow for globbing which will match the remaining parts
-  of a route and can be available as a parameter in the function
-  body. Also note that a glob can't be followed by other segments:
+  of a route. A glob match is done with the `*` character followed
+  by the variable name. Typically you prefix the variable name with
+  underscore to discard it:
 
       get "/hello/*_rest" do
         send_resp(conn, 200, "matches all routes starting with /hello")
       end
 
+  But you can also assign the glob to any variable. The contents will
+  always be a list:
+
       get "/hello/*glob" do
         send_resp(conn, 200, "route after /hello: #{inspect glob}")
       end
+
+  Opposite to `:identifiers`, globs do not allow prefix nor suffix
+  matches.
 
   Finally, a general `match` function is also supported:
 
@@ -103,9 +118,12 @@ defmodule Plug.Router do
         use Plug.Router
 
         plug :match
-        plug Plug.Parsers, parsers: [:json],
-                           pass:  ["application/json"],
-                           json_decoder: Jason
+
+        plug Plug.Parsers,
+             parsers: [:json],
+             pass:  ["application/json"],
+             json_decoder: Jason
+
         plug :dispatch
 
         post "/hello" do
@@ -500,12 +518,18 @@ defmodule Plug.Router do
   @doc false
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
-    {match, params_match, guards} = Plug.Router.Utils.build_path_head(path, guards)
-    vars = Plug.Router.Utils.rebind_vars(params_match)
+    {params, match, path_guards, post_match} = Plug.Router.Utils.build_path_clause(path)
+    params = Plug.Router.Utils.build_path_params(params)
+
+    if guards != true and path_guards != true do
+      raise ArgumentError, "cannot use \"when\" guards in route when using suffix matches"
+    end
+
+    guards = join_guards(guards, path_guards)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
-    {quote(do: conn), method, vars, match, params_match, host_match, guards, private, assigns}
+    {quote(do: conn), method, match, post_match, params, host_match, guards, private, assigns}
   end
 
   @doc false
@@ -565,17 +589,19 @@ defmodule Plug.Router do
             body: Macro.escape(body, unquote: true)
           ] do
       route = Plug.Router.__route__(method, path, guards, options)
-      {conn, method, vars, match, params, host, guards, private, assigns} = route
+      {conn, method, match, post_match, params, host, guards, private, assigns} = route
 
       defp do_match(unquote(conn), unquote(method), unquote(match), unquote(host))
            when unquote(guards) do
-        unquote(vars)
+        unquote_splicing(post_match)
         unquote(private)
         unquote(assigns)
 
+        params = unquote({:%{}, [], params})
+
         merge_params = fn
-          %Plug.Conn.Unfetched{} -> unquote({:%{}, [], params})
-          fetched -> Map.merge(fetched, unquote({:%{}, [], params}))
+          %Plug.Conn.Unfetched{} -> params
+          fetched -> Map.merge(fetched, params)
         end
 
         conn = update_in(unquote(conn).params, merge_params)
@@ -614,6 +640,7 @@ defmodule Plug.Router do
     {var, guards}
   end
 
+  defp join_guards(true, snd), do: snd
   defp join_guards(fst, true), do: fst
   defp join_guards(fst, snd), do: quote(do: unquote(fst) and unquote(snd))
 

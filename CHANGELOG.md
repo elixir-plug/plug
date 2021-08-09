@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.13.0-dev
+
+### Enhancements
+
+  * [Plug.Router] Allow suffix matches in the router (such as `/feeds/:name.atom`)
+
+### Deprecations
+
+  * [Plug.Router] Mixing prefix matches with globs is deprecated
+
 ## v1.12.1 (2021-08-01)
 
 ### Bug fixes
