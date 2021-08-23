@@ -209,7 +209,7 @@ This is not intended to be an exhaustive list, as this topic is actually a bit b
 
 ## Offloading TLS
 
-So far this document has focussed on configuring Plug to handle TLS within the application. Some people instead prefer to terminate TLS in a proxy or load balancer deployed in front of the Plug application.
+So far this document has focused on configuring Plug to handle TLS within the application. Some people instead prefer to terminate TLS in a proxy or load balancer deployed in front of the Plug application.
 
 ### Pros and Cons
 
@@ -245,6 +245,6 @@ To convert an RSA private key from DER to PEM format: `openssl rsa -in privkey.d
 
 The PKCS#12 format is a container format containing one or more certificates and/or encrypted keys. Such files typically have a `.p12` extension.
 
-To extract all certificates from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nokeys -out fullchain.pem`. The resulting file contains all certificates from the input file, typically the server certificate and any CA certificates that make up the CA chain. You can split the file into seperate `cert.pem` and `chain.pem` files using a text editor, or you can just pass `certfile: fullchain.pem` to the HTTPS adapter.
+To extract all certificates from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nokeys -out fullchain.pem`. The resulting file contains all certificates from the input file, typically the server certificate and any CA certificates that make up the CA chain. You can split the file into separate `cert.pem` and `chain.pem` files using a text editor, or you can just pass `certfile: fullchain.pem` to the HTTPS adapter.
 
 To extract a private key from a PKCS#12 file to a PEM file: `openssl pkcs12 -in server.p12 -nocerts -nodes -out privkey.pem`. You may want to replace the `-nodes` argument with `-aes128` to produce an encrypted, password protected PEM file.
