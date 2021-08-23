@@ -211,7 +211,8 @@ defmodule Plug.Router.Utils do
 
       [_ | _] ->
         raise Plug.Router.InvalidSpecError,
-              "only one dynamic entry (:var or *glob) per path segment is allowed, got: #{inspect(segment)}"
+              "only one dynamic entry (:var or *glob) per path segment is allowed, got: " <>
+                inspect(segment)
     end
   end
 
