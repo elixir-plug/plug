@@ -224,7 +224,7 @@ defmodule Plug.Router.Utils do
 
   defp parse_suffix(suffix) do
     raise Plug.Router.InvalidSpecError,
-          "invalid dynamic path. The characters : and * must be immediatelly followed by " <>
+          "invalid dynamic path. The characters : and * must be immediately followed by " <>
             "lowercase letters or underscore, got: :#{suffix}"
   end
 
