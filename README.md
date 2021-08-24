@@ -60,7 +60,7 @@ On a production system, you likely want to start your Plug pipeline under your a
 and then update `lib/my_app/application.ex` as follows:
 
 ```elixir
-defmodule MyApp do
+defmodule MyApp.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
