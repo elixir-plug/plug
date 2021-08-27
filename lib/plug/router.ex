@@ -487,7 +487,7 @@ defmodule Plug.Router do
       {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
       plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
-      if is_nil(target) or !is_atom(target) do
+      if is_nil(target) or not is_atom(target) do
         raise ArgumentError, message: "expected :to to be an alias or an atom"
       end
 
