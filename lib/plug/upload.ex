@@ -209,7 +209,7 @@ defmodule Plug.Upload do
   @impl true
   def init(:ok) do
     Process.flag(:trap_exit, true)
-    tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1)
+    tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1) |> Path.expand()
     cwd = Path.join(File.cwd!(), "tmp")
 
     :ets.new(@dir_table, [:named_table, :public, :set])
