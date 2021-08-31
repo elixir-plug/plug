@@ -127,6 +127,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart({:ok, headers, conn}, limit, opts, headers_opts, acc) when limit >= 0 do
     {conn, limit, acc} = parse_multipart_headers(headers, conn, limit, opts, acc)
+    conn = stash_headers(conn, headers)
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)
     parse_multipart(read_result, limit, opts, headers_opts, acc)
   end
@@ -209,6 +210,17 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, _file) do
     {:ok, limit - byte_size(tail), conn}
+  end
+
+  defp stash_headers(conn, headers) do
+    with disposition when not is_nil(disposition) <- get_header(headers, "content-disposition"),
+         [_, params] <- :binary.split(disposition, ";"),
+         %{"name" => name} <- Plug.Conn.Utils.params(params) do
+      private = Map.merge(%{plug_multipart_headers: %{}}, conn.private)
+      %{conn | private: put_in(private, [:plug_multipart_headers, name], headers)}
+    else
+      _ -> conn
+    end
   end
 
   ## Helpers

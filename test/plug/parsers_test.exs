@@ -187,7 +187,7 @@ defmodule Plug.ParsersTest do
     ------w58EW1cEpjzydSCq--\r
     """
 
-    %{params: params} =
+    %{params: params, private: %{plug_multipart_headers: headers}} =
       conn(:post, "/", multipart)
       |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
       |> parse()
@@ -205,6 +205,25 @@ defmodule Plug.ParsersTest do
     assert File.read!(file.path) == "hello\n\n"
     assert file.content_type == "text/plain"
     assert file.filename == "żółć.txt"
+
+    assert %{
+             "commit" => [{"content-disposition", "form-data; name=\"commit\""}],
+             "doc" => [
+               {"content-type", "text/plain"},
+               {"content-disposition",
+                "form-data; name=\"doc\"; filename*=\"utf-8''%C5%BC%C3%B3%C5%82%C4%87.txt\""}
+             ],
+             "empty" => [
+               {"content-type", "application/octet-stream"},
+               {"content-disposition", "form-data; name=\"empty\"; filename=\"\""}
+             ],
+             "name" => [{"content-disposition", "form-data; name=\"name\""}],
+             "pic" => [
+               {"content-type", "text/plain"},
+               {"content-disposition", "form-data; name=\"pic\"; filename=\"foo.txt\""}
+             ],
+             "status[]" => [{"content-disposition", "form-data; name=\"status[]\""}]
+           } == headers
   end
 
   test "multipart bodies with unnamed body parts opt" do
@@ -228,7 +247,7 @@ defmodule Plug.ParsersTest do
     ------w58EW1cEpjzydSCq--\r
     """
 
-    %{params: params} =
+    %{params: params, private: %{plug_multipart_headers: headers}} =
       conn(:post, "/", multipart)
       |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
       |> parse(include_unnamed_parts_at: "_parts")
@@ -242,6 +261,9 @@ defmodule Plug.ParsersTest do
     assert part2.headers == [{"x-my-foo", "bar"}, {"content-type", "application/octet-stream"}]
     assert part3.body == "No content-type? No problem!"
     assert part3.headers == []
+
+    # only the named bit is captured, since there is access to to the headers in parts.
+    assert %{"name" => [{"content-disposition", "form-data; name=\"name\""}]} == headers
   end
 
   test "validates utf8 in multipart body" do
