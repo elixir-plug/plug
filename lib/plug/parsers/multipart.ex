@@ -26,14 +26,28 @@ defmodule Plug.Parsers.MULTIPART do
       and `:read_timeout` options which are used explicitly for parsing multipart
       headers
 
-    * `:include_unnamed_parts_at` - string specifying a body parameter that can
-      hold a lists of body parts that didn't have a 'Content-Disposition' header.
-      For instance, `include_unnamed_parts_at: "_parts"` would result in
-      a body parameter `"_parts"`, containing a list of parts, each with `:body`
-      and `:headers` fields, like `[%{body: "{}", headers: [{"content-type", "application/json"}]}]`
-
-  * `:validate_utf8` - specifies whether multipart body parts should be validated
+    * `:validate_utf8` - specifies whether multipart body parts should be validated
       as utf8 binaries. Defaults to true
+
+    * `:multipart_to_params` - a MFA that receives the multipart headers and the
+      connection and it must return a tuple of `{:ok, params, conn}`
+
+  ## Multipart to params
+
+  Once all multiparts are collect, they must be converted to params and this
+  can be customize with a MFA. The default implementation of this function
+  is equivalent to this:
+
+      def multipart_to_params(parts, conn) do
+        params =
+          for {name, _headers, body} <- parts,
+              name != nil,
+              reduce: %{} do
+            acc -> Plug.Conn.Query.decode_pair({name, body}, acc)
+          end
+
+        {:ok, params, conn}
+      end
 
   ## Dynamic configuration
 
@@ -83,7 +97,14 @@ defmodule Plug.Parsers.MULTIPART do
       )
     end
 
-    {limit, headers_opts, opts}
+    if opts[:include_unnamed_parts_at] do
+      IO.warn(
+        ":include_unnamed_parts_at for multipart is deprecated. Use :multipart_to_params instead"
+      )
+    end
+
+    m2p = opts[:multipart_to_params] || {__MODULE__, :multipart_to_params, [opts]}
+    {m2p, limit, headers_opts, opts}
   end
 
   @impl true
@@ -106,20 +127,43 @@ defmodule Plug.Parsers.MULTIPART do
     {:next, conn}
   end
 
-  ## Multipart
+  @doc false
+  def multipart_to_params(acc, conn, opts) do
+    unnamed_at = opts[:include_unnamed_parts_at]
 
-  defp parse_multipart(conn, {{module, fun, args}, header_opts, opts}) do
-    # TODO: Remove me on 2.0.
-    limit = apply(module, fun, args)
-    parse_multipart(conn, {limit, header_opts, opts})
+    params =
+      Enum.reduce(acc, %{}, fn
+        {nil, headers, body}, acc when unnamed_at != nil ->
+          Plug.Conn.Query.decode_pair(
+            {unnamed_at <> "[]", %{headers: headers, body: body}},
+            acc
+          )
+
+        {nil, _headers, _body}, acc ->
+          acc
+
+        {name, _headers, body}, acc ->
+          Plug.Conn.Query.decode_pair({name, body}, acc)
+      end)
+
+    {:ok, params, conn}
   end
 
-  defp parse_multipart(conn, {limit, headers_opts, opts}) do
+  ## Multipart
+
+  defp parse_multipart(conn, {m2p, {module, fun, args}, header_opts, opts}) do
+    # TODO: Remove me on 2.0.
+    limit = apply(module, fun, args)
+    parse_multipart(conn, {m2p, limit, header_opts, opts})
+  end
+
+  defp parse_multipart(conn, {m2p, limit, headers_opts, opts}) do
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)
     {:ok, limit, acc, conn} = parse_multipart(read_result, limit, opts, headers_opts, [])
 
     if limit > 0 do
-      {:ok, Enum.reduce(acc, %{}, &Plug.Conn.Query.decode_pair/2), conn}
+      {mod, fun, args} = m2p
+      apply(mod, fun, [acc, conn | args])
     else
       {:error, :too_large, conn}
     end
@@ -140,7 +184,7 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_headers(headers, conn, limit, opts, acc) do
-    case multipart_type(headers, opts) do
+    case multipart_type(headers) do
       {:binary, name} ->
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
@@ -149,13 +193,7 @@ defmodule Plug.Parsers.MULTIPART do
           Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         end
 
-        {conn, limit, [{name, body} | acc]}
-
-      {:part, name} ->
-        {:ok, limit, body, conn} =
-          parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
-
-        {conn, limit, [{name, %{headers: headers, body: body}} | acc]}
+        {conn, limit, [{name, headers, body} | acc]}
 
       {:file, name, path, %Plug.Upload{} = uploaded} ->
         {:ok, file} = File.open(path, [:write, :binary, :delayed_write, :raw])
@@ -164,7 +202,7 @@ defmodule Plug.Parsers.MULTIPART do
           parse_multipart_file(Plug.Conn.read_part_body(conn, opts), limit, opts, file)
 
         :ok = File.close(file)
-        {conn, limit, [{name, uploaded} | acc]}
+        {conn, limit, [{name, headers, uploaded} | acc]}
 
       :skip ->
         {conn, limit, acc}
@@ -225,27 +263,13 @@ defmodule Plug.Parsers.MULTIPART do
     end
   end
 
-  defp multipart_type(headers, opts) do
-    if disposition = get_header(headers, "content-disposition") do
-      multipart_type_from_disposition(headers, disposition)
-    else
-      multipart_type_from_unnamed(opts)
-    end
-  end
-
-  defp multipart_type_from_unnamed(opts) do
-    case Keyword.fetch(opts, :include_unnamed_parts_at) do
-      {:ok, name} when is_binary(name) -> {:part, name <> "[]"}
-      :error -> :skip
-    end
-  end
-
-  defp multipart_type_from_disposition(headers, disposition) do
-    with [_, params] <- :binary.split(disposition, ";"),
+  defp multipart_type(headers) do
+    with {_, disposition} <- List.keyfind(headers, "content-disposition", 0),
+         [_, params] <- :binary.split(disposition, ";"),
          %{"name" => name} = params <- Plug.Conn.Utils.params(params) do
       handle_disposition(params, name, headers)
     else
-      _ -> :skip
+      _ -> {:binary, nil}
     end
   end
 

@@ -207,7 +207,16 @@ defmodule Plug.ParsersTest do
     assert file.filename == "żółć.txt"
   end
 
-  test "multipart bodies with unnamed body parts opt" do
+  def multipart_to_params(acc, conn) do
+    params =
+      Enum.reduce(acc, %{}, fn {name, headers, body}, acc ->
+        Plug.Conn.Query.decode_pair({name || "_parts[]", %{headers: headers, body: body}}, acc)
+      end)
+
+    {:ok, params, conn}
+  end
+
+  test "multipart with custom parameter conversion" do
     multipart = """
     ------w58EW1cEpjzydSCq\r
     Content-Disposition: form-data; name=\"name\"\r
@@ -231,9 +240,10 @@ defmodule Plug.ParsersTest do
     %{params: params} =
       conn(:post, "/", multipart)
       |> put_req_header("content-type", "multipart/mixed; boundary=----w58EW1cEpjzydSCq")
-      |> parse(include_unnamed_parts_at: "_parts")
+      |> parse(multipart_to_params: {__MODULE__, :multipart_to_params, []})
 
-    assert params["name"] == "hello"
+    assert params["name"].headers == [{"content-disposition", "form-data; name=\"name\""}]
+    assert params["name"].body == "hello"
 
     assert [part1, part2, part3] = params["_parts"]
     assert part1.body == "{\"indisposed\": \"json\"}"
