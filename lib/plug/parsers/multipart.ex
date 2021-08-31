@@ -36,7 +36,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   Once all multiparts are collect, they must be converted to params and this
   can be customize with a MFA. The default implementation of this function
-  is equivalent to this:
+  is equivalent to:
 
       def multipart_to_params(parts, conn) do
         params =
@@ -44,6 +44,19 @@ defmodule Plug.Parsers.MULTIPART do
               name != nil,
               reduce: %{} do
             acc -> Plug.Conn.Query.decode_pair({name, body}, acc)
+          end
+
+        {:ok, params, conn}
+      end
+
+  As you can notice, it discards all multiparts without a name. If you want
+  to keep the unnamed parts, you can store all of them under a known prefix,
+  such as:
+
+      def multipart_to_params(parts, conn) do
+        params =
+          for {name, _headers, body} <- parts, reduce: %{} do
+            acc -> Plug.Conn.Query.decode_pair({name || "_parts[]", body}, acc)
           end
 
         {:ok, params, conn}
