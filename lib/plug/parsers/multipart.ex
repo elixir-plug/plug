@@ -89,6 +89,8 @@ defmodule Plug.Parsers.MULTIPART do
   @impl true
   def parse(conn, "multipart", subtype, _headers, opts_tuple)
       when subtype in ["form-data", "mixed"] do
+    conn = %{conn | private: Map.put(conn.private, :plug_multipart_headers, %{})}
+
     try do
       parse_multipart(conn, opts_tuple)
     rescue
@@ -127,7 +129,6 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp parse_multipart({:ok, headers, conn}, limit, opts, headers_opts, acc) when limit >= 0 do
     {conn, limit, acc} = parse_multipart_headers(headers, conn, limit, opts, acc)
-    conn = stash_headers(conn, headers)
     read_result = Plug.Conn.read_part_headers(conn, headers_opts)
     parse_multipart(read_result, limit, opts, headers_opts, acc)
   end
@@ -150,11 +151,13 @@ defmodule Plug.Parsers.MULTIPART do
           Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
         end
 
-        {conn, limit, [{name, body} | acc]}
+        {stash_headers(conn, name, headers), limit, [{name, body} | acc]}
 
-      {:part, name} ->
+      {part, name} when part in [:part, :unnamed_part] ->
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
+
+        conn = if part == :part, do: stash_headers(conn, name, headers), else: conn
 
         {conn, limit, [{name, %{headers: headers, body: body}} | acc]}
 
@@ -165,7 +168,10 @@ defmodule Plug.Parsers.MULTIPART do
           parse_multipart_file(Plug.Conn.read_part_body(conn, opts), limit, opts, file)
 
         :ok = File.close(file)
-        {conn, limit, [{name, uploaded} | acc]}
+        {stash_headers(conn, name, headers), limit, [{name, uploaded} | acc]}
+
+      {:skip, name, headers} ->
+        {stash_headers(conn, name, headers), limit, acc}
 
       :skip ->
         {conn, limit, acc}
@@ -212,15 +218,8 @@ defmodule Plug.Parsers.MULTIPART do
     {:ok, limit - byte_size(tail), conn}
   end
 
-  defp stash_headers(conn, headers) do
-    with disposition when not is_nil(disposition) <- get_header(headers, "content-disposition"),
-         [_, params] <- :binary.split(disposition, ";"),
-         %{"name" => name} <- Plug.Conn.Utils.params(params) do
-      private = Map.merge(%{plug_multipart_headers: %{}}, conn.private)
-      %{conn | private: put_in(private, [:plug_multipart_headers, name], headers)}
-    else
-      _ -> conn
-    end
+  defp stash_headers(conn, name, headers) do
+    %{conn | private: put_in(conn.private, [:plug_multipart_headers, name], headers)}
   end
 
   ## Helpers
@@ -247,7 +246,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   defp multipart_type_from_unnamed(opts) do
     case Keyword.fetch(opts, :include_unnamed_parts_at) do
-      {:ok, name} when is_binary(name) -> {:part, name <> "[]"}
+      {:ok, name} when is_binary(name) -> {:unnamed_part, name <> "[]"}
       :error -> :skip
     end
   end
@@ -264,7 +263,7 @@ defmodule Plug.Parsers.MULTIPART do
   defp handle_disposition(params, name, headers) do
     case params do
       %{"filename" => ""} ->
-        :skip
+        {:skip, name, headers}
 
       %{"filename" => filename} ->
         path = Plug.Upload.random_file!("multipart")
@@ -273,7 +272,7 @@ defmodule Plug.Parsers.MULTIPART do
         {:file, name, path, upload}
 
       %{"filename*" => ""} ->
-        :skip
+        {:skip, name, headers}
 
       %{"filename*" => "utf-8''" <> filename} ->
         filename = URI.decode(filename)
