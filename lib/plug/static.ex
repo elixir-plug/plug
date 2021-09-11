@@ -45,15 +45,22 @@ defmodule Plug.Static do
 
   ## Options
 
-    * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists
-      in the static directory and if the `accept-encoding` header is set
-      to allow gzipped content (defaults to `false`).
+    * `:encodings` - list of 2-ary tuples where first value is value of
+      the `Accept-Encoding` header and second is extension of the file to
+      be served if given encoding is accepted by client. Entries will be tested
+      in order in list, so entries higher in list will be prefered. Defaults
+      to: `[]`.
 
-    * `:brotli` - given a request for `FILE`, serves `FILE.br` if it exists
-      in the static directory and if the `accept-encoding` header is set
-      to allow brotli-compressed content (defaults to `false`).
-      `FILE.br` is checked first and dominates `FILE.gz` due to the better
-      compression ratio.
+      In addition to setting this value directly it supports 2 additional
+      options for compatibility reasons:
+
+        + `:brotli` - will append `{"br", ".br"}` to the encodings list.
+        + `:gzip` - will append `{"gzip", ".gz"}` to the encodings list.
+
+      Additional options will be added in the above order (Brotli takes
+      preference over Gzip) to reflect older behaviour which was set due
+      to fact that Brotli in general provides better compresion ratio than
+      Gzip.
 
     * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
@@ -147,9 +154,14 @@ defmodule Plug.Static do
         _ -> raise ArgumentError, ":from must be an atom, a binary or a tuple"
       end
 
+    encodings =
+      opts
+      |> Keyword.get(:encodings, [])
+      |> maybe_add("br", ".br", Keyword.get(opts, :brotli, false))
+      |> maybe_add("gzip", ".gz", Keyword.get(opts, :gzip, false))
+
     %{
-      gzip?: Keyword.get(opts, :gzip, false),
-      brotli?: Keyword.get(opts, :brotli, false),
+      encodings: encodings,
       only_rules: {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, [])},
       qs_cache: Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000"),
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
@@ -164,7 +176,7 @@ defmodule Plug.Static do
   @impl true
   def call(
         conn = %Conn{method: meth},
-        %{at: at, only_rules: only_rules, from: from, gzip?: gzip?, brotli?: brotli?} = options
+        %{at: at, only_rules: only_rules, from: from, encodings: encodings} = options
       )
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
@@ -178,7 +190,7 @@ defmodule Plug.Static do
 
       path = path(from, segments)
       range = get_req_header(conn, "range")
-      encoding = file_encoding(conn, path, range, gzip?, brotli?)
+      encoding = file_encoding(conn, path, range, encodings)
       serve_static(encoding, conn, segments, range, options)
     else
       conn
@@ -300,11 +312,11 @@ defmodule Plug.Static do
   defp maybe_add_encoding(conn, nil), do: conn
   defp maybe_add_encoding(conn, ce), do: put_resp_header(conn, "content-encoding", ce)
 
-  defp maybe_add_vary(conn, %{gzip?: gzip?, brotli?: brotli?}) do
+  defp maybe_add_vary(conn, %{encodings: encodings}) do
     # If we serve gzip or brotli at any moment, we need to set the proper vary
     # header regardless of whether we are serving gzip content right now.
     # See: http://www.fastly.com/blog/best-practices-for-using-the-vary-header/
-    if gzip? or brotli? do
+    if encodings != [] do
       update_in(conn.resp_headers, &[{"vary", "Accept-Encoding"} | &1])
     else
       conn
@@ -354,18 +366,22 @@ defmodule Plug.Static do
     end
   end
 
-  defp file_encoding(conn, path, [_range], _gzip?, _brotli?) do
+  defp file_encoding(conn, path, [_range], _encodings) do
     # We do not support compression for range queries.
-    file_encoding(conn, path, nil, false, false)
+    file_encoding(conn, path, nil, [])
   end
 
-  defp file_encoding(conn, path, _range, gzip?, brotli?) do
-    cond do
-      file_info = brotli? and accept_encoding?(conn, "br") && regular_file_info(path <> ".br") ->
-        {"br", file_info, path <> ".br"}
+  defp file_encoding(conn, path, _range, encodings) do
+    encoded =
+      Enum.find_value(encodings, fn {encoding, ext} ->
+        if file_info = accept_encoding?(conn, encoding) && regular_file_info(path <> ext) do
+          {encoding, file_info, path <> ext}
+        end
+      end)
 
-      file_info = gzip? and accept_encoding?(conn, "gzip") && regular_file_info(path <> ".gz") ->
-        {"gzip", file_info, path <> ".gz"}
+    cond do
+      not is_nil(encoded) ->
+        encoded
 
       file_info = regular_file_info(path) ->
         {nil, file_info, path}
@@ -392,6 +408,9 @@ defmodule Plug.Static do
       accept |> Plug.Conn.Utils.list() |> Enum.any?(encoding?)
     end)
   end
+
+  defp maybe_add(list, key, value, true), do: list ++ [{key, value}]
+  defp maybe_add(list, _key, _value, false), do: list
 
   defp path({module, function, arguments}, segments)
        when is_atom(module) and is_atom(function) and is_list(arguments),
