@@ -45,15 +45,22 @@ defmodule Plug.Static do
 
   ## Options
 
-    * `:gzip` - given a request for `FILE`, serves `FILE.gz` if it exists
-      in the static directory and if the `accept-encoding` header is set
-      to allow gzipped content (defaults to `false`).
+    * `:encodings` - list of 2-ary tuples where first value is value of
+      the `Accept-Encoding` header and second is extension of the file to
+      be served if given encoding is accepted by client. Entries will be tested
+      in order in list, so entries higher in list will be prefered. Defaults
+      to: `[]`.
 
-    * `:brotli` - given a request for `FILE`, serves `FILE.br` if it exists
-      in the static directory and if the `accept-encoding` header is set
-      to allow brotli-compressed content (defaults to `false`).
-      `FILE.br` is checked first and dominates `FILE.gz` due to the better
-      compression ratio.
+      In addition to setting this value directly it supports 2 additional
+      options for compatibility reasons:
+
+        + `:brotli` - will append `{"br", ".br"}` to the encodings list.
+        + `:gzip` - will append `{"gzip", ".gz"}` to the encodings list.
+
+      Additional options will be added in the above order (Brotli takes
+      preference over Gzip) to reflect older behaviour which was set due
+      to fact that Brotli in general provides better compresion ratio than
+      Gzip.
 
     * `:cache_control_for_etags` - sets the cache header for requests
       that use etags. Defaults to `"public"`.
