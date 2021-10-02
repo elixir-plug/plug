@@ -175,10 +175,9 @@ defmodule Plug.CSRFProtection do
   end
 
   @doc """
-  Dump CSRF state so it can be loaded in another process.
+  Dump CSRF state from the process dictionary.
 
-  This function must be called after the `Plug.CSRFProtection`
-  plug is invoked. If a token was not yet computed, it will be.
+  This allows it to be loaded in another process.
 
   See `load_state/2` for more information.
   """
@@ -187,10 +186,10 @@ defmodule Plug.CSRFProtection do
   end
 
   @doc """
-  Dumps the CSRF state from the connection.
+  Dumps the CSRF state from the session token.
 
-  It expects the value of `get_session(conn, "_csrf_token")`.
-  It returns `nil` if there is no state in the session.
+  It expects the value of `get_session(conn, "_csrf_token")`
+  as input. It returns `nil` if the given token is not valid.
   """
   def dump_state_from_session(session_token) do
     if is_binary(session_token) and byte_size(session_token) == @encoded_token_size do
@@ -199,7 +198,11 @@ defmodule Plug.CSRFProtection do
   end
 
   @doc """
-  Validates the `state` is valid against the given `csrf_token`.
+  Validates the `csrf_token` against the state.
+
+  This is the mechanism used by the Plug itself to match the token
+  received in the request (via headers or parameters) with the state
+  (typically stored in the session).
   """
   def valid_state_and_csrf_token?(state, csrf_token) do
     with <<state_token::@encoded_token_size-binary>> <-
@@ -270,6 +273,8 @@ defmodule Plug.CSRFProtection do
   Deletes the CSRF token from the process dictionary.
 
   This will force the token to be deleted once the response is sent.
+  If you want to refresh the CSRF state, you can call `get_csrf_token/0`
+  after `delete_csrf_token/0` to ensure a new token is generated.
   """
   def delete_csrf_token do
     case Process.get(:plug_csrf_token_per_host) do
@@ -370,14 +375,10 @@ defmodule Plug.CSRFProtection do
 
   defp valid_csrf_token?(_conn, _csrf_token, _user_token, _allowed_host), do: false
 
-  # TODO: Remove the decode64 variant in future releases
-  # as the tokens here are meant to be short-lived anyway.
   defp valid_masked_token?(csrf_token, user_token, mask) do
-    with :error <- Base.url_decode64(user_token),
-         :error <- Base.decode64(user_token) do
-      false
-    else
+    case Base.url_decode64(user_token) do
       {:ok, user_token} -> Plug.Crypto.masked_compare(csrf_token, user_token, mask)
+      :error -> false
     end
   end
 
