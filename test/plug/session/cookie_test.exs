@@ -256,4 +256,77 @@ defmodule Plug.Session.CookieTest do
            |> prederived_conn()
            |> get_session("foo") == "bar"
   end
+
+  # Rotating options
+
+  test "gets session cookie using rotating options" do
+    v1_opts =
+      Keyword.merge(@default_opts,
+        encryption_salt: "encrypted cookie salt v1",
+        signing_salt: "signing salt v1",
+        secret_key_base: @secret
+      )
+
+    v1_conn =
+      conn(:get, "/")
+      |> Plug.Session.call(Plug.Session.init(v1_opts))
+      |> fetch_session()
+      |> put_session("foo", "bar")
+      |> send_resp(200, "")
+
+    # With different opts should not be able to read the cookie
+    v2_opts =
+      Keyword.merge(v1_opts,
+        encryption_salt: nil,
+        signing_salt: "signing salt v2",
+        secret_key_base: @secret
+      )
+
+    v2_conn =
+      conn(:get, "/")
+      |> recycle_cookies(v1_conn)
+      |> Plug.Session.call(Plug.Session.init(v2_opts))
+      |> fetch_session()
+
+    assert v2_conn
+           |> get_session("foo") == nil
+
+    # With rotating opts should be able to read the cookie
+    v3_opts =
+      Keyword.merge(v2_opts,
+        rotating_options: [v1_opts]
+      )
+
+    v3_conn =
+      conn(:get, "/")
+      |> recycle_cookies(v1_conn)
+      |> Plug.Session.call(Plug.Session.init(v3_opts))
+      |> fetch_session()
+
+    assert v3_conn
+           |> get_session("foo") == "bar"
+
+    # With rotating opts should set the cookie using main opts
+    # v2_opts is the main opts
+    # v1_opts is in rotating opts
+    v4_conn =
+      conn(:get, "/")
+      |> recycle_cookies(v1_conn)
+      |> Plug.Session.call(Plug.Session.init(v3_opts))
+      |> fetch_session()
+      |> put_session("foo", "bar")
+      |> send_resp(200, "")
+
+    assert conn(:get, "/")
+           |> recycle_cookies(v4_conn)
+           |> Plug.Session.call(Plug.Session.init(v1_opts))
+           |> fetch_session()
+           |> get_session("foo") == nil
+
+    assert conn(:get, "/")
+           |> recycle_cookies(v4_conn)
+           |> Plug.Session.call(Plug.Session.init(v2_opts))
+           |> fetch_session()
+           |> get_session("foo") == "bar"
+  end
 end
