@@ -48,6 +48,11 @@ defmodule Plug.Session.COOKIE do
     * `:log` - Log level to use when the cookie cannot be decoded.
       Defaults to `:debug`, can be set to false to disable it.
 
+    * `:rotating_options` - additional list of options to use when decrypting and
+      verifying the cookie. These options are used only when the cookie could not
+      be decoded using primary options and are fetched on init so they cannot be
+      changed in runtime. Defaults to `[]`.
+
   ## Examples
 
       # Use the session plug with the table name
@@ -68,43 +73,18 @@ defmodule Plug.Session.COOKIE do
 
   @impl true
   def init(opts) do
-    encryption_salt = opts[:encryption_salt]
-    signing_salt = check_signing_salt(opts)
-
-    iterations = Keyword.get(opts, :key_iterations, 1000)
-    length = Keyword.get(opts, :key_length, 32)
-    digest = Keyword.get(opts, :key_digest, :sha256)
-    log = Keyword.get(opts, :log, :debug)
-    secret_key_base = Keyword.get(opts, :secret_key_base)
-    key_opts = [iterations: iterations, length: length, digest: digest, cache: Plug.Keys]
-
-    serializer = check_serializer(opts[:serializer] || :external_term_format)
-
-    %{
-      encryption_salt: prederive(secret_key_base, encryption_salt, key_opts),
-      signing_salt: prederive(secret_key_base, signing_salt, key_opts),
-      key_opts: key_opts,
-      serializer: serializer,
-      log: log
-    }
+    build_opts(opts)
+    |> build_rotating_opts(opts[:rotating_options])
+    |> Map.delete(:secret_key_base)
   end
 
   @impl true
-  def get(conn, cookie, opts) do
-    %{key_opts: key_opts, signing_salt: signing_salt, log: log, serializer: serializer} = opts
+  def get(conn, raw_cookie, opts) do
+    opts = Map.put(opts, :secret_key_base, conn.secret_key_base)
 
-    case opts do
-      %{encryption_salt: nil} ->
-        MessageVerifier.verify(cookie, derive(conn.secret_key_base, signing_salt, key_opts))
-
-      %{encryption_salt: encryption_salt} ->
-        MessageEncryptor.decrypt(
-          cookie,
-          derive(conn.secret_key_base, encryption_salt, key_opts),
-          derive(conn.secret_key_base, signing_salt, key_opts)
-        )
-    end
-    |> decode(serializer, log)
+    [opts | opts.rotating_options]
+    |> Enum.find_value(:error, &read_raw_cookie(raw_cookie, &1))
+    |> decode(opts.serializer, opts.log)
   end
 
   @impl true
@@ -218,4 +198,51 @@ defmodule Plug.Session.COOKIE do
 
   defp check_serializer(_),
     do: raise(ArgumentError, "cookie store expects :serializer option to be a module")
+
+  defp read_raw_cookie(raw_cookie, opts) do
+    signing_salt = derive(opts.secret_key_base, opts.signing_salt, opts.key_opts)
+
+    case opts do
+      %{encryption_salt: nil} ->
+        MessageVerifier.verify(raw_cookie, signing_salt)
+
+      %{encryption_salt: _} ->
+        encryption_salt = derive(opts.secret_key_base, opts.encryption_salt, opts.key_opts)
+
+        MessageEncryptor.decrypt(raw_cookie, encryption_salt, signing_salt)
+    end
+    |> case do
+      :error -> nil
+      result -> result
+    end
+  end
+
+  defp build_opts(opts) do
+    encryption_salt = opts[:encryption_salt]
+    signing_salt = check_signing_salt(opts)
+
+    iterations = Keyword.get(opts, :key_iterations, 1000)
+    length = Keyword.get(opts, :key_length, 32)
+    digest = Keyword.get(opts, :key_digest, :sha256)
+    log = Keyword.get(opts, :log, :debug)
+    secret_key_base = Keyword.get(opts, :secret_key_base)
+    key_opts = [iterations: iterations, length: length, digest: digest, cache: Plug.Keys]
+
+    serializer = check_serializer(opts[:serializer] || :external_term_format)
+
+    %{
+      secret_key_base: secret_key_base,
+      encryption_salt: prederive(secret_key_base, encryption_salt, key_opts),
+      signing_salt: prederive(secret_key_base, signing_salt, key_opts),
+      key_opts: key_opts,
+      serializer: serializer,
+      log: log
+    }
+  end
+
+  defp build_rotating_opts(opts, rotating_opts) when is_list(rotating_opts) do
+    Map.put(opts, :rotating_options, Enum.map(rotating_opts, &build_opts/1))
+  end
+
+  defp build_rotating_opts(opts, _), do: Map.put(opts, :rotating_options, [])
 end
