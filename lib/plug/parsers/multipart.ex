@@ -34,7 +34,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   ## Multipart to params
 
-  Once all multiparts are collect, they must be converted to params and this
+  Once all multiparts are collected, they must be converted to params and this
   can be customize with a MFA. The default implementation of this function
   is equivalent to:
 
