@@ -79,6 +79,9 @@ defmodule Plug.Router.Utils do
       iex> Plug.Router.Utils.build_path_match("/foo/:id")
       {[:id], ["foo", {:id, [], nil}]}
 
+      iex> Plug.Router.Utils.build_path_match("/foo/:Id")
+      {[:Id], ["foo", {:Id, [], nil}]}
+
   """
   def build_path_match(path, context \\ nil) when is_binary(path) do
     case build_path_clause(path, true, context) do
@@ -220,13 +223,13 @@ defmodule Plug.Router.Utils do
     {params, Enum.reverse(match), guards, post_match}
   end
 
-  defp parse_suffix(<<h, t::binary>>) when h in ?a..?z or h == ?_,
+  defp parse_suffix(<<h, t::binary>>) when h in ?a..?z or h in ?A..?Z or h == ?_,
     do: parse_suffix(t, <<h>>)
 
   defp parse_suffix(suffix) do
     raise Plug.Router.InvalidSpecError,
           "invalid dynamic path. The characters : and * must be immediately followed by " <>
-            "lowercase letters or underscore, got: :#{suffix}"
+            "lowercase/uppercase letters or underscore, got: :#{suffix}"
   end
 
   defp parse_suffix(<<h, t::binary>>, acc) when h in ?a..?z or h in ?A..?Z or h == ?_,

@@ -59,7 +59,7 @@ defmodule Plug.Router.UtilsTest do
 
   test "build invalid match with empty matches" do
     assert_raise Plug.Router.InvalidSpecError,
-                 "invalid dynamic path. The characters : and * must be immediately followed by lowercase letters or underscore, got: :",
+                 "invalid dynamic path. The characters : and * must be immediately followed by lowercase/uppercase letters or underscore, got: :",
                  fn -> build_path_match("/foo/:") end
   end
 
