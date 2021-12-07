@@ -517,14 +517,14 @@ defmodule Plug.ConnTest do
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      put_resp_header(conn(:get, "foo"), "x-sample", "value\rBAR")
+      put_resp_header(conn(:get, "/foo"), "x-sample", "value\rBAR")
     end
 
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      put_resp_header(conn(:get, "foo"), "x-sample", "value\n\nBAR")
+      put_resp_header(conn(:get, "/foo"), "x-sample", "value\n\nBAR")
     end
   end
 
@@ -571,14 +571,14 @@ defmodule Plug.ConnTest do
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      prepend_resp_headers(conn(:get, "foo"), [{"x-sample", "value\rBAR"}])
+      prepend_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\rBAR"}])
     end
 
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      prepend_resp_headers(conn(:get, "foo"), [{"x-sample", "value\n\nBAR"}])
+      prepend_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\n\nBAR"}])
     end
   end
 
@@ -587,14 +587,14 @@ defmodule Plug.ConnTest do
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\rBAR"}])
+      merge_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\rBAR"}])
     end
 
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
-      merge_resp_headers(conn(:get, "foo"), [{"x-sample", "value\n\nBAR"}])
+      merge_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\n\nBAR"}])
     end
   end
 
