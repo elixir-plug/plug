@@ -84,7 +84,7 @@ defmodule Plug.Adapters.Test.ConnTest do
   end
 
   test "path not starting with slash" do
-    assert_raise ArgumentError, "The URI path needs to start with \"/\", got foo", fn ->
+    assert_raise ArgumentError, ~S(the URI path needs to start with "/", got: "foo"), fn ->
       conn(:get, "foo")
     end
   end
