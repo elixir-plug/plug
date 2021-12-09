@@ -55,7 +55,6 @@ defmodule Plug.Session.COOKIE do
 
   ## Examples
 
-      # Use the session plug with the table name
       plug Plug.Session, store: :cookie,
                          key: "_my_app_session",
                          encryption_salt: "cookie store encryption salt",
