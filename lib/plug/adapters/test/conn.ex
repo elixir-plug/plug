@@ -8,6 +8,10 @@ defmodule Plug.Adapters.Test.Conn do
     maybe_flush()
 
     uri = URI.parse(uri)
+    if is_binary(uri.path) and not String.starts_with?(uri.path, "/") do
+      raise ArgumentError, "the URI path needs to start with \"/\", got: #{inspect(uri.path)}"
+    end
+
     method = method |> to_string |> String.upcase()
     query = uri.query || ""
     owner = self()
