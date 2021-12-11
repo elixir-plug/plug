@@ -6,6 +6,30 @@
     <meta name="viewport" content="width=device-width">
     <style>/*! normalize.css v4.2.0 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;line-height:1.15;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,main,menu,nav,section{display:block}audio,canvas,progress,video{display:inline-block}audio:not([controls]){display:none;height:0}progress{vertical-align:baseline}template,[hidden]{display:none}a{background-color:transparent;-webkit-text-decoration-skip:objects}a:active,a:hover{outline-width:0}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:inherit}b,strong{font-weight:bolder}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background-color:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-0.25em}sup{top:-0.5em}img{border-style:none}svg:not(:root){overflow:hidden}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}figure{margin:1em 40px}hr{box-sizing:content-box;height:0;overflow:visible}button,input,optgroup,select,textarea{font:inherit;margin:0}optgroup{font-weight:bold}button,input{overflow:visible}button,select{text-transform:none}button,html [type="button"],[type="reset"],[type="submit"]{-webkit-appearance:button}button::-moz-focus-inner,[type="button"]::-moz-focus-inner,[type="reset"]::-moz-focus-inner,[type="submit"]::-moz-focus-inner{border-style:none;padding:0}button:-moz-focusring,[type="button"]:-moz-focusring,[type="reset"]:-moz-focusring,[type="submit"]:-moz-focusring{outline:1px dotted ButtonText}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}textarea{overflow:auto}[type="checkbox"],[type="radio"]{box-sizing:border-box;padding:0}[type="number"]::-webkit-inner-spin-button,[type="number"]::-webkit-outer-spin-button{height:auto}[type="search"]{-webkit-appearance:textfield;outline-offset:-2px}[type="search"]::-webkit-search-cancel-button,[type="search"]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:0.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}</style>
     <style>
+    :root {
+      --primary: <%= @style.primary %>;
+      --accent: <%= @style.accent %>;
+      --highlight: <%= @style.highlight %>;
+      --red-highlight: <%= @style.red_highlight %>;
+      --line-color: <%= @style.line_color %>;
+      --text-color: <%= @style.text_color %>;
+      --background: <%= @style.background %>;
+      --background-accent: <%= @style.background_accent %>;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: <%= @style.dark_primary %>;
+        --accent: <%= @style.dark_accent %>;
+        --highlight: <%= @style.dark_highlight %>;
+        --red-highlight: <%= @style.dark_red_highlight %>;
+        --line-color: <%= @style.dark_line_color %>;
+        --text-color: <%= @style.dark_text_color %>;
+        --background: <%= @style.dark_background %>;
+        --background-accent: <%= @style.dark_background_accent %>;
+      }
+    }
+
     html, body, td, input {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     }
@@ -17,8 +41,8 @@
     html {
         font-size: 15px;
         line-height: 1.6;
-        background: #fff;
-        color: <%= @style.text_color %>;
+        background: var(--background);
+        color: var(--text-color);
     }
 
     @media (max-width: 768px) {
@@ -50,7 +74,7 @@
 
     .top-details {
         padding: 48px;
-        background: #f9f9fa;
+        background: var(--background-accent);
     }
 
     .top-details,
@@ -137,12 +161,12 @@
     .exception-info > .struct {
         font-size: 1em;
         font-weight: 700;
-        color: <%= @style.primary %>;
+        color: var(--primary);
     }
 
     .exception-info > .struct > small {
         font-size: 1em;
-        color: <%= @style.accent %>;
+        color: var(--accent);
         font-weight: 400;
     }
 
@@ -150,7 +174,7 @@
         font-size: <%= :math.pow(1.2, 4) %>em;
         line-height: 1.4;
         font-weight: 300;
-        color: <%= @style.primary %>;
+        color: var(--primary);
     }
 
     @media (max-width: 768px) {
@@ -223,7 +247,7 @@
      */
 
     .frame-info {
-        background: white;
+        background: var(--background);
         box-shadow:
             0 1px 3px rgba(80, 100, 140, .1),
             0 8px 15px rgba(80, 100, 140, .05);
@@ -246,13 +270,13 @@
 
     .frame-info > .file > a {
         text-decoration: none;
-        color: <%= @style.text_color %>;
+        color: var(--text-color);
         font-weight: 700;
     }
 
     .frame-info > .code {
-        border-top: solid 1px <%= @style.line_color %>;
-        border-bottom: solid 1px <%= @style.line_color %>;
+        border-top: solid 1px var(--line-color);
+        border-bottom: solid 1px var(--line-color);
         font-size: 0.8em;
     }
 
@@ -266,7 +290,7 @@
     }
 
     .frame-info > details.meta {
-        border-top: solid 1px <%= @style.line_color %>;
+        border-top: solid 1px var(--line-color);
         padding: 0;
     }
 
@@ -299,15 +323,15 @@
      */
 
     .frame-mfa {
-        color: <%= @style.accent %>;
+        color: var(--accent);
     }
 
     .frame-mfa > .app {
-        color: <%= @style.accent %>;
+        color: var(--accent);
     }
 
     .frame-mfa > .docs {
-        color: <%= @style.primary %>;
+        color: var(--primary);
         text-decoration: none;
     }
 
@@ -351,27 +375,27 @@
 
     /* Line highlight */
     .code-block > .line.-highlight {
-        background-color: <%= @style.highlight %>;
+        background-color: var(--highlight);
         -webkit-animation: line-highlight 750ms linear;
         animation: line-highlight 750ms linear;
     }
 
     @-webkit-keyframes line-highlight {
-        0% { background-color: <%= @style.highlight %>; }
-        25% { background-color: <%= @style.red_highlight %>; }
-        50% { background-color: <%= @style.highlight %>; }
-        75% { background-color: <%= @style.red_highlight %>; }
+        0% { background-color: var(--highlight); }
+        25% { background-color: var(--red-highlight); }
+        50% { background-color: var(--highlight); }
+        75% { background-color: var(--red-highlight); }
     }
 
     @keyframes line-highlight {
-        0% { background-color: <%= @style.highlight %>; }
-        25% { background-color: <%= @style.red_highlight %>; }
-        50% { background-color: <%= @style.highlight %>; }
-        75% { background-color: <%= @style.red_highlight %>; }
+        0% { background-color: var(--highlight); }
+        25% { background-color: var(--red-highlight); }
+        50% { background-color: var(--highlight); }
+        75% { background-color: var(--red-highlight); }
     }
 
     .code-block > .line > .ln {
-        color: <%= @style.accent %>;
+        color: var(--accent);
         margin-right: 1.5em;
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -389,7 +413,7 @@
 
     .code-block-empty {
         text-align: center;
-        color: <%= @style.accent %>;
+        color: var(--accent);
         padding-top: 48px;
         padding-bottom: 48px;
     }
@@ -407,7 +431,7 @@
         display: block;
         clear: both;
         zoom: 1;
-        border-bottom: solid 1px <%= @style.line_color %>;
+        border-bottom: solid 1px var(--line-color);
         padding-top: 12px;
         margin-bottom: 16px;
     }
@@ -482,7 +506,7 @@
 
     .stack-trace-item,
     .stack-trace-item:active {
-        color: <%= @style.text_color %>;
+        color: var(--text-color);
     }
 
     .stack-trace-item:active {
@@ -490,7 +514,7 @@
     }
 
     .stack-trace-item.-active {
-        background-color: white;
+        background-color: var(--background);
     }
 
     /* Circle */
@@ -505,7 +529,7 @@
     }
 
     .stack-trace-item.-app > .left:before {
-        background: <%= @style.primary %>;
+        background: var(--primary);
         opacity: 1;
     }
 
@@ -519,7 +543,7 @@
     }
 
     .stack-trace-item > .info {
-        color: <%= @style.accent %>;
+        color: var(--accent);
         float: right;
         max-width: 45%;
     }
@@ -532,12 +556,12 @@
     }
 
     .stack-trace-item > .left > .filename > .line {
-        color: <%= @style.accent %>;
+        color: var(--accent);
     }
 
     /* App name */
     .stack-trace-item > .left > .app {
-        color: <%= @style.accent %>;
+        color: var(--accent);
     }
 
     .stack-trace-item > .left > .app:after {
@@ -575,7 +599,7 @@
 
     .banner {
       padding: 24px 48px 24px 48px;
-      border-top: solid 1px <%= @style.line_color %>;
+      border-top: solid 1px var(--line-color);
     }
 
     /*
@@ -583,7 +607,7 @@
      */
 
     .conn-info {
-        border-top: solid 1px <%= @style.line_color %>;
+        border-top: solid 1px var(--line-color);
     }
 
     /*
@@ -605,14 +629,14 @@
         overflow: hidden;
         margin: 0;
         padding: 4px 0;
-        border-bottom: solid 1px <%= @style.line_color %>;
+        border-bottom: solid 1px var(--line-color);
         white-space: nowrap;
         text-overflow: ellipsis;
     }
 
     .conn-details > dl:first-of-type {
         margin-top: 16px;
-        border-top: solid 1px <%= @style.line_color %>;
+        border-top: solid 1px var(--line-color);
     }
 
     /* Term */
@@ -620,7 +644,7 @@
         width: 20%;
         float: left;
         font-size: <%= :math.pow(1.2, -1) %>em;
-        color: <%= @style.accent %>;
+        color: var(--accent);
         overflow: hidden;
         text-overflow: ellipsis;
         position: relative;
@@ -651,9 +675,9 @@
 
     .action-button {
         background-color: white;
-        border: 1px solid <%= @style.primary %>;
+        border: 1px solid var(--primary);
         border-radius: 3px;
-        color: <%= @style.primary %>;
+        color: var(--primary);
         padding: 0 20px;
     }
 

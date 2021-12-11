@@ -104,6 +104,16 @@ defmodule Plug.Debugger do
     red_highlight: "#ffe5e5",
     line_color: "#eee",
     text_color: "#203040",
+    background: "#fff",
+    background_accent: "#f9f9fa",
+    dark_primary: "#e6daf9",
+    dark_accent: "#94a3b8",
+    dark_highlight: "#0f0b05",
+    dark_red_highlight: "#3e0202",
+    dark_line_color: "#334155",
+    dark_text_color: "#f1f5f9",
+    dark_background: "#0f172a",
+    dark_background_accent: "#1e293b",
     logo: @logo,
     monospace_font: "menlo, consolas, monospace"
   }
