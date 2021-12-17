@@ -1205,7 +1205,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Sends and informational response to the client.
+  Sends an informational response to the client.
 
   An informational response, such as an early hint, must happen prior to a response
   being sent. If an informational request is attempted after a response is sent then
