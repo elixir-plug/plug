@@ -2,8 +2,7 @@ defmodule Plug.Builder do
   @moduledoc """
   Conveniences for building plugs.
 
-  This module can be `use`-d into a module in order to build
-  a plug pipeline:
+  You can use this module to build a plug pipeline:
 
       defmodule MyApp do
         use Plug.Builder
