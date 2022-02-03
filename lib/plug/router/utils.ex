@@ -100,14 +100,14 @@ defmodule Plug.Router.Utils do
 
   ## Examples
 
-      iex> Plug.Router.Utils.build_path_params(["id"])
+      iex> Plug.Router.Utils.build_path_params_match(["id"])
       [{"id", {:id, [], nil}}]
 
-      iex> Plug.Router.Utils.build_path_params(["_id"])
+      iex> Plug.Router.Utils.build_path_params_match(["_id"])
       []
 
   """
-  def build_path_params(params, context \\ nil) when is_list(params) do
+  def build_path_params_match(params, context \\ nil) when is_list(params) do
     params
     |> Enum.reject(&match?("_" <> _, &1))
     |> Enum.map(&{&1, Macro.var(String.to_atom(&1), context)})

@@ -519,7 +519,7 @@ defmodule Plug.Router do
   def __route__(method, path, guards, options) do
     {method, guards} = build_methods(List.wrap(method || options[:via]), guards)
     {params, match, guards, post_match} = Plug.Router.Utils.build_path_clause(path, guards)
-    params = Plug.Router.Utils.build_path_params(params)
+    params = Plug.Router.Utils.build_path_params_match(params)
     private = extract_merger(options, :private)
     assigns = extract_merger(options, :assigns)
     host_match = Plug.Router.Utils.build_host_match(options[:host])
