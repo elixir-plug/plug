@@ -102,15 +102,31 @@ defmodule Plug.Router.Utils do
 
       iex> Plug.Router.Utils.build_path_params_match(["id"])
       [{"id", {:id, [], nil}}]
-
       iex> Plug.Router.Utils.build_path_params_match(["_id"])
       []
 
+      iex> Plug.Router.Utils.build_path_params_match([:id])
+      [{"id", {:id, [], nil}}]
+      iex> Plug.Router.Utils.build_path_params_match([:_id])
+      []
+
   """
-  def build_path_params_match(params, context \\ nil) when is_list(params) do
+  def build_path_params_match(params, context \\ nil)
+
+  def build_path_params_match([param | _] = params, context) when is_binary(param) do
     params
     |> Enum.reject(&match?("_" <> _, &1))
     |> Enum.map(&{&1, Macro.var(String.to_atom(&1), context)})
+  end
+
+  def build_path_params_match([param | _] = params, context) when is_atom(param) do
+    params
+    |> Enum.map(&{Atom.to_string(&1), Macro.var(&1, context)})
+    |> Enum.reject(&match?({"_" <> _var, _macro}, &1))
+  end
+
+  def build_path_params_match([], _context) do
+    []
   end
 
   @doc """
