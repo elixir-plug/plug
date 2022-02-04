@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.13.2 (2022-02-04)
+
+### Bug fixes
+
+  * [Plug.Router] Properly fix regression on Plug.Router helper function accidentally renamed
+
 ## v1.13.1 (2022-02-03)
 
 ### Bug fixes
