@@ -40,6 +40,19 @@ defmodule Plug.Router.UtilsTest do
     assert quote(@opts, do: {[:username], ["foo", username]}) == build_path_match("foo/:username")
   end
 
+  test "build match with multiple identifiers" do
+    assert quote(@opts, do: {[:id, :name, :category], ["foo", id, name, category]}) ==
+             build_path_match("/foo/:id/:name/:category")
+
+    assert quote(@opts,
+             do: {[:username, :post_id, :comment_id], ["foo", username, post_id, comment_id]}
+           ) ==
+             build_path_match("foo/:username/:post_id/:comment_id")
+
+    assert quote(@opts, do: {[:username, :post1, :post2], ["foo", username, post1, post2]}) ==
+             build_path_match("foo/:username/:post1/:post2")
+  end
+
   test "build match with literal plus identifier" do
     assert quote(@opts, do: {[:id], ["foo", "bar-" <> id]}) == build_path_match("/foo/bar-:id")
 
