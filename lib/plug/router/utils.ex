@@ -246,7 +246,7 @@ defmodule Plug.Router.Utils do
             "lowercase letters or underscore, got: :#{suffix}"
   end
 
-  defp parse_suffix(<<h, t::binary>>, acc) when h in ?a..?z or h in ?A..?Z or h == ?_,
+  defp parse_suffix(<<h, t::binary>>, acc) when h in ?a..?z or h in ?A..?Z or h in ?0..?9 or h == ?_,
     do: parse_suffix(t, <<acc::binary, h>>)
 
   defp parse_suffix(rest, acc),
