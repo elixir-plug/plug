@@ -20,6 +20,8 @@ defmodule Plug.Conn.WrapperError do
 
   @deprecated "Use reraise/1 or reraise/4 instead"
   def reraise(conn, kind, reason) do
+    # Please do not submit a PR to remove System.stacktrace()
+    # See https://github.com/elixir-plug/plug/pull/991
     reraise(conn, kind, reason, System.stacktrace())
   end
 
