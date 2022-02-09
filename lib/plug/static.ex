@@ -48,7 +48,7 @@ defmodule Plug.Static do
     * `:encodings` - list of 2-ary tuples where first value is value of
       the `Accept-Encoding` header and second is extension of the file to
       be served if given encoding is accepted by client. Entries will be tested
-      in order in list, so entries higher in list will be prefered. Defaults
+      in order in list, so entries higher in list will be preferred. Defaults
       to: `[]`.
 
       In addition to setting this value directly it supports 2 additional
@@ -59,7 +59,7 @@ defmodule Plug.Static do
 
       Additional options will be added in the above order (Brotli takes
       preference over Gzip) to reflect older behaviour which was set due
-      to fact that Brotli in general provides better compresion ratio than
+      to fact that Brotli in general provides better compression ratio than
       Gzip.
 
     * `:cache_control_for_etags` - sets the cache header for requests
