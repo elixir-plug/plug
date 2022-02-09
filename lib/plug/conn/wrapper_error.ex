@@ -22,7 +22,7 @@ defmodule Plug.Conn.WrapperError do
   def reraise(conn, kind, reason) do
     # Please do not submit a PR to remove System.stacktrace()
     # See https://github.com/elixir-plug/plug/pull/991
-    # TODO: use __STACKTRACE__ instead of System.stacktrace/0 when we depend on Elixir 1.10+.
+    # TODO: Use an empty list instead of System.stacktrace/0 when we depend on Elixir 1.10+
     reraise(conn, kind, reason, System.stacktrace())
   end
 
