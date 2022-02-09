@@ -126,8 +126,8 @@ defmodule Plug.Parsers do
       plug Plug.Parsers,
            parsers: [:urlencoded, {:json, json_decoder: Jason}]
 
-  It is also possible to pass the `:json_decoder` as an MFA, useful for passing
-  options to the JSON decoder:
+  It is also possible to pass the `:json_decoder` as a `{module, function, args}` (MFA) tuple,
+  useful for passing options to the JSON decoder:
 
       plug Plug.Parsers,
            parsers: [:json],
