@@ -126,6 +126,13 @@ defmodule Plug.Parsers do
       plug Plug.Parsers,
            parsers: [:urlencoded, {:json, json_decoder: Jason}]
 
+  It is also possible to pass the `:json_decoder` as a `{module, function, args}` tuple,
+  useful for passing options to the JSON decoder:
+
+      plug Plug.Parsers,
+           parsers: [:json],
+           json_decoder: {Jason, :decode!, [[floats: :decimals]]}
+
   A common set of shared options given to Plug.Parsers is `:length`,
   `:read_length` and `:read_timeout`, which customizes the maximum
   request length you want to accept. For example, to support file
