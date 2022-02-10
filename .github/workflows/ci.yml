@@ -17,15 +17,15 @@ jobs:
         include:
           - pair:
               elixir: 1.7.4
-              otp: 20.0
+              otp: 20.3
           - pair:
-              elixir: 1.11.4
-              otp: 23.2
+              elixir: 1.13.3
+              otp: 24.2.1
             lint: lint
     steps:
       - uses: actions/checkout@v2
 
-      - uses: erlef/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{matrix.pair.otp}}
           elixir-version: ${{matrix.pair.elixir}}
