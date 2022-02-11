@@ -287,6 +287,7 @@ defmodule Plug.Router do
   defmacro __using__(opts) do
     quote location: :keep do
       import Plug.Router
+      @plug_router_to %{}
       @before_compile Plug.Router
 
       use Plug.Builder, unquote(opts)
@@ -325,7 +326,31 @@ defmodule Plug.Router do
       raise "no routes defined in module #{inspect(env.module)} using Plug.Router"
     end
 
+    router_to = Module.get_attribute(env.module, :plug_router_to)
+    init_mode = Module.get_attribute(env.module, :plug_builder_opts)[:init_mode]
+
+    defs =
+      for {callback, {mod, opts}} <- router_to do
+        if init_mode == :runtime do
+          quote do
+            defp unquote(callback)(conn, _opts) do
+              unquote(mod).call(conn, unquote(mod).init(unquote(Macro.escape(opts))))
+            end
+          end
+        else
+          opts = mod.init(opts)
+
+          quote do
+            defp unquote(callback)(conn, _opts) do
+              require unquote(mod)
+              unquote(mod).call(conn, unquote(Macro.escape(opts)))
+            end
+          end
+        end
+      end
+
     quote do
+      unquote_splicing(defs)
       import Plug.Router, only: []
     end
   end
@@ -382,7 +407,7 @@ defmodule Plug.Router do
   A route should specify only one of `:do` or `:to` options.
   """
   defmacro match(path, options, contents \\ []) do
-    compile(nil, path, options, contents)
+    compile(nil, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -390,7 +415,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro get(path, options, contents \\ []) do
-    compile(:get, path, options, contents)
+    compile(:get, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -398,7 +423,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro head(path, options, contents \\ []) do
-    compile(:head, path, options, contents)
+    compile(:head, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -406,7 +431,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro post(path, options, contents \\ []) do
-    compile(:post, path, options, contents)
+    compile(:post, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -414,7 +439,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro put(path, options, contents \\ []) do
-    compile(:put, path, options, contents)
+    compile(:put, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -422,7 +447,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro patch(path, options, contents \\ []) do
-    compile(:patch, path, options, contents)
+    compile(:patch, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -430,7 +455,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro delete(path, options, contents \\ []) do
-    compile(:delete, path, options, contents)
+    compile(:delete, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -438,7 +463,7 @@ defmodule Plug.Router do
   See `match/3` for more examples.
   """
   defmacro options(path, options, contents \\ []) do
-    compile(:options, path, options, contents)
+    compile(:options, path, options, contents, __CALLER__)
   end
 
   @doc """
@@ -541,33 +566,31 @@ defmodule Plug.Router do
 
   # Entry point for both forward and match that is actually
   # responsible to compile the route.
-  defp compile(method, expr, options, contents) do
-    {body, options} =
+  defp compile(method, expr, options, contents, caller) do
+    {callback, options} =
       cond do
         Keyword.has_key?(contents, :do) ->
-          {contents[:do], options}
+          {wrap_function_do(contents[:do]), expand_options(options, caller)}
 
         Keyword.has_key?(options, :do) ->
-          Keyword.pop(options, :do)
+          {body, options} = Keyword.pop(options, :do)
+          {wrap_function_do(body), expand_options(options, caller)}
 
         options[:to] ->
-          {to, options} = Keyword.pop(options, :to)
-          {init_opts, options} = Keyword.pop(options, :init_opts, [])
+          options = expand_options(options, caller)
 
-          body =
-            quote do
-              @plug_router_to.call(var!(conn), @plug_router_init)
+          callback =
+            quote unquote: false do
+              &(unquote(callback) / 2)
             end
 
           options =
             quote do
-              to = unquote(to)
-              @plug_router_to to
-              @plug_router_init to.init(unquote(init_opts))
-              unquote(options)
+              {callback, options} = Plug.Router.__to__(unquote(caller.module), unquote(options))
+              options
             end
 
-          {body, options}
+          {callback, options}
 
         true ->
           raise ArgumentError, message: "expected one of :to or :do to be given as option"
@@ -580,7 +603,7 @@ defmodule Plug.Router do
             path: path,
             options: options,
             guards: Macro.escape(guards, unquote: true),
-            body: Macro.escape(body, unquote: true)
+            callback: Macro.escape(callback, unquote: true)
           ] do
       route = Plug.Router.__route__(method, path, guards, options)
       {conn, method, match, post_match, params, host, guards, private, assigns} = route
@@ -601,13 +624,44 @@ defmodule Plug.Router do
         conn = update_in(unquote(conn).params, merge_params)
         conn = update_in(conn.path_params, merge_params)
 
-        Plug.Router.__put_route__(conn, unquote(path), fn var!(conn), var!(opts) ->
-          _ = var!(opts)
-          unquote(body)
-        end)
+        Plug.Router.__put_route__(conn, unquote(path), unquote(callback))
       end
     end
   end
+
+  @doc false
+  def __to__(module, options) do
+    {to, options} = Keyword.pop(options, :to)
+    {init_opts, options} = Keyword.pop(options, :init_opts, [])
+
+    router_to = Module.get_attribute(module, :plug_router_to)
+    callback = :"plug_router_to_#{map_size(router_to)}"
+    router_to = Map.put(router_to, callback, {to, init_opts})
+    Module.put_attribute(module, :plug_router_to, router_to)
+    {Macro.var(callback, nil), options}
+  end
+
+  defp wrap_function_do(body) do
+    quote do
+      fn var!(conn), var!(opts) ->
+        _ = var!(opts)
+        unquote(body)
+      end
+    end
+  end
+
+  defp expand_options(opts, caller) do
+    if Macro.quoted_literal?(opts) do
+      Macro.prewalk(opts, &expand_alias(&1, caller))
+    else
+      opts
+    end
+  end
+
+  defp expand_alias({:__aliases__, _, _} = alias, env),
+    do: Macro.expand(alias, %{env | function: {:init, 1}})
+
+  defp expand_alias(other, _env), do: other
 
   defp extract_merger(options, key) when is_list(options) do
     if option = Keyword.get(options, key) do
