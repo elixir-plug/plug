@@ -1,6 +1,17 @@
 defmodule Plug.RouterTest do
+  defmodule SamplePlug do
+    import Plug.Conn
+
+    def init(:hello), do: :world
+    def init(options), do: options
+
+    def call(conn, options) do
+      send_resp(conn, 200, "#{inspect(options)}")
+    end
+  end
+
   defmodule Forward do
-    use Plug.Router
+    use Plug.Router, init_mode: :runtime
     use Plug.ErrorHandler
 
     plug :match
@@ -43,6 +54,11 @@ defmodule Plug.RouterTest do
       send_resp(conn, 200, id <> "--" <> List.last(conn.path_info))
     end
 
+    plug = SamplePlug
+    opts = :hello
+    get "/plug/match", to: SamplePlug
+    get "/plug/match/options", to: plug, init_opts: opts
+
     def handle_errors(conn, assigns) do
       # Custom call is always invoked before
       true = Process.get(:plug_forward_call)
@@ -60,17 +76,6 @@ defmodule Plug.RouterTest do
     plug :dispatch
 
     forward "/step2", to: Forward
-  end
-
-  defmodule SamplePlug do
-    import Plug.Conn
-
-    def init(:hello), do: :world
-    def init(options), do: options
-
-    def call(conn, options) do
-      send_resp(conn, 200, "#{inspect(options)}")
-    end
   end
 
   defmodule Sample do
@@ -340,9 +345,7 @@ defmodule Plug.RouterTest do
   test "dispatch to plug" do
     conn = call(Sample, conn(:get, "/plug/match"))
     assert conn.resp_body == "[]"
-  end
 
-  test "dispatch to plug with options" do
     conn = call(Sample, conn(:get, "/plug/match/options"))
     assert conn.resp_body == ":world"
   end
@@ -351,6 +354,14 @@ defmodule Plug.RouterTest do
     conn = call(Sample, conn(:get, "/forward"))
     assert conn.resp_body == "forwarded"
     assert conn.path_info == ["forward"]
+  end
+
+  test "dispatch to plug with forwarding with runtime init" do
+    conn = call(Sample, conn(:get, "/forward/plug/match"))
+    assert conn.resp_body == "[]"
+
+    conn = call(Sample, conn(:get, "/forward/plug/match/options"))
+    assert conn.resp_body == ":world"
   end
 
   test "dispatch with forwarding with custom call" do

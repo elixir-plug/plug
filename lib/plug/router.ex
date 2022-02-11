@@ -334,7 +334,7 @@ defmodule Plug.Router do
         if init_mode == :runtime do
           quote do
             defp unquote(callback)(conn, _opts) do
-              unquote(mod).call(conn, unquote(mod).init(Macro.escape(opts)))
+              unquote(mod).call(conn, unquote(mod).init(unquote(Macro.escape(opts))))
             end
           end
         else
