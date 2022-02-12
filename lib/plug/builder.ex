@@ -39,7 +39,9 @@ defmodule Plug.Builder do
 
     * `:log_on_halt` - accepts the level to log whenever the request is halted
 
-    * `:copy_opts_to_assign` - copy the options given to the Plug to the given assign
+    * `:copy_opts_to_assign` - an `atom` representing an assign. When supplied,
+      it will copy the options given to the Plug initialization to the given
+      connection assign
 
   ## Plug behaviour
 

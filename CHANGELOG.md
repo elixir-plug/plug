@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.13.3 (2022-02-12)
+
+### Enhancements
+
+  * [Plug.Builder] Introduce `:copy_opts_to_assign` instead of `builder_opts/0`
+  * [Plug.Router] Do not introduce compile-time dependencies in `Plug.Router`
+
 ## v1.13.2 (2022-02-04)
 
 ### Bug fixes
