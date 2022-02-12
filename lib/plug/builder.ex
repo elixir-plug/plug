@@ -34,9 +34,12 @@ defmodule Plug.Builder do
 
   When used, the following options are accepted by `Plug.Builder`:
 
-    * `:log_on_halt` - accepts the level to log whenever the request is halted
     * `:init_mode` - the environment to initialize the plug's options, one of
       `:compile` or `:runtime`. Defaults `:compile`.
+
+    * `:log_on_halt` - accepts the level to log whenever the request is halted
+
+    * `:copy_opts_to_assign` - copy the options given to the Plug to the given assign
 
   ## Plug behaviour
 
@@ -149,9 +152,23 @@ defmodule Plug.Builder do
         end
       end
 
+    plug_builder_call =
+      if assign = builder_opts[:copy_opts_to_assign] do
+        quote do
+          defp plug_builder_call(conn, opts) do
+            unquote(conn) = Plug.Conn.assign(conn, unquote(assign), opts)
+            unquote(body)
+          end
+        end
+      else
+        quote do
+          defp plug_builder_call(unquote(conn), opts), do: unquote(body)
+        end
+      end
+
     quote do
       unquote_splicing(compile_time)
-      defp plug_builder_call(unquote(conn), opts), do: unquote(body)
+      unquote(plug_builder_call)
     end
   end
 
@@ -213,45 +230,12 @@ defmodule Plug.Builder do
   defp expand_alias(other, _env), do: other
 
   @doc """
-  Annotates a plug will receive the options given
-  to the current module itself as arguments.
+  Using `builder_opts/0` is deprecated.
 
-  Imagine the following plug:
-
-      defmodule MyPlug do
-        use Plug.Builder
-
-        plug :inspect_opts, builder_opts()
-
-        defp inspect_opts(conn, opts) do
-          IO.inspect(opts)
-          conn
-        end
-      end
-
-  When plugged as:
-
-      plug MyPlug, custom: :options
-
-  It will print `[custom: :options]` as the builder options
-  were passed to the inner plug.
-
-  Note you only pass `builder_opts()` to **function plugs**.
-  You cannot use `builder_opts()` with module plugs because
-  their options are evaluated at compile time. If you need
-  to pass `builder_opts()` to a module plug, you can wrap
-  the module plug in function. To be precise, do not do this:
-
-      plug Plug.Parsers, builder_opts()
-
-  Instead do this:
-
-      plug :custom_plug_parsers, builder_opts()
-
-      defp custom_plug_parsers(conn, opts) do
-        Plug.Parsers.call(conn, Plug.Parsers.init(opts))
-      end
+  Instead use `:copy_opts_to_assign` on `use Plug.Builder`.
   """
+  # TODO: Deprecate me in future releases
+  @doc deprecated: "Pass :copy_opts_to_assign on \"use Plug.Builder\""
   defmacro builder_opts() do
     quote do
       Plug.Builder.__builder_opts__(__MODULE__)

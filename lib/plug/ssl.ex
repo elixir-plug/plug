@@ -305,6 +305,15 @@ defmodule Plug.SSL do
   @impl true
   def init(opts) do
     host = Keyword.get(opts, :host)
+
+    case host do
+      {:system, _} ->
+        IO.warn "Using {:system, host} as your Plug.SSL host is deprecated. Pass nil or a string instead."
+
+      _ ->
+        :ok
+    end
+
     rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
     exclude = Keyword.get(opts, :exclude, ["localhost"])
@@ -373,7 +382,7 @@ defmodule Plug.SSL do
   defp host(nil, host), do: host
   defp host(host, _) when is_binary(host), do: host
   defp host({mod, fun, args}, host), do: host(apply(mod, fun, args), host)
-  # TODO: Deprecate this format
+  # TODO: Remove me once the deprecation is removed.
   defp host({:system, env}, host), do: host(System.get_env(env), host)
 
   defp qs(""), do: ""

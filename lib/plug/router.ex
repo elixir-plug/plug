@@ -33,9 +33,8 @@ defmodule Plug.Router do
   `:match` is responsible for finding a matching route which is
   then forwarded to `:dispatch`. This means users can easily hook
   into the router mechanism and add behaviour before match, before
-  dispatch, or after both. All of the options given to `use Plug.Router`
-  are forwarded to `Plug.Builder`. See the `Plug.Builder` module
-  for more information on the `plug` macro and on the available options.
+  dispatch, or after both. See the `Plug.Builder` module for more
+  information.
 
   ## Routes
 
@@ -198,72 +197,10 @@ defmodule Plug.Router do
   `conn.assigns` (or `conn.private`) to configure their behaviour
   based on the matched route.
 
-  ## Routes compilation
+  ## `use` options
 
-  All routes are compiled to a match function that receives
-  three arguments: the method, the request path split on `/`
-  and the connection. Consider this example:
-
-      match "/foo/bar", via: :get do
-        send_resp(conn, 200, "hello world")
-      end
-
-  It is compiled to:
-
-      defp match("GET", ["foo", "bar"], conn) do
-        send_resp(conn, 200, "hello world")
-      end
-
-  This means guards can be given to `match`:
-
-      match "/foo/bar/:baz" when byte_size(baz) <= 3, via: :get do
-        send_resp(conn, 200, "hello world")
-      end
-
-  After a match is found, the block given as `do/end` is stored
-  as a function in the connection. This function is then retrieved
-  and invoked in the `dispatch` plug.
-
-  ## Routes options
-
-  Sometimes you may want to customize how a route behaves during dispatch.
-  This can be done by accessing the `opts` variable inside the route:
-
-      defmodule AppRouter do
-        use Plug.Router
-
-        plug :match
-        plug :dispatch, content: "hello world"
-
-        get "/hello" do
-          send_resp(conn, 200, opts[:content])
-        end
-
-        match _ do
-          send_resp(conn, 404, "oops")
-        end
-      end
-
-  This is particularly useful when used with `Plug.Builder.builder_opts/0`.
-  `builder_opts/0` allows us to pass options received when initializing
-  `AppRouter` to a specific plug, such as dispatch itself. So if instead of:
-
-      plug :dispatch, content: "hello world"
-
-  we do:
-
-      plug :dispatch, builder_opts()
-
-  now the content can be given when starting the router, like this:
-
-      Plug.Cowboy.http AppRouter, [content: "hello world"]
-
-  Or as part of a pipeline like this:
-
-      plug AppRouter, content: "hello world"
-
-  In a nutshell, `builder_opts()` allows us to pass the options given
-  when initializing the router to a `dispatch`.
+  All of the options given to `use Plug.Router` are forwarded to
+  `Plug.Builder`. See the `Plug.Builder` module for more information.
 
   ## Telemetry
 

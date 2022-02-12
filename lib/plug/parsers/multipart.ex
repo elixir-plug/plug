@@ -165,7 +165,7 @@ defmodule Plug.Parsers.MULTIPART do
   ## Multipart
 
   defp parse_multipart(conn, {m2p, {module, fun, args}, header_opts, opts}) do
-    # TODO: Remove me on 2.0.
+    # TODO: This is deprecated. Remove me on Plug 2.0.
     limit = apply(module, fun, args)
     parse_multipart(conn, {m2p, limit, header_opts, opts})
   end
