@@ -50,6 +50,11 @@ defmodule PlugTest do
     def call(conn, :inited), do: %{conn | halted: true}
   end
 
+  defmodule NotPlug do
+    def init(:opts), do: :inited
+    def call(_conn, :inited), do: %{}
+  end
+
   describe "run" do
     test "invokes plugs" do
       conn = Plug.run(conn(:head, "/"), [{Plug.Head, []}])
@@ -80,6 +85,21 @@ defmodule PlugTest do
       assert capture_log(fn ->
                assert Plug.run(conn(:get, "/"), [halter], log_on_halt: :error).halted
              end) =~ "[error] Plug halted in #{inspect(halter)}"
+    end
+
+    test "raise exception with invalid return" do
+      msg = "expected PlugTest.NotPlug to return Plug.Conn, got: %{}"
+
+      assert_raise RuntimeError, msg, fn ->
+        Plug.run(conn(:get, "/"), [{NotPlug, :opts}])
+      end
+
+      not_plug = fn _ -> %{} end
+      msg = ~r/expected #Function.* to return Plug.Conn, got: %{}/
+
+      assert_raise RuntimeError, msg, fn ->
+        Plug.run(conn(:get, "/"), [not_plug])
+      end
     end
   end
 end
