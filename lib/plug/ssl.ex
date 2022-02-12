@@ -308,7 +308,9 @@ defmodule Plug.SSL do
 
     case host do
       {:system, _} ->
-        IO.warn "Using {:system, host} as your Plug.SSL host is deprecated. Pass nil or a string instead."
+        IO.warn(
+          "Using {:system, host} as your Plug.SSL host is deprecated. Pass nil or a string instead."
+        )
 
       _ ->
         :ok
