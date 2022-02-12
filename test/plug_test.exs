@@ -87,7 +87,7 @@ defmodule PlugTest do
              end) =~ "[error] Plug halted in #{inspect(halter)}"
     end
 
-    test "raise exception when Plug.Conn not return" do
+    test "raise exception with invalid return" do
       msg = "expected PlugTest.NotPlug to return Plug.Conn, got: %{}"
 
       assert_raise RuntimeError, msg, fn ->
