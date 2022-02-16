@@ -210,11 +210,20 @@ defmodule Plug.Conn.Utils do
       iex> token(~S["<f\oo>\"<b\ar>"])
       "<foo>\"<bar>"
 
+      iex> token(~s["])
+      false
+
       iex> token("foo  ")
       "foo"
 
       iex> token("foo bar")
       false
+
+      iex> token("")
+      false
+
+      iex> token(" ")
+      ""
 
   """
   @spec token(binary) :: binary | false
