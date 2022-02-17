@@ -156,6 +156,9 @@ defmodule Plug.Conn.Utils do
       iex> params("=")
       %{}
 
+      iex> params(";")
+      %{}
+
   """
   @spec params(binary) :: params
   def params(t) do
