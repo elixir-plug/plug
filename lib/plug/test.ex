@@ -13,8 +13,9 @@ defmodule Plug.Test do
     * import all the functions from the `Plug.Conn` module
 
   By default, Plug tests checks for invalid header keys, e.g. header keys which
-  include uppercase letters, and raises a `Plug.Conn.InvalidHeaderError` when it finds one.
-  To disable it, set :validate_header_keys_during_test to false on the app config.
+  include uppercase letters, and raises a `Plug.Conn.InvalidHeaderError` when
+  it finds one. To disable it, set `:validate_header_keys_during_test` to
+  false on the app config.
 
       config :plug, :validate_header_keys_during_test, false
 
@@ -35,7 +36,7 @@ defmodule Plug.Test do
   Creates a test connection.
 
   The request `method` and `path` are required arguments. `method` may be any
-  value that implements `to_string/1` and it will properly converted and
+  value that implements `to_string/1` and it will be properly converted and
   normalized (e.g., `:get` or `"post"`).
 
   The `path` is commonly the request path with optional query string but it may
@@ -69,7 +70,7 @@ defmodule Plug.Test do
   Returns the sent response.
 
   This function is useful when the code being invoked crashes and
-  there is a need to verify a particular response was sent even with
+  there is a need to verify a particular response was sent, even with
   the crash. It returns a tuple with `{status, headers, body}`.
   """
   def sent_resp(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
@@ -99,12 +100,13 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Return the informational requests that have been sent.
+  Returns the informational requests that have been sent.
 
-  This function depends on gathering the messages sent by the test adapter
-  when informational messages, such as an early hint, are sent. Calling this function
-  will clear the informational request messages from the inbox for the process.
-  To assert on multiple informs, the result of the function should be stored in a variable.
+  This function depends on gathering the messages sent by the test adapter when
+  informational messages, such as an early hint, are sent. Calling this
+  function will clear the informational request messages from the inbox for the
+  process.  To assert on multiple informs, the result of the function should be
+  stored in a variable.
 
   ## Examples
 
@@ -112,6 +114,7 @@ defmodule Plug.Test do
       informs = Plug.Test.sent_informs(conn)
       assert {"/static/application.css", [{"accept", "text/css"}]} in informs
       assert {"/static/application.js", [{"accept", "application/javascript"}]} in informs
+
   """
   def sent_informs(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     Enum.reverse(receive_informs(ref, []))
@@ -127,7 +130,7 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Return the assets that have been pushed.
+  Returns the assets that have been pushed.
 
   This function depends on gathering the messages sent by the test adapter
   when assets are pushed. Calling this function will clear the pushed message
@@ -140,6 +143,7 @@ defmodule Plug.Test do
       pushes = Plug.Test.sent_pushes(conn)
       assert {"/static/application.css", [{"accept", "text/css"}]} in pushes
       assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
+
   """
   def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     Enum.reverse(receive_pushes(ref, []))
@@ -155,7 +159,7 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Puts the http protocol.
+  Puts the HTTP protocol.
   """
   def put_http_protocol(conn, http_protocol) do
     update_in(conn.adapter, fn {adapter, payload} ->
