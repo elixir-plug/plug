@@ -16,9 +16,21 @@ defmodule Plug.Conn.CookiesTest do
     assert decode("key space=value, key=value space") == %{}
     assert decode("  key1=value1 , key2=value2  ") == %{"key1" => "value1 , key2=value2"}
     assert decode("") == %{}
+    assert decode("=") == %{}
     assert decode("key, =, value") == %{}
     assert decode("key=") == %{"key" => ""}
     assert decode("key1=;;key2=") == %{"key1" => "", "key2" => ""}
+
+    for whitespace <- ["\s", "\t", "\r", "\n", "\v", "\f"] do
+      assert decode("#{whitespace}=value") == %{}
+      assert decode("#{whitespace}=#{whitespace}") == %{}
+
+      if whitespace == "\s" do
+        assert decode("key=#{whitespace}") == %{"key" => ""}
+      else
+        assert decode("key=#{whitespace}") == %{}
+      end
+    end
   end
 
   test "decodes encoded cookie" do
