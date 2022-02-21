@@ -2,7 +2,7 @@ defmodule Plug.MixProject do
   use Mix.Project
 
   @version "1.13.3"
-  @description "A specification and conveniences for composable modules between web applications"
+  @description "Compose web applications with functions"
   @xref_exclude [Plug.Cowboy, :telemetry]
 
   def project do
