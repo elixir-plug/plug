@@ -110,6 +110,14 @@ defmodule Plug.CSRFProtectionTest do
     assert CSRFProtection.get_csrf_token_for("http://www.example.com") != host_token
   end
 
+  test "cannot generate token from missing host in process" do
+    msg = ~r|invoked in a separate process than the one that started the request|
+
+    assert_raise RuntimeError, msg, fn ->
+      assert CSRFProtection.get_csrf_token_for(%URI{host: "http://www.example.com"})
+    end
+  end
+
   test "raise error for missing authenticity token in session" do
     assert_raise InvalidCSRFTokenError, fn ->
       call(conn(:post, "/", %{}))
