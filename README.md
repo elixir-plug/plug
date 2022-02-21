@@ -5,7 +5,7 @@
 
 Plug is:
 
-  1. A specification for composable modules between web applications
+  1. A specification for composing web applications with functions
   2. Connection adapters for different web servers in the Erlang VM
 
 [Documentation for Plug is available online](http://hexdocs.pm/plug/).
