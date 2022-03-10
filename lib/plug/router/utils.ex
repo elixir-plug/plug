@@ -175,10 +175,17 @@ defmodule Plug.Router.Utils do
           ?* ->
             submatch =
               if prefix != "" do
-                IO.warn(
-                  "doing a prefix match with globs is deprecated, " <>
-                    "invalid segment #{inspect(segment)}"
-                )
+                IO.warn("""
+                doing a prefix match with globs is deprecated, invalid segment #{inspect(segment)}.
+
+                You can either replace by a single segment match:
+
+                    /foo/bar-:var
+
+                Or by mixing single segment match with globs:
+
+                    /foo/bar-:var/*rest
+                """)
 
                 quote do: [unquote(prefix) <> _ | _] = unquote(var)
               else

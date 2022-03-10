@@ -56,7 +56,7 @@ defmodule Plug.LoggerTest do
         call(conn(:get, "/"))
       end)
 
-    assert first_message =~ ~r"\[info\]  GET /"u
+    assert first_message =~ ~r"\[info\] GET /"u
     assert second_message =~ ~r"Sent 200 in [0-9]+[µm]s"u
 
     [first_message, second_message] =
@@ -64,7 +64,7 @@ defmodule Plug.LoggerTest do
         call(conn(:get, "/hello/world"))
       end)
 
-    assert first_message =~ ~r"\[info\]  GET /hello/world"u
+    assert first_message =~ ~r"\[info\] GET /hello/world"u
     assert second_message =~ ~r"Sent 200 in [0-9]+[µm]s"u
   end
 
