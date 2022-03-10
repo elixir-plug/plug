@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.13.4 (2022-03-10)
+
+### Bug fixes
+
+  * Improve deprecation warnings
+
 ## v1.13.3 (2022-02-12)
 
 ### Enhancements
