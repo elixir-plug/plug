@@ -66,7 +66,7 @@ defmodule Plug.Upload do
   Useful if you want to do some work on an uploaded file in another process
   since it means that the file will survive the end of the request.
   """
-  @spec give_away(t | binary, pid, pid) :: :ok | {:error, binary}
+  @spec give_away(t | binary, pid, pid) :: :ok | {:error, :unknown_path}
   def give_away(upload, to_pid, from_pid \\ self())
 
   def give_away(%__MODULE__{path: path}, to_pid, from_pid) do
