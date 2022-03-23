@@ -790,6 +790,61 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
   end
 
+  defmodule StaticRules do
+    def generate_only_rules(_endpoint, only)
+        when is_list(only) do
+
+      only ++ ~w(static.txt)
+    end
+
+    def generate_only_matching_rules(_endpoint, only_matching)
+        when is_list(only_matching) do
+
+      only_matching ++ ~w(file)
+    end
+  end
+
+  defmodule FilterMFAPlug do
+    use Plug.Builder
+
+    plug Plug.Static,
+      at: "/",
+      from: Path.expand("../fixtures", __DIR__),
+      only:
+        {StaticRules, :generate_only_rules,
+         [
+           __MODULE__,
+           ~w(ssl)
+         ]},
+      only_matching:
+        {StaticRules, :generate_only_matching_rules,
+         [
+           __MODULE__,
+           []
+         ]}
+
+    plug :passthrough
+
+    defp passthrough(conn, _), do: Plug.Conn.send_resp(conn, 404, "Passthrough")
+  end
+
+  test "serves only MFA allowed files" do
+    conn = FilterMFAPlug.call(conn(:get, "/static.txt"), [])
+    assert conn.status == 200
+
+    conn = FilterMFAPlug.call(conn(:get, "/ssl/server.cer"), [])
+    assert conn.status == 200
+
+    conn = FilterMFAPlug.call(conn(:get, "/"), [])
+    assert conn.status == 404
+
+    conn = FilterMFAPlug.call(conn(:get, "/static/file.txt"), [])
+    assert conn.status == 404
+
+    conn = FilterMFAPlug.call(conn(:get, "/file-deadbeef.txt"), [])
+    assert conn.status == 200
+  end
+
   defmodule HeaderGenerator do
     def generate(_conn, header) do
       [header]

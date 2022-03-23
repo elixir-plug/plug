@@ -180,6 +180,7 @@ defmodule Plug.Static do
       )
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
+    only_rules = derive_only_rules(only_rules)
 
     if allowed?(only_rules, segments) do
       segments = Enum.map(segments, &uri_decode/1)
@@ -210,6 +211,16 @@ defmodule Plug.Static do
         raise InvalidPathError
     end
   end
+
+  defp derive_only_rules({only, only_matching}),
+    do: {derive_only(only), derive_only(only_matching)}
+
+  defp derive_only({module, function, arguments})
+       when is_atom(module) and is_atom(function) and is_list(arguments) do
+    apply(module, function, arguments)
+  end
+
+  defp derive_only(only) when is_list(only), do: only
 
   defp allowed?(_only_rules, []), do: false
   defp allowed?({[], []}, _list), do: true
