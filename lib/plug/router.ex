@@ -446,7 +446,7 @@ defmodule Plug.Router do
   defmacro forward(path, options) do
     quote bind_quoted: [path: path, options: options] do
       {target, options} = Keyword.pop(options, :to)
-      {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
+      {options, plug_options} = Keyword.split(options, [:via, :host, :private, :assigns])
       plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
       if is_nil(target) or not is_atom(target) do
