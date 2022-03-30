@@ -443,7 +443,7 @@ defmodule Plug.Router do
       forward "/baz", to: BazPlug, init_opts: [plug_specific_option: true]
 
   """
-  defmacro forward(path, options) when is_binary(path) do
+  defmacro forward(path, options) do
     quote bind_quoted: [path: path, options: options] do
       {target, options} = Keyword.pop(options, :to)
       {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
