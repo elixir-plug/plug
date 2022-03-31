@@ -414,7 +414,8 @@ defmodule Plug.Router do
   `forward` accepts the following options:
 
     * `:to` - a Plug the requests will be forwarded to.
-    * `:init_opts` - the options for the target Plug.
+    * `:init_opts` - the options for the target Plug. Should be the preferred
+                     way for passing options to the target Plug.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
     * `:private` - values for `conn.private`, exactly like in `match/3`.
