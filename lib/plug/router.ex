@@ -414,7 +414,8 @@ defmodule Plug.Router do
   `forward` accepts the following options:
 
     * `:to` - a Plug the requests will be forwarded to.
-    * `:init_opts` - the options for the target Plug.
+    * `:init_opts` - the options for the target Plug. It is the preferred
+      mechanism for passing options to the target Plug.
     * `:host` - a string representing the host or subdomain, exactly like in
       `match/3`.
     * `:private` - values for `conn.private`, exactly like in `match/3`.
@@ -446,7 +447,7 @@ defmodule Plug.Router do
   defmacro forward(path, options) do
     quote bind_quoted: [path: path, options: options] do
       {target, options} = Keyword.pop(options, :to)
-      {options, plug_options} = Keyword.split(options, [:host, :private, :assigns])
+      {options, plug_options} = Keyword.split(options, [:via, :host, :private, :assigns])
       plug_options = Keyword.get(plug_options, :init_opts, plug_options)
 
       if is_nil(target) or not is_atom(target) do
