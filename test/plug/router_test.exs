@@ -23,6 +23,8 @@ defmodule Plug.RouterTest do
       Process.put(:plug_forward_call, true)
     end
 
+    forward "/forward_via", via: [:put, :post], to: SamplePlug, init_opts: [route: :via]
+
     get "/" do
       resp(conn, 200, "forwarded")
     end
@@ -551,6 +553,14 @@ defmodule Plug.RouterTest do
   test "declare and call OPTIONS requests" do
     conn = call(Sample, conn(:options, "/options"))
     assert conn.status == 200
+  end
+
+  test "forwards only :via methods" do
+    for method <- [:post, :put] do
+      resp = call(Forward, conn(method, "/forward_via"))
+      assert resp.status == 200
+      assert resp.resp_body == "[route: :via]"
+    end
   end
 
   test "assigns options on forward" do
