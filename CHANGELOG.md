@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.13.5 (2022-04-11)
+
+### Enhancements
+
+  * Support `:via` in `Plug.Router.forward/2`
+
+### Bug fixes
+
+  * Fix compile-time deps in Plug.Builder
+  * Do not require routes to be compile-time binaries in `Plug.Router.forward/2`
+
 ## v1.13.4 (2022-03-10)
 
 ### Bug fixes
