@@ -1,7 +1,7 @@
 defmodule Plug.MIME do
   @moduledoc false
 
-  if Application.get_env(:plug, :mimes) do
+  if Application.compile_env(:plug, :mimes) do
     IO.puts(:stderr, """
     warning: you have set the :mimes configuration for the :plug
     application but it is no longer supported. Instead of:

@@ -20,10 +20,7 @@ defmodule Plug.Conn.WrapperError do
 
   @deprecated "Use reraise/1 or reraise/4 instead"
   def reraise(conn, kind, reason) do
-    # Please do not submit a PR to remove System.stacktrace()
-    # See https://github.com/elixir-plug/plug/pull/991
-    # TODO: Use an empty list instead of System.stacktrace/0 when we depend on Elixir 1.10+
-    reraise(conn, kind, reason, System.stacktrace())
+    reraise(conn, kind, reason, [])
   end
 
   def reraise(_conn, :error, %__MODULE__{stack: stack} = reason, _stack) do

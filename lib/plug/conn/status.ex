@@ -3,7 +3,7 @@ defmodule Plug.Conn.Status do
   Conveniences for working with status codes.
   """
 
-  custom_statuses = Application.get_env(:plug, :statuses, %{})
+  custom_statuses = Application.compile_env(:plug, :statuses, %{})
 
   statuses = %{
     100 => "Continue",
