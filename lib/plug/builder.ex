@@ -208,14 +208,18 @@ defmodule Plug.Builder do
 
   """
   defmacro plug(plug, opts \\ []) do
-    # We always expand it but the @before_compile callback adds compile
-    # time dependencies back depending on the builder's init mode.
-    plug = expand_alias(plug, __CALLER__)
+    init_mode = Module.get_attribute(__CALLER__.module, :plug_builder_opts)[:init_mode]
+    runtime? = init_mode == :runtime
 
-    # If we are sure we don't have a module plug, the options are all
-    # runtime options too.
+    plug =
+      if runtime? do
+        expand_alias(plug, __CALLER__)
+      else
+        plug
+      end
+
     opts =
-      if is_atom(plug) and not module_plug?(plug) and Macro.quoted_literal?(opts) do
+      if runtime? and Macro.quoted_literal?(opts) do
         Macro.prewalk(opts, &expand_alias(&1, __CALLER__))
       else
         opts
@@ -280,6 +284,14 @@ defmodule Plug.Builder do
         {Plug.Head, [], quote(do: a when is_binary(a))}
       ], [])
 
+  ## Options
+
+    * `:init_mode` - the environment to initialize the plug's options, one of
+      `:compile` or `:runtime`. Defaults `:compile`. It is responsibility of the
+      caller of this function to mark `:compile` plugs as compile time dependencies
+
+    * `:log_on_halt` - accepts the level to log whenever the request is halted
+
   """
   @spec compile(Macro.Env.t(), [{plug, Plug.opts(), Macro.t()}], Keyword.t()) ::
           {Macro.t(), Macro.t()}
@@ -299,7 +311,7 @@ defmodule Plug.Builder do
       Enum.reduce(pipeline, conn, fn {plug, opts, guards}, acc ->
         {plug, opts, guards}
         |> init_plug(init_mode)
-        |> quote_plug(init_mode, acc, env, builder_opts)
+        |> quote_plug(acc, env, builder_opts)
       end)
 
     {conn, ast}
@@ -338,22 +350,9 @@ defmodule Plug.Builder do
     Macro.escape(opts, unquote: true)
   end
 
-  defp quote_plug({:module, plug, opts, guards}, :compile, acc, env, builder_opts) do
-    call = quote_plug(:module, plug, opts, guards, acc, env, builder_opts)
-
-    quote do
-      require unquote(plug)
-      unquote(call)
-    end
-  end
-
-  defp quote_plug({plug_type, plug, opts, guards}, _init_mode, acc, env, builder_opts) do
-    quote_plug(plug_type, plug, opts, guards, acc, env, builder_opts)
-  end
-
   # `acc` is a series of nested plug calls in the form of plug3(plug2(plug1(conn))).
   # `quote_plug` wraps a new plug around that series of calls.
-  defp quote_plug(plug_type, plug, opts, guards, acc, env, builder_opts) do
+  defp quote_plug({plug_type, plug, opts, guards}, acc, env, builder_opts) do
     call = quote_plug_call(plug_type, plug, opts)
 
     error_message =
