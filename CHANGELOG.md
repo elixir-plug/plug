@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.13.6 (2022-04-14)
+
+### Bug fixes
+
+  * Fix compile-time dependencies in Plug.Builder
+
 ## v1.13.5 (2022-04-11)
 
 ### Enhancements
