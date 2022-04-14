@@ -341,7 +341,7 @@ defmodule Plug.Builder do
   defp quote_plug({:module, plug, opts, guards}, :compile, acc, env, builder_opts) do
     # require no longer adds a compile time dependency, which is
     # required by Plug.Builder. So we build the alias an we expand it.
-    parts = [:Elixir | Enum.map(Module.split(plug), &String.to_atom/1)]
+    parts = [:"Elixir" | Enum.map(Module.split(plug), &String.to_atom/1)]
     alias = {:__aliases__, [line: env.line], parts}
     _ = Macro.expand(alias, env)
 
