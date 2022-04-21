@@ -617,7 +617,10 @@ defmodule Plug.Conn do
   """
   @spec get_req_header(t, binary) :: [binary]
   def get_req_header(%Conn{req_headers: headers}, key) when is_binary(key) do
-    for {^key, value} <- headers, do: value
+    Enum.find_value(headers, fn
+      {^key, value} -> [value]
+      _header -> []
+    end)
   end
 
   @doc """
@@ -730,7 +733,10 @@ defmodule Plug.Conn do
   """
   @spec get_resp_header(t, binary) :: [binary]
   def get_resp_header(%Conn{resp_headers: headers}, key) when is_binary(key) do
-    for {^key, value} <- headers, do: value
+    Enum.find_value(headers, fn
+      {^key, value} -> [value]
+      _header -> []
+    end)
   end
 
   @doc ~S"""
