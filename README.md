@@ -43,19 +43,23 @@ end
 
 The snippet above shows a very simple example on how to use Plug. Save that snippet to a file and run it inside the plug application with:
 
-    $ iex -S mix
-    iex> c "path/to/file.ex"
-    [MyPlug]
-    iex> {:ok, _} = Plug.Cowboy.http MyPlug, []
-    {:ok, #PID<...>}
+```shell
+$ iex -S mix
+iex> c "path/to/file.ex"
+[MyPlug]
+iex> {:ok, _} = Plug.Cowboy.http(MyPlug, [])
+{:ok, #PID<...>}
+```
 
-Access [http://localhost:4000/](http://localhost:4000/) and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section next.
+Access <http://localhost:4000/> and we are done! For now, we have directly started the server in our terminal but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section next.
 
 ## Supervised handlers
 
 On a production system, you likely want to start your Plug pipeline under your application's supervision tree. Start a new Elixir project with the `--sup` flag:
 
-    $ mix new my_app --sup
+```shell
+$ mix new my_app --sup
+```
 
 and then update `lib/my_app/application.ex` as follows:
 
@@ -81,12 +85,12 @@ defmodule MyApp.Application do
 end
 ```
 
-Now run `mix run --no-halt` and it will start your application with a web server running at `localhost:4001`.
+Now run `mix run --no-halt` and it will start your application with a web server running at <http://localhost:4001>.
 
 ## Supported Versions
 
 | Branch | Support                  |
-| ------ | ------------------------ |
+|--------|--------------------------|
 | v1.13  | Bug fixes                |
 | v1.12  | Security patches only    |
 | v1.11  | Security patches only    |
