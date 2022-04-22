@@ -1,8 +1,8 @@
 defmodule Plug.Conn.Query do
   @moduledoc """
-  Conveniences for decoding and encoding url encoded queries.
+  Conveniences for decoding and encoding URL-encoded queries.
 
-  Plug allows a developer to build query strings that map to
+  Plug allows developers to build query strings that map to
   Elixir structures in order to make manipulation of such structures
   easier on the server side. Here are some examples:
 
@@ -59,11 +59,18 @@ defmodule Plug.Conn.Query do
   """
 
   @doc """
-  Decodes the given binary.
+  Decodes the given `query`.
 
-  The binary is assumed to be encoded in "x-www-form-urlencoded" format.
-  The format is decoded and then validated for proper UTF-8 encoding.
+  The `query` is assumed to be encoded in the "x-www-form-urlencoded" format.
+  The format is decoded at first. Then, if `validate_utf8` is `true`, the decoded
+  result is validated for proper UTF-8 encoding.
+
+  `initial` is the initial "accumulator" where decoded values will be added.
+
+  `invalid_exception` is the exception module for the exception to raise on
+  errors with decoding.
   """
+  @spec decode(String.t(), map(), module(), boolean()) :: %{optional(String.t()) => term()}
   def decode(
         query,
         initial \\ %{},
@@ -75,7 +82,8 @@ defmodule Plug.Conn.Query do
     initial
   end
 
-  def decode(query, initial, invalid_exception, validate_utf8) do
+  def decode(query, initial, invalid_exception, validate_utf8)
+      when is_binary(query) do
     parts = :binary.split(query, "&", [:global])
 
     Enum.reduce(
@@ -121,7 +129,7 @@ defmodule Plug.Conn.Query do
   end
 
   @doc """
-  Decodes the given tuple and stores it in the accumulator.
+  Decodes the given tuple and stores it in the given accumulator.
 
   It parses the key and stores the value into the current
   accumulator. The keys and values are not assumed to be
@@ -130,7 +138,8 @@ defmodule Plug.Conn.Query do
   Parameter lists are added to the accumulator in reverse
   order, so be sure to pass the parameters in reverse order.
   """
-  def decode_pair({key, value}, acc) do
+  @spec decode_pair({String.t(), term()}, acc) :: acc when acc: term()
+  def decode_pair({key, value} = _pair, acc) do
     if key != "" and :binary.last(key) == ?] do
       # Remove trailing ]
       subkey = :binary.part(key, 0, byte_size(key) - 1)
@@ -200,6 +209,7 @@ defmodule Plug.Conn.Query do
   @doc """
   Encodes the given map or list of tuples.
   """
+  @spec encode(Enumerable.t(), (term() -> binary())) :: binary()
   def encode(kv, encoder \\ &to_string/1) do
     IO.iodata_to_binary(encode_pair("", kv, encoder))
   end
