@@ -267,8 +267,16 @@ defmodule Plug.Debugger do
     end
   end
 
-  defp actions_redirect_path(%Plug.Conn{method: "GET", request_path: request_path}),
-    do: request_path
+  defp actions_redirect_path(%Plug.Conn{
+         method: "GET",
+         request_path: request_path,
+         query_string: query_string
+       }) do
+    case query_string do
+      "" -> request_path
+      query_string -> "#{request_path}?#{query_string}"
+    end
+  end
 
   defp actions_redirect_path(conn) do
     case get_req_header(conn, "referer") do
