@@ -422,8 +422,20 @@ defmodule Plug.DebuggerTest do
     refute body =~ ~s|<form action="/__plug__/debugger/action" method="POST">|
   end
 
-  test "sets last path as the current request path when is a GET" do
+  test "sets last path as the current request path when is a GET without query string" do
     path = "/actionable_exception"
+
+    conn =
+      conn(:get, path)
+      |> put_req_header("accept", "text/html")
+      |> Map.put(:secret_key_base, "secret")
+
+    %Plug.Conn{resp_body: body} = render(conn, [], fn -> raise ActionableError end)
+    assert body =~ ~s|<input type="hidden" name="last_path" value="#{path}">|
+  end
+
+  test "sets last path as the current request path when is a GET with query string" do
+    path = "/actionable_exception?a=b"
 
     conn =
       conn(:get, path)
