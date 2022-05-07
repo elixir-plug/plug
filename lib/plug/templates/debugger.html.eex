@@ -567,6 +567,10 @@
         white-space: normal;
     }
 
+    .code-quote > pre {
+        margin: 0;
+    }
+
     .code.-padded {
         padding: 0 16px 16px 16px;
     }
@@ -668,6 +672,7 @@
         background-color: inherit;
         background-color: #f2f2f4;
     }
+
     </style>
 </head>
 <body>
@@ -827,7 +832,7 @@
             <%= for {key, value} <- @session do %>
             <dl>
                 <dt><%= h key %></dt>
-                <dd><pre><%= h inspect(value) %></pre></dd>
+                <dd class="code-quote"><pre><%= h inspect(value) %></pre></dd>
             </dl>
             <% end %>
         </details>
