@@ -410,15 +410,10 @@ defmodule Plug.Debugger do
         false
     end
   end
-
-  defp impl?(docs) do
-    Enum.any?(docs, &match?({{:function, :__impl__, 1}, _, _, _, _}, &1))
-  end
-
   defp has_doc_matcher?(name, arity) do
     &match?(
       {{kind, ^name, ^arity}, _, _, doc, _}
-      when kind in [:function, :macro] and doc != :hidden,
+      when kind in [:function, :macro] and doc != :hidden and doc != :none,
       &1
     )
   end
