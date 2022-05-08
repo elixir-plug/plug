@@ -1229,7 +1229,7 @@ defmodule Plug.Conn do
   @doc """
   Sends an information response to a client but raises if the adapter does not support inform.
 
-  See `inform/1` for more information.
+  See `inform/3` for more information.
   """
   @spec inform!(t, status, Keyword.t()) :: t
   def inform!(%Conn{adapter: {adapter, _}} = conn, status, headers \\ []) do
