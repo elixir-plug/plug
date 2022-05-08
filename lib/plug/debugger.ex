@@ -400,16 +400,13 @@ defmodule Plug.Debugger do
   defp has_docs?(module, name, arity) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, module_doc, _, docs} when module_doc != :hidden ->
-        if impl?(docs) do
-          false
-        else
-          Enum.any?(docs, has_doc_matcher?(name, arity))
-        end
+        Enum.any?(docs, has_doc_matcher?(name, arity))
 
       _ ->
         false
     end
   end
+
   defp has_doc_matcher?(name, arity) do
     &match?(
       {{kind, ^name, ^arity}, _, _, doc, _}
