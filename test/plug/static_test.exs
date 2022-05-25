@@ -210,7 +210,7 @@ defmodule Plug.StaticTest do
 
     exception =
       assert_raise Plug.Static.InvalidPathError,
-                   "invalid path for static asset #{path}",
+                   "invalid path for static asset: #{path}",
                    fn ->
                      call(conn(:get, path))
                    end
@@ -220,7 +220,7 @@ defmodule Plug.StaticTest do
     path = "/public/fixtures/%2E%2E/fixtures/static/file.txt"
 
     exception =
-      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset #{path}", fn ->
+      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset: #{path}", fn ->
         call(conn(:get, path))
       end
 
@@ -229,7 +229,7 @@ defmodule Plug.StaticTest do
     path = "/public/c:\\foo.txt"
 
     exception =
-      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset #{path}", fn ->
+      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset: #{path}", fn ->
         call(conn(:get, path))
       end
 
@@ -238,7 +238,7 @@ defmodule Plug.StaticTest do
     path = "/public/sample.txt%00.html"
 
     exception =
-      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset #{path}", fn ->
+      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset: #{path}", fn ->
         call(conn(:get, path))
       end
 
@@ -247,7 +247,7 @@ defmodule Plug.StaticTest do
     path = "/public/sample.txt\0.html"
 
     exception =
-      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset #{path}", fn ->
+      assert_raise Plug.Static.InvalidPathError, "invalid path for static asset: #{path}", fn ->
         call(conn(:get, path))
       end
 
