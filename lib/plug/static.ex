@@ -185,7 +185,7 @@ defmodule Plug.Static do
       segments = Enum.map(segments, &uri_decode/1)
 
       if invalid_path?(segments) do
-        raise InvalidPathError
+        raise InvalidPathError, "invalid path for static asset: #{conn.request_path}"
       end
 
       path = path(from, segments)
