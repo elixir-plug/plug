@@ -1,12 +1,11 @@
 # Plug
 
-[![Build Status](https://github.com/elixir-plug/plug/workflows/CI/badge.svg)](https://github.com/elixir-plug/plug/actions?query=workflow%3A%22CI%22)
-[![Inline docs](https://inch-ci.org/github/elixir-plug/plug.svg?branch=master)](http://inch-ci.org/github/elixir-plug/plug)
+[![Package](https://img.shields.io/hexpm/v/plug)](https://hex.pm/packages/plug) [![Documentation](https://img.shields.io/badge/documentation-hex.pm-green)](https://hexdocs.pm/plug/) [![CI](https://img.shields.io/github/workflow/status/elixir-plug/plug/CI)](https://github.com/elixir-plug/plug/actions)
 
 Plug is:
 
-  1. A specification for composing web applications with functions
-  2. Connection adapters for different web servers in the Erlang VM
+1. A specification for composing web applications with functions
+2. Connection adapters for different web servers in the Erlang VM
 
 [Documentation for Plug is available online](http://hexdocs.pm/plug/).
 
@@ -17,7 +16,7 @@ In order to use Plug, you need a webserver and its bindings for Plug. The Cowboy
 ```elixir
 def deps do
   [
-    {:plug_cowboy, "~> 2.0"}
+    {:plug_cowboy, "~> 2.5"}
   ]
 end
 ```
@@ -90,7 +89,7 @@ Now run `mix run --no-halt` and it will start your application with a web server
 ## Supported Versions
 
 | Branch | Support                  |
-|--------|--------------------------|
+| ------ | ------------------------ |
 | v1.13  | Bug fixes                |
 | v1.12  | Security patches only    |
 | v1.11  | Security patches only    |
@@ -220,18 +219,18 @@ end
 
 This project aims to ship with different plugs that can be re-used across applications:
 
-  * `Plug.BasicAuth` - provides Basic HTTP authentication;
-  * `Plug.CSRFProtection` - adds Cross-Site Request Forgery protection to your application. Typically required if you are using `Plug.Session`;
-  * `Plug.Head` - converts HEAD requests to GET requests;
-  * `Plug.Logger` - logs requests;
-  * `Plug.MethodOverride` - overrides a request method with one specified in the request parameters;
-  * `Plug.Parsers` - responsible for parsing the request body given its content-type;
-  * `Plug.RequestId` - sets up a request ID to be used in logs;
-  * `Plug.RewriteOn` - rewrite the request's host/port/protocol from `x-forwarded-*` headers;
-  * `Plug.Session` - handles session management and storage;
-  * `Plug.SSL` - enforces requests through SSL;
-  * `Plug.Static` - serves static files;
-  * `Plug.Telemetry` - instruments the plug pipeline with `:telemetry` events;
+-   `Plug.BasicAuth` - provides Basic HTTP authentication;
+-   `Plug.CSRFProtection` - adds Cross-Site Request Forgery protection to your application. Typically required if you are using `Plug.Session`;
+-   `Plug.Head` - converts HEAD requests to GET requests;
+-   `Plug.Logger` - logs requests;
+-   `Plug.MethodOverride` - overrides a request method with one specified in the request parameters;
+-   `Plug.Parsers` - responsible for parsing the request body given its content-type;
+-   `Plug.RequestId` - sets up a request ID to be used in logs;
+-   `Plug.RewriteOn` - rewrite the request's host/port/protocol from `x-forwarded-*` headers;
+-   `Plug.Session` - handles session management and storage;
+-   `Plug.SSL` - enforces requests through SSL;
+-   `Plug.Static` - serves static files;
+-   `Plug.Telemetry` - instruments the plug pipeline with `:telemetry` events;
 
 You can go into more details about each of them [in our docs](http://hexdocs.pm/plug/).
 
@@ -239,8 +238,8 @@ You can go into more details about each of them [in our docs](http://hexdocs.pm/
 
 Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help development:
 
-  * `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
-  * `Plug.ErrorHandler` - allows developers to customize error pages in case of crashes instead of sending a blank one;
+-   `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
+-   `Plug.ErrorHandler` - allows developers to customize error pages in case of crashes instead of sending a blank one;
 
 ## Contributing
 
@@ -257,7 +256,7 @@ Finally, remember all interactions in our official spaces follow our [Code of Co
 Plug source code is released under Apache License 2.0.
 Check LICENSE file for more information.
 
-  [issues]: https://github.com/elixir-plug/plug/issues
-  [pulls]: https://github.com/elixir-plug/plug/pulls
-  [code-of-conduct]: https://github.com/elixir-lang/elixir/blob/master/CODE_OF_CONDUCT.md
-  [writing-docs]: https://hexdocs.pm/elixir/writing-documentation.html
+[issues]: https://github.com/elixir-plug/plug/issues
+[pulls]: https://github.com/elixir-plug/plug/pulls
+[code-of-conduct]: https://github.com/elixir-lang/elixir/blob/master/CODE_OF_CONDUCT.md
+[writing-docs]: https://hexdocs.pm/elixir/writing-documentation.html
