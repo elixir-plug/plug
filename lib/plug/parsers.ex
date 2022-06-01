@@ -139,7 +139,7 @@ defmodule Plug.Parsers do
   uploads, you can do:
 
       plug Plug.Parsers,
-           parsers: [:url_encoded, :multipart],
+           parsers: [:urlencoded, :multipart],
            length: 20_000_000
 
   However, the above will increase the maximum length of all request
@@ -148,7 +148,7 @@ defmodule Plug.Parsers do
 
       plug Plug.Parsers,
            parsers: [
-             :url_encoded,
+             :urlencoded,
              {:multipart, length: 20_000_000} # Increase to 20MB max upload
            ]
 
