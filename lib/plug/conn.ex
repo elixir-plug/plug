@@ -46,6 +46,39 @@ defmodule Plug.Conn do
        `:body_params` on top of `:query_params`
     * `req_cookies` - the request cookies (without the response ones)
 
+  ## Session vs Assigns
+
+  HTTP is stateless.
+  This means that a server begins each request cycle with no knowledge about
+  the client except the request itself.
+  Its response may include one or more `"Set-Cookie"` headers, asking the client
+  to send that value back in a `"Cookie"` header on subsequent requests.
+  This is the basis for stateful interactions with a client, so that the server
+  can remember the client's name, the contents of their shopping cart, and so on.
+
+  In Plug, a "session" is a place to store data that persists from one request
+  to the next.
+  Typically, this data is stored in a cookie using `Plug.Session.COOKIE`.
+  A minimal approach would be to store only a user's id in the session, then
+  use that during the request cycle to look up other information (in a database
+  or elsewhere).
+  More can be stored in a session cookie, but be careful: this makes requests
+  and responses heavier, and clients may reject cookies beyond a certain size.
+
+  If the session is stored elsewhere, such as with `Plug.Session.ETS`,
+  something like a user id would still be needed to look it up on each request.
+
+  Unlike data in a session, data in the `assigns` field lasts only for a single
+  request.
+  A typical use case would be for an authentication plug to look up a
+  user by id and store the user's details in the assigns for later plugs to
+  access during the same request.
+  When the next request happens, this data will be gone.
+
+  To summarize: `assigns` is for storing data to be accessed during the current
+  request, and the session is for storing data to be accessed in subsequent
+  requests.
+
   ## Response fields
 
   These fields contain response information:
