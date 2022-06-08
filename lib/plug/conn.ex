@@ -64,6 +64,8 @@ defmodule Plug.Conn do
   or elsewhere).
   More can be stored in a session cookie, but be careful: this makes requests
   and responses heavier, and clients may reject cookies beyond a certain size.
+  Also, whatever is stored in a session cookie is not shared between a user's
+  different browsers or devices.
 
   If the session is stored elsewhere, such as with `Plug.Session.ETS`,
   something like a user id would still be needed to look it up on each request.
