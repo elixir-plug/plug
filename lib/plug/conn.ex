@@ -659,8 +659,8 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
-  Note that the "host" header will be overridden by `conn.host` and should not
-  be set with this method. Instead, do `%{conn | host: value}`.
+  The "host" header will be overridden by `conn.host` and should not be set
+  with this method. Instead, do `%Plug.Conn{conn | host: value}`.
 
   Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
   it is recommended for header keys to be in lowercase, to avoid sending
@@ -1772,15 +1772,12 @@ defmodule Plug.Conn do
   end
 
   defp validate_req_header_key_if_test!(conn, key) do
-    if Application.fetch_env!(:plug, :validate_header_keys_during_test) do
-      if key == "host" do
-        # host is an HTTP header, but if you store it in the main list it will
-        # be overridden by conn.host.
-        raise InvalidHeaderError, "set the host header with %{conn | host: \"example.com\"}"
-      else
-        validate_header_key_if_test!(conn, key)
-      end
+    if Application.fetch_env!(:plug, :validate_header_keys_during_test) and key == "host" do
+      # host is an HTTP header, but if you store it in the main list it will be
+      # overridden by conn.host.
+      raise InvalidHeaderError, "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
     end
+    validate_header_key_if_test!(conn, key)
   end
 
   defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
