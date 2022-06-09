@@ -684,7 +684,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value)
       when is_binary(key) and is_binary(value) do
-    validate_header_key_if_test!(adapter, key)
+    validate_req_header_key_if_test!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -1766,6 +1766,18 @@ defmodule Plug.Conn do
       |> Map.put_new(:plug_session_info, :write)
 
     %{conn | private: private}
+  end
+
+  defp validate_req_header_key_if_test!(conn, key) do
+    if Application.fetch_env!(:plug, :validate_header_keys_during_test) do
+      if key == "host" do
+        # host is an HTTP header, but if you store it in the main list it will
+        # be overridden by conn.host.
+        raise InvalidHeaderError, "set the host header with %{conn | host: \"example.com\"}"
+      else
+        validate_header_key_if_test!(conn, key)
+      end
+    end
   end
 
   defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do

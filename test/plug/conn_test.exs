@@ -714,6 +714,9 @@ defmodule Plug.ConnTest do
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
     end
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[set the host header with %{conn | host: "example.com"}], fn ->
+      put_req_header(conn, "host", "bar")
+    end
   end
 
   test "put_req_header/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
