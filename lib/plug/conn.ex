@@ -659,6 +659,9 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
+  Note that the "host" header will be overridden by `conn.host` and should not
+  be set with this method. Instead, do `%{conn | host: value}`.
+
   Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
   it is recommended for header keys to be in lowercase, to avoid sending
   duplicate keys in a request.
