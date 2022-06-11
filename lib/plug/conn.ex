@@ -687,7 +687,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value)
       when is_binary(key) and is_binary(value) do
-    validate_req_header_key_if_test!(adapter, key)
+    validate_req_header!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -1771,16 +1771,14 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  defp validate_req_header_key_if_test!(conn, key) do
-    if key == "host" do
-      # host is an HTTP header, but if you store it in the main list it will be
-      # overridden by conn.host.
-      raise InvalidHeaderError,
-            "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
-    end
-
-    validate_header_key_if_test!(conn, key)
+  # host is an HTTP header, but if you store it in the main list it will be
+  # overridden by conn.host.
+  defp validate_req_header!(_adapter, "host") do
+    raise InvalidHeaderError,
+          "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
   end
+
+  defp validate_req_header!(adapter, key), do: validate_header_key_if_test!(adapter, key)
 
   defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
     if Application.fetch_env!(:plug, :validate_header_keys_during_test) and
