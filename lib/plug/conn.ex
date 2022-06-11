@@ -1772,11 +1772,12 @@ defmodule Plug.Conn do
   end
 
   defp validate_req_header_key_if_test!(conn, key) do
-    if Application.fetch_env!(:plug, :validate_header_keys_during_test) and key == "host" do
+    if key == "host" do
       # host is an HTTP header, but if you store it in the main list it will be
       # overridden by conn.host.
       raise InvalidHeaderError, "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
     end
+
     validate_header_key_if_test!(conn, key)
   end
 

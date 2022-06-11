@@ -714,6 +714,7 @@ defmodule Plug.ConnTest do
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
     end
+
     assert_raise Plug.Conn.InvalidHeaderError, ~S[set the host header with %Plug.Conn{conn | host: "example.com"}], fn ->
       put_req_header(conn, "host", "bar")
     end
