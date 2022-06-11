@@ -659,6 +659,9 @@ defmodule Plug.Conn do
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
 
+  The "host" header will be overridden by `conn.host` and should not be set
+  with this method. Instead, do `%Plug.Conn{conn | host: value}`.
+
   Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
   it is recommended for header keys to be in lowercase, to avoid sending
   duplicate keys in a request.
@@ -684,7 +687,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value)
       when is_binary(key) and is_binary(value) do
-    validate_header_key_if_test!(adapter, key)
+    validate_req_header_key_if_test!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -1766,6 +1769,17 @@ defmodule Plug.Conn do
       |> Map.put_new(:plug_session_info, :write)
 
     %{conn | private: private}
+  end
+
+  defp validate_req_header_key_if_test!(conn, key) do
+    if key == "host" do
+      # host is an HTTP header, but if you store it in the main list it will be
+      # overridden by conn.host.
+      raise InvalidHeaderError,
+            "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
+    end
+
+    validate_header_key_if_test!(conn, key)
   end
 
   defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
