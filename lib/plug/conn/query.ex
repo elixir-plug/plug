@@ -168,8 +168,11 @@ defmodule Plug.Conn.Query do
     parts = :binary.split(rest, pattern)
 
     case acc do
-      %{^key => current} ->
+      %{^key => current} when is_list(current) or is_map(current) ->
         Map.put(acc, key, assign_split(parts, value, current, pattern))
+
+      %{^key => _} ->
+        acc
 
       %{} ->
         Map.put(acc, key, assign_split(parts, value, :none, pattern))

@@ -51,6 +51,7 @@ defmodule Plug.Conn.QueryTest do
     assert decode("x[]=1&x[y]=1")["x"]["y"] == "1"
     assert decode("x[y][][w]=2&x[y]=1")["x"]["y"] == "1"
     assert decode("x=1&x[y]=1")["x"]["y"] == "1"
+    assert decode("x[y][0][w]=2&x[y]=1")["x"]["y"] == "1"
   end
 
   test "decode_pair simple queries" do
