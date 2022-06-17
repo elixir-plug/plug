@@ -76,8 +76,8 @@ defmodule Plug.Parsers.MULTIPART do
         end
 
         def parse(conn, "multipart", subtype, headers, opts) do
-          limit = [limit: System.fetch_env!("UPLOAD_LIMIT")]
-          opts = @multipart.init([limit: limit] ++ opts)
+          length = System.fetch_env!("UPLOAD_LIMIT")
+          opts = @multipart.init([length: length] ++ opts)
           @multipart.parse(conn, "multipart", subtype, headers, opts)
         end
 
