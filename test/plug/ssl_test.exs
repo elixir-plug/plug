@@ -5,10 +5,17 @@ defmodule Plug.SSLTest do
   describe "configure" do
     import Plug.SSL, only: [configure: 1]
 
-    test "sets secure_renegotiate and reuse_sessions to true by default" do
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl")
+    test "sets secure_renegotiate and reuse_sessions to true depending on the version" do
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", versions: [:tlsv1])
       assert opts[:reuse_sessions] == true
       assert opts[:secure_renegotiate] == true
+      assert opts[:honor_cipher_order] == nil
+      assert opts[:client_renegotiation] == nil
+      assert opts[:cipher_suite] == nil
+
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", versions: [:"tlsv1.3"])
+      assert opts[:reuse_sessions] == nil
+      assert opts[:secure_renegotiate] == nil
       assert opts[:honor_cipher_order] == nil
       assert opts[:client_renegotiation] == nil
       assert opts[:cipher_suite] == nil

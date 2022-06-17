@@ -242,9 +242,17 @@ defmodule Plug.SSL do
   end
 
   defp set_secure_defaults(options) do
-    options
-    |> Keyword.put_new(:secure_renegotiate, true)
-    |> Keyword.put_new(:reuse_sessions, true)
+    versions = options[:versions] || :ssl.versions()[:supported]
+
+    if Enum.any?([:tlsv1, :"tlsv1.1", :"tlsv1.2"], &(&1 in versions)) do
+      options
+      |> Keyword.put_new(:secure_renegotiate, true)
+      |> Keyword.put_new(:reuse_sessions, true)
+    else
+      options
+      |> Keyword.delete(:secure_renegotiate)
+      |> Keyword.delete(:reuse_sessions)
+    end
   end
 
   defp configure_managed_tls(options) do
