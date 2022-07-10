@@ -14,6 +14,24 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {:ok, "", _state} = adapter.read_req_body(state, length: 5)
   end
 
+  test "read_req_body/2 when passing params" do
+    conn = conn(:get, "/", %{"a" => "b", "c" => "d"})
+    {adapter, state} = conn.adapter
+    assert {:ok, "a=b&c=d", _state} = adapter.read_req_body(state, length: 7)
+
+    conn = conn(:get, "/?e=f", %{"a" => "b", "c" => "d"})
+    {adapter, state} = conn.adapter
+    assert {:ok, "a=b&c=d&e=f", _state} = adapter.read_req_body(state, length: 11)
+
+    conn = conn(:post, "/", %{"a" => "b", "c" => "d"})
+    {adapter, state} = conn.adapter
+    assert {:ok, "a=b&c=d", _state} = adapter.read_req_body(state, length: 7)
+
+    conn = conn(:post, "/?e=f", %{"a" => "b", "c" => "d"})
+    {adapter, state} = conn.adapter
+    assert {:ok, "a=b&c=d&e=f", _state} = adapter.read_req_body(state, length: 11)
+  end
+
   test "custom params" do
     conn = conn(:head, "/posts", page: 2)
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}

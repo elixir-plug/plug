@@ -163,7 +163,7 @@ defmodule Plug.Adapters.Test.Conn do
       |> Map.merge(from_query)
       |> Plug.Conn.Query.encode()
 
-    {params, {"", nil}, {query, params}, headers}
+    {params, {query, nil}, {query, params}, headers}
   end
 
   defp body_or_params(params, query, headers, _method) when is_map(params) do
@@ -174,8 +174,9 @@ defmodule Plug.Adapters.Test.Conn do
     body_params = stringify_params(params, & &1)
     query_params = Plug.Conn.Query.decode(query)
     params = Map.merge(query_params, body_params)
+    encoded_params = Plug.Conn.Query.encode(params)
 
-    {params, {"--plug_conn_test--", body_params}, {query, query_params}, headers}
+    {params, {encoded_params, body_params}, {query, query_params}, headers}
   end
 
   defp stringify_params([{_, _} | _] = params, value_fun),
