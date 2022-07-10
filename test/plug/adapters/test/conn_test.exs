@@ -21,7 +21,7 @@ defmodule Plug.Adapters.Test.ConnTest do
 
     conn = conn(:get, "/?e=f", %{"a" => "b", "c" => "d"})
     {adapter, state} = conn.adapter
-    assert {:ok, "a=b&c=d&e=f", _state} = adapter.read_req_body(state, length: 11)
+    assert {:ok, "a=b&c=d", _state} = adapter.read_req_body(state, length: 7)
 
     conn = conn(:post, "/", %{"a" => "b", "c" => "d"})
     {adapter, state} = conn.adapter
@@ -29,7 +29,7 @@ defmodule Plug.Adapters.Test.ConnTest do
 
     conn = conn(:post, "/?e=f", %{"a" => "b", "c" => "d"})
     {adapter, state} = conn.adapter
-    assert {:ok, "a=b&c=d&e=f", _state} = adapter.read_req_body(state, length: 11)
+    assert {:ok, "a=b&c=d", _state} = adapter.read_req_body(state, length: 7)
   end
 
   test "custom params" do

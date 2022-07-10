@@ -154,6 +154,7 @@ defmodule Plug.Adapters.Test.Conn do
   defp body_or_params(params, query, headers, method)
        when is_map(params) and method in ["GET", "HEAD"] do
     params = stringify_params(params, &to_string/1)
+    encoded_params = Plug.Conn.Query.encode(params)
 
     from_query = Plug.Conn.Query.decode(query)
     params = Map.merge(from_query, params)
@@ -163,7 +164,7 @@ defmodule Plug.Adapters.Test.Conn do
       |> Map.merge(from_query)
       |> Plug.Conn.Query.encode()
 
-    {params, {query, nil}, {query, params}, headers}
+    {params, {encoded_params, nil}, {query, params}, headers}
   end
 
   defp body_or_params(params, query, headers, _method) when is_map(params) do
@@ -174,7 +175,7 @@ defmodule Plug.Adapters.Test.Conn do
     body_params = stringify_params(params, & &1)
     query_params = Plug.Conn.Query.decode(query)
     params = Map.merge(query_params, body_params)
-    encoded_params = Plug.Conn.Query.encode(params)
+    encoded_params = Plug.Conn.Query.encode(body_params)
 
     {params, {encoded_params, body_params}, {query, query_params}, headers}
   end
