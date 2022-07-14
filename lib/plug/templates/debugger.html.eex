@@ -202,6 +202,64 @@
         padding-left: 32px;
     }
 
+    .code-explorer .hidden-contents {
+        position: absolute;
+        left: -999em;
+    }
+
+    .code-explorer .copy-markdown {
+        background-color: white;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        font-size: .875rem;
+        color: <%= @style.primary %>;
+        border: 1px solid <%= @style.line_color %>;
+        border-radius: .375rem;
+        margin-bottom: 4px;
+        transition: border-color 0.2s ease-out;
+    }
+
+    .code-explorer .copied-markdown {
+        background-color: white;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        font-size: .875rem;
+        color: rgb(22 163 74);
+        border: 1px solid rgb(22 163 74);
+        border-radius: .375rem;
+        margin-bottom: 4px;
+        transition: border-color 0.2s ease-out;
+    }
+
+    .code-explorer .copy-markdown.hidden {
+        display: none;
+    }
+
+    .code-explorer .copied-markdown.hidden {
+        display: none;
+    }
+
+    .code-explorer .copy-markdown:active {
+        background-color: #f9f9fa;
+        border-color: <%= @style.line_color %>;
+        cursor: pointer;
+    }
+
+    .code-explorer .copy-markdown:hover {
+        background-color: #f9f9fa;
+        border-color: <%= @style.primary %>;
+        cursor: pointer;
+    }
+
+    .code-explorer .copy-markdown-icon {
+        height: 1.25rem;
+        width: 1.25rem;
+        margin-left: 0.5rem;
+        margin-right: -0.125rem;
+    }
+
     /* Collapse to single-column */
     @media (max-width: 960px) {
         .code-explorer > .code-snippets {
@@ -400,17 +458,10 @@
      */
 
     .stack-trace-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding-top: 8px;
-    }
-
-    .stack-trace-heading:after {
-        content: '';
-        display: block;
-        clear: both;
-        zoom: 1;
-        border-bottom: solid 1px <%= @style.line_color %>;
-        padding-top: 12px;
-        margin-bottom: 16px;
     }
 
     .stack-trace-heading > h3 {
@@ -709,11 +760,12 @@
     <% end %>
 
         <div class="code-explorer">
+            <textarea class="hidden-contents" role="copy-contents"><%= @markdown %></textarea>
             <div class="code-snippets">
                 <%= for frame <- @frames do %>
                   <div class="frame-info" data-index="<%= frame.index %>" role="stack-trace-details">
                     <div class="file">
-                        <a href="<%= frame.link %>"><%= h frame.file %></a>
+                      <a href="<%= frame.link %>"><%= h frame.file %></a>
                     </div>
 
                     <%= if (snippet = frame.snippet) && snippet != [] do %>
@@ -764,6 +816,20 @@
             <div class="stack-trace">
                 <div class="stack-trace-heading">
                     <label><input type="checkbox" role="show-all-toggle">Show only app frames</label>
+                    <button class="copy-markdown" role="copy-to-markdown" type="button">
+                      Copy markdown
+                      <!-- Heroicon name: outline/clipboard-copy -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="copy-markdown-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                    </button>
+                    <button class="copied-markdown hidden" disabled role="copy-to-markdown-success" type="button">
+                      Copied!
+                      <!-- Heroicon name: outline/clipboard-check -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="copy-markdown-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    </button>
                 </div>
 
                 <ul class="stack-trace-list -show-all" role="stack-trace-list">
@@ -843,12 +909,36 @@
         var $items = document.querySelectorAll('[role~="stack-trace-item"]')
         var $toggle = document.querySelector('[role~="show-all-toggle"]')
         var $list = document.querySelector('[role~="stack-trace-list"]')
+        var $copyBtn = document.querySelector('[role~="copy-to-markdown"]')
+        var $copiedBtn = document.querySelector('[role~="copy-to-markdown-success"]')
+        var $copy = document.querySelector('[role~="copy-contents"]')
 
         each($items, function ($item) {
             on($item, 'click', itemOnclick)
         })
 
         on($toggle, 'click', toggleOnclick)
+        on($copyBtn, 'click', copyToClipboard)
+
+        function copyToClipboard () {
+          if(navigator.clipboard) {
+            // For those working on localhost or HTTPS
+            navigator.clipboard.writeText($copy.innerHTML).then(copiedClipboard).catch(() => {})
+          } else {
+            // For those working on HTTP
+            $copy.select()
+            if (document.execCommand("copy")) copiedClipboard()
+          }
+        }
+
+        function copiedClipboard () {
+          $copyBtn.classList.add("hidden")
+          $copiedBtn.classList.remove("hidden")
+          setTimeout(function () {
+            $copyBtn.classList.remove("hidden")
+            $copiedBtn.classList.add("hidden")
+          }, 5000)
+        }
 
         function toggleOnclick () {
             if (this.checked) {
