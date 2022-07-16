@@ -207,33 +207,6 @@
         left: -999em;
     }
 
-    .code-explorer .copy-markdown {
-        background-color: transparent;
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.5rem;
-        font-size: .875rem;
-        border-width: 0;
-        margin-bottom: 4px;
-    }
-
-    .code-explorer .copy-markdown:active {
-        background-color: #f9f9fa;
-        cursor: pointer;
-    }
-
-    .code-explorer .copy-markdown:hover {
-        background-color: #f9f9fa;
-        cursor: pointer;
-    }
-
-    .code-explorer .copy-markdown-icon {
-        height: 1rem;
-        width: 1rem;
-        margin-left: 0.5rem;
-        margin-right: -0.125rem;
-    }
-
     /* Collapse to single-column */
     @media (max-width: 960px) {
         .code-explorer > .code-snippets {
@@ -456,6 +429,31 @@
     .stack-trace-heading > label > input {
         margin-right: .3em;
         vertical-align: middle;
+    }
+
+    .stack-trace-heading .copy-markdown {
+        color: <%= @style.text_color %>;
+        background-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        font-size: <%= :math.pow(1.2, -1) %>em;
+        line-height: 1.9;
+        border-width: 0;
+    }
+
+    .stack-trace-heading .copy-markdown:active {
+        cursor: pointer;
+    }
+
+    .stack-trace-heading .copy-markdown:hover {
+        cursor: pointer;
+    }
+
+    .stack-trace-heading .copy-markdown-icon {
+        height: 1rem;
+        width: 1rem;
+        margin-left: 0.5rem;
+        margin-right: -0.125rem;
     }
 
     @media (max-width: 480px) {
