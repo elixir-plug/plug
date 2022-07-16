@@ -208,54 +208,28 @@
     }
 
     .code-explorer .copy-markdown {
-        background-color: white;
+        background-color: transparent;
         display: inline-flex;
         align-items: center;
         padding: 0.25rem 0.5rem;
         font-size: .875rem;
-        color: <%= @style.primary %>;
-        border: 1px solid <%= @style.line_color %>;
-        border-radius: .375rem;
+        border-width: 0;
         margin-bottom: 4px;
-        transition: border-color 0.2s ease-out;
-    }
-
-    .code-explorer .copied-markdown {
-        background-color: white;
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.5rem;
-        font-size: .875rem;
-        color: rgb(22 163 74);
-        border: 1px solid rgb(22 163 74);
-        border-radius: .375rem;
-        margin-bottom: 4px;
-        transition: border-color 0.2s ease-out;
-    }
-
-    .code-explorer .copy-markdown.hidden {
-        display: none;
-    }
-
-    .code-explorer .copied-markdown.hidden {
-        display: none;
     }
 
     .code-explorer .copy-markdown:active {
         background-color: #f9f9fa;
-        border-color: <%= @style.line_color %>;
         cursor: pointer;
     }
 
     .code-explorer .copy-markdown:hover {
         background-color: #f9f9fa;
-        border-color: <%= @style.primary %>;
         cursor: pointer;
     }
 
     .code-explorer .copy-markdown-icon {
-        height: 1.25rem;
-        width: 1.25rem;
+        height: 1rem;
+        width: 1rem;
         margin-left: 0.5rem;
         margin-right: -0.125rem;
     }
@@ -469,7 +443,7 @@
     }
 
     .stack-trace-heading > label {
-        display: block;
+        display: inline-block;
         padding-left: 8px;
         line-height: 1.9;
         font-size: <%= :math.pow(1.2, -1) %>em;
@@ -481,6 +455,7 @@
 
     .stack-trace-heading > label > input {
         margin-right: .3em;
+        vertical-align: middle;
     }
 
     @media (max-width: 480px) {
@@ -817,18 +792,8 @@
                 <div class="stack-trace-heading">
                     <label><input type="checkbox" role="show-all-toggle">Show only app frames</label>
                     <button class="copy-markdown" role="copy-to-markdown" type="button">
-                      Copy markdown
-                      <!-- Heroicon name: outline/clipboard-copy -->
-                      <svg xmlns="http://www.w3.org/2000/svg" class="copy-markdown-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                      </svg>
-                    </button>
-                    <button class="copied-markdown hidden" disabled role="copy-to-markdown-success" type="button">
-                      Copied!
-                      <!-- Heroicon name: outline/clipboard-check -->
-                      <svg xmlns="http://www.w3.org/2000/svg" class="copy-markdown-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                      </svg>
+                      <span role="copy-to-markdown-text">Copy markdown</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="copy-markdown-icon" viewBox="0 0 115.77 122.88"><g><path d="M89.62,13.96v7.73h12.19h0.01v0.02c3.85,0.01,7.34,1.57,9.86,4.1c2.5,2.51,4.06,5.98,4.07,9.82h0.02v0.02 v73.27v0.01h-0.02c-0.01,3.84-1.57,7.33-4.1,9.86c-2.51,2.5-5.98,4.06-9.82,4.07v0.02h-0.02h-61.7H40.1v-0.02 c-3.84-0.01-7.34-1.57-9.86-4.1c-2.5-2.51-4.06-5.98-4.07-9.82h-0.02v-0.02V92.51H13.96h-0.01v-0.02c-3.84-0.01-7.34-1.57-9.86-4.1 c-2.5-2.51-4.06-5.98-4.07-9.82H0v-0.02V13.96v-0.01h0.02c0.01-3.85,1.58-7.34,4.1-9.86c2.51-2.5,5.98-4.06,9.82-4.07V0h0.02h61.7 h0.01v0.02c3.85,0.01,7.34,1.57,9.86,4.1c2.5,2.51,4.06,5.98,4.07,9.82h0.02V13.96L89.62,13.96z M79.04,21.69v-7.73v-0.02h0.02 c0-0.91-0.39-1.75-1.01-2.37c-0.61-0.61-1.46-1-2.37-1v0.02h-0.01h-61.7h-0.02v-0.02c-0.91,0-1.75,0.39-2.37,1.01 c-0.61,0.61-1,1.46-1,2.37h0.02v0.01v64.59v0.02h-0.02c0,0.91,0.39,1.75,1.01,2.37c0.61,0.61,1.46,1,2.37,1v-0.02h0.01h12.19V35.65 v-0.01h0.02c0.01-3.85,1.58-7.34,4.1-9.86c2.51-2.5,5.98-4.06,9.82-4.07v-0.02h0.02H79.04L79.04,21.69z M105.18,108.92V35.65v-0.02 h0.02c0-0.91-0.39-1.75-1.01-2.37c-0.61-0.61-1.46-1-2.37-1v0.02h-0.01h-61.7h-0.02v-0.02c-0.91,0-1.75,0.39-2.37,1.01 c-0.61,0.61-1,1.46-1,2.37h0.02v0.01v73.27v0.02h-0.02c0,0.91,0.39,1.75,1.01,2.37c0.61,0.61,1.46,1,2.37,1v-0.02h0.01h61.7h0.02 v0.02c0.91,0,1.75-0.39,2.37-1.01c0.61-0.61,1-1.46,1-2.37h-0.02V108.92L105.18,108.92z"/></g></svg>
                     </button>
                 </div>
 
@@ -910,7 +875,7 @@
         var $toggle = document.querySelector('[role~="show-all-toggle"]')
         var $list = document.querySelector('[role~="stack-trace-list"]')
         var $copyBtn = document.querySelector('[role~="copy-to-markdown"]')
-        var $copiedBtn = document.querySelector('[role~="copy-to-markdown-success"]')
+        var $copyBtnText = document.querySelector('[role~="copy-to-markdown-text"]')
         var $copy = document.querySelector('[role~="copy-contents"]')
 
         each($items, function ($item) {
@@ -932,11 +897,9 @@
         }
 
         function copiedClipboard () {
-          $copyBtn.classList.add("hidden")
-          $copiedBtn.classList.remove("hidden")
+          $copyBtnText.innerText = "Copied!"
           setTimeout(function () {
-            $copyBtn.classList.remove("hidden")
-            $copiedBtn.classList.add("hidden")
+            $copyBtnText.innerText = "Copy markdown"
           }, 5000)
         }
 
