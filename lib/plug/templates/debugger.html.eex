@@ -417,7 +417,7 @@
 
     .stack-trace-heading > label {
         display: inline-block;
-        padding-left: 8px;
+        padding-left: 5px;
         line-height: 1.9;
         font-size: <%= :math.pow(1.2, -1) %>em;
         -webkit-user-select: none;
@@ -427,7 +427,7 @@
     }
 
     .stack-trace-heading > label > input {
-        margin-right: .3em;
+        margin: -0.2em 0.5em 0 0;
         vertical-align: middle;
     }
 
@@ -452,8 +452,7 @@
     .stack-trace-heading .copy-markdown-icon {
         height: 1rem;
         width: 1rem;
-        margin-left: 0.5rem;
-        margin-right: -0.125rem;
+        margin: 0.1em 0.3rem 0;
     }
 
     @media (max-width: 480px) {
