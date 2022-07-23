@@ -51,6 +51,11 @@ defmodule Plug.DebuggerTest do
       raise "oops"
     end
 
+    get "/bad_match" do
+      _ = conn
+      bad_match(:six, :one)
+    end
+
     get "/send_and_wrapped" do
       stack =
         try do
@@ -75,6 +80,10 @@ defmodule Plug.DebuggerTest do
 
     defp add_csp(conn, _opts),
       do: Plug.Conn.put_resp_header(conn, "content-security-policy", "abcdef")
+
+    defp bad_match(:one, :two), do: :ok
+    defp bad_match(:three, :four), do: :ok
+    defp bad_match(:five, :six), do: :ok
   end
 
   defmodule StyledRouter do
@@ -294,6 +303,15 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "session_value"
   end
 
+  test "shows copy markdown button" do
+    conn =
+      conn(:get, "/")
+      |> put_req_header("accept", "text/html")
+      |> render([], fn -> raise "oops" end)
+
+    assert conn.resp_body =~ "Copy markdown"
+  end
+
   defp stack(stack) do
     render(put_req_header(conn(:get, "/"), "accept", "text/html"), [stack: stack], fn ->
       raise "oops"
@@ -363,6 +381,22 @@ defmodule Plug.DebuggerTest do
 
     assert conn.resp_body =~ "# Plug.Parsers.UnsupportedMediaTypeError at GET /"
     assert conn.resp_body =~ "unsupported media type foo/bar"
+  end
+
+  test "renders bad match attempted arguments" do
+    conn =
+      conn(:get, "/bad_match")
+      |> put_req_header("accept", "text/markdown")
+      |> put_resp_header("content-security-policy", "abcdef")
+
+    capture_log(fn -> assert_raise(FunctionClauseError, fn -> Router.call(conn, []) end) end)
+    {_status, _headers, body} = sent_resp(conn)
+
+    assert body =~ "# FunctionClauseError at GET /bad_match"
+    assert body =~ "Code:\n"
+    assert body =~ "  Called with 2 arguments"
+    assert body =~ "  * `:six`"
+    assert body =~ "  * `:one`"
   end
 
   test "render actions when an implementation of `Plug.Exception` has it" do

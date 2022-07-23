@@ -4,6 +4,24 @@ Exception:
 
     <%= String.replace(@formatted, "\n", "\n    ") %>
 
+Code:
+<%= for frame <- @frames do %>
+`<%= h frame.file %>`
+<%= if (snippet = frame.snippet) && snippet != [] do %>
+    <%= for {index, line, highlight} <- snippet do %><%= if highlight do %><%= h index %>>  <% else %><%= h index %>   <% end %><%= h String.trim_trailing(line) %>
+    <% end %><% else %>
+    No code available.
+<% end %><%= if frame.args do %>
+  Called with <%= length(frame.args) %> arguments
+
+  <%= for arg <- frame.args do %>* `<%= h inspect arg %>`
+  <% end %><% end %><%= if frame.clauses do %><% {min, max, clauses} = frame.clauses %>
+  Attempted function clauses (showing <%= min %> out of <%= max %>)
+
+    <%= for clause <- clauses do %> <%= clause %>
+    <% end %>
+<% end %><% end %>
+
 ## Connection details
 
 ### Params
