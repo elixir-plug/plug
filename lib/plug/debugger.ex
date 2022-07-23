@@ -196,6 +196,7 @@ defmodule Plug.Debugger do
       params: params,
       frames: frames(:md, stack, opts)
     ]
+
     markdown = template_markdown(assigns)
 
     if accepts_html?(get_req_header(conn, "accept")) do
@@ -209,16 +210,17 @@ defmodule Plug.Debugger do
       style = Enum.into(opts[:style] || [], @default_style)
       banner = banner(conn, status, kind, reason, stack, opts)
 
-      assigns = Keyword.merge(assigns, [
-        conn: conn,
-        message: message,
-        markdown: markdown,
-        style: style,
-        banner: banner,
-        actions: actions,
-        frames: frames(:html, stack, opts),
-        last_path: last_path
-      ])
+      assigns =
+        Keyword.merge(assigns,
+          conn: conn,
+          message: message,
+          markdown: markdown,
+          style: style,
+          banner: banner,
+          actions: actions,
+          frames: frames(:html, stack, opts),
+          last_path: last_path
+        )
 
       send_resp(conn, status, template_html(assigns))
     else
