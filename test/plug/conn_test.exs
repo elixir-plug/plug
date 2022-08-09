@@ -582,7 +582,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "merge_resp_header/3 raises when invalid header value given" do
+  test "merge_resp_headers/3 raises when invalid header value given" do
     message =
       ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
 
@@ -689,6 +689,54 @@ defmodule Plug.ConnTest do
 
     conn = delete_req_header(conn, "foo")
     assert get_req_header(conn, "foo") == []
+  end
+
+  test "merge_req_headers/3" do
+    conn1 = merge_req_headers(conn(:head, "/foo"), %{"x-foo" => "bar", "x-bar" => "baz"})
+    assert get_req_header(conn1, "x-foo") == ["bar"]
+    assert get_req_header(conn1, "x-bar") == ["baz"]
+    conn2 = merge_req_headers(conn1, %{"x-foo" => "new"})
+    assert get_req_header(conn2, "x-foo") == ["new"]
+    assert get_req_header(conn2, "x-bar") == ["baz"]
+    assert length(conn1.req_headers) == length(conn2.req_headers)
+  end
+
+  test "prepend_req_headers/2" do
+    conn1 = prepend_req_headers(conn(:head, "/foo"), [{"x-foo", "bar"}])
+    assert get_req_header(conn1, "x-foo") == ["bar"]
+    conn2 = prepend_req_headers(conn1, [{"x-foo", "baz"}])
+    assert get_req_header(conn2, "x-foo") == ["baz", "bar"]
+  end
+
+  test "prepend_req_headers/2 raises when the conn was already been sent" do
+    conn = send_resp(conn(:get, "/foo"), 200, "ok")
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      prepend_req_headers(conn, [{"x-foo", "bar"}])
+    end
+  end
+
+  test "prepend_req_headers/2 raises when the conn is chunked" do
+    conn = send_chunked(conn(:get, "/foo"), 200)
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      prepend_req_headers(conn, [{"x-foo", "bar"}])
+    end
+  end
+
+  test "prepend_req_headers/2 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
+      prepend_req_headers(conn, [{"X-Foo", "bar"}])
+    end
+  end
+
+  test "prepend_req_headers/2 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+    prepend_req_headers(conn, [{"X-Foo", "bar"}])
   end
 
   test "put_req_header/3" do

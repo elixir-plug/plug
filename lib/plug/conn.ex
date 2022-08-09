@@ -655,6 +655,97 @@ defmodule Plug.Conn do
     for {^key, value} <- headers, do: value
   end
 
+  @doc ~S"""
+  Prepends the list of headers to the connection request headers.
+
+  Similar to `put_req_header` this functions adds a new request header
+  (`key`) but rather than replacing the existing one it prepends another
+  header with the same `key`.
+
+  The "host" header will be overridden by `conn.host` and should not be set
+  with this method. Instead, do `%Plug.Conn{conn | host: value}`.
+
+  Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
+  it is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request.
+  Additionally, requests with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped requests.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
+
+  Raises a `Plug.Conn.AlreadySentError` if the connection has already been
+  `:sent` or `:chunked`.
+
+  ## Examples
+
+      Plug.Conn.prepend_req_headers(conn, [{"accept", "application/json"}])
+
+  """
+  @spec prepend_req_headers(t, headers) :: t
+  def prepend_req_headers(conn, headers)
+
+  def prepend_req_headers(%Conn{state: :sent}, _headers) do
+    raise AlreadySentError
+  end
+
+  def prepend_req_headers(%Conn{state: :chunked}, _headers) do
+    raise AlreadySentError
+  end
+
+  def prepend_req_headers(%Conn{adapter: adapter, req_headers: req_headers} = conn, headers)
+      when is_list(headers) do
+    for {key, _value} <- headers do
+      validate_req_header!(adapter, key)
+    end
+
+    %{conn | req_headers: headers ++ req_headers}
+  end
+
+  @doc """
+  Merges a series of request headers into the connection.
+
+  The "host" header will be overridden by `conn.host` and should not be set
+  with this method. Instead, do `%Plug.Conn{conn | host: value}`.
+
+  Because header keys are case-insensitive in both HTTP/1.1 and HTTP/2,
+  it is recommended for header keys to be in lowercase, to avoid sending
+  duplicate keys in a request.
+  Additionally, requests with mixed-case headers served over HTTP/2 are not
+  considered valid by common clients, resulting in dropped requests.
+  As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
+  headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
+
+  ## Example
+
+      Plug.Conn.merge_req_headers(conn, [{"accept", "text/plain"}, {"X-1337", "5P34K"}])
+
+  """
+  @spec merge_req_headers(t, Enum.t()) :: t
+  def merge_req_headers(conn, headers)
+
+  def merge_req_headers(%Conn{state: :sent}, _headers) do
+    raise AlreadySentError
+  end
+
+  def merge_req_headers(%Conn{state: :chunked}, _headers) do
+    raise AlreadySentError
+  end
+
+  def merge_req_headers(conn, headers) when headers == %{} do
+    conn
+  end
+
+  def merge_req_headers(%Conn{req_headers: current, adapter: adapter} = conn, headers) do
+    headers =
+      Enum.reduce(headers, current, fn {key, value}, acc
+                                       when is_binary(key) and is_binary(value) ->
+        validate_req_header!(adapter, key)
+        List.keystore(acc, key, 0, {key, value})
+      end)
+
+    %{conn | req_headers: headers}
+  end
+
   @doc """
   Adds a new request header (`key`) if not present, otherwise replaces the
   previous value of that header with `value`.
