@@ -145,6 +145,7 @@ defmodule Plug.Test do
       assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
 
   """
+  @deprecated "Most browsers and clients have removed push support"
   def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
     Enum.reverse(receive_pushes(ref, []))
   end

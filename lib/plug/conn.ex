@@ -1401,6 +1401,7 @@ defmodule Plug.Conn do
   resource if your certificate is not trusted. In the case of Chrome this means
   a valid cert with a SAN. See https://www.chromestatus.com/feature/4981025180483584
   """
+  @deprecated "Most browsers and clients have removed push support"
   @spec push(t, String.t(), Keyword.t()) :: t
   def push(%Conn{} = conn, path, headers \\ []) do
     adapter_push(conn, path, headers)
@@ -1411,6 +1412,7 @@ defmodule Plug.Conn do
   Pushes a resource to the client but raises if the adapter
   does not support server push.
   """
+  @deprecated "Most browsers and clients have removed push support"
   @spec push!(t, String.t(), Keyword.t()) :: t
   def push!(%Conn{adapter: {adapter, _}} = conn, path, headers \\ []) do
     case adapter_push(conn, path, headers) do
