@@ -76,7 +76,7 @@ defmodule Plug.Upload do
   def give_away(path, to_pid, from_pid)
       when is_binary(path) and is_pid(to_pid) and is_pid(from_pid) do
     with [{^from_pid, _tmp}] <- :ets.lookup(@dir_table, from_pid),
-         true <- is_path_owner?(from_pid, path) do
+         true <- path_owner?(from_pid, path) do
       case :ets.lookup(@dir_table, to_pid) do
         [{^to_pid, _tmp}] ->
           :ets.insert(@path_table, {to_pid, path})
@@ -86,13 +86,9 @@ defmodule Plug.Upload do
 
         [] ->
           server = plug_server()
-
-          {:ok, tmps} = GenServer.call(server, :roots)
-          {:ok, tmp} = generate_tmp_dir(tmps)
+          {:ok, tmp} = generate_tmp_dir()
           :ok = GenServer.call(server, {:give_away, to_pid, tmp, path})
-
           :ets.delete_object(@path_table, {from_pid, path})
-
           :ok
       end
     else
@@ -110,17 +106,17 @@ defmodule Plug.Upload do
 
       [] ->
         server = plug_server()
+        GenServer.cast(server, {:monitor, pid})
 
-        {:ok, tmps} = GenServer.call(server, {:monitor, pid})
-
-        with {:ok, tmp} <- generate_tmp_dir(tmps) do
+        with {:ok, tmp} <- generate_tmp_dir() do
           true = :ets.insert_new(@dir_table, {pid, tmp})
           {:ok, tmp}
         end
     end
   end
 
-  defp generate_tmp_dir(tmp_roots) do
+  defp generate_tmp_dir() do
+    tmp_roots = :persistent_term.get(__MODULE__)
     {mega, _, _} = :os.timestamp()
     subdir = "/plug-" <> i(mega)
 
@@ -157,14 +153,13 @@ defmodule Plug.Upload do
 
   defp path(prefix, tmp) do
     sec = :os.system_time(:second)
-    rand = :rand.uniform(999_999_999_999_999)
+    rand = :rand.uniform(999_999_999_999)
     scheduler_id = :erlang.system_info(:scheduler_id)
     tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(rand) <> "-" <> i(scheduler_id)
   end
 
-  defp is_path_owner?(pid, path) do
+  defp path_owner?(pid, path) do
     owned_paths = :ets.lookup(@path_table, pid)
-
     Enum.any?(owned_paths, fn {_pid, p} -> p == path end)
   end
 
@@ -211,31 +206,28 @@ defmodule Plug.Upload do
     Process.flag(:trap_exit, true)
     tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1) |> Path.expand()
     cwd = Path.join(File.cwd!(), "tmp")
+    :persistent_term.put(__MODULE__, [tmp, cwd])
 
     :ets.new(@dir_table, [:named_table, :public, :set])
     :ets.new(@path_table, [:named_table, :public, :duplicate_bag])
-
-    {:ok, [tmp, cwd]}
+    {:ok, %{}}
   end
 
   @impl true
-  def handle_call({:monitor, pid}, _from, dirs) do
-    Process.monitor(pid)
-    {:reply, {:ok, dirs}, dirs}
-  end
-
-  def handle_call(:roots, _from, dirs) do
-    {:reply, {:ok, dirs}, dirs}
-  end
-
-  def handle_call({:give_away, pid, tmp, path}, _from, dirs) do
+  def handle_call({:give_away, pid, tmp, path}, _from, state) do
     # Since we are writing in behalf of another process, we need to make sure
     # the monitor and writing to the tables happen within the same operation.
     Process.monitor(pid)
     :ets.insert_new(@dir_table, {pid, tmp})
     :ets.insert(@path_table, {pid, path})
 
-    {:reply, :ok, dirs}
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_cast({:monitor, pid}, state) do
+    Process.monitor(pid)
+    {:noreply, state}
   end
 
   @impl true
