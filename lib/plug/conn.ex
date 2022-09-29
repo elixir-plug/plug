@@ -108,8 +108,8 @@ defmodule Plug.Conn do
   The connection state is used to track the connection lifecycle. It starts as
   `:unset` but is changed to `:set` (via `resp/3`) or `:set_chunked`
   (used only for `before_send` callbacks by `send_chunked/2`) or `:file`
-  (when invoked via `send_file/3`). Its final result is `:sent`, `:file` or
-  `:chunked` depending on the response model.
+  (when invoked via `send_file/3`). Its final result is `:sent`, `:file`, `:chunked` 
+  or `:upgraded` depending on the response model.
 
   ## Private fields
 
@@ -172,7 +172,7 @@ defmodule Plug.Conn do
   @type scheme :: :http | :https
   @type secret_key_base :: binary | nil
   @type segments :: [binary]
-  @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
+  @type state :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent | :upgraded
   @type status :: atom | int_status
 
   @type t :: %__MODULE__{
@@ -390,7 +390,7 @@ defmodule Plug.Conn do
   atoms is available in `Plug.Conn.Status`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   ## Examples
 
@@ -399,7 +399,10 @@ defmodule Plug.Conn do
 
   """
   @spec put_status(t, status) :: t
-  def put_status(%Conn{state: :sent}, _status), do: raise(AlreadySentError)
+  def put_status(%Conn{state: state}, _status) when state not in @unsent do
+    raise AlreadySentError
+  end
+
   def put_status(%Conn{} = conn, nil), do: %{conn | status: nil}
   def put_status(%Conn{} = conn, status), do: %{conn | status: Plug.Conn.Status.code(status)}
 
@@ -408,7 +411,7 @@ defmodule Plug.Conn do
 
   It expects the connection state to be `:set`, otherwise raises an
   `ArgumentError` for `:unset` connections or a `Plug.Conn.AlreadySentError` for
-  already `:sent` connections.
+  already `:sent`, `:chunked` or `:upgraded` connections.
 
   At the end sets the connection state to `:sent`.
 
@@ -451,7 +454,7 @@ defmodule Plug.Conn do
   If available, the file is sent directly over the socket using
   the operating system `sendfile` operation.
 
-  It expects a connection that has not been `:sent` yet and sets its
+  It expects a connection that has not been `:sent`, `:chunked` or `:upgraded` yet and sets its
   state to `:file` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
 
   ## Examples
@@ -494,7 +497,7 @@ defmodule Plug.Conn do
   @doc """
   Sends the response headers as a chunked response.
 
-  It expects a connection that has not been `:sent` yet and sets its
+  It expects a connection that has not been `:sent` or `:upgraded` yet and sets its
   state to `:chunked` afterwards. Otherwise, raises `Plug.Conn.AlreadySentError`.
   After `send_chunked/2` is called, chunks can be sent to the client via
   the `chunk/2` function.
@@ -590,7 +593,7 @@ defmodule Plug.Conn do
   Sets the response to the given `status` and `body`.
 
   It sets the connection state to `:set` (if not already `:set`)
-  and raises `Plug.Conn.AlreadySentError` if it was already `:sent`.
+  and raises `Plug.Conn.AlreadySentError` if it was already `:sent`, `:chunked` or `:upgraded`.
 
   If you also want to send the response, use `send_resp/1` after this
   or use `send_resp/3`.
@@ -674,7 +677,7 @@ defmodule Plug.Conn do
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   ## Examples
 
@@ -684,11 +687,7 @@ defmodule Plug.Conn do
   @spec prepend_req_headers(t, headers) :: t
   def prepend_req_headers(conn, headers)
 
-  def prepend_req_headers(%Conn{state: :sent}, _headers) do
-    raise AlreadySentError
-  end
-
-  def prepend_req_headers(%Conn{state: :chunked}, _headers) do
+  def prepend_req_headers(%Conn{state: state}, _headers) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -723,11 +722,7 @@ defmodule Plug.Conn do
   @spec merge_req_headers(t, Enum.t()) :: t
   def merge_req_headers(conn, headers)
 
-  def merge_req_headers(%Conn{state: :sent}, _headers) do
-    raise AlreadySentError
-  end
-
-  def merge_req_headers(%Conn{state: :chunked}, _headers) do
+  def merge_req_headers(%Conn{state: state}, _headers) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -762,7 +757,7 @@ defmodule Plug.Conn do
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   ## Examples
 
@@ -772,7 +767,7 @@ defmodule Plug.Conn do
   @spec put_req_header(t, binary, binary) :: t
   def put_req_header(conn, key, value)
 
-  def put_req_header(%Conn{state: :sent}, _key, _value) do
+  def put_req_header(%Conn{state: state}, _key, _value) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -786,7 +781,7 @@ defmodule Plug.Conn do
   Deletes a request header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   ## Examples
 
@@ -796,11 +791,7 @@ defmodule Plug.Conn do
   @spec delete_req_header(t, binary) :: t
   def delete_req_header(conn, key)
 
-  def delete_req_header(%Conn{state: :sent}, _key) do
-    raise AlreadySentError
-  end
-
-  def delete_req_header(%Conn{state: :chunked}, _key) do
+  def delete_req_header(%Conn{state: state}, _key) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -814,7 +805,7 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   Only the first value of the header `key` is updated if present.
 
@@ -831,11 +822,7 @@ defmodule Plug.Conn do
   @spec update_req_header(t, binary, binary, (binary -> binary)) :: t
   def update_req_header(conn, key, initial, fun)
 
-  def update_req_header(%Conn{state: :sent}, _key, _initial, _fun) do
-    raise AlreadySentError
-  end
-
-  def update_req_header(%Conn{state: :chunked}, _key, _initial, _fun) do
+  def update_req_header(%Conn{state: state}, _key, _initial, _fun) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -875,7 +862,7 @@ defmodule Plug.Conn do
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
@@ -886,11 +873,7 @@ defmodule Plug.Conn do
 
   """
   @spec put_resp_header(t, binary, binary) :: t
-  def put_resp_header(%Conn{state: :sent}, _key, _value) do
-    raise AlreadySentError
-  end
-
-  def put_resp_header(%Conn{state: :chunked}, _key, _value) do
+  def put_resp_header(%Conn{state: state}, _key, _value) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -916,7 +899,7 @@ defmodule Plug.Conn do
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (`\r`) or newline (`\n`) characters.
@@ -929,11 +912,7 @@ defmodule Plug.Conn do
   @spec prepend_resp_headers(t, headers) :: t
   def prepend_resp_headers(conn, headers)
 
-  def prepend_resp_headers(%Conn{state: :sent}, _headers) do
-    raise AlreadySentError
-  end
-
-  def prepend_resp_headers(%Conn{state: :chunked}, _headers) do
+  def prepend_resp_headers(%Conn{state: state}, _headers) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -965,11 +944,7 @@ defmodule Plug.Conn do
   @spec merge_resp_headers(t, Enum.t()) :: t
   def merge_resp_headers(conn, headers)
 
-  def merge_resp_headers(%Conn{state: :sent}, _headers) do
-    raise AlreadySentError
-  end
-
-  def merge_resp_headers(%Conn{state: :chunked}, _headers) do
+  def merge_resp_headers(%Conn{state: state}, _headers) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -993,7 +968,7 @@ defmodule Plug.Conn do
   Deletes a response header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   ## Examples
 
@@ -1001,11 +976,7 @@ defmodule Plug.Conn do
 
   """
   @spec delete_resp_header(t, binary) :: t
-  def delete_resp_header(%Conn{state: :sent}, _key) do
-    raise AlreadySentError
-  end
-
-  def delete_resp_header(%Conn{state: :chunked}, _key) do
+  def delete_resp_header(%Conn{state: state}, _key) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -1019,7 +990,7 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent` or `:chunked`.
+  `:sent`, `:chunked` or `:upgraded`.
 
   Only the first value of the header `key` is updated if present.
 
@@ -1036,11 +1007,7 @@ defmodule Plug.Conn do
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
   def update_resp_header(conn, key, initial, fun)
 
-  def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
-    raise AlreadySentError
-  end
-
-  def update_resp_header(%Conn{state: :chunked}, _key, _initial, _fun) do
+  def update_resp_header(%Conn{state: state}, _key, _initial, _fun) when state not in @unsent do
     raise AlreadySentError
   end
 
@@ -1847,8 +1814,10 @@ defmodule Plug.Conn do
     validate_header_value!("set-cookie", cookie)
   end
 
-  defp update_cookies(%Conn{state: :sent}, _fun), do: raise(AlreadySentError)
-  defp update_cookies(%Conn{state: :chunked}, _fun), do: raise(AlreadySentError)
+  defp update_cookies(%Conn{state: state}, _fun) when state not in @unsent do
+    raise AlreadySentError
+  end
+
   defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, _fun), do: conn
   defp update_cookies(%Conn{cookies: cookies} = conn, fun), do: %{conn | cookies: fun.(cookies)}
 
