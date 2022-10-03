@@ -150,6 +150,17 @@ defmodule Plug.Conn do
   Even though 404 has been overridden, the `:not_found` atom can still be used
   to set the status to 404 as well as the new atom `:actually_this_was_found`
   inflected from the reason phrase "Actually This Was Found".
+
+  ## Protocol Upgrades
+
+  Plug provides basic support for protocol upgrades via the `upgrade_adapter/3`
+  function to facilitate connection upgrades to protocols such as WebSockets.
+  As the name suggests, this functionality is adapter-dependent and the 
+  functionality & requirements of a given upgrade require explicit coordination
+  between a Plug application & the underlying adapter. Plug provides upgrade 
+  related functionality only to the extent necessary to allow a Plug application 
+  to request protocol upgrades from the underlying adapter. See the documentation
+  for `upgrade_adapter/3` for details.
   """
 
   @type adapter :: {module, term}
@@ -1354,6 +1365,44 @@ defmodule Plug.Conn do
 
   defp adapter_inform(%Conn{adapter: {adapter, payload}}, status, headers),
     do: adapter.inform(payload, status, headers)
+
+  @doc """
+  Request a protocol upgrade from the underlying HTTP adapter.
+
+  The precise semantics of an upgrade are deliberately left unspecified here in order to
+  support arbitrary upgrades, even to protocols which may not exist today. The primary intent of
+  this function is solely to allow an application to issue an upgrade request, not to manage how
+  a given protocol upgrade takes place or what APIs the application must support in order to serve
+  this updated protocol. For details in this regard, consult the documentation of the underlying
+  adapter (such a Plug.Cowboy or Bandit).
+
+  Takes an argument describing the requested upgrade (for example, `:websocket`), and an argument
+  which contains arbitrary data which the underlying adapter is expected to interpret in the
+  context of the requested upgrade.
+
+  If the upgrade is accepted by the adapter, the returned `Plug.Conn` will have a `state` of
+  `:upgraded`. This state is considered equivalently to a 'sent' state, and is subject to the same
+  limitation on subsequent mutating operations.
+
+  If the adapter does not support the requested upgrade then this is a noop and the returned 
+  `Plug.Conn` will be unchanged. The application can detect this and operate on the conn as it
+  normally would in order to indicate an upgrade failure to the client.
+  """
+  @spec upgrade_adapter(t, atom, term) :: t
+  def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, opts)
+      when state in @unsent do
+    case adapter.upgrade(payload, protocol, opts) do
+      {:ok, payload} ->
+        %{conn | adapter: {adapter, payload}, state: :upgraded}
+
+      _ ->
+        conn
+    end
+  end
+
+  def upgrade_adapter(_conn, _protocol, _opts) do
+    raise AlreadySentError
+  end
 
   @doc """
   Pushes a resource to the client.

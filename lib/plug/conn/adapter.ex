@@ -134,6 +134,18 @@ defmodule Plug.Conn.Adapter do
               :ok | {:error, term}
 
   @doc """
+  Attempt to upgrade the connection with the client.
+
+  If the adapter does not support the indicated upgrade, then `{:error, :not_supported}` should be
+  be returned.
+
+  If the adapter supports the indicated upgrade but is unable to proceed with it (due to
+  a negotiation error, invalid opts being passed to this function, or some other reason), then an
+  arbitrary error may be returned.
+  """
+  @callback upgrade(payload, protocol :: atom, opts :: term) :: {:ok, payload} | {:error, term}
+
+  @doc """
   Returns peer information such as the address, port and ssl cert.
   """
   @callback get_peer_data(payload) :: peer_data()

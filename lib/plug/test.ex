@@ -130,6 +130,33 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Returns the upgrade requests that have been sent.
+
+  This function depends on gathering the messages sent by the test adapter when
+  upgrade requests are sent. Calling this function will clear the upgrade request messages from the inbox for the
+  process.
+
+  ## Examples
+
+      conn = conn(:get, "/foo", "bar=10")
+      informs = Plug.Test.send_upgrades(conn)
+      assert {:websocket, [opt: :value]} in informs
+
+  """
+  def sent_upgrades(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    Enum.reverse(receive_upgrades(ref, []))
+  end
+
+  defp receive_upgrades(ref, upgrades) do
+    receive do
+      {^ref, :upgrade, response} ->
+        receive_upgrades(ref, [response | upgrades])
+    after
+      0 -> upgrades
+    end
+  end
+
+  @doc """
   Returns the assets that have been pushed.
 
   This function depends on gathering the messages sent by the test adapter
