@@ -141,7 +141,9 @@ defmodule Plug.Conn.Adapter do
 
   If the adapter supports the indicated upgrade but is unable to proceed with it (due to
   a negotiation error, invalid opts being passed to this function, or some other reason), then an
-  arbitrary error may be returned.
+  arbitrary error may be returned. Note that an adapter does not need to process the actual
+  upgrade within this function; it is a wholly supported failure mode for an adapter to attempt
+  the upgrade process later in the connection lifecycle and fail at that point.
   """
   @callback upgrade(payload, protocol :: atom, opts :: term) :: {:ok, payload} | {:error, term}
 

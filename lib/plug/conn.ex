@@ -1382,7 +1382,9 @@ defmodule Plug.Conn do
 
   If the upgrade is accepted by the adapter, the returned `Plug.Conn` will have a `state` of
   `:upgraded`. This state is considered equivalently to a 'sent' state, and is subject to the same
-  limitation on subsequent mutating operations.
+  limitation on subsequent mutating operations. Note that there is no guarantee or expectation
+  that the actual upgrade process is undertaken within this function; it is entirely possible that
+  the server will only do the actual upgrade later in the connection lifecycle.
 
   If the adapter does not support the requested upgrade then this is a noop and the returned 
   `Plug.Conn` will be unchanged. The application can detect this and operate on the conn as it
