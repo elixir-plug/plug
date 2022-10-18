@@ -139,8 +139,8 @@ defmodule Plug.Test do
   ## Examples
 
       conn = conn(:get, "/foo", "bar=10")
-      informs = Plug.Test.send_upgrades(conn)
-      assert {:websocket, [opt: :value]} in informs
+      upgrades = Plug.Test.send_upgrades(conn)
+      assert {:websocket, [opt: :value]} in upgrades
 
   """
   def sent_upgrades(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
