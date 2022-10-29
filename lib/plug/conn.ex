@@ -1391,9 +1391,9 @@ defmodule Plug.Conn do
   normally would in order to indicate an upgrade failure to the client.
   """
   @spec upgrade_adapter(t, atom, term) :: t
-  def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, opts)
+  def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, args)
       when state in @unsent do
-    case adapter.upgrade(payload, protocol, opts) do
+    case adapter.upgrade(payload, protocol, args) do
       {:ok, payload} ->
         %{conn | adapter: {adapter, payload}, state: :upgraded}
 
@@ -1402,7 +1402,7 @@ defmodule Plug.Conn do
     end
   end
 
-  def upgrade_adapter(_conn, _protocol, _opts) do
+  def upgrade_adapter(_conn, _protocol, _args) do
     raise AlreadySentError
   end
 
