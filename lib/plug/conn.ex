@@ -1367,7 +1367,7 @@ defmodule Plug.Conn do
     do: adapter.inform(payload, status, headers)
 
   @doc """
-  Request a protocol upgrade from the underlying HTTP adapter.
+  Request a protocol upgrade from the underlying adapter.
 
   The precise semantics of an upgrade are deliberately left unspecified here in order to
   support arbitrary upgrades, even to protocols which may not exist today. The primary intent of
