@@ -126,15 +126,13 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {103, [{"link", "</script.js>; rel=preload; as=script"}]} in informational_requests
   end
 
-  test "upgrade the upgrade request to the list" do
+  test "upgrade the supported upgrade request to the list" do
     conn =
       conn(:get, "/")
-      |> Plug.Conn.upgrade_adapter(:unsupported, opt: :unsupported_value)
       |> Plug.Conn.upgrade_adapter(:supported, opt: :supported_value)
 
     upgrade_requests = Plug.Test.sent_upgrades(conn)
 
-    assert {:unsupported, [opt: :unsupported_value]} in upgrade_requests
     assert {:supported, [opt: :supported_value]} in upgrade_requests
   end
 

@@ -459,9 +459,15 @@ defmodule Plug.ConnTest do
     assert conn.state == :upgraded
   end
 
-  test "upgrade_adapter/3 does not set the connection to :upgraded for failed upgrades" do
-    conn = conn(:get, "/foo") |> upgrade_adapter(:unsupported, opt: :unsupported)
-    assert conn.state == :unset
+  test "upgrade_adapter/3 raises an error on unsupported upgrades" do
+    assert_raise(
+      ArgumentError,
+      "upgrade to unsupported not supported by Plug.Adapters.Test.Conn.",
+      fn ->
+        conn(:get, "/foo")
+        |> upgrade_adapter(:unsupported, opt: :unsupported)
+      end
+    )
   end
 
   test "upgrade_adapter/3 will raise if the response is sent before upgrading" do
