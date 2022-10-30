@@ -1398,7 +1398,7 @@ defmodule Plug.Conn do
         %{conn | adapter: {adapter, payload}, state: :upgraded}
 
       {:error, :not_supported} ->
-        raise ArgumentError, "upgrade to #{protocol} not supported by #{inspect(adapter)}."
+        raise ArgumentError, "upgrade to #{protocol} not supported by #{inspect(adapter)}"
     end
   end
 
