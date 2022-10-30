@@ -462,10 +462,10 @@ defmodule Plug.ConnTest do
   test "upgrade_adapter/3 raises an error on unsupported upgrades" do
     assert_raise(
       ArgumentError,
-      "upgrade to unsupported not supported by Plug.Adapters.Test.Conn",
+      "upgrade to not_supported not supported by Plug.Adapters.Test.Conn",
       fn ->
         conn(:get, "/foo")
-        |> upgrade_adapter(:unsupported, opt: :unsupported)
+        |> upgrade_adapter(:not_supported, opt: :not_supported)
       end
     )
   end
