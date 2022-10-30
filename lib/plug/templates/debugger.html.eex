@@ -238,7 +238,9 @@
     .frame-info > .meta,
     .frame-info > .file {
         padding: 12px 16px;
-        white-space: no-wrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: <%= :math.pow(1.2, -1) %>em;
     }
 
