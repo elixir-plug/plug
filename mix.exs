@@ -1,7 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-  @version "1.14.0-dev"
+  @version "1.14.0"
   @description "Compose web applications with functions"
   @xref_exclude [Plug.Cowboy, :telemetry, :ssl]
 
