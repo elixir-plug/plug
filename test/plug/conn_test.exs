@@ -449,6 +449,35 @@ defmodule Plug.ConnTest do
     )
   end
 
+  test "upgrade_adapter/3 requests an upgrade" do
+    conn = conn(:get, "/foo") |> upgrade_adapter(:supported, opt: :supported)
+    assert {:supported, [opt: :supported]} in sent_upgrades(conn)
+  end
+
+  test "upgrade_adapter/3 sets the connection to :upgraded for supported upgrades" do
+    conn = conn(:get, "/foo") |> upgrade_adapter(:supported, opt: :supported)
+    assert conn.state == :upgraded
+  end
+
+  test "upgrade_adapter/3 raises an error on unsupported upgrades" do
+    assert_raise(
+      ArgumentError,
+      "upgrade to not_supported not supported by Plug.Adapters.Test.Conn",
+      fn ->
+        conn(:get, "/foo")
+        |> upgrade_adapter(:not_supported, opt: :not_supported)
+      end
+    )
+  end
+
+  test "upgrade_adapter/3 will raise if the response is sent before upgrading" do
+    assert_raise(Plug.Conn.AlreadySentError, fn ->
+      conn(:get, "/foo")
+      |> send_chunked(200)
+      |> upgrade_adapter(:supported, opt: :supported)
+    end)
+  end
+
   test "chunk/2 raises if send_chunked/3 hasn't been called yet" do
     conn = conn(:get, "/")
 

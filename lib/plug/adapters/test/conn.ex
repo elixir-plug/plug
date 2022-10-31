@@ -119,6 +119,16 @@ defmodule Plug.Adapters.Test.Conn do
     :ok
   end
 
+  def upgrade(%{owner: owner, ref: ref}, :not_supported = protocol, opts) do
+    send(owner, {ref, :upgrade, {protocol, opts}})
+    {:error, :not_supported}
+  end
+
+  def upgrade(%{owner: owner, ref: ref} = state, protocol, opts) do
+    send(owner, {ref, :upgrade, {protocol, opts}})
+    {:ok, state}
+  end
+
   def push(%{owner: owner, ref: ref}, path, headers) do
     send(owner, {ref, :push, {path, headers}})
     :ok
