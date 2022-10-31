@@ -1,8 +1,23 @@
 # Changelog
 
-## v1.14.0-dev
+## v1.14.0 (2022-10-31)
 
 Require Elixir v1.10+.
+
+### Enhancements
+
+  * Add `Plug.Conn.prepend_req_headers/2` and `Plug.Conn.merge_req_headers/2`
+  * Support adapter upgrades with `Plug.Conn.upgrade_adapter/3`
+  * Add "Copy to Markdown" button in exception page
+  * Support exclusive use of tlsv1.3
+
+### Bug fixes
+
+  * Make sure last parameter works within maps
+
+### Deprecations
+
+  * Deprecate server pushes as they are no longer supported by browsers
 
 ## v1.13.6 (2022-04-14)
 
