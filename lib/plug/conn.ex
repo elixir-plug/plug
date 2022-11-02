@@ -1374,7 +1374,7 @@ defmodule Plug.Conn do
   this function is solely to allow an application to issue an upgrade request, not to manage how
   a given protocol upgrade takes place or what APIs the application must support in order to serve
   this updated protocol. For details in this regard, consult the documentation of the underlying
-  adapter (such a Plug.Cowboy or Bandit).
+  adapter (such a [Plug.Cowboy](https://hexdocs.pm/plug_cowboy) or [Bandit](https://hexdocs.pm/bandit)).
 
   Takes an argument describing the requested upgrade (for example, `:websocket`), and an argument
   which contains arbitrary data which the underlying adapter is expected to interpret in the
@@ -1383,12 +1383,13 @@ defmodule Plug.Conn do
   If the upgrade is accepted by the adapter, the returned `Plug.Conn` will have a `state` of
   `:upgraded`. This state is considered equivalently to a 'sent' state, and is subject to the same
   limitation on subsequent mutating operations. Note that there is no guarantee or expectation
-  that the actual upgrade process is undertaken within this function; it is entirely possible that
-  the server will only do the actual upgrade later in the connection lifecycle.
+  that the actual upgrade process has succeeded, or event that it is undertaken within this
+  function; it is entirely possible (likely, even) that the server will only do the actual upgrade
+  later in the connection lifecycle.
 
-  If the adapter does not support the requested upgrade then this is a noop and the returned 
-  `Plug.Conn` will be unchanged. The application can detect this and operate on the conn as it
-  normally would in order to indicate an upgrade failure to the client.
+  If the adapter does not support the requested protocol this function will raise an
+  `ArgumentError`. The underlying adapter may also signal errors in the provided arguments by
+  raising; consult the corresponding adapter documentation for details.
   """
   @spec upgrade_adapter(t, atom, term) :: t
   def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, args)
