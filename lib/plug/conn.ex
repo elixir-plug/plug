@@ -1388,7 +1388,7 @@ defmodule Plug.Conn do
   later in the connection lifecycle.
 
   If the adapter does not support the requested protocol this function will raise an
-  `ArgumentException`. The underlying adapter may also signal errors in the provided arguments by
+  `ArgumentError`. The underlying adapter may also signal errors in the provided arguments by
   raising; consult the corresponding adapter documentation for details.
   """
   @spec upgrade_adapter(t, atom, term) :: t
