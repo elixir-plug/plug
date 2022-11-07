@@ -236,8 +236,7 @@ defmodule Plug.Builder do
 
   Instead use `:copy_opts_to_assign` on `use Plug.Builder`.
   """
-  # TODO: Deprecate me in future releases
-  @doc deprecated: "Pass :copy_opts_to_assign on \"use Plug.Builder\""
+  @deprecated "Pass :copy_opts_to_assign on \"use Plug.Builder\""
   defmacro builder_opts() do
     quote do
       Plug.Builder.__builder_opts__(__MODULE__)

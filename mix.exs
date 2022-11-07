@@ -3,7 +3,7 @@ defmodule Plug.MixProject do
 
   @version "1.14.0"
   @description "Compose web applications with functions"
-  @xref_exclude [Plug.Cowboy, :telemetry, :ssl]
+  @xref_exclude [Plug.Cowboy, :ssl]
 
   def project do
     [

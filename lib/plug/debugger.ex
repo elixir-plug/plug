@@ -247,14 +247,7 @@ defmodule Plug.Debugger do
 
   @doc false
   def encoded_actions_for_exception(exception, conn) do
-    exception_implementation = Plug.Exception.impl_for(exception)
-
-    implements_actions? =
-      Code.ensure_loaded?(exception_implementation) &&
-        function_exported?(exception_implementation, :actions, 1)
-
-    # TODO: Remove implements_actions? in future Plug versions
-    if implements_actions? && conn.secret_key_base do
+    if conn.secret_key_base do
       actions = Plug.Exception.actions(exception)
 
       Enum.map(actions, fn %{label: label, handler: handler} ->
