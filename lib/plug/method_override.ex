@@ -14,9 +14,9 @@ defmodule Plug.MethodOverride do
 
   This plug doesn't accept any options.
 
-  ## Examples
+  ## Examples
 
-      Plug.MethodOverride.call(conn, [])
+      plug Plug.MethodOverride
   """
 
   @behaviour Plug

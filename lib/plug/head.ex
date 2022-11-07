@@ -4,7 +4,7 @@ defmodule Plug.Head do
 
   ## Examples
 
-      Plug.Head.call(conn, [])
+      plug Plug.Head
   """
 
   @behaviour Plug
