@@ -890,7 +890,7 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value)
       when is_binary(key) and is_binary(value) do
-    validate_header_key_normalied_if_test!(adapter, key)
+    validate_header_key_normalized_if_test!(adapter, key)
     validate_header_key_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
@@ -930,7 +930,7 @@ defmodule Plug.Conn do
   def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: resp_headers} = conn, headers)
       when is_list(headers) do
     for {key, value} <- headers do
-      validate_header_key_normalied_if_test!(adapter, key)
+      validate_header_key_normalized_if_test!(adapter, key)
       validate_header_key_value!(key, value)
     end
 
@@ -967,7 +967,7 @@ defmodule Plug.Conn do
     headers =
       Enum.reduce(headers, current, fn {key, value}, acc
                                        when is_binary(key) and is_binary(value) ->
-        validate_header_key_normalied_if_test!(adapter, key)
+        validate_header_key_normalized_if_test!(adapter, key)
         validate_header_key_value!(key, value)
         List.keystore(acc, key, 0, {key, value})
       end)
@@ -1893,16 +1893,16 @@ defmodule Plug.Conn do
   end
 
   defp validate_req_header!(adapter, key),
-    do: validate_header_key_normalied_if_test!(adapter, key)
+    do: validate_header_key_normalized_if_test!(adapter, key)
 
-  defp validate_header_key_normalied_if_test!({Plug.Adapters.Test.Conn, _}, key) do
+  defp validate_header_key_normalized_if_test!({Plug.Adapters.Test.Conn, _}, key) do
     if Application.fetch_env!(:plug, :validate_header_keys_during_test) and
          not normalized_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
-  defp validate_header_key_normalied_if_test!(_adapter, _key) do
+  defp validate_header_key_normalized_if_test!(_adapter, _key) do
     :ok
   end
 
