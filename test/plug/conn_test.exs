@@ -530,7 +530,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError,
-                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 ~S[header "foo\r" contains a control feed (\r), colon (:), newline (\n) or null (\x00)],
                  fn ->
                    put_resp_header(conn, "foo\r", "bar")
                  end
@@ -541,7 +541,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError,
-                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 ~S[header "foo\r" contains a control feed (\r), colon (:), newline (\n) or null (\x00)],
                  fn ->
                    put_resp_header(conn, "foo\r", "bar")
                  end
@@ -549,14 +549,14 @@ defmodule Plug.ConnTest do
 
   test "put_resp_header/3 raises when invalid header value given" do
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       put_resp_header(conn(:get, "/foo"), "x-sample", "value\rBAR")
     end
 
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       put_resp_header(conn(:get, "/foo"), "x-sample", "value\n\nBAR")
@@ -603,14 +603,14 @@ defmodule Plug.ConnTest do
 
   test "prepend_resp_headers/2 raises when invalid header value given" do
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       prepend_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\rBAR"}])
     end
 
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       prepend_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\n\nBAR"}])
@@ -622,7 +622,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError,
-                 ~S[header "foo\n" contains a control feed (\r), colon(:) or newline character],
+                 ~S[header "foo\n" contains a control feed (\r), colon (:), newline (\n) or null (\x00)],
                  fn ->
                    prepend_resp_headers(conn, [{"foo\n", "bar"}])
                  end
@@ -633,7 +633,7 @@ defmodule Plug.ConnTest do
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError,
-                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 ~S[header "foo\n" contains a control feed (\r), colon (:), newline (\n) or null (\x00)],
                  fn ->
                    prepend_resp_headers(conn, [{"foo\n", "bar"}])
                  end
@@ -641,14 +641,14 @@ defmodule Plug.ConnTest do
 
   test "merge_resp_headers/3 raises when invalid header value given" do
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\rBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\rBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       merge_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\rBAR"}])
     end
 
     message =
-      ~S[value for header "x-sample" contains control feed (\r) or newline (\n): "value\n\nBAR"]
+      ~S[value for header "x-sample" contains control feed (\r), newline (\n) or null (\x00): "value\n\nBAR"]
 
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       merge_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\n\nBAR"}])

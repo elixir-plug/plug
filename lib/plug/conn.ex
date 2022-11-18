@@ -1913,20 +1913,20 @@ defmodule Plug.Conn do
   defp normalized_header_key?(_), do: false
 
   defp validate_header_key_value!(key, value) do
-    case :binary.match(key, [":", "\n", "\r"]) do
+    case :binary.match(key, [":", "\n", "\r", "\x00"]) do
       {_, _} ->
         raise InvalidHeaderError,
-              "header #{inspect(key)} contains a control feed (\\r), colon(:) or newline character"
+              "header #{inspect(key)} contains a control feed (\\r), colon (:), newline (\\n) or null (\\x00)"
 
       :nomatch ->
         key
     end
 
-    case :binary.match(value, ["\n", "\r"]) do
+    case :binary.match(value, ["\n", "\r", "\x00"]) do
       {_, _} ->
         raise InvalidHeaderError,
-              "value for header #{inspect(key)} contains control feed (\\r) or newline " <>
-                "(\\n): #{inspect(value)}"
+              "value for header #{inspect(key)} contains control feed (\\r), newline (\\n) or null (\\x00)" <>
+                ": #{inspect(value)}"
 
       :nomatch ->
         value
