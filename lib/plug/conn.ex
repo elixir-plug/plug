@@ -890,8 +890,8 @@ defmodule Plug.Conn do
 
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value)
       when is_binary(key) and is_binary(value) do
-    validate_header_key_if_test!(adapter, key)
-    validate_header_value!(key, value)
+    validate_header_key_normalied_if_test!(adapter, key)
+    validate_header_key_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -930,8 +930,8 @@ defmodule Plug.Conn do
   def prepend_resp_headers(%Conn{adapter: adapter, resp_headers: resp_headers} = conn, headers)
       when is_list(headers) do
     for {key, value} <- headers do
-      validate_header_key_if_test!(adapter, key)
-      validate_header_value!(key, value)
+      validate_header_key_normalied_if_test!(adapter, key)
+      validate_header_key_value!(key, value)
     end
 
     %{conn | resp_headers: headers ++ resp_headers}
@@ -967,8 +967,8 @@ defmodule Plug.Conn do
     headers =
       Enum.reduce(headers, current, fn {key, value}, acc
                                        when is_binary(key) and is_binary(value) ->
-        validate_header_key_if_test!(adapter, key)
-        validate_header_value!(key, value)
+        validate_header_key_normalied_if_test!(adapter, key)
+        validate_header_key_value!(key, value)
         List.keystore(acc, key, 0, {key, value})
       end)
 
@@ -1863,7 +1863,7 @@ defmodule Plug.Conn do
   end
 
   defp verify_cookie!(cookie, _key) do
-    validate_header_value!("set-cookie", cookie)
+    validate_header_key_value!("set-cookie", cookie)
   end
 
   defp update_cookies(%Conn{state: state}, _fun) when state not in @unsent do
@@ -1892,26 +1892,36 @@ defmodule Plug.Conn do
           "set the host header with %Plug.Conn{conn | host: \"example.com\"}"
   end
 
-  defp validate_req_header!(adapter, key), do: validate_header_key_if_test!(adapter, key)
+  defp validate_req_header!(adapter, key),
+    do: validate_header_key_normalied_if_test!(adapter, key)
 
-  defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
+  defp validate_header_key_normalied_if_test!({Plug.Adapters.Test.Conn, _}, key) do
     if Application.fetch_env!(:plug, :validate_header_keys_during_test) and
-         not valid_header_key?(key) do
+         not normalized_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
-  defp validate_header_key_if_test!(_adapter, _key) do
+  defp validate_header_key_normalied_if_test!(_adapter, _key) do
     :ok
   end
 
-  # Any string containing an UPPERCASE char is not valid.
-  defp valid_header_key?(<<h, _::binary>>) when h in ?A..?Z, do: false
-  defp valid_header_key?(<<_, t::binary>>), do: valid_header_key?(t)
-  defp valid_header_key?(<<>>), do: true
-  defp valid_header_key?(_), do: false
+  # Any string containing an UPPERCASE char is not normalized.
+  defp normalized_header_key?(<<h, _::binary>>) when h in ?A..?Z, do: false
+  defp normalized_header_key?(<<_, t::binary>>), do: normalized_header_key?(t)
+  defp normalized_header_key?(<<>>), do: true
+  defp normalized_header_key?(_), do: false
 
-  defp validate_header_value!(key, value) do
+  defp validate_header_key_value!(key, value) do
+    case :binary.match(key, [":", "\n", "\r"]) do
+      {_, _} ->
+        raise InvalidHeaderError,
+              "header #{inspect(key)} contains a control feed (\\r), colon(:) or newline character"
+
+      :nomatch ->
+        key
+    end
+
     case :binary.match(value, ["\n", "\r"]) do
       {_, _} ->
         raise InvalidHeaderError,

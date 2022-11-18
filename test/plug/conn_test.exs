@@ -510,7 +510,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "put_resp_header/3 raises when invalid header key given" do
+  test "put_resp_header/3 raises when non-normalized header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
 
@@ -519,10 +519,32 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "put_resp_header/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+  test "put_resp_header/3 doesn't raise with non-normalized header key given when :validate_header_keys_during_test is disabled" do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     put_resp_header(conn, "X-Foo", "bar")
+  end
+
+  test "put_resp_header/3 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError,
+                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 fn ->
+                   put_resp_header(conn, "foo\r", "bar")
+                 end
+  end
+
+  test "put_resp_header/3 raises when invalid header key given even when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError,
+                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 fn ->
+                   put_resp_header(conn, "foo\r", "bar")
+                 end
   end
 
   test "put_resp_header/3 raises when invalid header value given" do
@@ -564,7 +586,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "prepend_resp_headers/2 raises when invalid header key given" do
+  test "prepend_resp_headers/2 raises when non-normalized header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
 
@@ -573,7 +595,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "prepend_resp_headers/2 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+  test "prepend_resp_headers/2 doesn't raise with non-normalized header key given when :validate_header_keys_during_test is disabled" do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     prepend_resp_headers(conn, [{"X-Foo", "bar"}])
@@ -593,6 +615,28 @@ defmodule Plug.ConnTest do
     assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
       prepend_resp_headers(conn(:get, "/foo"), [{"x-sample", "value\n\nBAR"}])
     end
+  end
+
+  test "prepend_resp_headers/2 raises when invalid header key given" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError,
+                 ~S[header "foo\n" contains a control feed (\r), colon(:) or newline character],
+                 fn ->
+                   prepend_resp_headers(conn, [{"foo\n", "bar"}])
+                 end
+  end
+
+  test "prepend_resp_header/2 raises when invalid header key given even when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError,
+                 ~S[header "foo\r" contains a control feed (\r), colon(:) or newline character],
+                 fn ->
+                   prepend_resp_headers(conn, [{"foo\n", "bar"}])
+                 end
   end
 
   test "merge_resp_headers/3 raises when invalid header value given" do
@@ -737,7 +781,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "prepend_req_headers/2 raises when invalid header key given" do
+  test "prepend_req_headers/2 raises when non-normalized header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
 
@@ -746,7 +790,7 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "prepend_req_headers/2 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+  test "prepend_req_headers/2 doesn't raise with non-normalized header key given when :validate_header_keys_during_test is disabled" do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     prepend_req_headers(conn, [{"X-Foo", "bar"}])
@@ -768,13 +812,18 @@ defmodule Plug.ConnTest do
     end
   end
 
-  test "put_req_header/3 raises when invalid header key given" do
+  test "put_req_header/3 raises when non-normalized header key given" do
     Application.put_env(:plug, :validate_header_keys_during_test, true)
     conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError, ~S[header key is not lowercase: "X-Foo"], fn ->
       put_req_header(conn, "X-Foo", "bar")
     end
+  end
+
+  test "put_req_header/3 raises when trying to set the host header" do
+    Application.put_env(:plug, :validate_header_keys_during_test, true)
+    conn = conn(:get, "/foo")
 
     assert_raise Plug.Conn.InvalidHeaderError,
                  ~S[set the host header with %Plug.Conn{conn | host: "example.com"}],
@@ -783,7 +832,18 @@ defmodule Plug.ConnTest do
                  end
   end
 
-  test "put_req_header/3 doesn't raise with invalid header key given when :validate_header_keys_during_test is disabled" do
+  test "put_req_header/3 raises when trying to set the host header even when :validate_header_keys_during_test is disabled" do
+    Application.put_env(:plug, :validate_header_keys_during_test, false)
+    conn = conn(:get, "/foo")
+
+    assert_raise Plug.Conn.InvalidHeaderError,
+                 ~S[set the host header with %Plug.Conn{conn | host: "example.com"}],
+                 fn ->
+                   put_req_header(conn, "host", "bar")
+                 end
+  end
+
+  test "put_req_header/3 doesn't raise with non-normalized header key given when :validate_header_keys_during_test is disabled" do
     Application.put_env(:plug, :validate_header_keys_during_test, false)
     conn = conn(:get, "/foo")
     put_req_header(conn, "X-Foo", "bar")
