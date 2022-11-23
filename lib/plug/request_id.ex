@@ -40,6 +40,8 @@ defmodule Plug.RequestId do
   alias Plug.Conn
   @behaviour Plug
 
+  @type request_id :: binary()
+
   @impl true
   def init(opts) do
     Keyword.get(opts, :http_header, "x-request-id")
@@ -64,7 +66,11 @@ defmodule Plug.RequestId do
     Conn.put_resp_header(conn, header, request_id)
   end
 
-  defp generate_request_id do
+  @doc """
+  Generates a new request id.
+  """
+  @spec generate_request_id() :: request_id()
+  def generate_request_id do
     binary = <<
       System.system_time(:nanosecond)::64,
       :erlang.phash2({node(), self()}, 16_777_216)::24,
