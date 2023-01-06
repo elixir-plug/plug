@@ -186,7 +186,8 @@ defmodule Plug.Debugger do
   def render(conn, status, kind, reason, stack, opts) do
     session = maybe_fetch_session(conn)
     params = maybe_fetch_query_params(conn)
-    {title, message} = info(kind, reason)
+    {title, message, pretty} = info(kind, reason)
+    [headline | details] = String.split(message, "\n\n")
 
     assigns = [
       conn: conn,
@@ -213,7 +214,9 @@ defmodule Plug.Debugger do
       assigns =
         Keyword.merge(assigns,
           conn: conn,
-          message: message,
+          headline: headline,
+          details: details,
+          pretty: pretty,
           markdown: markdown,
           style: style,
           banner: banner,
@@ -304,9 +307,15 @@ defmodule Plug.Debugger do
   defp status(:error, error), do: Plug.Exception.status(error)
   defp status(_, _), do: 500
 
-  defp info(:error, error), do: {inspect(error.__struct__), Exception.message(error)}
-  defp info(:throw, thrown), do: {"unhandled throw", inspect(thrown)}
-  defp info(:exit, reason), do: {"unhandled exit", Exception.format_exit(reason)}
+  defp info(:error, %KeyError{key: key, term: term} = error) when not is_nil(term) do
+    message = "key #{inspect(key)} not found in: %" <> inspect(term.__struct__) <> "{...}"
+    pretty = inspect(term, pretty: true, limit: :infinity)
+    {inspect(error.__struct__), message, pretty}
+  end
+
+  defp info(:error, error), do: {inspect(error.__struct__), Exception.message(error), nil}
+  defp info(:throw, thrown), do: {"unhandled throw", inspect(thrown), nil}
+  defp info(:exit, reason), do: {"unhandled exit", Exception.format_exit(reason), nil}
 
   defp frames(renderer, stacktrace, opts) do
     app = opts[:otp_app]

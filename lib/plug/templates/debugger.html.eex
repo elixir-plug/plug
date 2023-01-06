@@ -707,14 +707,16 @@
         <% end %>
 
         <header class="exception-info">
-            <% [headline | details] = String.split(@message, "\n\n") %>
             <h5 class="struct">
                 <%= h @title %>
                 <small>at <%= h method(@conn) %></small>
                 <small class="path"><%= h @conn.request_path %></small>
             </h5>
-            <h1 class="title"><%= h headline %></h1>
-            <%= for detail <- details do %>
+            <h1 class="title"><%= h @headline %></h1>
+            <%= if @pretty do %>
+            <p class="code-quote"><pre><%= h @pretty %></pre></p>
+            <% end %>
+            <%= for detail <- @details do %>
             <p class="detail"><%= h detail %></p>
             <% end %>
         </header>
