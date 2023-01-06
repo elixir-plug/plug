@@ -128,7 +128,6 @@
     }
 
     .exception-info > .struct,
-    .exception-info > .headline,
     .exception-info > .detail {
         margin: 0;
         padding: 0;
@@ -144,25 +143,6 @@
         font-size: 1em;
         color: <%= @style.accent %>;
         font-weight: 400;
-    }
-
-    .exception-info > .headline {
-        font-size: <%= :math.pow(1.15, 4) %>em;
-        line-height: 1.4;
-        font-weight: 300;
-        color: <%= @style.primary %>;
-    }
-
-    @media (max-width: 768px) {
-        .exception-info > .headline {
-            font-size: <%= :math.pow(1.1, 4) %>em;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .exception-info > .headline {
-            font-size: <%= :math.pow(1.05, 4) %>em;
-        }
     }
 
     .exception-info > .detail {
@@ -712,7 +692,7 @@
                 <small>at <%= h method(@conn) %></small>
                 <small class="path"><%= h @conn.request_path %></small>
             </h5>
-            <code class="headline"><pre><%= h @headline %></pre></code>
+            <code><pre><%= h @headline %></pre></code>
             <%= for detail <- @details do %>
             <p class="detail"><%= h detail %></p>
             <% end %>
