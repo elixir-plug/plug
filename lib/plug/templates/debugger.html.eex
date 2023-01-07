@@ -127,8 +127,7 @@
         }
     }
 
-    .exception-info > .struct,
-    .exception-info > .detail {
+    .exception-info > .struct {
         margin: 0;
         padding: 0;
     }
@@ -145,9 +144,8 @@
         font-weight: 400;
     }
 
-    .exception-info > .detail {
-        margin-top: 1.3em;
-        white-space: pre-wrap;
+    .exception-info > code {
+        line-height: 1.5;
     }
 
     /*
@@ -692,10 +690,7 @@
                 <small>at <%= h method(@conn) %></small>
                 <small class="path"><%= h @conn.request_path %></small>
             </h5>
-            <code><pre><%= h @headline %></pre></code>
-            <%= for detail <- @details do %>
-            <p class="detail"><%= h detail %></p>
-            <% end %>
+            <code><pre><%= h @message %></pre></code>
         </header>
 
         <%= for %{label: label, encoded_handler: encoded_handler} <- @actions do %>

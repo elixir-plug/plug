@@ -187,7 +187,6 @@ defmodule Plug.Debugger do
     session = maybe_fetch_session(conn)
     params = maybe_fetch_query_params(conn)
     {title, message} = info(kind, reason)
-    [headline | details] = String.split(message, "\n\n")
 
     assigns = [
       conn: conn,
@@ -214,8 +213,7 @@ defmodule Plug.Debugger do
       assigns =
         Keyword.merge(assigns,
           conn: conn,
-          headline: headline,
-          details: details,
+          message: message,
           markdown: markdown,
           style: style,
           banner: banner,
