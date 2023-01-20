@@ -1590,7 +1590,8 @@ defmodule Plug.Conn do
 
     * `:domain` - the domain the cookie applies to
     * `:max_age` - the cookie max-age, in seconds. Providing a value for this
-      option will set both the _max-age_ and _expires_ cookie attributes.
+      option will set both the _max-age_ and _expires_ cookie attributes. Unset
+      by default, which means the browser will default to a [session cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie).
     * `:path` - the path the cookie applies to
     * `:http_only` - when `false`, the cookie is accessible beyond HTTP
     * `:secure` - if the cookie must be sent only over https. Defaults
