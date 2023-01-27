@@ -1,4 +1,4 @@
-# <%= @title %> at <%= method(@conn) %> <%= @conn.request_path %>
+# <%= @title %> at <%= @method %> <%= @request_path %>
 
 Exception:
 
@@ -30,11 +30,11 @@ Code:
 
 ### Request info
 
-  * URI: <%= url(@conn) %>
-  * Query string: <%= @conn.query_string %>
+  * URI: <%= @url %>
+  * Query string: <%= @query_string %>
 
 ### Headers
-  <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+  <%= for {key, value} <- Enum.sort(@headers) do %>
   * <%= key %>: <%= value %><% end %>
 
 ### Session

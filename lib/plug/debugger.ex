@@ -110,6 +110,20 @@ defmodule Plug.Debugger do
 
   @salt "plug-debugger-actions"
 
+  defstruct [
+    :status,
+    :session,
+    :params,
+    :last_path,
+    :request_path,
+    :method,
+    :url,
+    :query_string,
+    :banner,
+    headers: [],
+    actions: []
+  ]
+
   import Plug.Conn
   require Logger
 
@@ -181,23 +195,58 @@ defmodule Plug.Debugger do
   markdown_template_path = "lib/plug/templates/debugger.md.eex"
   EEx.function_from_file(:defp, :template_markdown, markdown_template_path, [:assigns])
 
+  def render_html(%__MODULE__{} = struct, kind, reason, stack, opts) do
+    style = Enum.into(opts[:style] || [], @default_style)
+    {title, message} = info(kind, reason)
+
+    markdown = render_md(struct, kind, reason, stack, opts)
+
+    assigns =
+      struct
+      |> Map.from_struct()
+      |> Map.merge(%{
+        markdown: markdown,
+        frames: frames(:html, stack, opts),
+        title: title,
+        message: message,
+        style: style
+      })
+
+    template_html(assigns)
+  end
+
+  def render_md(%__MODULE__{} = struct, kind, reason, stack, opts) do
+    {title, message} = info(kind, reason)
+
+    assigns =
+      struct
+      |> Map.from_struct()
+      |> Map.merge(%{
+        title: title,
+        message: message,
+        formatted: Exception.format(kind, reason, stack),
+        frames: frames(:md, stack, opts)
+      })
+
+    template_markdown(assigns)
+  end
+
   # Made public with @doc false for testing.
   @doc false
   def render(conn, status, kind, reason, stack, opts) do
-    session = maybe_fetch_session(conn)
-    params = maybe_fetch_query_params(conn)
-    {title, message} = info(kind, reason)
-
-    assigns = [
-      conn: conn,
-      title: title,
-      formatted: Exception.format(kind, reason, stack),
-      session: session,
-      params: params,
-      frames: frames(:md, stack, opts)
-    ]
-
-    markdown = template_markdown(assigns)
+    assigns = %__MODULE__{
+      status: status,
+      session: maybe_fetch_session(conn),
+      params: maybe_fetch_query_params(conn),
+      actions: encoded_actions_for_exception(reason, conn),
+      last_path: actions_redirect_path(conn),
+      request_path: conn.request_path,
+      method: conn.method,
+      url: url(conn),
+      query_string: conn.query_string,
+      headers: conn.req_headers,
+      banner: banner(conn, status, kind, reason, stack, opts)
+    }
 
     if accepts_html?(get_req_header(conn, "accept")) do
       conn =
@@ -205,26 +254,12 @@ defmodule Plug.Debugger do
         |> put_resp_content_type("text/html")
         |> delete_resp_header("content-security-policy")
 
-      actions = encoded_actions_for_exception(reason, conn)
-      last_path = actions_redirect_path(conn)
-      style = Enum.into(opts[:style] || [], @default_style)
-      banner = banner(conn, status, kind, reason, stack, opts)
+      html = render_html(assigns, kind, reason, stack, opts)
 
-      assigns =
-        Keyword.merge(assigns,
-          conn: conn,
-          message: message,
-          markdown: markdown,
-          style: style,
-          banner: banner,
-          actions: actions,
-          frames: frames(:html, stack, opts),
-          last_path: last_path
-        )
-
-      send_resp(conn, status, template_html(assigns))
+      send_resp(conn, status, html)
     else
       conn = put_resp_content_type(conn, "text/markdown")
+      markdown = render_md(assigns, kind, reason, stack, opts)
       send_resp(conn, status, markdown)
     end
   end
@@ -504,8 +539,6 @@ defmodule Plug.Debugger do
   end
 
   ## Helpers
-
-  defp method(%Plug.Conn{method: method}), do: method
 
   defp url(%Plug.Conn{scheme: scheme, host: host, port: port} = conn),
     do: "#{scheme}://#{host}:#{port}#{conn.request_path}"

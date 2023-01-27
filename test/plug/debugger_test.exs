@@ -1,4 +1,5 @@
 defmodule Plug.DebuggerTest do
+  alias Plug.Debugger
   use ExUnit.Case, async: true
   use Plug.Test
 
@@ -582,5 +583,73 @@ defmodule Plug.DebuggerTest do
       ])
 
     assert conn.resp_body =~ "<span class=\"code\">  end</span>"
+  end
+
+  test "render_md from a Debugger struct" do
+    stack = [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
+
+    md =
+      Debugger.render_md(
+        %Debugger{
+          status: 500,
+          session: nil,
+          params: %{"value" => 10},
+          actions: [],
+          last_path: nil,
+          request_path: "/path",
+          method: "live",
+          url: "http://localhost:4000/path",
+          query_string: nil,
+          headers: [],
+          banner: nil
+        },
+        :error,
+        Exception.exception("oops"),
+        stack,
+        []
+      )
+
+    assert md =~ "# Plug.DebuggerTest.Exception at live /path"
+    assert md =~ "GenServer.call/2"
+    assert md =~ ":1000"
+    assert md =~ "lib/gen_server.ex"
+    assert md =~ "value"
+    assert md =~ "10"
+    assert md =~ "http://localhost:4000/path"
+    assert md =~ "oops"
+  end
+
+  test "render_html from a Debugger struct" do
+    stack = [{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}]
+
+    html =
+      Debugger.render_html(
+        %Debugger{
+          status: 500,
+          session: nil,
+          params: %{"value" => 10},
+          actions: [],
+          last_path: nil,
+          request_path: "/path",
+          method: "live",
+          url: "http://localhost:4000/path",
+          query_string: nil,
+          headers: [],
+          banner: nil
+        },
+        :error,
+        Exception.exception("oops"),
+        stack,
+        []
+      )
+
+    assert html =~ "<title>Plug.DebuggerTest.Exception at live /path</title>"
+    assert html =~ "GenServer.call/2"
+    assert html =~ ":1000"
+    assert html =~ "lib/gen_server.ex"
+    assert html =~ "<dt>value</dt>"
+    assert html =~ "<dd><pre>10</pre></dd>"
+    assert html =~ "http://localhost:4000/path"
+    assert html =~ "oops"
   end
 end
