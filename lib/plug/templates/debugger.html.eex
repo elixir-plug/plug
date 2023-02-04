@@ -658,24 +658,10 @@
         margin: 20px 10px 5px 0;
     }
 
-    .action-button:hover {
-        background-color: #f9f9fa;
+    .action-button {
+        padding: 0 10px;
         cursor: pointer;
     }
-
-    .action-button {
-        background-color: white;
-        border: 1px solid <%= @style.primary %>;
-        border-radius: 3px;
-        color: <%= @style.primary %>;
-        padding: 0 20px;
-    }
-
-    .action-button:active {
-        background-color: inherit;
-        background-color: #f2f2f4;
-    }
-
     </style>
 </head>
 <body>
