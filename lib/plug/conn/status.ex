@@ -166,7 +166,7 @@ defmodule Plug.Conn.Status do
         MIX_ENV=dev mix deps.clean plug --build
 
     Doing this will allow the use of the integer status code 998 as
-    well as the atom :unavailable_for_legal_reasons in many Plug functions.
+    well as the atom :not_an_rfc_status_code in many Plug functions.
     For example:
 
         put_status(conn, :not_an_rfc_status_code)
