@@ -336,19 +336,14 @@ defmodule Plug.Conn do
   end
 
   @doc false
-  @spec async_assign(t, atom, (() -> term)) :: t
+  @deprecated "Call assign + Task.async instead"
   def async_assign(%Conn{} = conn, key, fun) when is_atom(key) and is_function(fun, 0) do
-    IO.warn("Plug.Conn.async_assign/3 is deprecated, please call assign + Task.async instead")
     assign(conn, key, Task.async(fun))
   end
 
   @doc false
-  @spec await_assign(t, atom, timeout) :: t
+  @deprecated "Fetch the assign and call Task.await instead"
   def await_assign(%Conn{} = conn, key, timeout \\ 5000) when is_atom(key) do
-    IO.warn(
-      "Plug.Conn.await_assign/3 is deprecated, please fetch the assign and call Task.await instead"
-    )
-
     task = Map.fetch!(conn.assigns, key)
     assign(conn, key, Task.await(task, timeout))
   end
