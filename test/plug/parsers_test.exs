@@ -255,7 +255,7 @@ defmodule Plug.ParsersTest do
   end
 
   test "validates utf8 in multipart body" do
-    latin1_binary = :unicode.characters_to_binary('hello©', :utf8, :latin1)
+    latin1_binary = :unicode.characters_to_binary(~c"hello©", :utf8, :latin1)
 
     multipart = """
     ------w58EW1cEpjzydSCq\r
@@ -273,7 +273,7 @@ defmodule Plug.ParsersTest do
   end
 
   test "does not validate utf8 in multipart body opt" do
-    latin1_binary = :unicode.characters_to_binary('hello©', :utf8, :latin1)
+    latin1_binary = :unicode.characters_to_binary(~c"hello©", :utf8, :latin1)
 
     multipart = """
     ------w58EW1cEpjzydSCq\r

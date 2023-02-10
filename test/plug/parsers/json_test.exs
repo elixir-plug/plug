@@ -34,13 +34,13 @@ defmodule Plug.Parsers.JSONTest do
     def decode!(~s(null)) do
       nil
     end
-    
+
     def decode!("[]") do
       []
     end
 
     def decode!("{_json: []}") do
-      %{"_json" => []}      
+      %{"_json" => []}
     end
 
     def decode!(_) do
@@ -195,7 +195,7 @@ defmodule Plug.Parsers.JSONTest do
     assert Plug.Exception.status(exception) == 400
   end
 
-  test "nests all json when nest_all_json is true"  do
+  test "nests all json when nest_all_json is true" do
     conn_object = "{_json: []}" |> json_conn() |> parse(nest_all_json: true)
     conn_array = "[]" |> json_conn() |> parse(nest_all_json: true)
     assert conn_object.params == %{"_json" => %{"_json" => []}}

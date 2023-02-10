@@ -32,12 +32,12 @@ defmodule Plug.SSLTest do
       assert opts[:versions] == [:"tlsv1.2"]
 
       assert opts[:ciphers] == [
-               'ECDHE-RSA-AES256-GCM-SHA384',
-               'ECDHE-ECDSA-AES256-GCM-SHA384',
-               'ECDHE-RSA-AES128-GCM-SHA256',
-               'ECDHE-ECDSA-AES128-GCM-SHA256',
-               'DHE-RSA-AES256-GCM-SHA384',
-               'DHE-RSA-AES128-GCM-SHA256'
+               ~c"ECDHE-RSA-AES256-GCM-SHA384",
+               ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
+               ~c"ECDHE-RSA-AES128-GCM-SHA256",
+               ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
+               ~c"DHE-RSA-AES256-GCM-SHA384",
+               ~c"DHE-RSA-AES128-GCM-SHA256"
              ]
     end
 
@@ -49,22 +49,22 @@ defmodule Plug.SSLTest do
       assert opts[:versions] == [:"tlsv1.2", :"tlsv1.1", :tlsv1]
 
       assert opts[:ciphers] == [
-               'ECDHE-RSA-AES256-GCM-SHA384',
-               'ECDHE-ECDSA-AES256-GCM-SHA384',
-               'ECDHE-RSA-AES128-GCM-SHA256',
-               'ECDHE-ECDSA-AES128-GCM-SHA256',
-               'DHE-RSA-AES256-GCM-SHA384',
-               'DHE-RSA-AES128-GCM-SHA256',
-               'ECDHE-RSA-AES256-SHA384',
-               'ECDHE-ECDSA-AES256-SHA384',
-               'ECDHE-RSA-AES128-SHA256',
-               'ECDHE-ECDSA-AES128-SHA256',
-               'DHE-RSA-AES256-SHA256',
-               'DHE-RSA-AES128-SHA256',
-               'ECDHE-RSA-AES256-SHA',
-               'ECDHE-ECDSA-AES256-SHA',
-               'ECDHE-RSA-AES128-SHA',
-               'ECDHE-ECDSA-AES128-SHA'
+               ~c"ECDHE-RSA-AES256-GCM-SHA384",
+               ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
+               ~c"ECDHE-RSA-AES128-GCM-SHA256",
+               ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
+               ~c"DHE-RSA-AES256-GCM-SHA384",
+               ~c"DHE-RSA-AES128-GCM-SHA256",
+               ~c"ECDHE-RSA-AES256-SHA384",
+               ~c"ECDHE-ECDSA-AES256-SHA384",
+               ~c"ECDHE-RSA-AES128-SHA256",
+               ~c"ECDHE-ECDSA-AES128-SHA256",
+               ~c"DHE-RSA-AES256-SHA256",
+               ~c"DHE-RSA-AES128-SHA256",
+               ~c"ECDHE-RSA-AES256-SHA",
+               ~c"ECDHE-ECDSA-AES256-SHA",
+               ~c"ECDHE-RSA-AES128-SHA",
+               ~c"ECDHE-ECDSA-AES128-SHA"
              ]
     end
 
@@ -99,7 +99,7 @@ defmodule Plug.SSLTest do
                configure(
                  key: "abcdef",
                  cert: "ghijkl",
-                 ciphers: ['ECDHE-ECDSA-AES256-GCM-SHA384', "ECDHE-RSA-AES256-GCM-SHA384"]
+                 ciphers: [~c"ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384"]
                )
 
       assert message ==
