@@ -21,6 +21,9 @@ defmodule Plug.Parsers.JSON do
 
   So by default, `Plug.Parsers` will read 1_000_000 bytes at a time from the
   socket with an overall limit of 8_000_000 bytes.
+
+  The option `:nest_all_json`, when true, specifies all parsed JSON (including maps)
+  are parsed into a `"_json"` key.
   """
 
   @behaviour Plug.Parsers
@@ -69,7 +72,7 @@ defmodule Plug.Parsers.JSON do
   @impl true
   def parse(conn, "application", subtype, _headers, {{mod, fun, args}, decoder, opts}) do
     if subtype == "json" or String.ends_with?(subtype, "+json") do
-      apply(mod, fun, [conn, opts | args]) |> decode(decoder)
+      apply(mod, fun, [conn, opts | args]) |> decode(decoder, opts)
     else
       {:next, conn}
     end
@@ -79,17 +82,19 @@ defmodule Plug.Parsers.JSON do
     {:next, conn}
   end
 
-  defp decode({:ok, "", conn}, _decoder) do
+  defp decode({:ok, "", conn}, _decoder, _opts) do
     {:ok, %{}, conn}
   end
 
-  defp decode({:ok, body, conn}, {module, fun, args}) do
+  defp decode({:ok, body, conn}, {module, fun, args}, opts) do
+    nest_all = Keyword.get(opts, :nest_all_json, false)
+
     try do
       apply(module, fun, [body | args])
     rescue
       e -> raise Plug.Parsers.ParseError, exception: e
     else
-      terms when is_map(terms) ->
+      terms when is_map(terms) and not nest_all ->
         {:ok, terms, conn}
 
       terms ->
@@ -97,15 +102,15 @@ defmodule Plug.Parsers.JSON do
     end
   end
 
-  defp decode({:more, _, conn}, _decoder) do
+  defp decode({:more, _, conn}, _decoder, _opts) do
     {:error, :too_large, conn}
   end
 
-  defp decode({:error, :timeout}, _decoder) do
+  defp decode({:error, :timeout}, _decoder, _opts) do
     raise Plug.TimeoutError
   end
 
-  defp decode({:error, _}, _decoder) do
+  defp decode({:error, _}, _decoder, _opts) do
     raise Plug.BadRequestError
   end
 end
