@@ -50,7 +50,6 @@ defmodule Plug.Parsers.JSONTest do
     def decode!("{id: 1}", capitalize_keys: true) do
       %{"ID" => 1}
     end
-
   end
 
   defmodule BodyReader do
@@ -196,17 +195,10 @@ defmodule Plug.Parsers.JSONTest do
     assert Plug.Exception.status(exception) == 400
   end
 
-  test "parsing request body: { \"_json\": []} is the same as []"  do
-    conn_object = "{_json: []}" |> json_conn() |> parse()
-    conn_array = "[]" |> json_conn() |> parse()
-    assert conn_object.params == conn_array.params
-  end
-
-  test "parsing request body: { \"_json\": []} is the not same as [] with option nest_all_json"  do
+  test "nests all json when nest_all_json is true"  do
     conn_object = "{_json: []}" |> json_conn() |> parse(nest_all_json: true)
     conn_array = "[]" |> json_conn() |> parse(nest_all_json: true)
-    assert conn_object.params != conn_array.params
+    assert conn_object.params == %{"_json" => %{"_json" => []}}
+    assert conn_array.params == %{"_json" => []}
   end
-
-  
 end

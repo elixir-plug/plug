@@ -22,10 +22,8 @@ defmodule Plug.Parsers.JSON do
   So by default, `Plug.Parsers` will read 1_000_000 bytes at a time from the
   socket with an overall limit of 8_000_000 bytes.
 
-  Specific option :nest_all_json specifies all parsed json (also maps) are parsed
-  into a `"_json"` key so they can be handled the same.
-    * `nest_all_json:` all is parsed into a Map with a a `"_json"` key 
-
+  The option `:nest_all_json`, when true, specifies all parsed JSON (including maps)
+  are parsed into a `"_json"` key.
   """
 
   @behaviour Plug.Parsers
@@ -89,7 +87,8 @@ defmodule Plug.Parsers.JSON do
   end
 
   defp decode({:ok, body, conn}, {module, fun, args}, opts) do
-    nest_all = opts[:nest_all_json] || false
+    nest_all = Keyword.get(opts, :nest_all_json, false)
+
     try do
       apply(module, fun, [body | args])
     rescue
