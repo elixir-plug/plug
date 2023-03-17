@@ -68,7 +68,7 @@ Access <http://localhost:4000/> and you should be greeted!
 
 ## Hello world: websockets
 
-Pluyg v1.14 includes a connection `upgrade` API, which means it provides WebSocket
+Plug v1.14 includes a connection `upgrade` API, which means it provides WebSocket
 support out of the box. Let's see an example, this time using the Bandit webserver
 and the `websocket_adapter` project for the WebSocket bits. Since we need different
 routes, we will use the built-in `Plug.Router` for that:
