@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.14.1 (2023-03-17)
+
+### Enhancements
+
+  * Add `nest_all_json` option to JSON parser
+  * Make action on Plug.Debugger page look like a button
+  * Better formatting of exceptions on the error page
+  * Provide stronger response header validation
+
 ## v1.14.0 (2022-10-31)
 
 Require Elixir v1.10+.
