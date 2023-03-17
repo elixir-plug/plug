@@ -17,17 +17,23 @@ There are two options at the moment:
 
 1. Use the Cowboy webserver (Erlang-based) by adding the `plug_cowboy` package to your `mix.exs`:
 
-```elixir
-def deps do
-  [
-    {:plug_cowboy, "~> 2.0"}
-  ]
-end
-```
+    ```elixir
+    def deps do
+      [
+        {:plug_cowboy, "~> 2.0"}
+      ]
+    end
+    ```
 
 2. Use the Bandit webserver (Elixir-based) by adding the `bandit` package to your `mix.exs`:
 
-
+    ```elixir
+    def deps do
+      [
+        {:bandit, "~> 0.6"}
+      ]
+    end
+    ```
 
 ## Hello world: request/response
 
