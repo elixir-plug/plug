@@ -12,7 +12,10 @@ Plug is:
 
 ## Installation
 
-In order to use Plug, you need a webserver and its bindings for Plug. The Cowboy webserver is the most common one, which can be installed by adding `plug_cowboy` as a dependency to your `mix.exs`:
+In order to use Plug, you need a webserver and its bindings for Plug.
+There are two options at the moment:
+
+1. Use the Cowboy webserver (Erlang-based) by adding the `plug_cowboy` package to your `mix.exs`:
 
 ```elixir
 def deps do
@@ -22,7 +25,13 @@ def deps do
 end
 ```
 
-## Hello world
+2. Use the Bandit webserver (Elixir-based) by adding the `bandit` package to your `mix.exs`:
+
+
+
+## Hello world: request/response
+
+This is a minimal hello world example, using the Cowboy webserver:
 
 ```elixir
 Mix.install([:plug, :plug_cowboy])
@@ -43,13 +52,83 @@ defmodule MyPlug do
 end
 
 require Logger
-{:ok, _} = Plug.Cowboy.http(MyPlug, [])
+webserver = {Plug.Cowboy, plug: Router, scheme: :http, port: 4000}
+{:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
 Logger.info("Plug now running on localhost:4000")
 ```
 
-The snippet above shows a very simple example on how to use Plug. Save that snippet to a file and execute it as `elixir --no-halt hello_world.exs`. Access <http://localhost:4000/> and you should be greeted!
+Save that snippet to a file and execute it as `elixir --no-halt hello_world.exs`.
+Access <http://localhost:4000/> and you should be greeted!
 
-For now, we have directly started the server in a single file but, for production deployments, you likely want to start it in your supervision tree. See the [Supervised handlers](#supervised-handlers) section next.
+## Hello world: websockets
+
+Pluyg v1.14 includes a connection `upgrade` API, which means it provides WebSocket
+support out of the box. Let's see an example, this time using the Bandit webserver
+and the `websocket_adapter` project for the WebSocket bits. Since we need different
+routes, we will use the built-in `Plug.Router` for that:
+
+```elixir
+Mix.install([:plug, :bandit, :websock_adapter])
+
+defmodule EchoServer do
+  def init(args) do
+    {:ok, []}
+  end
+
+  def handle_in({"ping", [opcode: :text]}, state) do
+    {:reply, :ok, {:text, "pong"}, state}
+  end
+
+  def terminate(:timeout, state) do
+    {:ok, state}
+  end
+end
+
+defmodule Router do
+  use Plug.Router
+
+  plug Plug.Logger
+  plug :match
+  plug :dispatch
+
+  get "/" do
+    send_resp(conn, 200, """
+    Use the JavaScript console to interact using websockets
+
+    sock  = new WebSocket("ws://localhost:4000/websocket")
+    sock.addEventListener("message", console.log)
+    sock.addEventListener("open", () => sock.send("ping"))
+    """)
+  end
+
+  get "/websocket" do
+    conn
+    |> WebSockAdapter.upgrade(EchoServer, [], timeout: 60_000)
+    |> halt()
+  end
+
+  match _ do
+    send_resp(conn, 404, "not found")
+  end
+end
+
+require Logger
+webserver = {Bandit, plug: Router, scheme: :http, port: 4000}
+{:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
+Logger.info("Plug now running on localhost:4000")
+```
+
+Save that snippet to a file and execute it as `elixir --no-halt websockets.exs`.
+Access <http://localhost:4000/> and you should see messages in your browser
+console.
+
+As you can see, Plug abstracts the different webservers. When booting
+up your application, the difference is between choosing Plug.Cowboy
+or Bandit.
+
+For now, we have directly started the server in a throw-away supervisor but,
+for production deployments, you want to start them in application
+supervision tree. See the [Supervised handlers](#supervised-handlers) section next.
 
 ## Supervised handlers
 
@@ -64,7 +143,7 @@ Add both `:plug` and `:plug_cowboy` as dependencies in your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:plug, "~> 1.13"},
+    {:plug, "~> 1.14"},
     {:plug_cowboy, "~> 2.0"}
   ]
 end
@@ -102,12 +181,13 @@ Now run `mix run --no-halt` and it will start your application with a web server
 
 | Branch | Support                  |
 |--------|--------------------------|
-| v1.13  | Bug fixes                |
+| v1.14  | Bug fixes                |
+| v1.13  | Security patches only    |
 | v1.12  | Security patches only    |
 | v1.11  | Security patches only    |
 | v1.10  | Security patches only    |
 | v1.9   | Security patches only    |
-| v1.8   | Security patches only    |
+| v1.8   | Unsupported from 01/2023 |
 | v1.7   | Unsupported from 01/2022 |
 | v1.6   | Unsupported from 01/2022 |
 | v1.5   | Unsupported from 03/2021 |
