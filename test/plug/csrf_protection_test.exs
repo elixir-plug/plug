@@ -10,8 +10,7 @@ defmodule Plug.CSRFProtectionTest do
                   store: :cookie,
                   key: "foobar",
                   encryption_salt: "cookie store encryption salt",
-                  signing_salt: "cookie store signing salt",
-                  encrypt: true
+                  signing_salt: "cookie store signing salt"
                 )
 
   @secret String.duplicate("abcdef0123456789", 8)

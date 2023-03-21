@@ -5,6 +5,9 @@ defmodule Plug.SessionTest do
   alias Plug.ProcessStore
   doctest Plug.Session.Store
 
+  @secret_key_base String.duplicate("abcdef0123456789", 8)
+  @cookie_signing_salt "cookie store signing salt"
+
   test "puts session cookie" do
     conn = fetch_cookies(conn(:get, "/"))
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
@@ -149,6 +152,100 @@ defmodule Plug.SessionTest do
   test "converts store reference" do
     opts = Plug.Session.init(store: :ets, key: "foobar", table: :some_table)
     assert opts.store == Plug.Session.ETS
+  end
+
+  test "passes signed session via cookies" do
+    conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+
+    opts =
+      Plug.Session.init(
+        store: :cookie,
+        key: "foobar",
+        signing_salt: @cookie_signing_salt,
+        sign: true,
+        max_age: 300
+      )
+
+    conn = conn |> Plug.Session.call(opts) |> fetch_session()
+    conn = put_session(conn, :foo, "bar")
+    conn = send_resp(conn, 200, "")
+
+    new_conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+    conn = recycle_cookies(new_conn, conn)
+    conn = conn |> Plug.Session.call(opts) |> fetch_cookies(signed: ["foobar"]) |> fetch_session()
+
+    assert get_session(conn, :foo) == "bar"
+  end
+
+  @tag capture_log: true
+  test "failes session extraction when signed and the token is expired" do
+    conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+
+    opts =
+      Plug.Session.init(
+        store: :cookie,
+        key: "foobar",
+        signing_salt: @cookie_signing_salt,
+        sign: true,
+        max_age: 0
+      )
+
+    conn = conn |> Plug.Session.call(opts) |> fetch_session()
+    conn = put_session(conn, :foo, "bar")
+    conn = send_resp(conn, 200, "")
+
+    new_conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+    conn = recycle_cookies(new_conn, conn)
+    conn = conn |> Plug.Session.call(opts) |> fetch_cookies(signed: ["foobar"]) |> fetch_session()
+
+    refute get_session(conn, :foo)
+  end
+
+  test "passes encrypted session via cookies" do
+    conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+
+    opts =
+      Plug.Session.init(
+        store: :cookie,
+        key: "foobar",
+        signing_salt: @cookie_signing_salt,
+        encrypt: true,
+        max_age: 300
+      )
+
+    conn = conn |> Plug.Session.call(opts) |> fetch_session()
+    conn = put_session(conn, :foo, "bar")
+    conn = send_resp(conn, 200, "")
+
+    new_conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+    conn = recycle_cookies(new_conn, conn)
+    conn = conn |> Plug.Session.call(opts) |> fetch_cookies(encrypted: ["foobar"]) |> fetch_session()
+
+    assert get_session(conn, :foo) == "bar"
+  end
+
+  @tag capture_log: true
+  test "failes session extraction when encrypted and the token is expired" do
+    conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+
+    opts =
+      Plug.Session.init(
+        store: :cookie,
+        key: "foobar",
+        signing_salt: @cookie_signing_salt,
+        encrypt: true,
+        max_age: 0
+      )
+
+    conn = conn |> Plug.Session.call(opts) |> fetch_session()
+    conn = put_session(conn, :foo, "bar")
+    conn = send_resp(conn, 200, "")
+
+    new_conn = %{conn(:get, "/") | secret_key_base: @secret_key_base}
+    conn = recycle_cookies(new_conn, conn)
+    conn = conn |> Plug.Session.call(opts) |> fetch_cookies(encrypted: ["foobar"]) |> fetch_session()
+
+    refute get_session(conn, :foo)
   end
 
   test "init_test_session/2" do
