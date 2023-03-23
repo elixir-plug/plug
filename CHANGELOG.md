@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.14.2 (2023-03-23)
+
+### Bug fixes
+
+  * Properly deprecate `Plug.Adapters.Cowboy` before removal
+
 ## v1.14.1 (2023-03-17)
 
 ### Enhancements
