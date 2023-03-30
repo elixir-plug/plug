@@ -209,9 +209,11 @@ defmodule Plug.ParsersTest do
 
   def multipart_to_params(acc, conn) do
     params =
-      Enum.reduce(acc, %{}, fn {name, headers, body}, acc ->
-        Plug.Conn.Query.decode_pair({name || "_parts[]", %{headers: headers, body: body}}, acc)
+      acc
+      |> List.foldr(Plug.Conn.Query.decode_init(), fn {name, headers, body}, acc ->
+        Plug.Conn.Query.decode_each({name || "_parts[]", %{headers: headers, body: body}}, acc)
       end)
+      |> Plug.Conn.Query.decode_done()
 
     {:ok, params, conn}
   end

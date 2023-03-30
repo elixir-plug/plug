@@ -1951,23 +1951,3 @@ defimpl Inspect, for: Plug.Conn do
   defp no_adapter_data(conn, %{limit: :infinity}), do: conn
   defp no_adapter_data(%{adapter: {adapter, _}} = conn, _), do: %{conn | adapter: {adapter, :...}}
 end
-
-defimpl Collectable, for: Plug.Conn do
-  def into(conn) do
-    IO.warn(
-      "using Enum.into/2 for conn is deprecated, use Plug.Conn.chunk/2 " <>
-        "and Enum.reduce_while/3 instead (see the Plug.Conn.chunk/2 docs for an example)"
-    )
-
-    fun = fn
-      conn, {:cont, x} ->
-        {:ok, conn} = Plug.Conn.chunk(conn, x)
-        conn
-
-      conn, _ ->
-        conn
-    end
-
-    {conn, fun}
-  end
-end

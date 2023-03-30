@@ -111,7 +111,6 @@ defmodule Plug.Router.Utils do
       []
 
   """
-  # TODO: Make me private in Plug v2.0
   def build_path_params_match(params, context \\ nil)
 
   def build_path_params_match([param | _] = params, context) when is_binary(param) do

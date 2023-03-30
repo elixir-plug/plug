@@ -5,8 +5,6 @@ defmodule Plug.ConnTest do
   alias Plug.Conn
   alias Plug.ProcessStore
 
-  import ExUnit.CaptureIO
-
   test "test adapter builds on connection" do
     conn =
       Plug.Adapters.Test.Conn.conn(%Plug.Conn{private: %{hello: :world}}, :post, "/hello", nil)
@@ -377,15 +375,6 @@ defmodule Plug.ConnTest do
     assert conn.resp_body == "HELLO\n"
     {:ok, conn} = chunk(conn, ["WORLD", ["\n"]])
     assert conn.resp_body == "HELLO\nWORLD\n"
-  end
-
-  test "send_chunked/3 with collectable" do
-    conn = send_chunked(conn(:get, "/foo"), 200)
-
-    capture_io(:stderr, fn ->
-      conn = Enum.into(~w(hello world), conn)
-      assert conn.resp_body == "helloworld"
-    end)
   end
 
   test "send_chunked/3 sends self a message" do

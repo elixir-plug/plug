@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.15.0-dev
+
+### Enhancements
+
+  * Optimize query decoding by 15% to 45% - this removes the previously deprecated `:limit` MFA and `:include_unnamed_parts_at` from MULTIPART
+
 ## v1.14.2 (2023-03-23)
 
 ### Bug fixes

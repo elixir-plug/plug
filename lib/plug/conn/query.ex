@@ -56,6 +56,7 @@ defmodule Plug.Conn.Query do
       iex> encode(%{foo: %{bar: "baz"}})
       "foo[bar]=baz"
 
+  For stateful decoding, see `decode_init/0`, `decode_each/2`, and `decode_done/2`.
   """
 
   @doc """
@@ -87,8 +88,8 @@ defmodule Plug.Conn.Query do
     parts = :binary.split(query, "&", [:global])
 
     parts
-    |> Enum.reduce(init(), &decode_www_pair(&1, &2, invalid_exception, validate_utf8))
-    |> finalize(initial)
+    |> Enum.reduce(decode_init(), &decode_www_pair(&1, &2, invalid_exception, validate_utf8))
+    |> decode_done(initial)
   end
 
   defp decode_www_pair("", acc, _invalid_exception, _validate_utf8) do
@@ -126,13 +127,25 @@ defmodule Plug.Conn.Query do
     end
   end
 
-  defp init(), do: %{root: []}
+  @doc """
+  Starts a stateful decoder.
 
-  defp decode_each({"", value}, map) do
+  Use `decode_each/2` and `decode_done/2` to decode and complete.
+  """
+  def decode_init(), do: %{root: []}
+
+  @doc """
+  Decodes the given tuple.
+
+  It parses the key and stores the value into the current
+  accumulator. The keys and values are not assumed to be
+  encoded in "x-www-form-urlencoded".
+  """
+  def decode_each({"", value}, map) do
     insert_keys([{:root, ""}], value, map)
   end
 
-  defp decode_each({key, value}, map) do
+  def decode_each({key, value}, map) do
     # Examples:
     #
     #     users
@@ -187,7 +200,10 @@ defmodule Plug.Conn.Query do
     map
   end
 
-  defp finalize(map, initial), do: finalize_map(map.root, Enum.to_list(initial), map)
+  @doc """
+  Finishes stateful decoding and returns a map.
+  """
+  def decode_done(map, initial \\ []), do: finalize_map(map.root, Enum.to_list(initial), map)
 
   defp finalize_pointer(key, map) do
     case Map.fetch!(map, key) do
@@ -230,7 +246,7 @@ defmodule Plug.Conn.Query do
   Parameter lists are added to the accumulator in reverse
   order, so be sure to pass the parameters in reverse order.
   """
-  @spec decode_pair({String.t(), term()}, acc) :: acc when acc: term()
+  @deprecated "Use decode_init/0, decode_each/2, and decode_done/2 instead"
   def decode_pair({key, value} = _pair, acc) do
     if key != "" and :binary.last(key) == ?] do
       # Remove trailing ]
