@@ -73,24 +73,22 @@ defmodule Plug.Conn.Query do
   @spec decode(String.t(), map(), module(), boolean()) :: %{optional(String.t()) => term()}
   def decode(
         query,
-        initial \\ %{},
+        initial \\ [],
         invalid_exception \\ Plug.Conn.InvalidQueryError,
         validate_utf8 \\ true
       )
 
   def decode("", initial, _invalid_exception, _validate_utf8) do
-    initial
+    Map.new(initial)
   end
 
   def decode(query, initial, invalid_exception, validate_utf8)
       when is_binary(query) do
     parts = :binary.split(query, "&", [:global])
 
-    Enum.reduce(
-      Enum.reverse(parts),
-      initial,
-      &decode_www_pair(&1, &2, invalid_exception, validate_utf8)
-    )
+    parts
+    |> Enum.reduce(init(), &decode_www_pair(&1, &2, invalid_exception, validate_utf8))
+    |> finalize(initial)
   end
 
   defp decode_www_pair("", acc, _invalid_exception, _validate_utf8) do
@@ -108,7 +106,7 @@ defmodule Plug.Conn.Query do
           {decode_www_form(key, invalid_exception, validate_utf8), ""}
       end
 
-    decode_pair(current, acc)
+    decode_each(current, acc)
   end
 
   defp decode_www_form(value, invalid_exception, validate_utf8) do
@@ -127,6 +125,100 @@ defmodule Plug.Conn.Query do
         binary
     end
   end
+
+  defp init(), do: %{root: []}
+
+  defp decode_each({"", value}, map) do
+    insert_keys([{:root, ""}], value, map)
+  end
+
+  defp decode_each({key, value}, map) do
+    # Examples:
+    #
+    #     users
+    #     #=> [{:root, "users"}]
+    #
+    #     users[foo]
+    #     #=> [{"users", "foo"}, {:root, "users"}]
+    #
+    #     users[foo][bar]
+    #     #=> [{"users[foo]", "bar"}, {"users", "foo"}, {:root, "users"}]
+    #
+    keys =
+      with ?] <- :binary.last(key),
+           {pos, 1} when pos > 0 <- :binary.match(key, "[") do
+        value = binary_part(key, 0, pos)
+        pos = pos + 1
+        rest = binary_part(key, pos, byte_size(key) - pos)
+        split_keys(rest, key, pos, pos, value, [{:root, value}])
+      else
+        _ -> [{:root, key}]
+      end
+
+    insert_keys(keys, value, map)
+  end
+
+  defp split_keys(<<?], ?[, rest::binary>>, binary, current_pos, start_pos, level, acc) do
+    value = split_key(binary, current_pos, start_pos)
+    next_level = binary_part(binary, 0, current_pos + 1)
+    split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, [{level, value} | acc])
+  end
+
+  defp split_keys(<<?]>>, binary, current_pos, start_pos, level, acc) do
+    value = split_key(binary, current_pos, start_pos)
+    [{level, value} | acc]
+  end
+
+  defp split_keys(<<_, rest::binary>>, binary, current_pos, start_pos, level, acc) do
+    split_keys(rest, binary, current_pos + 1, start_pos, level, acc)
+  end
+
+  defp split_key(_binary, start, start), do: nil
+  defp split_key(binary, current, start), do: binary_part(binary, start, current - start)
+
+  defp insert_keys([{level, key} | rest], value, map) do
+    case map do
+      %{^level => entries} -> %{map | level => [{key, value} | entries]}
+      %{} -> insert_keys(rest, [:pointer | level], Map.put(map, level, [{key, value}]))
+    end
+  end
+
+  defp insert_keys([], _value, map) do
+    map
+  end
+
+  defp finalize(map, initial), do: finalize_map(map.root, Enum.to_list(initial), map)
+
+  defp finalize_pointer(key, map) do
+    case Map.fetch!(map, key) do
+      [{nil, _} | _] = entries -> finalize_list(entries, [], map)
+      entries -> finalize_map(entries, [], map)
+    end
+  end
+
+  defp finalize_map([{key, [:pointer | pointer]} | rest], acc, map),
+    do: finalize_map(rest, [{key, finalize_pointer(pointer, map)} | acc], map)
+
+  defp finalize_map([{nil, _} | rest], acc, map),
+    do: finalize_map(rest, acc, map)
+
+  defp finalize_map([{_, _} = kv | rest], acc, map),
+    do: finalize_map(rest, [kv | acc], map)
+
+  defp finalize_map([], acc, _map),
+    do: Map.new(acc)
+
+  defp finalize_list([{nil, [:pointer | pointer]} | rest], acc, map),
+    do: finalize_list(rest, [finalize_pointer(pointer, map) | acc], map)
+
+  defp finalize_list([{nil, value} | rest], acc, map),
+    do: finalize_list(rest, [value | acc], map)
+
+  defp finalize_list([{_, _} | rest], acc, map),
+    do: finalize_list(rest, acc, map)
+
+  defp finalize_list([], acc, _map),
+    do: acc
 
   @doc """
   Decodes the given tuple and stores it in the given accumulator.
