@@ -1,6 +1,4 @@
-Application.ensure_all_started(:telemetry)
 ExUnit.start(assert_receive_timeout: 200)
-Logger.configure_backend(:console, colors: [enabled: false], metadata: [:request_id])
 
 defmodule Plug.ProcessStore do
   @behaviour Plug.Session.Store
