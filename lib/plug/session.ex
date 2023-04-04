@@ -36,7 +36,8 @@ defmodule Plug.Session do
     * `:extra` - see `Plug.Conn.put_resp_cookie/4`;
 
   Additional options can be given to the session store, see the store's
-  documentation for the options it accepts.
+  documentation for the options it accepts. It can also accept a MFA to
+  allow loading config in runtime `{MyAppWeb.Auth, :get_session_config, []}`.
 
   ## Examples
 
@@ -47,6 +48,9 @@ defmodule Plug.Session do
   @behaviour Plug
 
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra, :same_site]
+
+  @impl true
+  def init({module, func, args}), do: apply(module, func, args) |> init()
 
   @impl true
   def init(opts) do

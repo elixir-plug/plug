@@ -197,4 +197,21 @@ defmodule Plug.SessionTest do
     assert get_session(conn, :other) == "other"
     assert get_session(conn, :bar) == "bar"
   end
+
+  test "allows MFA for passing session options" do
+    opts = Plug.Session.init({__MODULE__, :session_opts, ["foobar"]})
+
+    assert opts.key == "foobar"
+    assert opts.cookie_opts[:secure] == true
+  end
+
+  def session_opts(key) do
+    [
+      store: ProcessStore,
+      key: key,
+      secure: true,
+      path: "some/path",
+      extra: "extra"
+    ]
+  end
 end
