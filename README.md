@@ -57,6 +57,16 @@ defmodule MyPlug do
   end
 end
 
+defmodule Router do
+  use Plug.Router
+
+  plug Plug.Logger
+  plug :match
+  plug :dispatch
+
+  forward "/", to: MyPlug
+end
+
 require Logger
 webserver = {Plug.Cowboy, plug: Router, scheme: :http, port: 4000}
 {:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
@@ -77,8 +87,8 @@ routes, we will use the built-in `Plug.Router` for that:
 Mix.install([:plug, :bandit, :websock_adapter])
 
 defmodule EchoServer do
-  def init(args) do
-    {:ok, []}
+  def init(options) do
+    {:ok, options}
   end
 
   def handle_in({"ping", [opcode: :text]}, state) do
@@ -119,7 +129,7 @@ defmodule Router do
 end
 
 require Logger
-webserver = {Bandit, plug: Router, scheme: :http, port: 4000}
+webserver = {Bandit, plug: Router, scheme: :http, options: [port: 4000]}
 {:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
 Logger.info("Plug now running on localhost:4000")
 ```
