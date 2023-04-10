@@ -2,16 +2,18 @@ defmodule Plug do
   @moduledoc """
   The plug specification.
 
+  ## Types of plugs
+
   There are two kind of plugs: function plugs and module plugs.
 
-  #### Function plugs
+  ### Function plugs
 
   A function plug is any function that receives a connection and a set of
   options and returns a connection. Its type signature must be:
 
       (Plug.Conn.t, Plug.opts) :: Plug.Conn.t
 
-  #### Module plugs
+  ### Module plugs
 
   A module plug is an extension of the function plug. It is a module that must
   export:

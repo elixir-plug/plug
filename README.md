@@ -61,9 +61,10 @@ require Logger
 webserver = {Plug.Cowboy, plug: MyPlug, scheme: :http, options: [port: 4000]}
 {:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
 Logger.info("Plug now running on localhost:4000")
+Process.sleep(:infinity)
 ```
 
-Save that snippet to a file and execute it as `elixir --no-halt hello_world.exs`.
+Save that snippet to a file and execute it as `elixir hello_world.exs`.
 Access <http://localhost:4000/> and you should be greeted!
 
 ## Hello world: websockets
@@ -122,9 +123,10 @@ require Logger
 webserver = {Bandit, plug: Router, scheme: :http, options: [port: 4000]}
 {:ok, _} = Supervisor.start_link([webserver], strategy: :one_for_one)
 Logger.info("Plug now running on localhost:4000")
+Process.sleep(:infinity)
 ```
 
-Save that snippet to a file and execute it as `elixir --no-halt websockets.exs`.
+Save that snippet to a file and execute it as `elixir websockets.exs`.
 Access <http://localhost:4000/> and you should see messages in your browser
 console.
 
