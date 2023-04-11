@@ -74,31 +74,20 @@ defmodule Plug.SSL do
   import Plug.Conn
 
   @strong_tls_ciphers [
-    ~c"ECDHE-RSA-AES256-GCM-SHA384",
-    ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
-    ~c"ECDHE-RSA-AES128-GCM-SHA256",
-    ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
-    ~c"DHE-RSA-AES256-GCM-SHA384",
-    ~c"DHE-RSA-AES128-GCM-SHA256"
+    ~c"TLS_AES_128_GCM_SHA256",
+    ~c"TLS_AES_256_GCM_SHA384",
+    ~c"TLS_CHACHA20_POLY1305_SHA256"
   ]
 
   @compatible_tls_ciphers [
-    ~c"ECDHE-RSA-AES256-GCM-SHA384",
-    ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
-    ~c"ECDHE-RSA-AES128-GCM-SHA256",
     ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
-    ~c"DHE-RSA-AES256-GCM-SHA384",
+    ~c"ECDHE-RSA-AES128-GCM-SHA256",
+    ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
+    ~c"ECDHE-RSA-AES256-GCM-SHA384",
+    ~c"ECDHE-ECDSA-CHACHA20-POLY1305",
+    ~c"ECDHE-RSA-CHACHA20-POLY1305",
     ~c"DHE-RSA-AES128-GCM-SHA256",
-    ~c"ECDHE-RSA-AES256-SHA384",
-    ~c"ECDHE-ECDSA-AES256-SHA384",
-    ~c"ECDHE-RSA-AES128-SHA256",
-    ~c"ECDHE-ECDSA-AES128-SHA256",
-    ~c"DHE-RSA-AES256-SHA256",
-    ~c"DHE-RSA-AES128-SHA256",
-    ~c"ECDHE-RSA-AES256-SHA",
-    ~c"ECDHE-ECDSA-AES256-SHA",
-    ~c"ECDHE-RSA-AES128-SHA",
-    ~c"ECDHE-ECDSA-AES128-SHA"
+    ~c"DHE-RSA-AES256-GCM-SHA384"
   ]
 
   @eccs [
@@ -136,30 +125,21 @@ defmodule Plug.SSL do
 
   To simplify configuration of TLS defaults, this function provides two preconfigured
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
-  chosen and related configuration come from the [OWASP Cipher String Cheat
-  Sheet](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet)
+  chosen and related configuration come from the
+  [Mozilla Security/Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
 
-  We've made two modifications to the suggested config from the OWASP recommendations.
-  First we include ECDSA certificates which are excluded from their configuration.
-  Second we have changed the order of the ciphers to deprioritize DHE because of
-  performance implications noted within the OWASP post itself. As the article notes
-  "...the TLS handshake with DHE hinders the CPU about 2.4 times more than ECDHE".
+  The **Strong** cipher suite only supports tlsv1.3. Ciphers were based on the "Modern"
+  configuration recommandation and support forward secrecy and are authenticated.
+  The intention of this configuration is to provide as secure as possible defaults
+  knowing that it will not be fully compatible with older browsers and operating systems.
 
-  The **Strong** cipher suite only supports tlsv1.2. Ciphers were based on the OWASP
-  Group A+ and includes support for RSA or ECDSA certificates. The intention of this
-  configuration is to provide as secure as possible defaults knowing that it will not
-  be fully compatible with older browsers and operating systems.
-
-  The **Compatible** cipher suite supports tlsv1, tlsv1.1 and tlsv1.2. Ciphers were
-  based on the OWASP Group B and includes support for RSA or ECDSA certificates. The
-  intention of this configuration is to provide as secure as possible defaults that
-  still maintain support for older browsers and Android versions 4.3 and earlier
+  The **Compatible** cipher suite supports tlsv1.2 and tlsv1.3. Ciphers were
+  based on the "Intermediate" configuration recommendation. The intention of this configuration
+  is to provide as secure as possible defaults that still maintain support for older browsers
+  and Android versions 10 and earlier
 
   For both suites we've specified certificate curves secp256r1, ecp384r1 and secp521r1.
-  Since OWASP doesn't prescribe curves we've based the selection on [Mozilla's
-  recommendations](https://wiki.mozilla.org/Security/Server_Side_TLS#Cipher_names_correspondence_table)
-
-  **The cipher suites were last updated on 2018-JUN-14.**
+  **The cipher suites were last updated on 2023-APR-11.**
   """
   @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def configure(options) do
@@ -276,14 +256,14 @@ defmodule Plug.SSL do
     options
     |> set_managed_tls_defaults
     |> Keyword.put_new(:ciphers, @strong_tls_ciphers)
-    |> Keyword.put_new(:versions, [:"tlsv1.2"])
+    |> Keyword.put_new(:versions, [:"tlsv1.3"])
   end
 
   defp set_compatible_tls_defaults(options) do
     options
     |> set_managed_tls_defaults
-    |> Keyword.put_new(:ciphers, @compatible_tls_ciphers)
-    |> Keyword.put_new(:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1])
+    |> Keyword.put_new(:ciphers, @strong_tls_ciphers ++ @compatible_tls_ciphers)
+    |> Keyword.put_new(:versions, [:"tlsv1.3", :"tlsv1.2"])
   end
 
   defp validate_ciphers(options) do
