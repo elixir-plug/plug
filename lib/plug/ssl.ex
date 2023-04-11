@@ -129,7 +129,7 @@ defmodule Plug.SSL do
   [Mozilla Security/Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
 
   The **Strong** cipher suite only supports tlsv1.3. Ciphers were based on the "Modern"
-  configuration recommandation and support forward secrecy and are authenticated.
+  configuration recommendation and support forward secrecy and are authenticated.
   The intention of this configuration is to provide as secure as possible defaults
   knowing that it will not be fully compatible with older browsers and operating systems.
 
