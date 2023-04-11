@@ -16,11 +16,11 @@ jobs:
       matrix:
         include:
           - pair:
-              elixir: 1.10.4
-              otp: 21.3
+              elixir: 1.12.3
+              otp: 22.3
           - pair:
-              elixir: 1.13.3
-              otp: 24.2.1
+              elixir: 1.14.4
+              otp: 25.3
             lint: lint
     steps:
       - uses: actions/checkout@v2
