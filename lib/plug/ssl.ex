@@ -148,8 +148,8 @@ defmodule Plug.SSL do
     |> validate_ciphers()
     |> normalize_ssl_files()
     |> convert_to_charlist()
-    |> set_secure_defaults()
     |> configure_managed_tls()
+    |> set_secure_defaults()
   catch
     {:configure, message} -> {:error, message}
   else
