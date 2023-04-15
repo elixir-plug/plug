@@ -1263,6 +1263,7 @@ defmodule Plug.ConnTest do
 
     conn = put_session(conn, "foo", :bar)
     conn = put_session(conn, :key, 42)
+    conn = put_session(conn, "is_nil", nil)
 
     assert conn.private[:plug_session_info] == :write
 
@@ -1272,6 +1273,11 @@ defmodule Plug.ConnTest do
     assert get_session(conn, "foo") == :bar
     assert get_session(conn, "key") == 42
     assert get_session(conn, "unknown") == nil
+
+    assert get_session(conn, "unknown", nil) == nil
+    assert get_session(conn, "unknown", true) == true
+    assert get_session(conn, :unknown, 42) == 42
+    assert get_session(conn, "is_nil", 42) == nil
 
     conn = %{conn | state: :sent}
 

@@ -1685,15 +1685,17 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns session value for the given `key`. If `key`
-  is not set, `nil` is returned.
+  Returns session value for the given `key`. 
+
+  Returns the `default` value if `key` does not exist.
+  If `default` is not provided, `nil` is used.
 
   The key can be a string or an atom, where atoms are
   automatically converted to strings.
   """
-  @spec get_session(t, String.t() | atom) :: any
-  def get_session(conn, key) when is_atom(key) or is_binary(key) do
-    conn |> get_session |> Map.get(session_key(key))
+  @spec get_session(t, String.t() | atom, any) :: any
+  def get_session(conn, key, default \\ nil) when is_atom(key) or is_binary(key) do
+    conn |> get_session |> Map.get(session_key(key), default)
   end
 
   @doc """
