@@ -314,9 +314,7 @@ defmodule Plug.SSL do
   end
 
   defp keynew(list, key, position, value) do
-    if List.keymember?(list, key, position),
-      do: list,
-      else: List.keystore(list, key, position, value)
+    if List.keymember?(list, key, position), do: list, else: [value | list]
   end
 
   @impl true
