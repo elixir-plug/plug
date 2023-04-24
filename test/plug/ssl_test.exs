@@ -89,6 +89,13 @@ defmodule Plug.SSLTest do
       assert opts[:ciphers] == []
     end
 
+    test "allows bare atom configuration through unchanged" do
+      assert {:ok, opts} = configure([:inet6, {:key, "abcdef"}, {:cert, "ghijkl"}])
+      assert :inet6 in opts
+      assert {:key, "abcdef"} in opts
+      assert {:cert, "ghijkl"} in opts
+    end
+
     test "errors when an invalid cipher is given" do
       assert configure(key: "abcdef", cert: "ghijkl", cipher_suite: :unknown) ==
                {:error, "unknown :cipher_suite named :unknown"}

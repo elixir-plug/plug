@@ -161,7 +161,8 @@ defmodule Plug.SSL do
 
   **The cipher suites were last updated on 2018-JUN-14.**
   """
-  @spec configure(Keyword.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
+  @spec configure([:ssl.tls_server_option()]) ::
+          {:ok, [:ssl.tls_server_option()]} | {:error, String.t()}
   def configure(options) do
     options
     |> check_for_missing_keys()
@@ -177,9 +178,9 @@ defmodule Plug.SSL do
   end
 
   defp check_for_missing_keys(options) do
-    has_sni? = Keyword.has_key?(options, :sni_hosts) or Keyword.has_key?(options, :sni_fun)
-    has_key? = Keyword.has_key?(options, :key) or Keyword.has_key?(options, :keyfile)
-    has_cert? = Keyword.has_key?(options, :cert) or Keyword.has_key?(options, :certfile)
+    has_sni? = List.keymember?(options, :sni_hosts, 0) or List.keymember?(options, :sni_fun, 0)
+    has_key? = List.keymember?(options, :key, 0) or List.keymember?(options, :keyfile, 0)
+    has_cert? = List.keymember?(options, :cert, 0) or List.keymember?(options, :certfile, 0)
 
     cond do
       has_sni? -> options
@@ -220,7 +221,7 @@ defmodule Plug.SSL do
       fail(message)
     end
 
-    Keyword.put(options, key, value)
+    List.keystore(options, key, 0, {key, value})
   end
 
   defp otp_app(options) do
@@ -234,7 +235,7 @@ defmodule Plug.SSL do
   defp convert_to_charlist(options) do
     Enum.reduce([:password], options, fn key, acc ->
       if value = acc[key] do
-        Keyword.put(acc, key, to_charlist(value))
+        List.keystore(acc, key, 0, {key, to_charlist(value)})
       else
         acc
       end
@@ -246,17 +247,18 @@ defmodule Plug.SSL do
 
     if Enum.any?([:tlsv1, :"tlsv1.1", :"tlsv1.2"], &(&1 in versions)) do
       options
-      |> Keyword.put_new(:secure_renegotiate, true)
-      |> Keyword.put_new(:reuse_sessions, true)
+      |> keynew(:secure_renegotiate, 0, {:secure_renegotiate, true})
+      |> keynew(:reuse_sessions, 0, {:reuse_sessions, true})
     else
       options
-      |> Keyword.delete(:secure_renegotiate)
-      |> Keyword.delete(:reuse_sessions)
+      |> List.keydelete(:secure_renegotiate, 0)
+      |> List.keydelete(:reuse_sessions, 0)
     end
   end
 
   defp configure_managed_tls(options) do
-    {cipher_suite, options} = Keyword.pop(options, :cipher_suite)
+    {_, cipher_suite} = List.keyfind(options, :cipher_suite, 0, {:cipher_suite, nil})
+    options = List.keydelete(options, :cipher_suite, 0)
 
     case cipher_suite do
       :strong -> set_strong_tls_defaults(options)
@@ -268,27 +270,28 @@ defmodule Plug.SSL do
 
   defp set_managed_tls_defaults(options) do
     options
-    |> Keyword.put_new(:honor_cipher_order, true)
-    |> Keyword.put_new(:eccs, @eccs)
+    |> keynew(:honor_cipher_order, 0, {:honor_cipher_order, true})
+    |> keynew(:eccs, 0, {:eccs, @eccs})
   end
 
   defp set_strong_tls_defaults(options) do
     options
     |> set_managed_tls_defaults
-    |> Keyword.put_new(:ciphers, @strong_tls_ciphers)
-    |> Keyword.put_new(:versions, [:"tlsv1.2"])
+    |> keynew(:ciphers, 0, {:ciphers, @strong_tls_ciphers})
+    |> keynew(:versions, 0, {:versions, [:"tlsv1.2"]})
   end
 
   defp set_compatible_tls_defaults(options) do
     options
     |> set_managed_tls_defaults
-    |> Keyword.put_new(:ciphers, @compatible_tls_ciphers)
-    |> Keyword.put_new(:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1])
+    |> keynew(:ciphers, 0, {:ciphers, @compatible_tls_ciphers})
+    |> keynew(:versions, 0, {:versions, [:"tlsv1.2", :"tlsv1.1", :tlsv1]})
   end
 
   defp validate_ciphers(options) do
     options
-    |> Keyword.get(:ciphers, [])
+    |> List.keyfind(:ciphers, 0, {:ciphers, []})
+    |> elem(1)
     |> Enum.each(&validate_cipher/1)
 
     options
@@ -308,6 +311,10 @@ defmodule Plug.SSL do
 
   defp fail(message) when is_binary(message) do
     throw({:configure, message})
+  end
+
+  defp keynew(list, key, position, value) do
+    if List.keymember?(list, key, position), do: list, else: [value | list]
   end
 
   @impl true
