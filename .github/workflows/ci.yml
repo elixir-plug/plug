@@ -19,26 +19,28 @@ jobs:
               elixir: 1.10.4
               otp: 21.3
           - pair:
-              elixir: 1.13.3
-              otp: 24.2.1
+              elixir: 1.14.4
+              otp: 25.3
             lint: lint
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: erlef/setup-beam@v1
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.pair.otp}}
-          elixir-version: ${{matrix.pair.elixir}}
+          otp-version: ${{ matrix.pair.otp }}
+          elixir-version: ${{ matrix.pair.elixir }}
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: mix deps.get --only test
 
-      - run: mix format --check-formatted
+      - name: Ensure that files are formatted
+        run: mix format --check-formatted
         if: ${{ matrix.lint }}
 
-      - run: mix deps.get && mix deps.unlock --check-unused
+      - name: Check for unused dependencies
+        run: mix do deps.get, deps.unlock --check-unused
         if: ${{ matrix.lint }}
 
-      - run: mix deps.compile
-
-      - run: mix test
+      - name: Run tests
+        run: mix test
