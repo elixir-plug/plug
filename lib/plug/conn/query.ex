@@ -56,7 +56,7 @@ defmodule Plug.Conn.Query do
       iex> encode(%{foo: %{bar: "baz"}})
       "foo[bar]=baz"
 
-  It is not possible to encode maps inside lists, if the maps have 0 or more than 1 element.
+  It is only possible to encode maps inside lists if those maps have exactly one element.
   In this case it is possible to encode the parameters using maps instead of lists:
 
       iex> encode(%{"list" => [%{"a" => 1, "b" => 2}]})
