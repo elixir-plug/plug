@@ -13,7 +13,7 @@ defmodule Plug.Telemetry do
       is the whole `Plug.Conn` under the `:conn` key and any leftover
       options given to the plug under `:options`.
 
-    * `[:my, :plug, :stop]` - emitted right before the request is sent.
+    * `[:my, :plug, :stop]` - emitted right before the response is sent.
       The event carries a single measurement, `:duration`,  which is the
       monotonic time difference between the stop and start events.
       It has the same metadata as the start event, except the connection
