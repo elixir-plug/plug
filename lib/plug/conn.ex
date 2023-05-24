@@ -330,9 +330,9 @@ defmodule Plug.Conn do
       :world
 
   """
-  @spec merge_assigns(t, Keyword.t()) :: t
-  def merge_assigns(%Conn{assigns: assigns} = conn, keyword) when is_list(keyword) do
-    %{conn | assigns: Enum.into(keyword, assigns)}
+  @spec merge_assigns(t, Enumerable.t({atom, term})) :: t
+  def merge_assigns(%Conn{assigns: assigns} = conn, new) do
+    %{conn | assigns: Enum.into(new, assigns)}
   end
 
   @doc false
@@ -384,9 +384,9 @@ defmodule Plug.Conn do
       :world
 
   """
-  @spec merge_private(t, Keyword.t()) :: t
-  def merge_private(%Conn{private: private} = conn, keyword) when is_list(keyword) do
-    %{conn | private: Enum.into(keyword, private)}
+  @spec merge_private(t, Enumerable.t({atom, term})) :: t
+  def merge_private(%Conn{private: private} = conn, new) do
+    %{conn | private: Enum.into(new, private)}
   end
 
   @doc """
