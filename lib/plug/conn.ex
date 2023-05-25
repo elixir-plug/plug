@@ -330,7 +330,7 @@ defmodule Plug.Conn do
       :world
 
   """
-  @spec merge_assigns(t, Enumerable.t({atom, term})) :: t
+  @spec merge_assigns(t, Enumerable.t()) :: t
   def merge_assigns(%Conn{assigns: assigns} = conn, new) do
     %{conn | assigns: Enum.into(new, assigns)}
   end
@@ -384,7 +384,7 @@ defmodule Plug.Conn do
       :world
 
   """
-  @spec merge_private(t, Enumerable.t({atom, term})) :: t
+  @spec merge_private(t, Enumerable.t()) :: t
   def merge_private(%Conn{private: private} = conn, new) do
     %{conn | private: Enum.into(new, private)}
   end
