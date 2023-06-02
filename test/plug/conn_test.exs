@@ -405,6 +405,20 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
+  test "chunk/2 runs before_chunk callbacks" do
+    pid = self()
+    _conn =
+      conn(:get, "/foo")
+      |> register_before_chunk(fn conn, chunk ->
+        send(pid, {:before_chunk, chunk})
+        conn
+       end)
+      |> send_chunked(200)
+      |> chunk("CHUNK")
+
+    assert_received {:before_chunk, "CHUNK"}
+  end
+
   test "inform/3 performs an informational request" do
     conn = conn(:get, "/foo") |> inform(103, [{"link", "</style.css>; rel=preload; as=style"}])
     assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)

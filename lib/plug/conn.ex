@@ -108,7 +108,7 @@ defmodule Plug.Conn do
   The connection state is used to track the connection lifecycle. It starts as
   `:unset` but is changed to `:set` (via `resp/3`) or `:set_chunked`
   (used only for `before_send` callbacks by `send_chunked/2`) or `:file`
-  (when invoked via `send_file/3`). Its final result is `:sent`, `:file`, `:chunked` 
+  (when invoked via `send_file/3`). Its final result is `:sent`, `:file`, `:chunked`
   or `:upgraded` depending on the response model.
 
   ## Private fields
@@ -155,10 +155,10 @@ defmodule Plug.Conn do
 
   Plug provides basic support for protocol upgrades via the `upgrade_adapter/3`
   function to facilitate connection upgrades to protocols such as WebSockets.
-  As the name suggests, this functionality is adapter-dependent and the 
+  As the name suggests, this functionality is adapter-dependent and the
   functionality & requirements of a given upgrade require explicit coordination
-  between a Plug application & the underlying adapter. Plug provides upgrade 
-  related functionality only to the extent necessary to allow a Plug application 
+  between a Plug application & the underlying adapter. Plug provides upgrade
+  related functionality only to the extent necessary to allow a Plug application
   to request protocol upgrades from the underlying adapter. See the documentation
   for `upgrade_adapter/3` for details.
   """
@@ -553,6 +553,8 @@ defmodule Plug.Conn do
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
+    conn = run_before_chunk(conn, chunk)
+
     if iodata_empty?(chunk) do
       {:ok, conn}
     else
@@ -1685,7 +1687,7 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns session value for the given `key`. 
+  Returns session value for the given `key`.
 
   Returns the `default` value if `key` does not exist.
   If `default` is not provided, `nil` is used.
@@ -1808,6 +1810,31 @@ defmodule Plug.Conn do
     update_in(conn.private[:before_send], &[callback | &1 || []])
   end
 
+ @doc ~S"""
+  Registers a callback to be invoked before a chunk is sent by Plug.Conn.chunk/2.
+  Callbacks are invoked in the reverse order they are defined (callbacks
+  defined first are invoked last).
+  ## Examples
+  To log the chunk about to be sent
+      require Logger
+      Plug.Conn.register_before_chunk(conn, fn _conn, chunk ->
+        Logger.info("Sending chunk: #{IO.inspect chunk}")
+        conn
+      end)
+  """
+  @spec register_before_chunk(t, (t, iodata() -> t)) :: t
+  def register_before_chunk(conn, callback)
+
+  def register_before_chunk(%Conn{state: state}, _callback)
+      when state not in @unsent do
+    raise AlreadySentError
+  end
+
+  def register_before_chunk(%Conn{} = conn, callback)
+      when is_function(callback, 2) do
+    update_in(conn.private[:before_chunk], &[callback | &1 || []])
+  end
+
   @doc """
   Halts the Plug pipeline by preventing further plugs downstream from being
   invoked. See the docs for `Plug.Builder` for more information on halting a
@@ -1839,6 +1866,17 @@ defmodule Plug.Conn do
 
     if conn.state != new do
       raise ArgumentError, "cannot send/change response from run_before_send callback"
+    end
+
+    %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
+  end
+
+  defp run_before_chunk(%Conn{private: private} = conn, chunk) do
+    initial_state = conn.state
+    conn = Enum.reduce(private[:before_chunk] || [], conn, & &1.(&2, chunk))
+
+    if conn.state != initial_state do
+      raise ArgumentError, "cannot send/change response from run_before_chunk callback"
     end
 
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
