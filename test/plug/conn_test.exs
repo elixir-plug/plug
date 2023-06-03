@@ -410,13 +410,18 @@ defmodule Plug.ConnTest do
     _conn =
       conn(:get, "/foo")
       |> register_before_chunk(fn conn, chunk ->
-        send(pid, {:before_chunk, chunk})
+        send(pid, {:before_chunk, 1, chunk})
+        conn
+       end)
+      |> register_before_chunk(fn conn, chunk ->
+        send(pid, {:before_chunk, 2, chunk})
         conn
        end)
       |> send_chunked(200)
       |> chunk("CHUNK")
 
-    assert_received {:before_chunk, "CHUNK"}
+    assert_received {:before_chunk, 2, "CHUNK"}
+    assert_received {:before_chunk, 1, "CHUNK"}
   end
 
   test "inform/3 performs an informational request" do
