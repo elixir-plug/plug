@@ -1811,18 +1811,23 @@ defmodule Plug.Conn do
   end
 
  @doc ~S"""
-  Registers a callback to be invoked before a chunk is sent by Plug.Conn.chunk/2.
-  Callbacks are invoked in the reverse order they are defined (callbacks
-  defined first are invoked last).
+  Registers a callback to be invoked before a chunk is sent by `chunk/2`.
+
+  Callbacks are invoked in the reverse order they are registered, that is, callbacks which
+  are registered first are invoked last.
+
   ## Examples
-  To log the chunk about to be sent
-      require Logger
-      Plug.Conn.register_before_chunk(conn, fn _conn, chunk ->
-        Logger.info("Sending chunk: #{IO.inspect chunk}")
+
+  This example logs the size of the chunk about to be sent:
+
+      register_before_chunk(conn, fn _conn, chunk ->
+        Logger.info("Sending #{IO.iodata_length(chunk)} bytes")
         conn
       end)
+
   """
-  @spec register_before_chunk(t, (t, iodata() -> t)) :: t
+  @doc since: "1.15.0"
+  @spec register_before_chunk(t, (t, body -> t)) :: t
   def register_before_chunk(conn, callback)
 
   def register_before_chunk(%Conn{state: state}, _callback)
@@ -1876,7 +1881,7 @@ defmodule Plug.Conn do
     conn = Enum.reduce(private[:before_chunk] || [], conn, & &1.(&2, chunk))
 
     if conn.state != initial_state do
-      raise ArgumentError, "cannot send/change response from run_before_chunk callback"
+      raise ArgumentError, "cannot send or change response from run_before_chunk/2 callback"
     end
 
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
