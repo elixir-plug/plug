@@ -407,8 +407,8 @@ defmodule Plug.ConnTest do
 
   test "chunk/2 runs before_chunk callbacks" do
     pid = self()
-    _conn =
-      conn(:get, "/foo")
+
+    conn(:get, "/foo")
       |> register_before_chunk(fn conn, chunk ->
         send(pid, {:before_chunk, 1, chunk})
         conn
@@ -422,6 +422,25 @@ defmodule Plug.ConnTest do
 
     assert_received {:before_chunk, 2, "CHUNK"}
     assert_received {:before_chunk, 1, "CHUNK"}
+  end
+
+  test "chunk/2 uses the updated conn from before_chunk callbacks" do
+    pid = self()
+    conn =
+      conn(:get, "/foo")
+      |> register_before_chunk(fn conn, _chunk ->
+        {count, conn} = get_and_update_in(conn.assigns[:test_counter], &{&1, (&1 || 0) + 1})
+        send(pid, {:before_chunk, count})
+        conn
+      end)
+      |> send_chunked(200)
+    {:ok, conn} = chunk(conn, "CHUNK")
+    {:ok, conn} = chunk(conn, "CHUNK")
+    {:ok, _} = chunk(conn, "CHUNK")
+
+    assert_received {:before_chunk, nil}
+    assert_received {:before_chunk, 1}
+    assert_received {:before_chunk, 2}
   end
 
   test "inform/3 performs an informational request" do
