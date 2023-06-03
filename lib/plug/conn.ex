@@ -1810,7 +1810,7 @@ defmodule Plug.Conn do
     update_in(conn.private[:before_send], &[callback | &1 || []])
   end
 
- @doc ~S"""
+  @doc ~S"""
   Registers a callback to be invoked before a chunk is sent by `chunk/2`.
 
   Callbacks are invoked in the reverse order they are registered, that is, callbacks which

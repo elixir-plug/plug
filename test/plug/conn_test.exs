@@ -409,16 +409,16 @@ defmodule Plug.ConnTest do
     pid = self()
 
     conn(:get, "/foo")
-      |> register_before_chunk(fn conn, chunk ->
-        send(pid, {:before_chunk, 1, chunk})
-        conn
-       end)
-      |> register_before_chunk(fn conn, chunk ->
-        send(pid, {:before_chunk, 2, chunk})
-        conn
-       end)
-      |> send_chunked(200)
-      |> chunk("CHUNK")
+    |> register_before_chunk(fn conn, chunk ->
+      send(pid, {:before_chunk, 1, chunk})
+      conn
+    end)
+    |> register_before_chunk(fn conn, chunk ->
+      send(pid, {:before_chunk, 2, chunk})
+      conn
+    end)
+    |> send_chunked(200)
+    |> chunk("CHUNK")
 
     assert_received {:before_chunk, 2, "CHUNK"}
     assert_received {:before_chunk, 1, "CHUNK"}
@@ -426,6 +426,7 @@ defmodule Plug.ConnTest do
 
   test "chunk/2 uses the updated conn from before_chunk callbacks" do
     pid = self()
+
     conn =
       conn(:get, "/foo")
       |> register_before_chunk(fn conn, _chunk ->
@@ -434,6 +435,7 @@ defmodule Plug.ConnTest do
         conn
       end)
       |> send_chunked(200)
+
     {:ok, conn} = chunk(conn, "CHUNK")
     {:ok, conn} = chunk(conn, "CHUNK")
     {:ok, _} = chunk(conn, "CHUNK")
