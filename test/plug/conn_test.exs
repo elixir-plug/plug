@@ -1428,6 +1428,14 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "register_before_chunk/2 raises when a response has already been sent" do
+    conn = send_resp(conn(:get, "/"), 200, "ok")
+
+    assert_raise Plug.Conn.AlreadySentError, fn ->
+      register_before_chunk(conn, fn _ -> nil end)
+    end
+  end
+
   test "does not delegate to connections' adapter's chunk/2 when called with an empty chunk" do
     defmodule RaisesOnEmptyChunkAdapter do
       defdelegate send_chunked(state, status, headers), to: Plug.Adapters.Test.Conn
