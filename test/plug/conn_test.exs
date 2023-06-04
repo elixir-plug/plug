@@ -420,8 +420,12 @@ defmodule Plug.ConnTest do
     |> send_chunked(200)
     |> chunk("CHUNK")
 
-    assert_received {:before_chunk, 2, "CHUNK"}
-    assert_received {:before_chunk, 1, "CHUNK"}
+    # We need to match with n1 and n2 because if we match directly on 1 and 2 then
+    # selective receive will match on the messages even if they're out of order.
+    assert_receive {:before_chunk, n1, "CHUNK"}
+    assert_receive {:before_chunk, n2, "CHUNK"}
+    assert n1 == 2
+    assert n2 == 1
   end
 
   test "chunk/2 uses the updated conn from before_chunk callbacks" do
@@ -429,18 +433,19 @@ defmodule Plug.ConnTest do
 
     conn =
       conn(:get, "/foo")
+      |> assign(:test_counter, 0)
       |> register_before_chunk(fn conn, _chunk ->
-        {count, conn} = get_and_update_in(conn.assigns[:test_counter], &{&1, (&1 || 0) + 1})
+        {count, conn} = get_and_update_in(conn.assigns[:test_counter], &{&1, &1 + 1})
         send(pid, {:before_chunk, count})
         conn
       end)
       |> send_chunked(200)
 
-    {:ok, conn} = chunk(conn, "CHUNK")
-    {:ok, conn} = chunk(conn, "CHUNK")
-    {:ok, _} = chunk(conn, "CHUNK")
+    assert {:ok, conn} = chunk(conn, "CHUNK")
+    assert {:ok, conn} = chunk(conn, "CHUNK")
+    assert {:ok, _conn} = chunk(conn, "CHUNK")
 
-    assert_received {:before_chunk, nil}
+    assert_received {:before_chunk, 0}
     assert_received {:before_chunk, 1}
     assert_received {:before_chunk, 2}
   end
