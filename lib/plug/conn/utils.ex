@@ -265,6 +265,9 @@ defmodule Plug.Conn.Utils do
       iex> list("empties, , are,, filtered")
       ["empties", "are", "filtered"]
 
+      iex> list("whitespace , , ,,   is   ,definitely,optional")
+      ["whitespace", "is", "definitely", "optional"]
+
   """
   @spec list(binary) :: [binary]
   def list(binary) do
@@ -300,7 +303,17 @@ defmodule Plug.Conn.Utils do
 
   defp strip_spaces("\r\n" <> t), do: strip_spaces(t)
   defp strip_spaces(<<h, t::binary>>) when h in [?\s, ?\t], do: strip_spaces(t)
-  defp strip_spaces(t), do: t
+  defp strip_spaces(t), do: trim_trailing(t)
+
+  defp trim_trailing(binary), do: trim_trailing(binary, byte_size(binary))
+
+  defp trim_trailing(binary, pos) do
+    if pos > 0 and :binary.at(binary, pos - 1) in [?\s, ?\t] do
+      trim_trailing(binary, pos - 1)
+    else
+      binary_part(binary, 0, pos)
+    end
+  end
 
   defp downcase_char(char) when char in @upper, do: char + 32
   defp downcase_char(char), do: char
