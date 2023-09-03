@@ -90,8 +90,10 @@ defmodule Plug.Adapters.Test.Conn do
 
   def chunk(%{method: "HEAD"} = state, _body), do: {:ok, "", state}
 
-  def chunk(%{chunks: chunks} = state, body) do
-    body = chunks <> IO.iodata_to_binary(body)
+  def chunk(%{owner: owner, ref: ref, chunks: chunks} = state, chunk) do
+    chunk = IO.iodata_to_binary(chunk)
+    send(owner, {ref, :chunk, chunk})
+    body = chunks <> chunk
     {:ok, body, %{state | chunks: body}}
   end
 

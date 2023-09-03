@@ -100,12 +100,38 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Returns the sent body chunks.
+
+  This function depends on gathering the messages sent by the test adapter when
+  response body chunks are sent. Calling this function will clear the chunk
+  messages from the inbox for the process. To assert on multiple informs, the
+  result of the function should be stored in a variable.
+
+  ## Examples
+
+      conn = conn(:get, "/")
+      assert Plug.Test.sent_chunks(conn) == ["foo", "bar"]
+  """
+  def sent_chunks(%Plug.Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    Enum.reverse(receive_chunks(ref, []))
+  end
+
+  defp receive_chunks(ref, chunks) do
+    receive do
+      {^ref, :chunk, chunk} ->
+        receive_chunks(ref, [chunk | chunks])
+    after
+      0 -> chunks
+    end
+  end
+
+  @doc """
   Returns the informational requests that have been sent.
 
   This function depends on gathering the messages sent by the test adapter when
   informational messages, such as an early hint, are sent. Calling this
   function will clear the informational request messages from the inbox for the
-  process.  To assert on multiple informs, the result of the function should be
+  process. To assert on multiple informs, the result of the function should be
   stored in a variable.
 
   ## Examples

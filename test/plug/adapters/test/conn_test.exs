@@ -114,6 +114,16 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.host == "www.elixir-lang.org"
   end
 
+  test "sent chunks" do
+    conn = conn(:get, "/")
+    conn = Plug.Conn.send_chunked(conn, 200)
+    {:ok, conn} = Plug.Conn.chunk(conn, "foo")
+    {:ok, conn} = Plug.Conn.chunk(conn, "bar")
+
+    assert conn.resp_body == "foobar"
+    assert Plug.Test.sent_chunks(conn) == ["foo", "bar"]
+  end
+
   test "inform adds to the informational responses to the list" do
     conn =
       conn(:get, "/")
