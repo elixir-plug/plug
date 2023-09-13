@@ -31,9 +31,9 @@ defmodule Plug.Conn do
 
   ## Fetchable fields
 
-  The request information in these fields is not populated until it is fetched
-  using the associated `fetch_` function. For example, the `cookies` field uses
-  `fetch_cookies/2`.
+  Fetchable fields do not populate with request information until the corresponding
+  prefixed 'fetch_' function retrieves them, e.g., the `fetch_cookies/2` function
+  retrieves the `cookies` field.
 
   If you access these fields before fetching them, they will be returned as
   `Plug.Conn.Unfetched` structs.
@@ -49,33 +49,34 @@ defmodule Plug.Conn do
   ## Session vs Assigns
 
   HTTP is stateless.
+
   This means that a server begins each request cycle with no knowledge about
-  the client except the request itself.
-  Its response may include one or more `"Set-Cookie"` headers, asking the client
-  to send that value back in a `"Cookie"` header on subsequent requests.
+  the client except the request itself. Its response may include one or more
+  `"Set-Cookie"` headers, asking the client to send that value back in a
+  `"Cookie"` header on subsequent requests.
+
   This is the basis for stateful interactions with a client, so that the server
   can remember the client's name, the contents of their shopping cart, and so on.
 
-  In Plug, a "session" is a place to store data that persists from one request
-  to the next.
-  Typically, this data is stored in a cookie using `Plug.Session.COOKIE`.
+  In `Plug`, a "session" is a place to store data that persists from one request
+  to the next. Typically, this data is stored in a cookie using `Plug.Session.COOKIE`.
+
   A minimal approach would be to store only a user's id in the session, then
   use that during the request cycle to look up other information (in a database
   or elsewhere).
+
   More can be stored in a session cookie, but be careful: this makes requests
   and responses heavier, and clients may reject cookies beyond a certain size.
-  Also, whatever is stored in a session cookie is not shared between a user's
-  different browsers or devices.
+  Also, session cookie are not shared between a user's different browsers or devices.
 
-  If the session is stored elsewhere, such as with `Plug.Session.ETS`,
-  something like a user id would still be needed to look it up on each request.
+  If the session is stored elsewhere, such as with `Plug.Session.ETS`, session
+  data lookup still needs a key, e.g., a user's id. Unlike session data, `assigns`
+  data fields only last a single request.
 
-  Unlike data in a session, data in the `assigns` field lasts only for a single
-  request.
-  A typical use case would be for an authentication plug to look up a
-  user by id and store the user's details in the assigns for later plugs to
-  access during the same request.
-  When the next request happens, this data will be gone.
+  A typical use case would be for an authentication plug to look up a user by id
+  and keep the state of the user's credentials by storing them in `assigns`.
+  Other plugs will then also have access through the `assigns` storage. This is
+  an important point because the session data disappears on the next request.
 
   To summarize: `assigns` is for storing data to be accessed during the current
   request, and the session is for storing data to be accessed in subsequent
@@ -85,13 +86,13 @@ defmodule Plug.Conn do
 
   These fields contain response information:
 
-    * `resp_body` - the response body, by default is an empty string. It is set
+    * `resp_body` - the response body is an empty string by default. It is set
       to nil after the response is sent, except for test connections. The response
-      charset used defaults to "utf-8".
+      charset defaults to "utf-8".
     * `resp_cookies` - the response cookies with their name and options
-    * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
-      is set to `"max-age=0, private, must-revalidate"`. Note, response headers
-      are expected to have lowercase keys.
+    * `resp_headers` - the response headers as a list of tuples, `cache-control`
+      is set to `"max-age=0, private, must-revalidate"` by default.
+      Note: Use all lowercase for response headers.
     * `status` - the response status
 
   ## Connection fields
@@ -100,9 +101,9 @@ defmodule Plug.Conn do
     * `owner` - the Elixir process that owns the connection
     * `halted` - the boolean status on whether the pipeline was halted
     * `secret_key_base` - a secret key used to verify and encrypt cookies.
-      the field must be set manually whenever one of those features are used.
-      This data must be kept in the connection and never used directly, always
-      use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it
+      These features require manual field setup. Data must be kept in the
+      connection and never used directly. Always use `Plug.Crypto.KeyGenerator.generate/3`
+      to derive keys from it.
     * `state` - the connection state
 
   The connection state is used to track the connection lifecycle. It starts as
@@ -120,47 +121,44 @@ defmodule Plug.Conn do
 
   ## Custom status codes
 
-  Plug allows status codes to be overridden or added in order to allow new codes
-  not directly specified by Plug or its adapters. Adding or overriding a status
-  code is done through the Mix configuration of the `:plug` application. For
-  example, to override the existing 404 reason phrase for the 404 status code
-  ("Not Found" by default) and add a new 998 status code, the following config
-  can be specified:
+  `Plug` allows status codes to be overridden or added and allow new codes not directly
+  specified by `Plug` or its adapters. The `:plug` application's Mix config can add or
+  override a status code.
+
+  For example, the config below overrides the default 404 reason phrase ("Not Found")
+  and adds a new 998 status code:
 
       config :plug, :statuses, %{
         404 => "Actually This Was Found",
         998 => "Not An RFC Status Code"
       }
 
-  As this configuration is Plug specific, Plug will need to be recompiled for
-  the changes to take place: this will not happen automatically as dependencies
-  are not automatically recompiled when their configuration changes. To recompile
-  Plug:
+  Dependency-specific config changes are not automatically recompiled. Recompile `Plug`
+  for the changes to take place. The command below recompiles `Plug`:
 
       mix deps.clean --build plug
 
-  The atoms that can be used in place of the status code in many functions are
-  inflected from the reason phrase of the status code. With the above
-  configuration, the following will all work:
+  A corresponding atom is inflected from each status code reason phrase. In many functions,
+  these atoms can stand in for the status code. For example, with the above configuration,
+  the following will work:
 
       put_status(conn, :not_found)                     # 404
       put_status(conn, :actually_this_was_found)       # 404
       put_status(conn, :not_an_rfc_status_code)        # 998
 
-  Even though 404 has been overridden, the `:not_found` atom can still be used
-  to set the status to 404 as well as the new atom `:actually_this_was_found`
-  inflected from the reason phrase "Actually This Was Found".
+  The `:not_found` atom can still be used to set the 404 status even though the 404 status code
+  reason phrase was overwritten. The new atom `:actually_this_was_found`, inflected from the
+  reason phrase "Actually This Was Found", can also be used to set the 404 status code.
 
   ## Protocol Upgrades
 
-  Plug provides basic support for protocol upgrades via the `upgrade_adapter/3`
-  function to facilitate connection upgrades to protocols such as WebSockets.
-  As the name suggests, this functionality is adapter-dependent and the
-  functionality & requirements of a given upgrade require explicit coordination
-  between a Plug application & the underlying adapter. Plug provides upgrade
-  related functionality only to the extent necessary to allow a Plug application
-  to request protocol upgrades from the underlying adapter. See the documentation
-  for `upgrade_adapter/3` for details.
+  `Plug.Conn.upgrade_adapter/3` provides basic support for protocol upgrades and facilitates
+  connection upgrades to protocols such as WebSockets. As the name suggests, this functionality
+  is adapter-dependent. Protocol upgrade functionality requires explicit coordination between
+  a `Plug` application and the underlying adapter.
+
+  `Plug` upgrade-related functionality only provides the possibility for the `Plug` application
+  to request protocol upgrades from the underlying adapter. See `upgrade_adapter/3` documentation.
   """
 
   @type adapter :: {module, term}
@@ -298,8 +296,8 @@ defmodule Plug.Conn do
   @doc """
   Assigns a value to a key in the connection.
 
-  The "assigns" storage is meant to be used to store values in the connection
-  so that other plugs in your plug pipeline can access them. The assigns storage
+  The `assigns` storage is meant to be used to store values in the connection
+  so that other plugs in your plug pipeline can access them. The `assigns` storage
   is a map.
 
   ## Examples
@@ -1121,7 +1119,7 @@ defmodule Plug.Conn do
   be allowed to pass for each read from the underlying socket.
 
   Because the request body can be of any size, reading the body will only
-  work once, as Plug will not cache the result of these operations. If you
+  work once, as `Plug` will not cache the result of these operations. If you
   need to access the body multiple times, it is your responsibility to store
   it. Finally keep in mind some plugs like `Plug.Parsers` may read the body,
   so the body may be unavailable after being accessed by such plugs.
@@ -1841,9 +1839,9 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Halts the Plug pipeline by preventing further plugs downstream from being
+  Halts the `Plug` pipeline by preventing further plugs downstream from being
   invoked. See the docs for `Plug.Builder` for more information on halting a
-  Plug pipeline.
+  `Plug` pipeline.
   """
   @spec halt(t) :: t
   def halt(%Conn{} = conn) do
