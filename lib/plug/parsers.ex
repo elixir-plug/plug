@@ -105,6 +105,9 @@ defmodule Plug.Parsers do
       `Plug.Parsers.MULTIPART` which relies instead on other functions defined
       in `Plug.Conn`.
 
+    * `:except` - an optional path or list of path roots that will be ignored
+      by the parser.
+
   All other options given to this Plug are forwarded to the parsers.
 
   ## Examples
