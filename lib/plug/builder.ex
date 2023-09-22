@@ -50,6 +50,29 @@ defmodule Plug.Builder do
   By implementing the Plug API, `Plug.Builder` guarantees this module is a plug
   and can be handed to a web server or used as part of another pipeline.
 
+  ## Conditional plugs
+
+  Sometimes you may want to conditionally invoke a Plug in a pipeline. For example,
+  you may want to invoke `Plug.Parsers` only under certain routes. This can be done
+  by wrapping the module plug in a function plug. Instead of:
+
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart], pass: ["text/*"]
+
+  You can write:
+
+      plug :conditional_parser
+
+      defp conditional_parser(%Plug.Conn{path_info: ["noparser" | _]} = conn, _opts) do
+        conn
+      end
+
+      @parser Plug.Parsers.init(parsers: [:urlencoded, :multipart], pass: ["text/*"])
+      defp conditional_parser(conn, _opts) do
+        Plug.Parsers.call(conn, @parser)
+      end
+
+  The above will invoke `Plug.Parsers` on all routes, except the ones under `/noparser`
+
   ## Overriding the default Plug API functions
 
   Both the `init/1` and `call/2` functions defined by `Plug.Builder` can be
