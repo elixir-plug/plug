@@ -448,4 +448,24 @@ defmodule Plug.ParsersTest do
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
   end
+
+  test "does not fetch when conn path matches except root" do
+    conn =
+      conn(:post, "/except", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(except: "/except")
+
+    assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+  end
+
+  test "does not fetch when conn path matches except root, one of a list" do
+    conn =
+      conn(:post, "/also-except", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(except: ["/except", "/also-except"])
+
+    assert conn.params == %Plug.Conn.Unfetched{aspect: :params}
+    assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+  end
 end

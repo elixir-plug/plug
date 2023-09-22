@@ -255,11 +255,15 @@ defmodule Plug.Parsers do
     {query_string_length, opts} = Keyword.pop(opts, :query_string_length, 1_000_000)
     validate_utf8 = Keyword.get(opts, :validate_utf8, true)
 
+    exceptions = opts
+    |> Keyword.get(:except)
+    |> List.wrap
+
     unless parsers do
       raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
     end
 
-    {convert_parsers(parsers, opts), pass, query_string_length, validate_utf8}
+    {convert_parsers(parsers, opts), pass, query_string_length, validate_utf8, exceptions}
   end
 
   defp convert_parsers(parsers, root_opts) do
@@ -284,9 +288,19 @@ defmodule Plug.Parsers do
   end
 
   @impl true
+  def call(%{method: method, request_path: request_path} = conn, {parsers, pass, query_string_length, validate_utf8, [_ | _] = exceptions}) 
+    when method in @methods do
+
+    if Enum.any?(exceptions, &String.starts_with?(request_path, &1)) do
+      conn
+    else
+      call(conn, {parsers, pass, query_string_length, validate_utf8, []})
+    end
+  end
+
   def call(%{method: method, body_params: %Plug.Conn.Unfetched{}} = conn, options)
       when method in @methods do
-    {parsers, pass, query_string_length, validate_utf8} = options
+    {parsers, pass, query_string_length, validate_utf8, _exceptions} = options
     %{req_headers: req_headers} = conn
 
     conn =
@@ -321,7 +335,7 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(%{body_params: body_params} = conn, {_, _, query_string_length, validate_utf8}) do
+  def call(%{body_params: body_params} = conn, {_, _, query_string_length, validate_utf8, _exceptions}) do
     body_params = make_empty_if_unfetched(body_params)
     {conn, params} = merge_params(conn, body_params, query_string_length, validate_utf8)
     %{conn | params: params, body_params: body_params}
