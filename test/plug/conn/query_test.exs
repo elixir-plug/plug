@@ -65,14 +65,18 @@ defmodule Plug.Conn.QueryTest do
 
   describe "encode" do
     test "data" do
-      assert encode(%{foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
+      assert encode(%{foo: "bar", baz: "bat"}) in ["baz=bat&foo=bar", "foo=bar&baz=bat"]
 
       assert encode(%{foo: nil}) == "foo="
       assert encode(%{foo: "bå®"}) == "foo=b%C3%A5%C2%AE"
       assert encode(%{foo: 1337}) == "foo=1337"
       assert encode(%{foo: ["bar", "baz"]}) == "foo[]=bar&foo[]=baz"
 
-      assert encode(%{users: %{name: "hello", age: 17}}) == "users[age]=17&users[name]=hello"
+      assert encode(%{users: %{name: "hello", age: 17}}) in [
+               "users[name]=hello&users[age]=17",
+               "users[age]=17&users[name]=hello"
+             ]
+
       assert encode(%{users: [name: "hello", age: 17]}) == "users[name]=hello&users[age]=17"
 
       assert encode(%{users: [name: "hello", age: 17, name: "goodbye"]}) ==
@@ -89,7 +93,10 @@ defmodule Plug.Conn.QueryTest do
 
       assert encode(%{foo: [""]}) == "foo[]="
 
-      assert encode(%{foo: ["bar", "baz"], bat: [1, 2]}) == "bat[]=1&bat[]=2&foo[]=bar&foo[]=baz"
+      assert encode(%{foo: ["bar", "baz"], bat: [1, 2]}) in [
+               "bat[]=1&bat[]=2&foo[]=bar&foo[]=baz",
+               "foo[]=bar&foo[]=baz&bat[]=1&bat[]=2"
+             ]
 
       assert encode(%{x: %{y: %{z: 1}}}) == "x[y][z]=1"
       assert encode(%{x: %{y: %{z: [1]}}}) == "x[y][z][]=1"
@@ -105,14 +112,14 @@ defmodule Plug.Conn.QueryTest do
     test "with custom encoder" do
       encoder = &(&1 |> to_string |> String.duplicate(2))
 
-      assert encode(%{foo: "bar", baz: "bat"}, encoder) == "baz=batbat&foo=barbar"
-      assert encode(%{foo: ["bar", "baz"]}, encoder) == "foo[]=barbar&foo[]=bazbaz"
-      assert encode(%{foo: URI.parse("/bar")}, encoder) == "foo=%2Fbar%2Fbar"
+      assert encode([foo: "bar", baz: "bat"], encoder) == "foo=barbar&baz=batbat"
+      assert encode([foo: ["bar", "baz"]], encoder) == "foo[]=barbar&foo[]=bazbaz"
+      assert encode([foo: URI.parse("/bar")], encoder) == "foo=%2Fbar%2Fbar"
     end
 
     test "ignores empty maps or lists" do
-      assert encode(%{filter: %{}, foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
-      assert encode(%{filter: [], foo: "bar", baz: "bat"}) == "baz=bat&foo=bar"
+      assert encode(filter: %{}, foo: "bar", baz: "bat") == "foo=bar&baz=bat"
+      assert encode(filter: [], foo: "bar", baz: "bat") == "foo=bar&baz=bat"
     end
 
     test "raises when there's a map with 0 or >1 elems in a list" do

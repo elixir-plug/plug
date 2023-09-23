@@ -32,8 +32,8 @@ defmodule Plug.Conn.Query do
 
   Maps can be encoded:
 
-      iex> encode(%{foo: "bar", baz: "bat"})
-      "baz=bat&foo=bar"
+      iex> encode(%{foo: "bar"})
+      "foo=bar"
 
   Encoding keyword lists preserves the order of the fields:
 
