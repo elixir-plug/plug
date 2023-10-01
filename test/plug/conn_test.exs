@@ -405,51 +405,6 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn, "x-body") == ["CHUNK"]
   end
 
-  test "chunk/2 runs before_chunk callbacks" do
-    pid = self()
-
-    conn(:get, "/foo")
-    |> register_before_chunk(fn conn, chunk ->
-      send(pid, {:before_chunk, 1, chunk})
-      conn
-    end)
-    |> register_before_chunk(fn conn, chunk ->
-      send(pid, {:before_chunk, 2, chunk})
-      conn
-    end)
-    |> send_chunked(200)
-    |> chunk("CHUNK")
-
-    # We need to match with n1 and n2 because if we match directly on 1 and 2 then
-    # selective receive will match on the messages even if they're out of order.
-    assert_receive {:before_chunk, n1, "CHUNK"}
-    assert_receive {:before_chunk, n2, "CHUNK"}
-    assert n1 == 2
-    assert n2 == 1
-  end
-
-  test "chunk/2 uses the updated conn from before_chunk callbacks" do
-    pid = self()
-
-    conn =
-      conn(:get, "/foo")
-      |> assign(:test_counter, 0)
-      |> register_before_chunk(fn conn, _chunk ->
-        {count, conn} = get_and_update_in(conn.assigns[:test_counter], &{&1, &1 + 1})
-        send(pid, {:before_chunk, count})
-        conn
-      end)
-      |> send_chunked(200)
-
-    assert {:ok, conn} = chunk(conn, "CHUNK")
-    assert {:ok, conn} = chunk(conn, "CHUNK")
-    assert {:ok, _conn} = chunk(conn, "CHUNK")
-
-    assert_received {:before_chunk, 0}
-    assert_received {:before_chunk, 1}
-    assert_received {:before_chunk, 2}
-  end
-
   test "inform/3 performs an informational request" do
     conn = conn(:get, "/foo") |> inform(103, [{"link", "</style.css>; rel=preload; as=style"}])
     assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
@@ -1451,14 +1406,6 @@ defmodule Plug.ConnTest do
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
       register_before_send(conn, fn _ -> nil end)
-    end
-  end
-
-  test "register_before_chunk/2 raises when a response has already been sent" do
-    conn = send_resp(conn(:get, "/"), 200, "ok")
-
-    assert_raise Plug.Conn.AlreadySentError, fn ->
-      register_before_chunk(conn, fn _ -> nil end)
     end
   end
 
