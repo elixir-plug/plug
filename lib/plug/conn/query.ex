@@ -80,7 +80,7 @@ defmodule Plug.Conn.Query do
   `invalid_exception` is the exception module for the exception to raise on
   errors with decoding.
   """
-  @spec decode(String.t(), map(), module(), boolean()) :: %{optional(String.t()) => term()}
+  @spec decode(String.t(), keyword(), module(), boolean()) :: %{optional(String.t()) => term()}
   def decode(
         query,
         initial \\ [],
