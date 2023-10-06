@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.15.0 (2023-10-06)
+
+### Enhancements
+
+  * Relax requirement on `plug_crypto`
+
 ## v1.15.0 (2023-10-01)
 
 ### Enhancements
