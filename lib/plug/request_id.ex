@@ -34,6 +34,12 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, http_header: "custom-request-id"
 
+    * `:assign_as` - The name of the key that will be used to store the
+      discovered or generated request id in `conn.assigns`. If not provided,
+      the request id will not be stored.
+
+          plug Plug.RequestId, assign_as: :plug_request_id
+
   """
 
   require Logger
@@ -42,14 +48,17 @@ defmodule Plug.RequestId do
 
   @impl true
   def init(opts) do
-    Keyword.get(opts, :http_header, "x-request-id")
+    {
+      Keyword.get(opts, :http_header, "x-request-id"),
+      Keyword.get(opts, :assign_as)
+    }
   end
 
   @impl true
-  def call(conn, req_id_header) do
+  def call(conn, {header, assign_as}) do
     conn
-    |> get_request_id(req_id_header)
-    |> set_request_id(req_id_header)
+    |> get_request_id(header)
+    |> set_request_id(header, assign_as)
   end
 
   defp get_request_id(conn, header) do
@@ -59,8 +68,11 @@ defmodule Plug.RequestId do
     end
   end
 
-  defp set_request_id({conn, request_id}, header) do
+  defp set_request_id({conn, request_id}, header, assign_as) do
     Logger.metadata(request_id: request_id)
+
+    conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
+
     Conn.put_resp_header(conn, header, request_id)
   end
 
