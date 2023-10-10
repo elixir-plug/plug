@@ -24,6 +24,20 @@ defmodule Plug.Conn.Query do
       iex> decode("foo[]=bar&foo[]=baz")["foo"]
       ["bar", "baz"]
 
+  > #### Nesting inside lists {: .error}
+  >
+  > Nesting inside lists is ambiguous and unspecified behaviour.
+  > Therefore, you should not rely on the decoding behaviour of
+  > `user[][foo]=1&user[][bar]=2`.
+  >
+  > As an alternative, you can explicitly specify the keys:
+  >
+  >     # If foo and bar belong to the same entry
+  >     user[0][foo]=1&user[0][bar]=2
+  >
+  >     # If foo and bar are different entries
+  >     user[0][foo]=1&user[1][bar]=2
+
   Keys without values are treated as empty strings,
   according to https://url.spec.whatwg.org/#application/x-www-form-urlencoded:
 

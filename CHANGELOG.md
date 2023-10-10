@@ -12,7 +12,7 @@
 
   * Add `Plug.Conn.get_session/3` for default value
   * Allow `Plug.SSL.configure/1` to accept all :ssl options
-  * Optimize query decoding by 15% to 45% - this removes the previously deprecated `:limit` MFA and `:include_unnamed_parts_at` from MULTIPART
+  * Optimize query decoding by 15% to 45% - this removes the previously deprecated `:limit` MFA and `:include_unnamed_parts_at` from MULTIPART. This may be backwards incompatible for applications that were relying on ambiguous arguments, such as `user[][key]=1&user[][key]=2`, which has unspecified parsing behaviour
 
 ## v1.14.2 (2023-03-23)
 
