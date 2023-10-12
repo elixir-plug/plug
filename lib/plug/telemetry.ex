@@ -23,6 +23,9 @@ defmodule Plug.Telemetry do
   is sent. The `:stop` event is not guaranteed to be emitted in all error
   cases, so this Plug cannot be used as a Telemetry span.
 
+  You can manually emit events including a `:duration` measurement from any
+  subsequent step in your plug pipeline by calling `execute_measurement/3`.
+
   ## Time unit
 
   The `:duration` measurements are presented in the `:native` time unit.
@@ -60,22 +63,18 @@ defmodule Plug.Telemetry do
     end
 
     ensure_valid_event_prefix!(event_prefix)
-    start_event = event_prefix ++ [:start]
-    stop_event = event_prefix ++ [:stop]
-    {start_event, stop_event, opts}
+
+    {event_prefix, opts}
   end
 
   @impl true
-  def call(conn, {start_event, stop_event, opts}) do
-    start_time = System.monotonic_time()
-    metadata = %{conn: conn, options: opts}
-    :telemetry.execute(start_event, %{system_time: System.system_time()}, metadata)
+  def call(conn, {event_prefix, opts}) do
+    private = %{start_time: System.monotonic_time(), event_prefix: event_prefix, opts: opts}
 
-    Plug.Conn.register_before_send(conn, fn conn ->
-      duration = System.monotonic_time() - start_time
-      :telemetry.execute(stop_event, %{duration: duration}, %{conn: conn, options: opts})
-      conn
-    end)
+    conn
+    |> Plug.Conn.put_private(:plug_telemetry, private)
+    |> Plug.Conn.register_before_send(&execute_measurement/1)
+    |> execute(:start, %{system_time: System.system_time()})
   end
 
   defp ensure_valid_event_prefix!(event_prefix) do
@@ -85,5 +84,27 @@ defmodule Plug.Telemetry do
       raise ArgumentError,
             "expected :event_prefix to be a list of atoms, got: #{inspect(event_prefix)}"
     end
+  end
+
+  defp execute(%Plug.Conn{private: private} = conn, name, measurements, metadata \\ %{}) do
+    %{plug_telemetry: %{event_prefix: event_prefix, opts: opts}} = private
+
+    metadata = Map.merge(metadata, %{conn: conn, options: opts})
+    :telemetry.execute(event_prefix ++ [name], measurements, metadata)
+
+    conn
+  end
+
+  @doc """
+  This is the new interface I'd like to have
+  """
+  @spec execute_measurement(Plug.Conn.t()) :: Plug.Conn.t()
+  @spec execute_measurement(Plug.Conn.t(), atom) :: Plug.Conn.t()
+  @spec execute_measurement(Plug.Conn.t(), atom, map) :: Plug.Conn.t()
+  def execute_measurement(%Plug.Conn{private: private} = conn, name \\ :stop, metadata \\ %{})
+      when is_atom(name) and is_map(metadata) do
+    %{plug_telemetry: %{start_time: start_time}} = private
+
+    execute(conn, name, %{duration: System.monotonic_time() - start_time}, metadata)
   end
 end
