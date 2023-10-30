@@ -92,7 +92,8 @@ defmodule Plug.BasicAuth do
       strings with only alphanumeric characters and space
 
   """
-  @spec basic_auth(Plug.Conn.t(), [auth_option]) :: Plug.Conn.t() when auth_option: {:username, String.t()} | {:password, String.t()} | {:realm, String.t()}
+  @spec basic_auth(Plug.Conn.t(), [auth_option]) :: Plug.Conn.t()
+        when auth_option: {:username, String.t()} | {:password, String.t()} | {:realm, String.t()}
   def basic_auth(%Plug.Conn{} = conn, options \\ []) when is_list(options) do
     username = Keyword.fetch!(options, :username)
     password = Keyword.fetch!(options, :password)
@@ -155,7 +156,8 @@ defmodule Plug.BasicAuth do
       strings with only alphanumeric characters and space
 
   """
-  @spec request_basic_auth(Plug.Conn.t(), [option]) :: Plug.Conn.t() when option: {:realm, String.t()}
+  @spec request_basic_auth(Plug.Conn.t(), [option]) :: Plug.Conn.t()
+        when option: {:realm, String.t()}
   def request_basic_auth(%Plug.Conn{} = conn, options \\ []) when is_list(options) do
     realm = Keyword.get(options, :realm, "Application")
     escaped_realm = String.replace(realm, "\"", "")
