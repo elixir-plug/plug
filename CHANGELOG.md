@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.15.2 (2023-11-14)
+
+### Enhancements
+
+  * Add `:assign_as` option to `Plug.RequestId`
+  * Improve performance of `Plug.RequestId`
+  * Avoid clashes between Plug nodes
+  * Add specs to `Plug.BasicAuth`
+  * Fix a bug with non-string `_method` body parameters in `Plug.MethodOverride`
+
 ## v1.15.1 (2023-10-06)
 
 ### Enhancements
