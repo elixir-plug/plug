@@ -58,8 +58,6 @@ defmodule Plug.MethodOverride do
   end
 
   defp override_method(conn, body_params) do
-    # dbg(String.upcase(body_params["_method"] || "", :ascii))
-
     with method when is_binary(method) <- body_params["_method"] || "",
          method = String.upcase(method, :ascii),
          true <- method in @allowed_methods do
