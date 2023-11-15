@@ -36,6 +36,8 @@ defmodule Plug.Adapters.Test.Conn do
         })
     }
 
+    conn_port = if conn.port != 0, do: conn.port, else: 80
+
     %Plug.Conn{
       conn
       | adapter: {__MODULE__, state},
@@ -43,7 +45,7 @@ defmodule Plug.Adapters.Test.Conn do
         method: method,
         owner: owner,
         path_info: split_path(uri.path),
-        port: uri.port || 80,
+        port: uri.port || conn_port,
         remote_ip: conn.remote_ip || {127, 0, 0, 1},
         req_headers: req_headers,
         request_path: uri.path,

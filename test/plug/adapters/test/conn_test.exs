@@ -152,6 +152,12 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.remote_ip == {151, 236, 219, 228}
   end
 
+  test "use existing conn.port if exists" do
+    conn_with_port = %Plug.Conn{conn(:get, "/") | port: 4200}
+    child_conn = Plug.Adapters.Test.Conn.conn(conn_with_port, :get, "/", foo: "bar")
+    assert child_conn.port == 4200
+  end
+
   test "use custom peer data" do
     peer_data = %{address: {127, 0, 0, 1}, port: 111_317}
     conn = conn(:get, "/") |> put_peer_data(peer_data)
