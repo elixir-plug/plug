@@ -718,8 +718,8 @@ defmodule Plug.Conn do
   As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
-  Including a header with value `false` or `nil` will remove the first
-  occurrence of that header.
+  Including a header with value `nil` will remove the first occurrence of
+  that header.
 
   ## Example
 
@@ -740,7 +740,7 @@ defmodule Plug.Conn do
   def merge_req_headers(%Conn{req_headers: current, adapter: adapter} = conn, headers) do
     headers =
       Enum.reduce(headers, current, fn
-        {key, value}, acc when is_binary(key) and value in [false, nil] ->
+        {key, value}, acc when is_binary(key) and is_nil(value) ->
           validate_req_header!(adapter, key)
           List.keydelete(acc, key, 0)
 
@@ -947,8 +947,8 @@ defmodule Plug.Conn do
   As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
-  Including a header with value `false` or `nil` will remove the first
-  occurrence of that header.
+  Including a header with value `nil` will remove the first occurrence of
+  that header.
 
   ## Example
 
@@ -969,7 +969,7 @@ defmodule Plug.Conn do
   def merge_resp_headers(%Conn{resp_headers: current, adapter: adapter} = conn, headers) do
     headers =
       Enum.reduce(headers, current, fn
-        {key, value}, acc when is_binary(key) and value in [false, nil] ->
+        {key, value}, acc when is_binary(key) and is_nil(value) ->
           validate_header_key_normalized_if_test!(adapter, key)
           validate_header_key!(key)
           List.keydelete(acc, key, 0)

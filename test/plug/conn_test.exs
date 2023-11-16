@@ -652,10 +652,8 @@ defmodule Plug.ConnTest do
     assert get_resp_header(conn2, "x-foo") == ["new"]
     assert get_resp_header(conn2, "x-bar") == ["baz"]
     assert length(conn1.resp_headers) == length(conn2.resp_headers)
-    conn3 = merge_resp_headers(conn2, %{"x-bar" => false})
+    conn3 = merge_resp_headers(conn2, %{"x-bar" => nil})
     assert get_resp_header(conn3, "x-bar") == []
-    conn4 = merge_resp_headers(conn3, %{"x-foo" => nil})
-    assert get_resp_header(conn4, "x-foo") == []
   end
 
   test "delete_resp_header/2" do
@@ -749,10 +747,8 @@ defmodule Plug.ConnTest do
     assert get_req_header(conn2, "x-foo") == ["new"]
     assert get_req_header(conn2, "x-bar") == ["baz"]
     assert length(conn1.req_headers) == length(conn2.req_headers)
-    conn3 = merge_req_headers(conn2, %{"x-bar" => false})
+    conn3 = merge_req_headers(conn2, %{"x-bar" => nil})
     assert get_resp_header(conn3, "x-bar") == []
-    conn4 = merge_req_headers(conn3, %{"x-foo" => nil})
-    assert get_resp_header(conn4, "x-foo") == []
   end
 
   test "prepend_req_headers/2" do
