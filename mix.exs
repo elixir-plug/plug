@@ -1,7 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-  @version "1.14.2"
+  @version "1.15.2"
   @description "Compose web applications with functions"
   @xref_exclude [Plug.Cowboy, :ssl]
 
@@ -45,7 +45,7 @@ defmodule Plug.MixProject do
   def deps do
     [
       {:mime, "~> 1.0 or ~> 2.0"},
-      {:plug_crypto, "~> 1.1.1 or ~> 1.2"},
+      {:plug_crypto, "~> 1.1.1 or ~> 1.2 or ~> 2.0"},
       {:telemetry, "~> 0.4.3 or ~> 1.0"},
       {:ex_doc, "~> 0.21", only: :docs}
     ]

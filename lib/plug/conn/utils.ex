@@ -52,7 +52,7 @@ defmodule Plug.Conn.Utils do
 
   """
   @spec media_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
-  def media_type(binary) do
+  def media_type(binary) when is_binary(binary) do
     case strip_spaces(binary) do
       "*/*" <> t -> mt_params(t, "*", "*")
       t -> mt_first(t, "")

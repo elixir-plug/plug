@@ -1,10 +1,28 @@
 # Changelog
 
-## v1.15.0-dev
+## v1.15.2 (2023-11-14)
 
 ### Enhancements
 
-  * Optimize query decoding by 15% to 45% - this removes the previously deprecated `:limit` MFA and `:include_unnamed_parts_at` from MULTIPART
+  * Add `:assign_as` option to `Plug.RequestId`
+  * Improve performance of `Plug.RequestId`
+  * Avoid clashes between Plug nodes
+  * Add specs to `Plug.BasicAuth`
+  * Fix a bug with non-string `_method` body parameters in `Plug.MethodOverride`
+
+## v1.15.1 (2023-10-06)
+
+### Enhancements
+
+  * Relax requirement on `plug_crypto`
+
+## v1.15.0 (2023-10-01)
+
+### Enhancements
+
+  * Add `Plug.Conn.get_session/3` for default value
+  * Allow `Plug.SSL.configure/1` to accept all :ssl options
+  * Optimize query decoding by 15% to 45% - this removes the previously deprecated `:limit` MFA and `:include_unnamed_parts_at` from MULTIPART. This may be backwards incompatible for applications that were relying on ambiguous arguments, such as `user[][key]=1&user[][key]=2`, which has unspecified parsing behaviour
 
 ## v1.14.2 (2023-03-23)
 
@@ -216,7 +234,7 @@ Require Elixir v1.10+.
   * [Plug.Parsers] Add option to skip utf8 validation
   * [Plug.Parsers] Make multipart support MFA for `:length` limit
   * [Plug.Static] Accept MFA for `:header` option
-  
+
 ### Notes
   * When implementing the `Plug.Exception` protocol, if the new `actions` function is not implemented, a warning will printed during compilation.
 

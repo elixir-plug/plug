@@ -59,7 +59,6 @@ defmodule Plug.Session.COOKIE do
                          key: "_my_app_session",
                          encryption_salt: "cookie store encryption salt",
                          signing_salt: "cookie store signing salt",
-                         key_length: 64,
                          log: :debug
   """
 
