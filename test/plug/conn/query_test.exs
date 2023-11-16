@@ -1,7 +1,16 @@
 defmodule Plug.Conn.QueryTest do
   use ExUnit.Case, async: true
 
-  import Plug.Conn.Query, only: [decode: 1, encode: 1, encode: 2]
+  import Plug.Conn.Query,
+    only: [
+      decode: 1,
+      encode: 1,
+      encode: 2,
+      decode_init: 0,
+      decode_each: 2,
+      decode_done: 2
+    ]
+
   doctest Plug.Conn.Query
 
   describe "decode" do
@@ -181,7 +190,9 @@ defmodule Plug.Conn.QueryTest do
     end
 
     defp decode_pair(pairs) do
-      Enum.reduce(Enum.reverse(pairs), %{}, &Plug.Conn.Query.decode_pair(&1, &2))
+      pairs
+      |> Enum.reduce(decode_init(), &decode_each(&1, &2))
+      |> decode_done([])
     end
   end
 end
