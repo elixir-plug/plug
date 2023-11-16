@@ -718,6 +718,9 @@ defmodule Plug.Conn do
   As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
+  Including a header with value `false` or `nil` will remove the first
+  occurrence of that header.
+
   ## Example
 
       Plug.Conn.merge_req_headers(conn, [{"accept", "text/plain"}, {"X-1337", "5P34K"}])
@@ -736,10 +739,14 @@ defmodule Plug.Conn do
 
   def merge_req_headers(%Conn{req_headers: current, adapter: adapter} = conn, headers) do
     headers =
-      Enum.reduce(headers, current, fn {key, value}, acc
-                                       when is_binary(key) and is_binary(value) ->
-        validate_req_header!(adapter, key)
-        List.keystore(acc, key, 0, {key, value})
+      Enum.reduce(headers, current, fn
+        {key, value}, acc when is_binary(key) and value in [false, nil] ->
+          validate_req_header!(adapter, key)
+          List.keydelete(acc, key, 0)
+
+        {key, value}, acc when is_binary(key) and is_binary(value) ->
+          validate_req_header!(adapter, key)
+          List.keystore(acc, key, 0, {key, value})
       end)
 
     %{conn | req_headers: headers}
@@ -940,6 +947,9 @@ defmodule Plug.Conn do
   As a convenience, when using the `Plug.Adapters.Conn.Test` adapter, any
   headers that aren't lowercase will raise a `Plug.Conn.InvalidHeaderError`.
 
+  Including a header with value `false` or `nil` will remove the first
+  occurrence of that header.
+
   ## Example
 
       Plug.Conn.merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
@@ -958,11 +968,16 @@ defmodule Plug.Conn do
 
   def merge_resp_headers(%Conn{resp_headers: current, adapter: adapter} = conn, headers) do
     headers =
-      Enum.reduce(headers, current, fn {key, value}, acc
-                                       when is_binary(key) and is_binary(value) ->
-        validate_header_key_normalized_if_test!(adapter, key)
-        validate_header_key_value!(key, value)
-        List.keystore(acc, key, 0, {key, value})
+      Enum.reduce(headers, current, fn
+        {key, value}, acc when is_binary(key) and value in [false, nil] ->
+          validate_header_key_normalized_if_test!(adapter, key)
+          validate_header_key!(key)
+          List.keydelete(acc, key, 0)
+
+        {key, value}, acc when is_binary(key) and is_binary(value) ->
+          validate_header_key_normalized_if_test!(adapter, key)
+          validate_header_key_value!(key, value)
+          List.keystore(acc, key, 0, {key, value})
       end)
 
     %{conn | resp_headers: headers}
@@ -1908,7 +1923,7 @@ defmodule Plug.Conn do
   defp normalized_header_key?(<<>>), do: true
   defp normalized_header_key?(_), do: false
 
-  defp validate_header_key_value!(key, value) do
+  defp validate_header_key!(key) do
     case :binary.match(key, [":", "\n", "\r", "\x00"]) do
       {_, _} ->
         raise InvalidHeaderError,
@@ -1917,6 +1932,10 @@ defmodule Plug.Conn do
       :nomatch ->
         key
     end
+  end
+
+  defp validate_header_key_value!(key, value) do
+    validate_header_key!(key)
 
     case :binary.match(value, ["\n", "\r", "\x00"]) do
       {_, _} ->
