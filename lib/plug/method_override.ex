@@ -9,14 +9,33 @@ defmodule Plug.MethodOverride do
     * `PATCH`
     * `DELETE`
 
-  This plug expects the body parameters to be already parsed and
-  fetched. Those can be fetched with `Plug.Parsers`.
+  This plug only replaces the request method if the `_method` request
+  parameter is a string. If the `_method` request parameter is not a string,
+  the request method is not changed.
+
+  > #### Parse Body Parameters First {: .info}
+  >
+  > This plug expects the body parameters to be **already fetched and
+  > parsed**. Those can be fetched with `Plug.Parsers`.
 
   This plug doesn't accept any options.
 
-  ## Examples
+  To recap, here are all the conditions that the request must meet in order
+  for this plug to replace the `:method` field in the `Plug.Conn`:
+
+    1. The conn's request `:method` must be `POST`.
+    1. The conn's `:body_params` must have been fetched already (for example,
+       with `Plug.Parsers`).
+    1. The conn's `:body_params` must have a `_method` field that is a string
+       and whose value is `"PUT"`, `"PATCH"`, or `"DELETE"` (case insensitive).
+
+  ## Usage
+
+      # You'll need to fetch and parse parameters first, for example:
+      # plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json]
 
       plug Plug.MethodOverride
+
   """
 
   @behaviour Plug
@@ -39,12 +58,12 @@ defmodule Plug.MethodOverride do
   end
 
   defp override_method(conn, body_params) do
-    method = String.upcase(body_params["_method"] || "", :ascii)
-
-    if method in @allowed_methods do
-      %{conn | method: method}
+    with method when is_binary(method) <- body_params["_method"] || "",
+         method = String.upcase(method, :ascii),
+         true <- method in @allowed_methods do
+      %Plug.Conn{conn | method: method}
     else
-      conn
+      _ -> conn
     end
   end
 end

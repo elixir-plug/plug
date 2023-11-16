@@ -21,21 +21,20 @@ defmodule Plug.Builder do
         end
       end
 
-  Multiple plugs can be defined with the `plug/2` macro, forming a pipeline.
-  The plugs in the pipeline will be executed in the order they've been added
-  through the `plug/2` macro. In the example above, `Plug.Logger` will be
-  called first and then the `:hello` function plug will be called on the
-  resulting connection.
+  The `plug/2` macro forms a pipeline by defining multiple plugs. Each plug
+  in the pipeline is executed from top to bottom. In the example above, the
+  `Plug.Logger` module plug is called before the `:hello` function plug, so
+  the function plug will be called on the module plug's resulting connection.
 
-  `Plug.Builder` also imports the `Plug.Conn` module, making functions like
-  `send_resp/3` available.
+  `Plug.Builder` imports the `Plug.Conn` module so functions like `send_resp/3`
+  are available.
 
   ## Options
 
   When used, the following options are accepted by `Plug.Builder`:
 
     * `:init_mode` - the environment to initialize the plug's options, one of
-      `:compile` or `:runtime`. Defaults `:compile`.
+      `:compile` or `:runtime`. The default value is `:compile`.
 
     * `:log_on_halt` - accepts the level to log whenever the request is halted
 
@@ -45,11 +44,34 @@ defmodule Plug.Builder do
 
   ## Plug behaviour
 
-  Internally, `Plug.Builder` implements the `Plug` behaviour, which means both
-  the `init/1` and `call/2` functions are defined.
+  `Plug.Builder` defines the `init/1` and `call/2` functions by implementing
+  the `Plug` behaviour.
 
   By implementing the Plug API, `Plug.Builder` guarantees this module is a plug
   and can be handed to a web server or used as part of another pipeline.
+
+  ## Conditional plugs
+
+  Sometimes you may want to conditionally invoke a Plug in a pipeline. For example,
+  you may want to invoke `Plug.Parsers` only under certain routes. This can be done
+  by wrapping the module plug in a function plug. Instead of:
+
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart], pass: ["text/*"]
+
+  You can write:
+
+      plug :conditional_parser
+
+      defp conditional_parser(%Plug.Conn{path_info: ["noparser" | _]} = conn, _opts) do
+        conn
+      end
+
+      @parser Plug.Parsers.init(parsers: [:urlencoded, :multipart], pass: ["text/*"])
+      defp conditional_parser(conn, _opts) do
+        Plug.Parsers.call(conn, @parser)
+      end
+
+  The above will invoke `Plug.Parsers` on all routes, except the ones under `/noparser`
 
   ## Overriding the default Plug API functions
 
@@ -86,9 +108,9 @@ defmodule Plug.Builder do
 
   ## Halting a plug pipeline
 
-  A plug pipeline can be halted with `Plug.Conn.halt/1`. The builder will
-  prevent further plugs downstream from being invoked and return the current
-  connection. In the following example, the `Plug.Logger` plug never gets
+  `Plug.Conn.halt/1` halts a plug pipeline. `Plug.Builder` prevents plugs
+  downstream from being invoked and returns the current connection.
+  In the following example, the `Plug.Logger` plug never gets
   called:
 
       defmodule PlugUsingHalt do

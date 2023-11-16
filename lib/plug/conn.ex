@@ -551,8 +551,6 @@ defmodule Plug.Conn do
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    conn = run_before_chunk(conn, chunk)
-
     if iodata_empty?(chunk) do
       {:ok, conn}
     else
@@ -1808,36 +1806,6 @@ defmodule Plug.Conn do
     update_in(conn.private[:before_send], &[callback | &1 || []])
   end
 
-  @doc ~S"""
-  Registers a callback to be invoked before a chunk is sent by `chunk/2`.
-
-  Callbacks are invoked in the reverse order they are registered, that is, callbacks which
-  are registered first are invoked last.
-
-  ## Examples
-
-  This example logs the size of the chunk about to be sent:
-
-      register_before_chunk(conn, fn _conn, chunk ->
-        Logger.info("Sending #{IO.iodata_length(chunk)} bytes")
-        conn
-      end)
-
-  """
-  @doc since: "1.15.0"
-  @spec register_before_chunk(t, (t, body -> t)) :: t
-  def register_before_chunk(conn, callback)
-
-  def register_before_chunk(%Conn{state: state}, _callback)
-      when state not in @unsent do
-    raise AlreadySentError
-  end
-
-  def register_before_chunk(%Conn{} = conn, callback)
-      when is_function(callback, 2) do
-    update_in(conn.private[:before_chunk], &[callback | &1 || []])
-  end
-
   @doc """
   Halts the `Plug` pipeline by preventing further plugs downstream from being
   invoked. See the docs for `Plug.Builder` for more information on halting a
@@ -1869,17 +1837,6 @@ defmodule Plug.Conn do
 
     if conn.state != new do
       raise ArgumentError, "cannot send/change response from run_before_send callback"
-    end
-
-    %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
-  end
-
-  defp run_before_chunk(%Conn{private: private} = conn, chunk) do
-    initial_state = conn.state
-    conn = Enum.reduce(private[:before_chunk] || [], conn, & &1.(&2, chunk))
-
-    if conn.state != initial_state do
-      raise ArgumentError, "cannot send or change response from run_before_chunk/2 callback"
     end
 
     %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
