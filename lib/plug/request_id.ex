@@ -1,26 +1,33 @@
 defmodule Plug.RequestId do
   @moduledoc """
-  A plug for generating a unique request id for each request.
+  A plug for generating a unique request ID for each request.
 
-  The generated request id will be in the format "uq8hs30oafhj5vve8ji5pmp7mtopc08f".
+  The generated request ID will be in the format:
 
-  If a request id already exists as the "x-request-id" HTTP request header,
-  then that value will be used assuming it is between 20 and 200 characters.
-  If it is not, a new request id will be generated.
+  ```
+  uq8hs30oafhj5vve8ji5pmp7mtopc08f
+  ```
 
-  The request id is added to the Logger metadata as `:request_id` and the response as
-  the "x-request-id" HTTP header. To see the request id in your log output,
-  configure your logger backends to include the `:request_id` metadata:
+  If a request ID already exists in a configured HTTP request header (see options below),
+  then this plug will use that value, *assuming it is between 20 and 200 characters*.
+  If such header is not present, this plug will generate a new request ID.
+
+  The request ID is added to the `Logger` metadata as `:request_id`, and to the
+  response as the configured HTTP response header (see options below). To see the
+  request ID in your log output, configure your logger backends to include the `:request_id`
+  metadata. For example:
 
       config :logger, :console, metadata: [:request_id]
 
-  It is recommended to include this metadata configuration in your production
+  We recommend to include this metadata configuration in your production
   configuration file.
 
-  You can also access the `request_id` programmatically by calling
-  `Logger.metadata[:request_id]`. Do not access it via the request header, as
-  the request header value has not been validated and it may not always be
-  present.
+  > #### Programmatic access to the request ID {: .tip}
+  >
+  > To access the request ID programmatically, use the `:assign_as` option (see below)
+  > to assign the request ID to a key in `conn.assigns`, and then fetch it from there.
+
+  ## Usage
 
   To use this plug, just plug it into the desired module:
 
@@ -29,10 +36,16 @@ defmodule Plug.RequestId do
   ## Options
 
     * `:http_header` - The name of the HTTP *request* header to check for
-      existing request ids. This is also the HTTP *response* header that will be
-      set with the request id. Default value is "x-request-id"
+      existing request IDs. This is also the HTTP *response* header that will be
+      set with the request id. Default value is `"x-request-id"`.
 
           plug Plug.RequestId, http_header: "custom-request-id"
+
+    * `:assign_as` - The name of the key that will be used to store the
+      discovered or generated request id in `conn.assigns`. If not provided,
+      the request id will not be stored. *Available since v1.16.0*.
+
+          plug Plug.RequestId, assign_as: :plug_request_id
 
   """
 
@@ -42,26 +55,27 @@ defmodule Plug.RequestId do
 
   @impl true
   def init(opts) do
-    Keyword.get(opts, :http_header, "x-request-id")
+    {
+      Keyword.get(opts, :http_header, "x-request-id"),
+      Keyword.get(opts, :assign_as)
+    }
   end
 
   @impl true
-  def call(conn, req_id_header) do
-    conn
-    |> get_request_id(req_id_header)
-    |> set_request_id(req_id_header)
+  def call(conn, {header, assign_as}) do
+    request_id = get_request_id(conn, header)
+
+    Logger.metadata(request_id: request_id)
+    conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
+
+    Conn.put_resp_header(conn, header, request_id)
   end
 
   defp get_request_id(conn, header) do
     case Conn.get_req_header(conn, header) do
-      [] -> {conn, generate_request_id()}
-      [val | _] -> if valid_request_id?(val), do: {conn, val}, else: {conn, generate_request_id()}
+      [] -> generate_request_id()
+      [val | _] -> if valid_request_id?(val), do: val, else: generate_request_id()
     end
-  end
-
-  defp set_request_id({conn, request_id}, header) do
-    Logger.metadata(request_id: request_id)
-    Conn.put_resp_header(conn, header, request_id)
   end
 
   defp generate_request_id do

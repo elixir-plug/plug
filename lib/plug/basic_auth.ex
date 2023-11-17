@@ -92,7 +92,9 @@ defmodule Plug.BasicAuth do
       strings with only alphanumeric characters and space
 
   """
-  def basic_auth(conn, options \\ []) do
+  @spec basic_auth(Plug.Conn.t(), [auth_option]) :: Plug.Conn.t()
+        when auth_option: {:username, String.t()} | {:password, String.t()} | {:realm, String.t()}
+  def basic_auth(%Plug.Conn{} = conn, options \\ []) when is_list(options) do
     username = Keyword.fetch!(options, :username)
     password = Keyword.fetch!(options, :password)
 
@@ -116,7 +118,8 @@ defmodule Plug.BasicAuth do
 
   See the module docs for examples.
   """
-  def parse_basic_auth(conn) do
+  @spec parse_basic_auth(Plug.Conn.t()) :: {user :: String.t(), password :: String.t()} | :error
+  def parse_basic_auth(%Plug.Conn{} = conn) do
     with ["Basic " <> encoded_user_and_pass] <- get_req_header(conn, "authorization"),
          {:ok, decoded_user_and_pass} <- Base.decode64(encoded_user_and_pass),
          [user, pass] <- :binary.split(decoded_user_and_pass, ":") do
@@ -134,6 +137,7 @@ defmodule Plug.BasicAuth do
       put_req_header(conn, "authorization", encode_basic_auth("hello", "world"))
 
   """
+  @spec encode_basic_auth(String.t(), String.t()) :: String.t()
   def encode_basic_auth(user, pass) when is_binary(user) and is_binary(pass) do
     "Basic " <> Base.encode64("#{user}:#{pass}")
   end
@@ -150,8 +154,11 @@ defmodule Plug.BasicAuth do
     * `:realm` - the authentication realm. The value is not fully
       sanitized, so do not accept user input as the realm and use
       strings with only alphanumeric characters and space
+
   """
-  def request_basic_auth(conn, options \\ []) when is_list(options) do
+  @spec request_basic_auth(Plug.Conn.t(), [option]) :: Plug.Conn.t()
+        when option: {:realm, String.t()}
+  def request_basic_auth(%Plug.Conn{} = conn, options \\ []) when is_list(options) do
     realm = Keyword.get(options, :realm, "Application")
     escaped_realm = String.replace(realm, "\"", "")
 

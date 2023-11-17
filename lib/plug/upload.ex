@@ -116,9 +116,9 @@ defmodule Plug.Upload do
   end
 
   defp generate_tmp_dir() do
-    tmp_roots = :persistent_term.get(__MODULE__)
+    {tmp_roots, suffix} = :persistent_term.get(__MODULE__)
     {mega, _, _} = :os.timestamp()
-    subdir = "/plug-" <> i(mega)
+    subdir = "/plug-" <> i(mega) <> "-" <> suffix
 
     if tmp = Enum.find_value(tmp_roots, &make_tmp_dir(&1 <> subdir)) do
       {:ok, tmp}
@@ -206,7 +206,9 @@ defmodule Plug.Upload do
     Process.flag(:trap_exit, true)
     tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1) |> Path.expand()
     cwd = Path.join(File.cwd!(), "tmp")
-    :persistent_term.put(__MODULE__, [tmp, cwd])
+    # Add a tiny random component to avoid clashes between nodes
+    suffix = :crypto.strong_rand_bytes(3) |> Base.url_encode64()
+    :persistent_term.put(__MODULE__, {[tmp, cwd], suffix})
 
     :ets.new(@dir_table, [:named_table, :public, :set])
     :ets.new(@path_table, [:named_table, :public, :duplicate_bag])
