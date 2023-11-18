@@ -146,10 +146,15 @@ defmodule Plug.Conn.Query do
   defp decode_www_form(value, invalid_exception, validate_utf8, validate_utf8_error) do
     try do
       URI.decode_www_form(value)
-    catch
-      :throw, :malformed_uri ->
+    rescue
+      ArgumentError ->
         raise invalid_exception,
               "invalid urlencoded params, got #{value}"
+
+        # catch
+        #   :throw, :malformed_uri ->
+        #     raise invalid_exception,
+        #           "invalid urlencoded params, got #{value}"
     else
       binary ->
         Plug.Conn.Utils.validate_utf8!(
@@ -210,6 +215,11 @@ defmodule Plug.Conn.Query do
     value = split_key(binary, current_pos, start_pos)
     next_level = binary_part(binary, 0, current_pos + 1)
     split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, [{level, value} | acc])
+  end
+
+  defp split_keys(<<?], ?[, rest::binary>>, binary, current_pos, start_pos, level, acc) do
+    next_level = level <> "[]"
+    split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, acc)
   end
 
   defp split_keys(<<?]>>, binary, current_pos, start_pos, level, acc) do
