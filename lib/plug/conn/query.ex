@@ -86,67 +86,79 @@ defmodule Plug.Conn.Query do
   Decodes the given `query`.
 
   The `query` is assumed to be encoded in the "x-www-form-urlencoded" format.
-  The format is decoded at first. Then, if `validate_utf8` is `true`, the decoded
-  result is validated for proper UTF-8 encoding.
 
   `initial` is the initial "accumulator" where decoded values will be added.
 
   `invalid_exception` is the exception module for the exception to raise on
   errors with decoding.
+
+  If `validate_utf8` is set to `true`, the function validates that the decoded
+  result is properly encoded in UTF-8. If validation fails, it raises an exception
+  based on the status code of `validate_utf8_error`.
+
+
   """
-  @spec decode(String.t(), keyword(), module(), boolean()) :: %{optional(String.t()) => term()}
+  @spec decode(String.t(), keyword(), module(), boolean(), integer()) :: %{
+          optional(String.t()) => term()
+        }
   def decode(
         query,
         initial \\ [],
         invalid_exception \\ Plug.Conn.InvalidQueryError,
-        validate_utf8 \\ true
+        validate_utf8 \\ true,
+        validate_utf8_error \\ 400
       )
 
-  def decode("", initial, _invalid_exception, _validate_utf8) do
+  def decode("", initial, _invalid_exception, _validate_utf8, _validate_utf8_error) do
     Map.new(initial)
   end
 
-  def decode(query, initial, invalid_exception, validate_utf8)
+  def decode(query, initial, invalid_exception, validate_utf8, validate_utf8_error)
       when is_binary(query) do
     parts = :binary.split(query, "&", [:global])
 
     parts
-    |> Enum.reduce(decode_init(), &decode_www_pair(&1, &2, invalid_exception, validate_utf8))
+    |> Enum.reduce(
+      decode_init(),
+      &decode_www_pair(&1, &2, invalid_exception, validate_utf8, validate_utf8_error)
+    )
     |> decode_done(initial)
   end
 
-  defp decode_www_pair("", acc, _invalid_exception, _validate_utf8) do
+  defp decode_www_pair("", acc, _invalid_exception, _validate_utf8, _validate_utf8_error) do
     acc
   end
 
-  defp decode_www_pair(binary, acc, invalid_exception, validate_utf8) do
+  defp decode_www_pair(binary, acc, invalid_exception, validate_utf8, validate_utf8_error) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->
-          {decode_www_form(key, invalid_exception, validate_utf8),
-           decode_www_form(value, invalid_exception, validate_utf8)}
+          {decode_www_form(key, invalid_exception, validate_utf8, validate_utf8_error),
+           decode_www_form(value, invalid_exception, validate_utf8, validate_utf8_error)}
 
         [key] ->
-          {decode_www_form(key, invalid_exception, validate_utf8), ""}
+          {decode_www_form(key, invalid_exception, validate_utf8, validate_utf8_error), ""}
       end
 
     decode_each(current, acc)
   end
 
-  defp decode_www_form(value, invalid_exception, validate_utf8) do
-    # TODO: Remove rescue as this can't fail from Elixir v1.13
+  defp decode_www_form(value, invalid_exception, validate_utf8, validate_utf8_error) do
     try do
       URI.decode_www_form(value)
-    rescue
-      ArgumentError ->
-        raise invalid_exception, "invalid urlencoded params, got #{value}"
+    catch
+      :throw, :malformed_uri ->
+        raise invalid_exception,
+              "invalid urlencoded params, got #{value}"
     else
       binary ->
-        if validate_utf8 do
-          Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
-        end
-
-        binary
+        Plug.Conn.Utils.validate_utf8!(
+          binary,
+          "urlencoded params",
+          invalid_exception,
+          validate_utf8,
+          validate_utf8_error
+        )
     end
   end
 

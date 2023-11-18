@@ -2,6 +2,7 @@ defmodule Plug.Conn.Utils do
   @moduledoc """
   Utilities for working with connection data
   """
+  import Plug.Conn.Status, only: [reason_phrase: 1]
 
   @type params :: %{optional(binary) => binary}
 
@@ -11,6 +12,9 @@ defmodule Plug.Conn.Utils do
   @other [?., ?-, ?+]
   @space [?\s, ?\t]
   @specials ~c|()<>@,;:\\"/[]?={}|
+
+  @client_error_status 400..499
+  @server_error_status 500..599
 
   @doc ~S"""
   Parses media types (with wildcards).
@@ -51,6 +55,7 @@ defmodule Plug.Conn.Utils do
       :error
 
   """
+
   @spec media_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
   def media_type(binary) when is_binary(binary) do
     case strip_spaces(binary) do
@@ -278,26 +283,125 @@ defmodule Plug.Conn.Utils do
   end
 
   @doc """
-  Validates the given binary is valid UTF-8.
+  Validates that the given binary is valid UTF-8.
+  Raises exception on failure based on `validate_utf8_error` status code.
   """
-  @spec validate_utf8!(binary, module, binary) :: :ok | no_return
-  def validate_utf8!(binary, exception, context)
+  @spec validate_utf8!(binary, binary, module, boolean, integer) :: binary | no_return
+  def validate_utf8!(
+        binary,
+        context,
+        invalid_exception,
+        validate_utf8 \\ true,
+        validate_utf8_error \\ 400
+      )
 
-  def validate_utf8!(<<binary::binary>>, exception, context) do
-    do_validate_utf8!(binary, exception, context)
+  def validate_utf8!(
+        binary,
+        _context,
+        _invalid_exception,
+        false,
+        _validate_utf8_error
+      ),
+      do: binary
+
+  def validate_utf8!(
+        <<binary::binary>>,
+        context,
+        invalid_exception,
+        validate_utf8,
+        validate_utf8_error
+      ) do
+    do_validate_utf8!(
+      binary,
+      binary,
+      context,
+      invalid_exception,
+      validate_utf8,
+      validate_utf8_error
+    )
   end
 
-  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context) do
-    do_validate_utf8!(rest, exception, context)
+  defp do_validate_utf8!(
+         <<_::utf8, rest::bits>>,
+         return_binary,
+         context,
+         invalid_exception,
+         validate_utf8,
+         validate_utf8_error
+       ) do
+    do_validate_utf8!(
+      rest,
+      return_binary,
+      context,
+      invalid_exception,
+      validate_utf8,
+      validate_utf8_error
+    )
   end
 
-  defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
-    raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+  defp do_validate_utf8!(
+         <<byte, _::bits>>,
+         _return_binary,
+         context,
+         invalid_exception,
+         _validate_utf8,
+         400
+       ) do
+    raise invalid_exception,
+          "invalid UTF-8 on urlencoded params, got byte 139"
   end
 
-  defp do_validate_utf8!(<<>>, _exception, _context) do
-    :ok
+  defp do_validate_utf8!(
+         <<byte, _::bits>>,
+         _return_binary,
+         context,
+         invalid_exception,
+         _validate_utf8,
+         404
+       ) do
+    raise invalid_exception,
+          "resource could not be found in #{context}"
   end
+
+  defp do_validate_utf8!(
+         <<byte, _::bits>>,
+         _return_binary,
+         context,
+         _invalid_exception,
+         _validate_utf8,
+         validate_utf8_error
+       )
+       when validate_utf8_error in @client_error_status do
+    raise Plug.BadRequestError,
+      message: "could not process the request due to client error",
+      plug_status: validate_utf8_error,
+      plug_reason_phrase: reason_phrase(validate_utf8_error)
+  end
+
+  defp do_validate_utf8!(
+         <<byte, _::bits>>,
+         _return_binary,
+         _context,
+         _invalid_exception,
+         _validate_utf8,
+         validate_utf8_error
+       )
+       when validate_utf8_error in @server_error_status do
+    raise Plug.BadResponseError,
+      message: "could not process the request due to server error",
+      plug_status: validate_utf8_error,
+      plug_reason_phrase: reason_phrase(validate_utf8_error)
+  end
+
+  defp do_validate_utf8!(
+         <<>>,
+         return_binary,
+         _context,
+         _invalid_exception,
+         _validate_utf8,
+         _validate_utf8_error
+       ),
+       do: return_binary
 
   ## Helpers
 

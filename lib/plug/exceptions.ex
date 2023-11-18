@@ -55,16 +55,59 @@ end
 
 defmodule Plug.BadRequestError do
   @moduledoc """
-  The request will not be processed due to a client error.
+  An exception raised when the request will not be processed due to a client error.
   """
+  defexception message: "could not process the request due to client error.",
+               plug_status: 400,
+               plug_message: "Bad Request"
 
-  defexception message: "could not process the request due to client error", plug_status: 400
+  def message(exception) do
+    "could not process the request due to client error. \n
+    (Status Code: #{exception.plug_status} #{exception.plug_message})"
+  end
+end
+
+defmodule Plug.BadResponseError do
+  @moduledoc """
+  An exception raised when the request will not be processed due to a server error.
+  """
+  defexception message: "could not process the request due to server error.",
+               plug_status: 500,
+               plug_message: "Internal Server Error"
+
+  def message(exception) do
+    "could not process the request due to server error: (Status Code: #{exception.plug_status} #{exception.plug_message})"
+  end
 end
 
 defmodule Plug.TimeoutError do
   @moduledoc """
-  Timeout while waiting for the request.
+  An exception raised when the request times out while waiting for the request.
   """
 
   defexception message: "timeout while waiting for request data", plug_status: 408
+end
+
+defmodule Plug.ResourceNotFoundError do
+  @moduledoc """
+  An exception raised when the requested resource cannot be located.
+  """
+
+  defexception message: "The requested resource could not be found", plug_status: 404
+end
+
+defmodule Plug.ClientError do
+  @moduledoc """
+  An exception raised when the requested resource returned a 4XX status code.
+  """
+
+  defexception message: "The requested resource could not be found", plug_status: 404
+end
+
+defmodule Plug.ServerError do
+  @moduledoc """
+  An exception raised when
+  """
+
+  defexception message: "The requested resource could not be found", plug_status: 404
 end

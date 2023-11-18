@@ -1067,6 +1067,8 @@ defmodule Plug.Conn do
     * `:validate_utf8` - boolean that tells whether or not to validate the keys and
       values of the decoded query string are UTF-8 encoded. Defaults to `true`.
 
+   * `:validate_utf8_error` - status code if validation fails. Defaults to `400`.
+
   """
   @spec fetch_query_params(t, Keyword.t()) :: t
   def fetch_query_params(conn, opts \\ [])
@@ -1087,7 +1089,8 @@ defmodule Plug.Conn do
         query_string,
         %{},
         Plug.Conn.InvalidQueryError,
-        Keyword.get(opts, :validate_utf8, true)
+        Keyword.get(opts, :validate_utf8, true),
+        Keyword.get(opts, :validate_utf8_error, 400)
       )
 
     case params do
