@@ -348,7 +348,7 @@ defmodule Plug.Conn.Utils do
          400
        ) do
     raise invalid_exception,
-          "invalid UTF-8 on urlencoded params, got byte 139"
+          "invalid UTF-8 on urlencoded params, got byte #{byte}"
   end
 
   defp do_validate_utf8!(
