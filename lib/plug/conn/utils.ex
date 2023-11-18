@@ -342,7 +342,7 @@ defmodule Plug.Conn.Utils do
   defp do_validate_utf8!(
          <<byte, _::bits>>,
          _return_binary,
-         context,
+         _context,
          invalid_exception,
          _validate_utf8,
          400
@@ -352,7 +352,7 @@ defmodule Plug.Conn.Utils do
   end
 
   defp do_validate_utf8!(
-         <<byte, _::bits>>,
+         <<_byte, _::bits>>,
          _return_binary,
          context,
          invalid_exception,
@@ -364,9 +364,9 @@ defmodule Plug.Conn.Utils do
   end
 
   defp do_validate_utf8!(
-         <<byte, _::bits>>,
+         <<_byte, _::bits>>,
          _return_binary,
-         context,
+         _context,
          _invalid_exception,
          _validate_utf8,
          validate_utf8_error
@@ -379,7 +379,7 @@ defmodule Plug.Conn.Utils do
   end
 
   defp do_validate_utf8!(
-         <<byte, _::bits>>,
+         <<_byte, _::bits>>,
          _return_binary,
          _context,
          _invalid_exception,
