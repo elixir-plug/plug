@@ -217,11 +217,6 @@ defmodule Plug.Conn.Query do
     split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, [{level, value} | acc])
   end
 
-  defp split_keys(<<?], ?[, rest::binary>>, binary, current_pos, start_pos, level, acc) do
-    next_level = level <> "[]"
-    split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, acc)
-  end
-
   defp split_keys(<<?]>>, binary, current_pos, start_pos, level, acc) do
     value = split_key(binary, current_pos, start_pos)
     [{level, value} | acc]
