@@ -1339,7 +1339,7 @@ defmodule Plug.Conn do
       :ok ->
         conn
 
-      _ ->
+      {:error, :not_supported} ->
         raise "inform is not supported by #{inspect(adapter)}." <>
                 "You should either delete the call to `inform!/3` or switch to an " <>
                 "adapter that does support informational such as Plug.Cowboy"
@@ -1356,8 +1356,19 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  defp adapter_inform(%Conn{adapter: {adapter, payload}}, status, headers),
-    do: adapter.inform(payload, status, headers)
+  defp adapter_inform(%Conn{adapter: {adapter, payload}}, status, headers) do
+    case adapter.inform(payload, status, headers) do
+      :ok ->
+        :ok
+
+      {:error, :not_supported} ->
+        {:error, :not_supported}
+
+      other ->
+        raise ArgumentError,
+              "expected adapter inform/3 to return :ok | {:error, :not_supported}, got: #{inspect(other)}"
+    end
+  end
 
   @doc """
   Request a protocol upgrade from the underlying adapter.
