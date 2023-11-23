@@ -438,6 +438,11 @@ defmodule Plug.ConnTest do
     )
   end
 
+  test "inform!/3 performs an informational request" do
+    conn = conn(:get, "/foo") |> inform!(103, [{"link", "</style.css>; rel=preload; as=style"}])
+    assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
+  end
+
   test "upgrade_adapter/3 requests an upgrade" do
     conn = conn(:get, "/foo") |> upgrade_adapter(:supported, opt: :supported)
     assert {:supported, [opt: :supported]} in sent_upgrades(conn)

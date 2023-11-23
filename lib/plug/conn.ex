@@ -1320,10 +1320,19 @@ defmodule Plug.Conn do
   `get_http_protocol/1` to retrieve the protocol and version.
   """
   @spec inform(t, status, Keyword.t()) :: t
-  def inform(%Conn{} = conn, status, headers \\ []) do
+  def inform(%Conn{adapter: {adapter, _}} = conn, status, headers \\ []) do
     status_code = Plug.Conn.Status.code(status)
-    adapter_inform(conn, status_code, headers)
-    conn
+
+    case adapter_inform(conn, status_code, headers) do
+      :ok ->
+        conn
+
+      {:ok, payload} ->
+        put_in(conn.adapter, {adapter, payload})
+
+      {:error, :not_supported} ->
+        conn
+    end
   end
 
   @doc """
@@ -1340,8 +1349,8 @@ defmodule Plug.Conn do
         conn
 
       {:ok, payload} ->
-        put_in(conn.adapter, {adapter, payload}
-      
+        put_in(conn.adapter, {adapter, payload})
+
       {:error, :not_supported} ->
         raise "inform is not supported by #{inspect(adapter)}." <>
                 "You should either delete the call to `inform!/3` or switch to an " <>
@@ -1360,17 +1369,7 @@ defmodule Plug.Conn do
   end
 
   defp adapter_inform(%Conn{adapter: {adapter, payload}}, status, headers) do
-    case adapter.inform(payload, status, headers) do
-      :ok ->
-        :ok
-
-      {:error, :not_supported} ->
-        {:error, :not_supported}
-
-      other ->
-        raise ArgumentError,
-              "expected adapter inform/3 to return :ok | {:error, :not_supported}, got: #{inspect(other)}"
-    end
+    adapter.inform(payload, status, headers)
   end
 
   @doc """
