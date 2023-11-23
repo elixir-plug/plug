@@ -1339,6 +1339,9 @@ defmodule Plug.Conn do
       :ok ->
         conn
 
+      {:ok, payload} ->
+        put_in(conn.adapter, {adapter, payload}
+      
       {:error, :not_supported} ->
         raise "inform is not supported by #{inspect(adapter)}." <>
                 "You should either delete the call to `inform!/3` or switch to an " <>
