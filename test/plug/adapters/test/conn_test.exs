@@ -124,6 +124,14 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert Plug.Test.sent_chunks(conn) == ["foo", "bar"]
   end
 
+  test "sent chunks on send_resp" do
+    conn = conn(:get, "/")
+    conn = Plug.Conn.send_resp(conn, 200, "foobar")
+
+    assert conn.resp_body == "foobar"
+    assert Plug.Test.sent_chunks(conn) == []
+  end
+
   test "inform adds to the informational responses to the list" do
     conn =
       conn(:get, "/")
