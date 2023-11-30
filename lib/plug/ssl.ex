@@ -36,6 +36,9 @@ defmodule Plug.SSL do
     * `:exclude` - exclude the given hosts from redirecting to the `https`
       scheme. Defaults to `["localhost"]`. It may be set to a list of binaries
       or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
+    * `:exclude_paths` - exclude the given paths from redirecting to the `https`
+      scheme. Defaults to `[]`. It may be set to a list of binaries
+      or a tuple [`{module, function, args}`](#module-excluded-paths-tuple).
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
@@ -64,6 +67,24 @@ defmodule Plug.SSL do
   where:
 
       def excluded_host?(host) do
+        # Custom logic
+      end
+
+  ## Excluded paths tuple
+
+  Tuple `{module, function, args}` can be passed to be invoked each time
+  the plug is checking whether to redirect path. Provided function needs
+  to receive at least one argument (`path`).
+
+  For example, you may define it as:
+
+      plug Plug.SSL,
+        rewrite_on: [:x_forwarded_proto],
+        exclude_paths: {__MODULE__, :excluded_path?, []}
+
+  where:
+
+      def excluded_path?(path) do
         # Custom logic
       end
 
@@ -333,23 +354,25 @@ defmodule Plug.SSL do
 
     rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
-    exclude = Keyword.get(opts, :exclude, ["localhost"])
-    {hsts_header(opts), exclude, host, rewrite_on, log}
+    exclude_hosts = Keyword.get(opts, :exclude, ["localhost"])
+    exclude_paths = Keyword.get(opts, :exclude_paths, [])
+    {hsts_header(opts), exclude_hosts, exclude_paths, host, rewrite_on, log}
   end
 
   @impl true
-  def call(conn, {hsts, exclude, host, rewrite_on, log_level}) do
+  def call(conn, {hsts, exclude_hosts, exclude_paths, host, rewrite_on, log_level}) do
     conn = Plug.RewriteOn.call(conn, rewrite_on)
 
     cond do
-      excluded?(conn.host, exclude) -> conn
+      excluded?(conn.host, exclude_hosts) -> conn
+      excluded?(conn.request_path, exclude_paths) -> conn
       conn.scheme == :https -> put_hsts_header(conn, hsts)
       true -> redirect_to_https(conn, host, log_level)
     end
   end
 
-  defp excluded?(host, list) when is_list(list), do: :lists.member(host, list)
-  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
+  defp excluded?(host_or_path, list) when is_list(list), do: :lists.member(host_or_path, list)
+  defp excluded?(host_or_path, {mod, fun, args}), do: apply(mod, fun, [host_or_path | args])
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
