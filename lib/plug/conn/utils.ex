@@ -1,4 +1,6 @@
 defmodule Plug.Conn.Utils do
+  alias Plug.Conn.Status
+
   @moduledoc """
   Utilities for working with connection data
   """
@@ -11,6 +13,7 @@ defmodule Plug.Conn.Utils do
   @other [?., ?-, ?+]
   @space [?\s, ?\t]
   @specials ~c|()<>@,;:\\"/[]?={}|
+  @utf8_error_code Application.compile_env(:plug, :utf8_error_code, 500)
 
   @doc ~S"""
   Parses media types (with wildcards).
@@ -292,7 +295,8 @@ defmodule Plug.Conn.Utils do
   end
 
   defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
-    raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+    raise exception,
+          "(Status #{Status.code(@utf8_error_code)}:  #{Status.reason_phrase(@utf8_error_code)}) invalid UTF-8 on #{context}, got byte #{byte}"
   end
 
   defp do_validate_utf8!(<<>>, _exception, _context) do
