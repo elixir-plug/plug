@@ -1,5 +1,5 @@
 defmodule Plug.Conn.Utils do
-  alias Plug.Conn.Status
+  require Logger
 
   @moduledoc """
   Utilities for working with connection data
@@ -283,7 +283,7 @@ defmodule Plug.Conn.Utils do
   @doc """
   Validates the given binary is valid UTF-8.
   """
-  @spec validate_utf8!(binary, module, binary) :: :ok | no_return
+  @spec validate_utf8!(binary, module, binary) :: :ok | no_return | {:error, String.t()}
   def validate_utf8!(binary, exception, context)
 
   def validate_utf8!(<<binary::binary>>, exception, context) do
@@ -294,13 +294,29 @@ defmodule Plug.Conn.Utils do
     do_validate_utf8!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
-    raise exception,
-          "(Status #{Status.code(@utf8_error_code)}:  #{Status.reason_phrase(@utf8_error_code)}) invalid UTF-8 on #{context}, got byte #{byte}"
-  end
+  defp do_validate_utf8!(<<byte, _::bits>>, exception, context),
+    do: do_validate_utf8!(byte, exception, context, @utf8_error_code)
 
   defp do_validate_utf8!(<<>>, _exception, _context) do
     :ok
+  end
+
+  defp do_validate_utf8!(byte, exception, context, error_code) do
+    case error_code do
+      500 ->
+        raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+
+      404 ->
+        {:error, "invalid UTF-8 on #{context}, got byte #{byte}"}
+
+      error_code when error_code in 100..999 ->
+        :ok =
+          Logger.warning("Invalid UTF-8 on #{context}, got byte #{byte}",
+            error: @utf8_error_code,
+            context: context,
+            byte: byte
+          )
+    end
   end
 
   ## Helpers
