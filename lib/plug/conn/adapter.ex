@@ -131,7 +131,7 @@ defmodule Plug.Conn.Adapter do
   should be returned.
   """
   @callback inform(payload, status :: Conn.status(), headers :: Keyword.t()) ::
-              :ok | {:error, term}
+              :ok | {:ok, payload()} | {:error, term()}
 
   @doc """
   Attempt to upgrade the connection with the client.

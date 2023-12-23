@@ -30,7 +30,7 @@ There are two options at the moment:
     ```elixir
     def deps do
       [
-        {:bandit, "~> 0.6"}
+        {:bandit, "~> 1.0"}
       ]
     end
     ```
@@ -75,7 +75,7 @@ and the `websocket_adapter` project for the WebSocket bits. Since we need differ
 routes, we will use the built-in `Plug.Router` for that:
 
 ```elixir
-Mix.install([:plug, :bandit, :websock_adapter])
+Mix.install([:bandit, :websock_adapter])
 
 defmodule EchoServer do
   def init(options) do
@@ -146,12 +146,11 @@ On a production system, you likely want to start your Plug pipeline under your a
 $ mix new my_app --sup
 ```
 
-Add both `:plug` and `:plug_cowboy` as dependencies in your `mix.exs`:
+Add `:plug_cowboy` (or `:bandit`) as a dependency to your `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:plug, "~> 1.14"},
     {:plug_cowboy, "~> 2.0"}
   ]
 end
