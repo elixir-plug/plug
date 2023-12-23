@@ -81,7 +81,7 @@ defmodule Plug do
   If any plug halts, the connection won't invoke the remaining plugs. If the
   given connection was already halted, none of the plugs are invoked either.
 
-  While Plug.Builder is designed to operate at compile-time, the `run` function 
+  While `Plug.Builder` is designed to operate at compile-time, the `run` function
   serves as a straightforward alternative for runtime executions.
 
   ## Examples
