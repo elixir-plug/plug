@@ -18,6 +18,18 @@ defmodule Plug.MethodOverrideTest do
     assert conn.method == "POST"
   end
 
+  # This can happen with JSON bodies that have _method as something other than a string.
+  test "ignores non-string _method in the body" do
+    # We don't depend on any JSON library here, so we just shove the "parsed" JSON
+    # in the :body_params directly.
+    conn =
+      conn(:post, "/", "")
+      |> Map.put(:body_params, %{"_method" => ["put"]})
+      |> Plug.run([{Plug.MethodOverride, []}])
+
+    assert conn.method == "POST"
+  end
+
   test "converts POST to DELETE when _method=DELETE param is specified" do
     conn = call(urlencoded_conn(:post, "_method=DELETE"))
     assert conn.method == "DELETE"
