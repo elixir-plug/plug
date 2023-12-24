@@ -82,6 +82,14 @@ defmodule Plug.Conn.Query do
   For stateful decoding, see `decode_init/0`, `decode_each/2`, and `decode_done/2`.
   """
 
+  @typedoc """
+  Stateful decoder accumulator.
+
+  See `decode_init/0`, `decode_each/2`, and `decode_done/2`.
+  """
+  @typedoc since: "1.16.0"
+  @opaque decoder() :: map()
+
   @doc """
   Decodes the given `query`.
 
@@ -154,16 +162,30 @@ defmodule Plug.Conn.Query do
   Starts a stateful decoder.
 
   Use `decode_each/2` and `decode_done/2` to decode and complete.
+  See `decode_each/2` for examples.
   """
+  @spec decode_init() :: decoder()
   def decode_init(), do: %{root: []}
 
   @doc """
-  Decodes the given tuple.
+  Decodes the given `pair` tuple.
 
   It parses the key and stores the value into the current
-  accumulator. The keys and values are not assumed to be
-  encoded in "x-www-form-urlencoded".
+  accumulator `decoder`. The keys and values are not assumed to be
+  encoded in `"x-www-form-urlencoded"`.
+
+  ## Examples
+
+      iex> decoder = Plug.Conn.Query.decode_init()
+      iex> decoder = Plug.Conn.Query.decode_each({"foo", "bar"}, decoder)
+      iex> decoder = Plug.Conn.Query.decode_each({"baz", "bat"}, decoder)
+      iex> Plug.Conn.Query.decode_done(decoder)
+      %{"baz" => "bat", "foo" => "bar"}
+
   """
+  @spec decode_each({term(), term()}, decoder()) :: decoder()
+  def decode_each(pair, decoder)
+
   def decode_each({"", value}, map) do
     insert_keys([{:root, ""}], value, map)
   end
@@ -224,9 +246,24 @@ defmodule Plug.Conn.Query do
   end
 
   @doc """
-  Finishes stateful decoding and returns a map.
+  Finishes stateful decoding and returns a map with the decoded pairs.
+
+  `decoder` is the stateful decoder returned by `decode_init/0` and `decode_each/2`.
+  `initial` is an enumerable of key-value pairs that functions as the initial
+  accumulator for the returned map (see examples below).
+
+  ## Examples
+
+      iex> decoder = Plug.Conn.Query.decode_init()
+      iex> decoder = Plug.Conn.Query.decode_each({"foo", "bar"}, decoder)
+      iex> Plug.Conn.Query.decode_done(decoder, %{"initial" => true})
+      %{"foo" => "bar", "initial" => true}
+
   """
-  def decode_done(map, initial \\ []), do: finalize_map(map.root, Enum.to_list(initial), map)
+  @spec decode_done(decoder(), Enumerable.t()) :: %{optional(String.t()) => term()}
+  def decode_done(%{root: root} = decoder, initial \\ []) do
+    finalize_map(root, Enum.to_list(initial), decoder)
+  end
 
   defp finalize_pointer(key, map) do
     case Map.fetch!(map, key) do
