@@ -16,14 +16,14 @@ jobs:
       matrix:
         include:
           - pair:
-              elixir: 1.10.4
-              otp: 21.3
+              elixir: "1.10.4"
+              otp: "21.3"
           - pair:
-              elixir: 1.15.6
-              otp: 26.0
+              elixir: "1.16"
+              otp: "26.2"
             lint: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Erlang and Elixir
         uses: erlef/setup-beam@v1
@@ -32,7 +32,7 @@ jobs:
           elixir-version: ${{ matrix.pair.elixir }}
 
       - name: Install dependencies
-        run: mix deps.get --only test
+        run: mix deps.get --check-locked
 
       - name: Ensure that files are formatted
         run: mix format --check-formatted
