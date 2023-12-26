@@ -51,10 +51,10 @@ defmodule Plug.MixProject do
     ]
   end
 
-  if Version.match?(System.version(), "~> 1.10.0") do
-    defp plug_crypto_version, do: "~> 1.1.1 or ~> 1.2"
-  else
+  if System.get_env("PLUG_CRYPTO_2_0", "true") == "true" do
     defp plug_crypto_version, do: "~> 1.1.1 or ~> 1.2 or ~> 2.0"
+  else
+    defp plug_crypto_version, do: "~> 1.1.1 or ~> 1.2"
   end
 
   defp package do

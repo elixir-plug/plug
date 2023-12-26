@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       MIX_ENV: test
+      PLUG_CRYPTO_2_0: "${{ matrix.PLUG_CRYPTO_2_0 }}"
     strategy:
       fail-fast: false
       matrix:
@@ -18,10 +19,12 @@ jobs:
           - pair:
               elixir: "1.10.4"
               otp: "21.3"
+            PLUG_CRYPTO_2_0: "false"
           - pair:
               elixir: "1.16"
               otp: "26.2"
-            lint: lint
+              lint: lint
+            PLUG_CRYPTO_2_0: "true"
     steps:
       - uses: actions/checkout@v4
 
