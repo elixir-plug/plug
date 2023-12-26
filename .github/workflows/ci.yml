@@ -32,14 +32,18 @@ jobs:
           elixir-version: ${{ matrix.pair.elixir }}
 
       - name: Install dependencies
+        run: mix deps.get
+
+      - name: Ensure mix.lock is up to date
         run: mix deps.get --check-locked
+        if: ${{ matrix.lint }}
 
       - name: Ensure that files are formatted
         run: mix format --check-formatted
         if: ${{ matrix.lint }}
 
       - name: Check for unused dependencies
-        run: mix do deps.get, deps.unlock --check-unused
+        run: mix deps.unlock --check-unused
         if: ${{ matrix.lint }}
 
       - name: Run tests
