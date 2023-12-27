@@ -3,7 +3,6 @@ defmodule Plug.Conn.UtilsTest do
   require Logger
 
   import Plug.Conn.Utils
-  alias Plug.Conn.Utils, as: Utils
   doctest Plug.Conn.Utils
 
   @exception RuntimeError
