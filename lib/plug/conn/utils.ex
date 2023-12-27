@@ -281,7 +281,39 @@ defmodule Plug.Conn.Utils do
   end
 
   @doc """
-  Validates the given binary is valid UTF-8.
+  Validates if the given binary data is valid UTF-8.
+
+  This function checks a binary string to determine if it is a valid UTF-8 encoded string.
+  It operates based on the given `error_code`, which dictates the behavior when encountering invalid UTF-8 bytes.
+
+  ## Parameters
+
+    - `binary`: The binary data to be checked.
+    - `exception`: The exception module to be used for raising errors in case of invalid UTF-8.
+    - `context`: A string providing context about the binary data being checked.
+    - `error_code`: An integer that determines the behavior when invalid UTF-8 is encountered.
+      - `500` will raise the specified `exception` (default).
+      - `404` will return an error tuple.
+      - Codes within `100..999` will log a warning.
+
+  ## Examples
+
+      iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context")
+      ** (RuntimeError) invalid UTF-8 on test context, got byte 255
+
+      iex> Plug.Conn.Utils.validate_utf8!("valid string", RuntimeError, "test context", 404)
+      :ok
+
+      iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context", 404)
+      {:error, "invalid UTF-8 on test context, got byte 255"}
+
+
+
+      # Example with logging for invalid UTF-8
+      iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context", 200)
+      :ok
+      # Logs "invalid UTF-8 on test context, got byte 255"
+
   """
   @spec validate_utf8!(binary, module, binary, integer()) ::
           :ok | no_return | {:error, String.t()}
