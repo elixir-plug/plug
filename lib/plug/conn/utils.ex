@@ -344,7 +344,7 @@ defmodule Plug.Conn.Utils do
       error_code when error_code in 100..999 ->
         :ok =
           Logger.warning(
-            "invalid UTF-8 on #{context}, got byte #{byte} in position #{byte_position}",
+            "Invalid UTF-8 on #{context}, got byte #{byte} in position #{byte_position}",
             error: @utf8_error_code,
             context: context,
             byte: byte
