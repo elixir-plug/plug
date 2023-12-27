@@ -25,7 +25,7 @@ defmodule Plug.Conn.UtilsTest do
 
     test "raises an exception for invalid UTF-8 input", context do
       assert_raise context.exception,
-                   "invalid UTF-8 on #{context.context}, got byte 255",
+                   "invalid UTF-8 on #{context.context}, got byte 255 in position #{byte_size(@invalid_utf8) - 1}",
                    fn ->
                      Utils.validate_utf8!(
                        context.invalid_utf8,
@@ -40,11 +40,15 @@ defmodule Plug.Conn.UtilsTest do
   describe "validate_utf8! with error_code 404" do
     setup context, do: Map.merge(context, %{error_code: 404})
 
-    test "returns {:error, message} for invalid UTF-8 input", context_map do
+    test "returns {:error, message} for invalid UTF-8 w/ error code 404",
+         context_map do
       %{context: context} = context_map
-      error_tuple = {:error, "invalid UTF-8 on #{context}, got byte 255"}
 
-      assert ^error_tuple =
+      error_tuple =
+        {:error,
+         "invalid UTF-8 on #{context}, got byte 255 in position #{byte_size(@invalid_utf8) - 1}"}
+
+      assert error_tuple ==
                Utils.validate_utf8!(
                  context_map.invalid_utf8,
                  context_map.exception,
@@ -57,7 +61,8 @@ defmodule Plug.Conn.UtilsTest do
   describe "validate_utf8! with error_code 401" do
     setup context, do: Map.merge(context, %{error_code: 401})
 
-    test "logs a detailed warning for invalid UTF-8 input", context do
+    test "logs a detailed warning for invalid UTF-8 input in position #{byte_size(@invalid_utf8) - 1}",
+         context do
       log =
         capture_log(fn ->
           assert :ok =
