@@ -11,19 +11,22 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       MIX_ENV: test
+      PLUG_CRYPTO_2_0: "${{ matrix.PLUG_CRYPTO_2_0 }}"
     strategy:
       fail-fast: false
       matrix:
         include:
           - pair:
-              elixir: 1.10.4
-              otp: 21.3
+              elixir: "1.10.4"
+              otp: "21.3"
+            PLUG_CRYPTO_2_0: "false"
           - pair:
-              elixir: 1.15.6
-              otp: 26.0
-            lint: lint
+              elixir: "1.16"
+              otp: "26.2"
+              lint: lint
+            PLUG_CRYPTO_2_0: "true"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Erlang and Elixir
         uses: erlef/setup-beam@v1
@@ -32,14 +35,18 @@ jobs:
           elixir-version: ${{ matrix.pair.elixir }}
 
       - name: Install dependencies
-        run: mix deps.get --only test
+        run: mix deps.get
+
+      - name: Ensure mix.lock is up to date
+        run: mix deps.get --check-locked
+        if: ${{ matrix.lint }}
 
       - name: Ensure that files are formatted
         run: mix format --check-formatted
         if: ${{ matrix.lint }}
 
       - name: Check for unused dependencies
-        run: mix do deps.get, deps.unlock --check-unused
+        run: mix deps.unlock --check-unused
         if: ${{ matrix.lint }}
 
       - name: Run tests
