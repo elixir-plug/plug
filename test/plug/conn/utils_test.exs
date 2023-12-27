@@ -1,7 +1,6 @@
 defmodule Plug.Conn.UtilsTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureLog
-  require Logger
 
   import Plug.Conn.Utils
   alias Plug.Conn.Utils, as: Utils
