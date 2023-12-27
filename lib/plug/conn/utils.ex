@@ -299,20 +299,20 @@ defmodule Plug.Conn.Utils do
   ## Examples
 
       iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context")
-      ** (RuntimeError) invalid UTF-8 on test context, got byte 255
+      ** (RuntimeError) invalid UTF-8 on test context, got byte 255 in position 0
 
       iex> Plug.Conn.Utils.validate_utf8!("valid string", RuntimeError, "test context", 404)
       :ok
 
       iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context", 404)
-      {:error, "invalid UTF-8 on test context, got byte 255"}
+      {:error, "invalid UTF-8 on test context, got byte 255 in position 0"}
 
 
 
       # Example with logging for invalid UTF-8
       iex> Plug.Conn.Utils.validate_utf8!(<<255, "invalid">>, RuntimeError, "test context", 200)
       :ok
-      # Logs "invalid UTF-8 on test context, got byte 255"
+      # Logs "invalid UTF-8 on test context, got byte 255 in position 0"
 
   """
   @spec validate_utf8!(binary, module, binary, integer()) ::
@@ -320,36 +320,40 @@ defmodule Plug.Conn.Utils do
   def validate_utf8!(binary, exception, context, error_code \\ @utf8_error_code)
 
   def validate_utf8!(<<binary::binary>>, exception, context, error_code) do
-    do_validate_utf8!(binary, exception, context, error_code)
+    do_validate_utf8!(binary, exception, context, error_code, 0)
   end
 
-  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context, error_code) do
-    do_validate_utf8!(rest, exception, context, error_code)
+  defp do_validate_utf8!(<<a::56, rest::bits>>, exception, context, error_code, byte_position)
+       when Bitwise.band(a, 0x80808080808080) == 0 do
+    do_validate_utf8!(rest, exception, context, error_code, byte_position + 7)
   end
 
-  defp do_validate_utf8!(<<byte, _::bits>>, exception, context, error_code),
-    do: do_validate_utf8!(byte, exception, context, error_code)
-
-  defp do_validate_utf8!(<<>>, _exception, _context, _error_code) do
-    :ok
+  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context, error_code, byte_position) do
+    do_validate_utf8!(rest, exception, context, error_code, byte_position + 1)
   end
 
-  defp do_validate_utf8!(byte, exception, context, error_code) do
+  defp do_validate_utf8!(<<byte, _::bits>>, exception, context, error_code, byte_position) do
     case error_code do
       500 ->
-        raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+        raise exception,
+              "invalid UTF-8 on #{context}, got byte #{byte} in position #{byte_position}"
 
       404 ->
-        {:error, "invalid UTF-8 on #{context}, got byte #{byte}"}
+        {:error, "invalid UTF-8 on #{context}, got byte #{byte} in position #{byte_position}"}
 
       error_code when error_code in 100..999 ->
         :ok =
-          Logger.warning("invalid UTF-8 on #{context}, got byte #{byte}",
+          Logger.warning(
+            "invalid UTF-8 on #{context}, got byte #{byte} in position #{byte_position}",
             error: @utf8_error_code,
             context: context,
             byte: byte
           )
     end
+  end
+
+  defp do_validate_utf8!(<<>>, _exception, _context, _error_code, _byte_position) do
+    :ok
   end
 
   ## Helpers
