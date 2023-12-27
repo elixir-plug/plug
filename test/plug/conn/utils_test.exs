@@ -75,7 +75,7 @@ defmodule Plug.Conn.UtilsTest do
         end)
 
       expected_log_regex =
-        ~r/\d{2}:\d{2}:\d{2}\.\d{3} \[warning\] invalid UTF-8 on test context, got byte 255\n/i
+        ~r/\d{2}:\d{2}:\d{2}\.\d{3} \[warning\] invalid UTF-8 on test context, got byte 255 in position #{byte_size(@invalid_utf8) - 1}/i
 
       assert String.match?(log, expected_log_regex)
     end
