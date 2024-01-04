@@ -62,8 +62,8 @@ defmodule Plug.Test do
 
   """
   @spec conn(String.Chars.t(), binary, params) :: Conn.t()
-  def conn(method, path, params_or_body \\ nil) do
-    Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, method, path, params_or_body)
+  def conn(method, path, params_or_body \\ nil, decode_func \\ fn query -> Plug.Conn.Query.decode(query) end) do
+    Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, method, path, params_or_body, decode_func)
   end
 
   @doc """

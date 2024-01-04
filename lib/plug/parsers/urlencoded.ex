@@ -31,13 +31,15 @@ defmodule Plug.Parsers.URLENCODED do
     case apply(mod, fun, [conn, opts | args]) do
       {:ok, body, conn} ->
         validate_utf8 = Keyword.get(opts, :validate_utf8, true)
+        on_err_func = Keyword.get(opts, :on_err_func, fn reason -> raise Plug.Parsers.BadEncodingError, reason end)
 
         {:ok,
          Plug.Conn.Query.decode(
            body,
            %{},
            Plug.Parsers.BadEncodingError,
-           validate_utf8
+           validate_utf8,
+           on_err_func
          ), conn}
 
       {:more, _data, conn} ->

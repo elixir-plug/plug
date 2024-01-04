@@ -185,7 +185,8 @@ defmodule Plug.Parsers.MULTIPART do
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
 
         if Keyword.get(opts, :validate_utf8, true) do
-          Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+          on_err_func = Keyword.get(opts, :on_err_func, fn reason -> raise Plug.Parsers.BadEncodingError, reason end)
+          Plug.Conn.Utils.validate_utf8(body, on_err_func, "multipart body")
         end
 
         {conn, limit, [{name, headers, body} | acc]}

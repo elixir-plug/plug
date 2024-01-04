@@ -284,18 +284,30 @@ defmodule Plug.Conn.Utils do
   def validate_utf8!(binary, exception, context)
 
   def validate_utf8!(<<binary::binary>>, exception, context) do
-    do_validate_utf8!(binary, exception, context)
+    validate_utf8(binary, fn reason -> raise exception, reason end, context)
   end
 
-  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context) do
-    do_validate_utf8!(rest, exception, context)
+  @doc """
+  Validates the given binary is valid UTF-8.
+  """
+  @spec validate_utf8(binary, function, binary) :: :ok | {:error, any}
+  def validate_utf8(binary, on_err_func, context)
+
+  def validate_utf8(<<binary::binary>>, on_err_func, context) do
+    with {:error, reason} <- do_validate_utf8(binary, context) do
+      on_err_func.(reason)
+    end
   end
 
-  defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
-    raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+  defp do_validate_utf8(<<_::utf8, rest::bits>>, context) do
+    do_validate_utf8(rest, context)
   end
 
-  defp do_validate_utf8!(<<>>, _exception, _context) do
+  defp do_validate_utf8(<<byte, _::bits>>, context) do
+    {:error, "invalid UTF-8 on #{context}, got byte #{byte}"}
+  end
+
+  defp do_validate_utf8(<<>>, _context) do
     :ok
   end
 

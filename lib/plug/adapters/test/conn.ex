@@ -4,7 +4,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Test helpers
 
-  def conn(conn, method, uri, body_or_params) do
+  def conn(conn, method, uri, body_or_params, decode_func \\ fn query -> Plug.Conn.Query.decode(query) end) do
     maybe_flush()
     uri = URI.parse(uri)
 
@@ -18,7 +18,7 @@ defmodule Plug.Adapters.Test.Conn do
     owner = self()
 
     {params, {body, body_params}, {query, query_params}, req_headers} =
-      body_or_params(body_or_params, query, conn.req_headers, method)
+      body_or_params(body_or_params, query, conn.req_headers, method, decode_func)
 
     state = %{
       method: method,
@@ -151,21 +151,21 @@ defmodule Plug.Adapters.Test.Conn do
     end
   end
 
-  defp body_or_params(nil, query, headers, _method), do: {nil, {"", nil}, {query, nil}, headers}
+  defp body_or_params(nil, query, headers, _method, _decode_func), do: {nil, {"", nil}, {query, nil}, headers}
 
-  defp body_or_params(body, query, headers, _method) when is_binary(body) do
+  defp body_or_params(body, query, headers, _method, _decode_func) when is_binary(body) do
     {nil, {body, nil}, {query, nil}, headers}
   end
 
-  defp body_or_params(params, query, headers, method) when is_list(params) do
-    body_or_params(Enum.into(params, %{}), query, headers, method)
+  defp body_or_params(params, query, headers, method, decode_func) when is_list(params) do
+    body_or_params(Enum.into(params, %{}), query, headers, method, decode_func)
   end
 
-  defp body_or_params(params, query, headers, method)
+  defp body_or_params(params, query, headers, method, decode_func)
        when is_map(params) and method in ["GET", "HEAD"] do
     params = stringify_params(params, &to_string/1)
 
-    from_query = Plug.Conn.Query.decode(query)
+    from_query = decode_func.(query)
     params = Map.merge(from_query, params)
 
     query =
@@ -176,13 +176,13 @@ defmodule Plug.Adapters.Test.Conn do
     {params, {"", nil}, {query, params}, headers}
   end
 
-  defp body_or_params(params, query, headers, _method) when is_map(params) do
+  defp body_or_params(params, query, headers, _method, decode_func) when is_map(params) do
     content_type_header = {"content-type", "multipart/mixed; boundary=plug_conn_test"}
     content_type = List.keyfind(headers, "content-type", 0, content_type_header)
     headers = List.keystore(headers, "content-type", 0, content_type)
 
     body_params = stringify_params(params, & &1)
-    query_params = Plug.Conn.Query.decode(query)
+    query_params = decode_func.(query)
     params = Map.merge(query_params, body_params)
 
     {params, {"--plug_conn_test--", body_params}, {query, query_params}, headers}

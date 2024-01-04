@@ -1,7 +1,7 @@
 defmodule Plug.ParsersTest do
   use ExUnit.Case, async: true
-
   use Plug.Test
+  require Logger
 
   defmodule BodyReader do
     def read_body(conn, opts) do
@@ -114,6 +114,16 @@ defmodule Plug.ParsersTest do
         parse(conn, validate_utf8: true)
       end
     )
+  end
+
+  test "on error function is used on invalid utf-8 in body params when validate_utf8 true" do
+    on_err_func = fn error -> Logger.warning("Custom warning due to #{error}") end
+
+    assert ExUnit.CaptureLog.capture_log(fn ->
+      conn(:post, "/", "foo=#{<<139>>}", fn query -> Plug.Conn.Query.decode(query, [], Plug.Conn.InvalidQueryError, true, on_err_func) end)
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(validate_utf8: true, on_err_func: on_err_func)
+    end) =~ "Custom warning due to invalid UTF-8 on urlencoded params, got byte 139"
   end
 
   test "parses invalid utf-8 in body params when validate_utf8 false" do
