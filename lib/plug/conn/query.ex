@@ -95,7 +95,8 @@ defmodule Plug.Conn.Query do
 
   The `query` is assumed to be encoded in the "x-www-form-urlencoded" format.
   The format is decoded at first. Then, if `validate_utf8` is `true`, the decoded
-  result is validated for proper UTF-8 encoding.
+  result is validated for proper UTF-8 encoding. `validate_utf8` may also be
+  an atom with a custom exception to raise.
 
   `initial` is the initial "accumulator" where decoded values will be added.
 
@@ -150,8 +151,10 @@ defmodule Plug.Conn.Query do
         raise invalid_exception, "invalid urlencoded params, got #{value}"
     else
       binary ->
-        if validate_utf8 do
-          Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+        case validate_utf8 do
+          true -> Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+          false -> :ok
+          module -> Plug.Conn.Utils.validate_utf8!(binary, module, "urlencoded params")
         end
 
         binary

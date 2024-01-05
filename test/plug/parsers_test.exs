@@ -116,6 +116,20 @@ defmodule Plug.ParsersTest do
     )
   end
 
+  test "errors on invalid utf-8 in body params with custom exception" do
+    conn =
+      conn(:post, "/", "foo=#{<<139>>}")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+
+    assert_raise(
+      ArgumentError,
+      "invalid UTF-8 on urlencoded params, got byte 139",
+      fn ->
+        parse(conn, validate_utf8: ArgumentError)
+      end
+    )
+  end
+
   test "parses invalid utf-8 in body params when validate_utf8 false" do
     conn =
       conn(:post, "/", "foo=#{<<139>>}")

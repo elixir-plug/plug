@@ -27,7 +27,7 @@ defmodule Plug.Parsers.MULTIPART do
       headers
 
     * `:validate_utf8` - specifies whether multipart body parts should be validated
-      as utf8 binaries. Defaults to true
+      as utf8 binaries. It is either a boolean or a custom exception to raise
 
     * `:multipart_to_params` - a MFA that receives the multipart headers and the
       connection and it must return a tuple of `{:ok, params, conn}`
@@ -184,8 +184,15 @@ defmodule Plug.Parsers.MULTIPART do
         {:ok, limit, body, conn} =
           parse_multipart_body(Plug.Conn.read_part_body(conn, opts), limit, opts, "")
 
-        if Keyword.get(opts, :validate_utf8, true) do
-          Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+        case Keyword.get(opts, :validate_utf8, true) do
+          true ->
+            Plug.Conn.Utils.validate_utf8!(body, Plug.Parsers.BadEncodingError, "multipart body")
+
+          false ->
+            :ok
+
+          module ->
+            Plug.Conn.Utils.validate_utf8!(body, module, "multipart body")
         end
 
         {conn, limit, [{name, headers, body} | acc]}
