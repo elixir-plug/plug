@@ -84,9 +84,11 @@ defmodule Plug.Conn.Adapter do
   a chunked response to the client.
 
   Webservers are advised to return `nil` as the sent_body,
-  as the body can no longer be manipulated. However, the
-  test implementation returns the actual body so it can
-  be used during testing.
+  since this function does not actually produce a body.
+  However, the test implementation returns an empty binary
+  as the body in order to be consistent with the built-up
+  body returned by subsequent calls to the test implementation's
+  `chunk/2` function
   """
   @callback send_chunked(payload, status :: Conn.status(), headers :: Conn.headers()) ::
               {:ok, sent_body :: binary | nil, payload}
@@ -97,13 +99,14 @@ defmodule Plug.Conn.Adapter do
   If the request has method `"HEAD"`, the adapter should
   not send the response to the client.
 
-  Webservers are advised to return `:ok` and not modify
-  any further state for each chunk. However, the test
-  implementation returns the actual body and payload so
-  it can be used during testing.
+  Webservers are advised to return `nil` as the sent_body,
+  since the complete sent body depends on the sum of all
+  calls to this function. However, the test implementation
+  tracks the overall body and payload so it can be used
+  during testing.
   """
   @callback chunk(payload, body :: Conn.body()) ::
-              :ok | {:ok, sent_body :: binary, payload} | {:error, term}
+              :ok | {:ok, sent_body :: binary | nil, payload} | {:error, term}
 
   @doc """
   Reads the request body.
