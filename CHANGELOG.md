@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.15.3 (2024-01-16)
+
+### Enhancements
+
+  * Allow setting the port on the connection in tests
+  * Allow returning `{:ok, payload}` on inform
+  * Allow custom exceptions in `validate_utf8` option
+  * Allow skipping sent body on chunked replies
+
 ## v1.15.2 (2023-11-14)
 
 ### Enhancements
