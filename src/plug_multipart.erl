@@ -15,22 +15,33 @@
 -module(plug_multipart).
 
 %% Parsing.
+-deprecated([{parse_headers,2, "use Plug.Conn.Multipart.parse_headers/2 instead"}]).
 -export([parse_headers/2]).
+-deprecated([{parse_body,2, "use Plug.Conn.Multipart.parse_body/2 instead"}]).
 -export([parse_body/2]).
 
 %% Building.
+-deprecated([{boundary,0, "use Plug.Conn.Multipart.boundary/2 instead"}]).
 -export([boundary/0]).
+-deprecated([{first_part,2, "use Plug.Conn.Multipart.first_part/2 instead"}]).
 -export([first_part/2]).
+-deprecated([{part,2, "use Plug.Conn.Multipart.part/2 instead"}]).
 -export([part/2]).
+-deprecated([{close,1, "use Plug.Conn.Multipart.close/1 instead"}]).
 -export([close/1]).
 
 %% Headers.
+-deprecated([{form_data,1, "use Plug.Conn.Multipart.form_data/1 instead"}]).
 -export([form_data/1]).
+-deprecated([{parse_content_disposition,1, "use Plug.Conn.Multipart.parse_content_disposition/1 instead"}]).
 -export([parse_content_disposition/1]).
+-deprecated([{parse_content_transfer_encoding,1, "use Plug.Conn.Multipart.parse_content_transfer_encoding/1 instead"}]).
 -export([parse_content_transfer_encoding/1]).
+-deprecated([{parse_content_type,1, "use Plug.Conn.Multipart.parse_content_type/1 instead"}]).
 -export([parse_content_type/1]).
 
 -type headers() :: [{iodata(), iodata()}].
+%% Deprecated use Plug.Conn.headers() instead
 -export_type([headers/0]).
 
 -define(LC(C), case C of

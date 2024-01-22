@@ -1196,7 +1196,7 @@ defmodule Plug.Conn do
   end
 
   defp read_part_headers(conn, data, boundary, adapter, state, opts) do
-    case :plug_multipart.parse_headers(data, boundary) do
+    case Plug.Conn.Multipart.parse_headers(data, boundary) do
       {:ok, headers, rest} ->
         {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
 
@@ -1243,7 +1243,7 @@ defmodule Plug.Conn do
   end
 
   defp read_part_body(%Conn{} = conn, data, acc, length, boundary, adapter, state, opts) do
-    case :plug_multipart.parse_body(data, boundary) do
+    case Plug.Conn.Multipart.parse_body(data, boundary) do
       {:ok, body} ->
         {_, next, state} = next_multipart(adapter, state, opts)
         acc = prepend_unless_empty(acc, body)
