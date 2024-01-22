@@ -148,7 +148,7 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
     assert conn.resp_body == "HELLO"
     assert get_resp_header(conn, "content-type") == ["text/plain"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
     assert get_resp_header(conn, "etag") == []
     assert get_resp_header(conn, "x-custom") == ["x-value"]
   end
@@ -503,7 +503,7 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-type") == ["text/plain"]
       assert get_resp_header(conn, "accept-ranges") == ["bytes"]
       assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
-      assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000"]
+      assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
       assert get_resp_header(conn, "etag") == []
       assert get_resp_header(conn, "x-custom") == ["x-value"]
     end
