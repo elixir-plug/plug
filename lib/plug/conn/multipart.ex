@@ -158,18 +158,22 @@ defmodule Plug.Conn.Multipart do
   # There is a line break right after the boundary, skip it.
   defp before_parse_headers(<<"\r\n", stream::bits>>), do: parse_hd_name(stream, [], <<>>)
 
-  defp parse_hd_name(<<?:, rest::bits>>, h, acc), do: parse_hd_before_value(rest, h, acc)
+  defp parse_hd_name(<<c, rest::bits>>, h, acc) do
+    case c do
+      ?: -> parse_hd_before_value(rest, h, acc)
+      ?\s -> parse_hd_name_ws(rest, h, acc)
+      ?\t -> parse_hd_name_ws(rest, h, acc)
+      _ -> parse_hd_name(rest, h, <<acc::binary, lower(c)>>)
+    end
+  end
 
-  defp parse_hd_name(<<c, rest::bits>>, h, acc) when c in [?\s, ?\t],
-    do: parse_hd_name_ws(rest, h, acc)
-
-  defp parse_hd_name(<<c, rest::bits>>, h, acc),
-    do: parse_hd_name(rest, h, <<acc::binary, lower(c)>>)
-
-  defp parse_hd_name_ws(<<c, rest::bits>>, h, name) when c in [?\s, ?\t],
-    do: parse_hd_name_ws(rest, h, name)
-
-  defp parse_hd_name_ws(<<?:, rest::bits>>, h, name), do: parse_hd_before_value(rest, h, name)
+  defp parse_hd_name_ws(<<c, rest::bits>>, h, name) do
+    case c do
+      ?\s -> parse_hd_name_ws(rest, h, name)
+      ?\t -> parse_hd_name_ws(rest, h, name)
+      ?: -> parse_hd_before_value(rest, h, name)
+    end
+  end
 
   defp parse_hd_before_value(<<?\s, rest::bits>>, h, n), do: parse_hd_before_value(rest, h, n)
   defp parse_hd_before_value(<<?\t, rest::bits>>, h, n), do: parse_hd_before_value(rest, h, n)
@@ -183,7 +187,8 @@ defmodule Plug.Conn.Multipart do
     end
   end
 
-  defp parse_hd_value(<<c, rest::bits>>, h, n, acc), do: parse_hd_value(rest, h, n, acc <> <<c>>)
+  defp parse_hd_value(<<c, rest::bits>>, h, n, acc),
+    do: parse_hd_value(rest, h, n, <<acc::binary, c>>)
 
   defp lower(c) do
     case c do
