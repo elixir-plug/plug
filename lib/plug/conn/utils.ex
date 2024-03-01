@@ -8,7 +8,7 @@ defmodule Plug.Conn.Utils do
   @upper ?A..?Z
   @lower ?a..?z
   @alpha ?0..?9
-  @other [?., ?-, ?+]
+  @other [?., ?-, ?+, ?_]
   @space [?\s, ?\t]
   @specials ~c|()<>@,;:\\"/[]?={}|
 
@@ -31,6 +31,9 @@ defmodule Plug.Conn.Utils do
 
       iex> media_type "APPLICATION/vnd.ms-data+XML"
       {:ok, "application", "vnd.ms-data+xml", %{}}
+
+      iex> media_type "application/media_control+xml"
+      {:ok, "application", "media_control+xml", %{}}
 
       iex> media_type "text/*; q=1.0"
       {:ok, "text", "*", %{"q" => "1.0"}}
