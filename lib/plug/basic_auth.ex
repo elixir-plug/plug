@@ -38,7 +38,7 @@ defmodule Plug.BasicAuth do
 
       plug :auth
 
-      defp auth(conn, opts) do
+      defp auth(conn, _opts) do
         username = System.fetch_env!("AUTH_USERNAME")
         password = System.fetch_env!("AUTH_PASSWORD")
         Plug.BasicAuth.basic_auth(conn, username: username, password: password)
