@@ -101,10 +101,10 @@ defmodule Plug.Static do
       `conn` will be passed to the function, as well as the `args`.
 
     * `:content_types` - controls custom MIME type mapping.
-      Can be either a map with filename as key and content type as value to override
+      It can be a map with filename as key and content type as value to override
       the default type for matching filenames. For example:
       `content_types: %{"apple-app-site-association" => "application/json"}`.
-      Or the value `false` to opt out of setting the header at all. The latter
+      Alternatively, it can be the value `false` to opt out of setting the header at all. The latter
       can be used to set the header based on custom logic before calling this plug.
       Defaults to an empty map `%{}`.
 
