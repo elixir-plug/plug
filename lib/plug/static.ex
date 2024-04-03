@@ -100,9 +100,13 @@ defmodule Plug.Static do
       an enum of key-value pairs or a `{module, function, args}` to return an enum. The
       `conn` will be passed to the function, as well as the `args`.
 
-    * `:content_types` - custom MIME type mapping. As a map with filename as key
-      and content type as value. For example:
+    * `:content_types` - controls custom MIME type mapping.
+      It can be a map with filename as key and content type as value to override
+      the default type for matching filenames. For example:
       `content_types: %{"apple-app-site-association" => "application/json"}`.
+      Alternatively, it can be the value `false` to opt out of setting the header at all. The latter
+      can be used to set the header based on custom logic before calling this plug.
+      Defaults to an empty map `%{}`.
 
   ## Examples
 
@@ -218,6 +222,13 @@ defmodule Plug.Static do
     h in full or (prefix != [] and match?({0, _}, :binary.match(h, prefix)))
   end
 
+  defp maybe_put_content_type(conn, false, _), do: conn
+
+  defp maybe_put_content_type(conn, types, filename) do
+    content_type = Map.get(types, filename) || MIME.from_path(filename)
+    put_resp_header(conn, "content-type", content_type)
+  end
+
   defp serve_static({content_encoding, file_info, path}, conn, segments, range, options) do
     %{
       qs_cache: qs_cache,
@@ -230,10 +241,9 @@ defmodule Plug.Static do
     case put_cache_header(conn, qs_cache, et_cache, et_generation, file_info, path) do
       {:stale, conn} ->
         filename = List.last(segments)
-        content_type = Map.get(types, filename) || MIME.from_path(filename)
 
         conn
-        |> put_resp_header("content-type", content_type)
+        |> maybe_put_content_type(types, filename)
         |> put_resp_header("accept-ranges", "bytes")
         |> maybe_add_encoding(content_encoding)
         |> merge_headers(headers)

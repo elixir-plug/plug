@@ -35,6 +35,28 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "content-type") == ["application/vnd.manifest+json"]
   end
 
+  test "overwrites Content-Type by default" do
+    conn =
+      conn(:get, "/public/fixtures/static.txt")
+      |> put_resp_header("content-type", "application/octet-stream")
+      |> call()
+
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type") == ["text/plain"]
+  end
+
+  test "preserves original Content-Type if requested" do
+    conn =
+      conn(:get, "/public/fixtures/static.txt")
+      |> put_resp_header("content-type", "application/octet-stream")
+      |> call(content_types: false)
+
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "content-type") == ["application/octet-stream"]
+  end
+
   test "serves the file with a urlencoded filename" do
     conn = call(conn(:get, "/public/fixtures/static%20with%20spaces.txt"))
     assert conn.status == 200
