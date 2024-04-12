@@ -73,7 +73,8 @@ defmodule Plug.BasicAuth do
     * The supplied `user` and `pass` may be empty strings;
 
     * If you are comparing the username and password with existing strings,
-      do not use `==/2`. Use `Plug.Crypto.secure_compare/2` instead.
+      do not use `==/2` or pattern matching. Use `Plug.Crypto.secure_compare/2`
+      instead.
 
   """
   import Plug.Conn
