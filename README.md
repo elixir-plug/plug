@@ -188,12 +188,13 @@ Now run `mix run --no-halt` and it will start your application with a web server
 
 | Branch | Support                  |
 |--------|--------------------------|
-| v1.14  | Bug fixes                |
+| v1.15  | Bug fixes                |
+| v1.14  | Security patches only    |
 | v1.13  | Security patches only    |
 | v1.12  | Security patches only    |
 | v1.11  | Security patches only    |
 | v1.10  | Security patches only    |
-| v1.9   | Security patches only    |
+| v1.9   | Unsupported from 10/2023 |
 | v1.8   | Unsupported from 01/2023 |
 | v1.7   | Unsupported from 01/2022 |
 | v1.6   | Unsupported from 01/2022 |
