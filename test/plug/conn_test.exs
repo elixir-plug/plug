@@ -1215,6 +1215,17 @@ defmodule Plug.ConnTest do
       refute Map.has_key?(fetch_cookies(new_conn, signed: "foo").cookies, "foo")
     end
 
+    test "put_resp_cookie/4 with sign: true and max_age: nil" do
+      conn =
+        secret_conn()
+        |> fetch_cookies()
+        |> put_resp_cookie("foo", {:signed, :cookie}, sign: true, max_age: nil)
+        |> send_resp(200, "OK")
+
+      new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies(signed: ~w(foo))
+      assert Map.get(new_conn.cookies, "foo") == {:signed, :cookie}
+    end
+
     test "put_resp_cookie/4 with encrypt: true and max_age: 0" do
       conn =
         secret_conn()
