@@ -533,7 +533,7 @@ defmodule Plug.Conn do
   `send_chunked/2`. It returns `{:ok, conn}` in case of success,
   otherwise `{:error, reason}`.
 
-  To stream data use `Enum.reduce_while/3` instead of `Enum.into/2`.
+  To stream data use `Enum.reduce_while/3` instead of `Enum.reduce/2`.
   `Enum.reduce_while/3` allows aborting the execution if `chunk/2` fails to
   deliver the chunk of data.
 
