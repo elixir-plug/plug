@@ -36,7 +36,7 @@ defmodule Plug.RewriteOnTest do
     assert conn.port == 1234
   end
 
-  test "rewrites host with a x-forwarder-host header" do
+  test "rewrites host with a x-forwarded-host header" do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("x-forwarded-host", "truessl.example.com")
@@ -45,13 +45,43 @@ defmodule Plug.RewriteOnTest do
     assert conn.host == "truessl.example.com"
   end
 
-  test "rewrites port with a x-forwarder-port header" do
+  test "rewrites port with a x-forwarded-port header" do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("x-forwarded-port", "3030")
       |> call(:x_forwarded_port)
 
     assert conn.port == 3030
+  end
+
+  test "rewrites remote_ip with a x-forwarded-for header" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-for", "bad")
+      |> call(:x_forwarded_for)
+
+    assert conn.remote_ip == {127, 0, 0, 1}
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-for", "4.3.2.1")
+      |> call(:x_forwarded_for)
+
+    assert conn.remote_ip == {4, 3, 2, 1}
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-for", "1.2.3.4,::1")
+      |> call(:x_forwarded_for)
+
+    assert conn.remote_ip == {1, 2, 3, 4}
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-for", "::1,1.2.3.4")
+      |> call(:x_forwarded_for)
+
+    assert conn.remote_ip == {0, 0, 0, 0, 0, 0, 0, 1}
   end
 
   test "rewrites the host, the port, and the protocol" do
