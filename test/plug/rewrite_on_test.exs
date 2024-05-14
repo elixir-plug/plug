@@ -6,6 +6,16 @@ defmodule Plug.RewriteOnTest do
     Plug.RewriteOn.call(conn, Plug.RewriteOn.init(rewrite))
   end
 
+  test "rewrites http to https based on MFArgs" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-proto", "https")
+      |> call({List, :flatten, [[:x_forwarded_proto]]})
+
+    assert conn.scheme == :https
+    assert conn.port == 443
+  end
+
   test "rewrites http to https based on x-forwarded-proto" do
     conn =
       conn(:get, "http://example.com/")

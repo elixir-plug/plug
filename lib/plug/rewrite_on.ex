@@ -14,6 +14,9 @@ defmodule Plug.RewriteOn do
     * `:x_forwarded_port` - to override the port based on on the "x-forwarded-port" header
     * `:x_forwarded_proto` - to override the protocol based on on the "x-forwarded-proto" header
 
+  A tuple representing a Module-Function-Args can also be given as argument
+  instead of a list.
+
   Since rewriting the scheme based on `x-forwarded-*` headers can open up
   security vulnerabilities, only use this plug if:
 
@@ -26,6 +29,7 @@ defmodule Plug.RewriteOn do
   import Plug.Conn, only: [get_req_header: 2]
 
   @impl true
+  def init(header) when is_tuple(header), do: header
   def init(header), do: List.wrap(header)
 
   @impl true
@@ -53,6 +57,10 @@ defmodule Plug.RewriteOn do
 
   def call(conn, []) do
     conn
+  end
+
+  def call(conn, {mod, fun, args}) do
+    call(conn, apply(mod, fun, args))
   end
 
   defp put_scheme(%{scheme: :http, port: 80} = conn, ["https"]),
