@@ -231,7 +231,7 @@ defmodule Plug.Debugger do
 
   @doc false
   def run_action(%Plug.Conn{} = conn) do
-    with %Plug.Conn{body_params: params} <- fetch_body_params(conn),
+    with %Plug.Conn{body_params: params} = conn <- fetch_body_params(conn),
          {:ok, {module, function, args}} <-
            Plug.Crypto.verify(conn.secret_key_base, @salt, params["encoded_handler"]) do
       apply(module, function, args)
