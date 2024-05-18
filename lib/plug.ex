@@ -40,6 +40,8 @@ defmodule Plug do
   Here's an example of a module plug:
 
       defmodule JSONHeaderPlug do
+        @behaviour #{inspect(__MODULE__)}
+
         import Plug.Conn
 
         def init(opts) do
@@ -143,6 +145,8 @@ defmodule Plug do
   ## Example
 
       defmodule Router do
+        @behaviour #{inspect(__MODULE__)}
+
         def init(opts), do: opts
 
         def call(conn, opts) do
