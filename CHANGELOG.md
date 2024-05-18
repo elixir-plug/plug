@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.16.0 (2024-05-18)
+
+### Enhancements
+
+  * Support x-forwarded-for in Plug.RewriteOn
+  * Support MFArgs in Plug.RewriteOn
+  * Add immutable directive to versioned requests in `Plug.Static`
+  * Support disabling MIME type handling in `Plug.Static`
+
+### Bug fixes
+
+  * Fix bug with discarded connection state in `Plug.Debugger`
+  * Parse media types with underscores in them
+  * Do not crash on `max_age` set to nil (for consistency)
+
 ## v1.15.3 (2024-01-16)
 
 ### Enhancements
