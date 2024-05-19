@@ -64,7 +64,7 @@ defmodule Plug.Debugger do
 
   ## Custom Banners
 
-  You may pass an MFA (`{module, function, args}`) to be invoked when an
+  You may pass a MFA (`{module, function, args}`) to be invoked when an
   error is rendered which provides a custom banner at the top of the
   debugger page. The function receives the following arguments, with the
   passed `args` concatenated at the end:
@@ -496,7 +496,7 @@ defmodule Plug.Debugger do
 
       {:ok, other} ->
         raise ArgumentError,
-              "expected :banner to be an MFA ({module, func, args}), got: #{inspect(other)}"
+              "expected :banner to be a MFA ({module, func, args}), got: #{inspect(other)}"
 
       :error ->
         nil

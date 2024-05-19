@@ -10,10 +10,10 @@ defmodule Plug.RewriteOn do
 
   The supported values are:
 
-    * `:x_forwarded_for` - to override the remote ip based on on the "x-forwarded-for" header
-    * `:x_forwarded_host` - to override the host based on on the "x-forwarded-host" header
-    * `:x_forwarded_port` - to override the port based on on the "x-forwarded-port" header
-    * `:x_forwarded_proto` - to override the protocol based on on the "x-forwarded-proto" header
+    * `:x_forwarded_for` - to override the remote ip based on the "x-forwarded-for" header
+    * `:x_forwarded_host` - to override the host based on the "x-forwarded-host" header
+    * `:x_forwarded_port` - to override the port based on the "x-forwarded-port" header
+    * `:x_forwarded_proto` - to override the protocol based on the "x-forwarded-proto" header
 
   A tuple representing a Module-Function-Args can also be given as argument
   instead of a list.
