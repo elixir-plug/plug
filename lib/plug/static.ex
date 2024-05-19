@@ -167,7 +167,8 @@ defmodule Plug.Static do
     %{
       encodings: encodings,
       only_rules: {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, [])},
-      qs_cache: Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000, immutable"),
+      qs_cache:
+        Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000, immutable"),
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
       et_generation: Keyword.get(opts, :etag_generation, nil),
       headers: Keyword.get(opts, :headers, %{}),
