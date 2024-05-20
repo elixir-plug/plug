@@ -12,7 +12,7 @@ defmodule Plug.Static do
       atom representing the application name (where assets will
       be served from `priv/static`), a tuple containing the
       application name and the directory to serve assets from (besides
-      `priv/static`), or a MFA tuple.
+      `priv/static`), or an MFA tuple.
 
   The preferred form is to use `:from` with an atom or tuple, since
   it will make your application independent from the starting directory.

@@ -26,11 +26,11 @@ defmodule Plug.Session.COOKIE do
 
     * `:encryption_salt` - a salt used with `conn.secret_key_base` to generate
       a key for encrypting/decrypting a cookie, can be either a binary or
-      a MFA returning a binary;
+      an MFA returning a binary;
 
     * `:signing_salt` - a salt used with `conn.secret_key_base` to generate a
       key for signing/verifying a cookie, can be either a binary or
-      a MFA returning a binary;
+      an MFA returning a binary;
 
     * `:key_iterations` - option passed to `Plug.Crypto.KeyGenerator`
       when generating the encryption and signing keys. Defaults to 1000;
