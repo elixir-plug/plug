@@ -51,7 +51,7 @@ The `cacertfile` option is not needed when using a self-signed certificate, or w
   keyfile: "/etc/letsencrypt/live/example.net/privkey.pem"
 ```
 
-It is possible to bundle the certificate files with the  application, possibly for packaging into a release. In this case the files must be stored under the application's 'priv' directory. The `otp_app` option must be set to the name of the OTP application that contains the files, in order to correctly resolve the relative paths:
+It is possible to bundle the certificate files with the application, possibly for packaging into a release. In this case the files must be stored under the application's 'priv' directory. The `otp_app` option must be set to the name of the OTP application that contains the files, in order to correctly resolve the relative paths:
 
 ```elixir
 Plug.Cowboy.https MyApp.MyPlug, [],
