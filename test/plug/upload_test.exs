@@ -20,8 +20,16 @@ defmodule Plug.UploadTest do
 
     receive do
       {:DOWN, ^ref, :process, ^pid, :normal} ->
-        {:ok, _} = Plug.Upload.random_file("sample")
-        refute File.exists?(path)
+        wait_until(fn -> not File.exists?(path) end)
+    end
+  end
+
+  defp wait_until(fun) do
+    if fun.() do
+      :ok
+    else
+      Process.sleep(50)
+      wait_until(fun)
     end
   end
 
@@ -82,31 +90,17 @@ defmodule Plug.UploadTest do
 
     receive do
       {:DOWN, ^ref, :process, ^pid, :normal} ->
-        {:ok, _} = Plug.Upload.random_file("sample")
-
+        wait_until(fn -> not File.exists?(path3) end)
         assert File.exists?(path1)
         assert File.exists?(path2)
-        refute File.exists?(path3)
     end
 
     send(other_pid, :exit)
 
     receive do
       {:DOWN, ^other_ref, :process, ^other_pid, :normal} ->
-        # force sync by creating file in unknown process
-        parent = self()
-
-        spawn(fn ->
-          {:ok, _} = Plug.Upload.random_file("sample")
-          send(parent, :continue)
-        end)
-
-        receive do
-          :continue -> :ok
-        end
-
-        refute File.exists?(path1)
-        refute File.exists?(path2)
+        wait_until(fn -> not File.exists?(path1) end)
+        wait_until(fn -> not File.exists?(path2) end)
     end
   end
 
@@ -158,20 +152,8 @@ defmodule Plug.UploadTest do
 
     receive do
       {:DOWN, ^other_ref, :process, ^other_pid, :normal} ->
-        # force sync by creating file in unknown process
-        parent = self()
-
-        spawn(fn ->
-          {:ok, _} = Plug.Upload.random_file("sample")
-          send(parent, :continue)
-        end)
-
-        receive do
-          :continue -> :ok
-        end
-
-        refute File.exists?(path)
-        refute File.exists?(path1)
+        wait_until(fn -> not File.exists?(path) end)
+        wait_until(fn -> not File.exists?(path1) end)
     end
   end
 end
