@@ -844,6 +844,8 @@
         on($toggle, 'click', toggleOnclick)
         on($copyBtn, 'click', copyToClipboard)
 
+        restoreToggle()
+
         function copyToClipboard () {
           if(navigator.clipboard) {
             // For those working on localhost or HTTPS
@@ -863,6 +865,8 @@
         }
 
         function toggleOnclick () {
+            localStorage.setItem('plugStackTrace', this.checked ? 'checked' : '');
+
             if (this.checked) {
                 var $first = document.querySelector('[role~="stack-trace-item"].-app:first-of-type')
                 if ($first) itemOnclick.call($first)
@@ -870,6 +874,11 @@
             } else {
                 addClass($list, '-show-all')
             }
+        }
+
+        function restoreToggle () {
+            $toggle.checked = localStorage.getItem('plugStackTrace') === 'checked'
+            toggleOnclick.call($toggle)
         }
 
         function itemOnclick () {
