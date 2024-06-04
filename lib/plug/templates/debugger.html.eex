@@ -865,13 +865,13 @@
         }
 
         function toggleOnclick () {
+            localStorage.setItem('plugStackTrace', this.checked ? 'checked' : '');
+
             if (this.checked) {
-                localStorage.setItem('plugStackTrace', 'checked');
                 var $first = document.querySelector('[role~="stack-trace-item"].-app:first-of-type')
                 if ($first) itemOnclick.call($first)
                 removeClass($list, '-show-all')
             } else {
-                localStorage.setItem('plugStackTrace', '');
                 addClass($list, '-show-all')
             }
         }
