@@ -86,6 +86,10 @@ defmodule Plug.Conn.CookiesTest do
     assert encode("foo", %{value: "bar", http_only: false}) == "foo=bar; path=/"
   end
 
+  test "encodes with :partitioned option" do
+    assert encode("foo", %{value: "bar", partitioned: true}) == "foo=bar; path=/; HttpOnly; Partitioned"
+  end
+
   test "encodes with :max_age" do
     start = {{2012, 9, 29}, {15, 32, 10}}
 

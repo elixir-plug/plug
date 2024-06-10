@@ -62,6 +62,7 @@ defmodule Plug.Conn.Cookies do
       emit_if(Map.get(opts, :secure, false), "; secure"),
       emit_if(Map.get(opts, :http_only, true), "; HttpOnly"),
       emit_if(Map.get(opts, :same_site, nil), &encode_same_site/1),
+      emit_if(Map.get(opts, :partitioned, false), "; Partitioned"),
       emit_if(opts[:extra], &["; ", &1])
     ])
   end
