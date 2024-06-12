@@ -16,23 +16,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - pair:
-              elixir: "1.10.4"
-              otp: "21.3"
+          # Earliest-supported Elixir/Erlang pair.
+          - elixir: "1.10.4"
+            otp: "21.3"
             PLUG_CRYPTO_2_0: "false"
-          - pair:
-              elixir: "1.16"
-              otp: "26.2"
-              lint: lint
+
+          # Latest-supported Elixir/Erlang pair.
+          - elixir: "1.17"
+            otp: "27.0"
+            lint: lint
             PLUG_CRYPTO_2_0: "true"
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Erlang and Elixir
         uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{ matrix.pair.otp }}
-          elixir-version: ${{ matrix.pair.elixir }}
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
 
       - name: Install dependencies
         run: mix deps.get
