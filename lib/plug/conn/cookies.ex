@@ -15,38 +15,34 @@ defmodule Plug.Conn.Cookies do
 
   """
   def decode(cookie) do
-    do_decode(:binary.split(cookie, ";", [:global]), %{})
-  end
-
-  defp do_decode([], acc), do: acc
-
-  defp do_decode([h | t], acc) do
-    case decode_kv(h) do
-      {k, v} -> do_decode(t, Map.put(acc, k, v))
-      false -> do_decode(t, acc)
-    end
+    cookie
+    |> :binary.split(";", [:global])
+    |> Enum.reduce(%{}, fn kv, acc ->
+      case decode_kv(kv) do
+        {k, v} -> Map.put(acc, k, v)
+        false -> acc
+      end
+    end)
   end
 
   defp decode_kv(""), do: false
-  defp decode_kv(<<h, t::binary>>) when h in [?\s, ?\t], do: decode_kv(t)
-  defp decode_kv(kv), do: decode_key(kv, "")
+  defp decode_kv(kv) do
+    kv
+    |> String.trim()
+    |> decode_key("")
+  end
 
   defp decode_key("", _key), do: false
-  defp decode_key(<<?=, _::binary>>, ""), do: false
-  defp decode_key(<<?=, t::binary>>, key), do: decode_value(t, "", key, "")
+  defp decode_key(<<?=, _t::binary>>, ""), do: false
+  defp decode_key(<<?=, t::binary>>, key) do
+    value = case t do
+      "" -> ""
+      _ -> String.trim(t)
+    end
+    {key, value}
+  end
   defp decode_key(<<h, _::binary>>, _key) when h in [?\s, ?\t, ?\r, ?\n, ?\v, ?\f], do: false
   defp decode_key(<<h, t::binary>>, key), do: decode_key(t, <<key::binary, h>>)
-
-  defp decode_value("", _spaces, key, value), do: {key, value}
-
-  defp decode_value(<<?\s, t::binary>>, spaces, key, value),
-    do: decode_value(t, <<spaces::binary, ?\s>>, key, value)
-
-  defp decode_value(<<h, _::binary>>, _spaces, _key, _value) when h in [?\t, ?\r, ?\n, ?\v, ?\f],
-    do: false
-
-  defp decode_value(<<h, t::binary>>, spaces, key, value),
-    do: decode_value(t, "", key, <<value::binary, spaces::binary, h>>)
 
   @doc """
   Encodes the given cookies as expected in a response header.
