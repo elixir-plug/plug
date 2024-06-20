@@ -33,7 +33,7 @@ defmodule Plug.Conn.Cookies do
   end
 
   defp decode_key("", _key), do: false
-  defp decode_key(<<?=, _t::binary>>, ""), do: false
+  defp decode_key(<<?=, _::binary>>, ""), do: false
   defp decode_key(<<?=, t::binary>>, key) do
     value = case t do
       "" -> ""
