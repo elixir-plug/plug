@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.16.1 (2024-06-20)
+
+### Enhancements
+
+  * Optimize cookie parsing by 10x (10x faster, 10x less memory) on Erlang/OTP 26+
+
 ## v1.16.0 (2024-05-18)
 
 ### Enhancements
