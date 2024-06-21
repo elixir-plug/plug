@@ -3,6 +3,12 @@ defmodule Plug.Conn.StatusTest do
 
   alias Plug.Conn.Status
 
+  test "code/1 when given a numeric status code, returns the same numeric status code" do
+    assert Status.code(200) == 200
+    assert Status.code(203) == 203
+    assert Status.code(404) == 404
+  end
+
   test "code for built-in statuses the numeric code" do
     assert Status.code(:ok) == 200
     assert Status.code(:non_authoritative_information) == 203
