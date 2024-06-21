@@ -117,6 +117,9 @@ defmodule Plug.Conn.Utils do
       iex> content_type "*/*"
       :error
 
+      iex> content_type "something"
+      :error
+
   """
   @spec content_type(binary) :: {:ok, type :: binary, subtype :: binary, params} | :error
   def content_type(binary) do
@@ -160,6 +163,9 @@ defmodule Plug.Conn.Utils do
       %{}
 
       iex> params(";")
+      %{}
+
+      iex> params("foo=")
       %{}
 
   """
