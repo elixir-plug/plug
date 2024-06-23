@@ -144,6 +144,18 @@ defmodule Plug.CSRFProtectionTest do
     end
   end
 
+  test "error is raised when CSRF token payload is not a Base64 encoded string" do
+    old_conn = call(conn(:get, "/?token=get_for"))
+
+    # Replace the token payload with a string that is not Base64 encoded.
+    [protected, _payload, signature] = String.split(old_conn.resp_body, ".")
+    csrf_token = Enum.join([protected, "a", signature], ".")
+
+    assert_raise InvalidCSRFTokenError, fn ->
+      call_with_old_conn(conn(:post, "/", %{_csrf_token: csrf_token}), old_conn)
+    end
+  end
+
   test "raise error when unrecognized option is sent" do
     token = CSRFProtection.get_csrf_token()
 
@@ -242,6 +254,17 @@ defmodule Plug.CSRFProtectionTest do
     assert CSRFProtection.valid_state_and_csrf_token?(state, conn2.resp_body)
 
     assert conn1.resp_body != conn2.resp_body
+  end
+
+  test "valid_state_and_csrf_token?/2 does not return truthy value when given CSRF token that is not Base64 encoded" do
+    conn = call(conn(:get, "/?token=get"))
+    assert byte_size(conn.resp_body) == 56
+    state = CSRFProtection.dump_state_from_session(get_session(conn, "_csrf_token"))
+
+    # Replace the first byte of the CSRF token with a character that is not in
+    # the Base64 alphabet.
+    <<_head, rest::binary>> = conn.resp_body
+    refute CSRFProtection.valid_state_and_csrf_token?(state, <<"!", rest::binary>>)
   end
 
   test "protected requests with token from another process in params are allowed" do
