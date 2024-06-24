@@ -15,6 +15,14 @@ defmodule Plug.BasicAuthTest do
       refute conn.halted
     end
 
+    test "raises key error when no options are given" do
+      assert_raise KeyError, fn ->
+        conn(:get, "/")
+        |> put_req_header("authorization", encode_basic_auth("hello", "world"))
+        |> basic_auth()
+      end
+    end
+
     test "refutes invalid user and password" do
       for {user, pass} <- [{"hello", "wrong"}, {"wrong", "hello"}] do
         conn =
