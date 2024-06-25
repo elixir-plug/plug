@@ -64,6 +64,20 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert conn.query_params == %{"foo" => "bar"}
     assert conn.params == %{"foo" => "bar", "biz" => "baz"}
 
+    conn = conn(:post, "/", %{foo: &length/1})
+    assert %{"foo" => value} = conn.body_params
+    assert is_function(value)
+    assert conn.query_string == ""
+    assert conn.query_params == %{}
+    assert conn.params == %{"foo" => &length/1}
+
+    conn = conn(:post, "/", %{foo: %{__struct__: :mod}})
+    assert %{"foo" => value} = conn.body_params
+    assert is_struct(value)
+    assert conn.query_string == ""
+    assert conn.query_params == %{}
+    assert conn.params == %{"foo" => %{__struct__: :mod}}
+
     conn = conn(:post, "/", %{})
     assert conn.body_params == %{}
     assert conn.query_string == ""
@@ -158,9 +172,24 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.port == 4200
   end
 
+  test "conn/4 writes message to stderr when URI path does not start with forward slash" do
+    assert ExUnit.CaptureIO.capture_io(:stderr, fn ->
+             Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, :get, "foo", [])
+           end) =~
+             ~s(the URI path used in plug tests must start with "/", got: "foo")
+  end
+
   test "use custom peer data" do
     peer_data = %{address: {127, 0, 0, 1}, port: 111_317}
     conn = conn(:get, "/") |> put_peer_data(peer_data)
     assert peer_data == Plug.Conn.get_peer_data(conn)
+  end
+
+  test "push/3 sends message including path and headers" do
+    ref = make_ref()
+
+    Plug.Adapters.Test.Conn.push(%{owner: self(), ref: ref}, "/", [])
+
+    assert_receive {^ref, :push, {"/", []}}
   end
 end
