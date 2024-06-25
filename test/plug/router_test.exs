@@ -614,6 +614,32 @@ defmodule Plug.RouterTest do
                      %{route: "/", conn: %Plug.Conn{}, router: Sample}}
   end
 
+  test "error is raised with expected message when match/3 is not given :to or :do option" do
+    assert_raise ArgumentError, "expected one of :to or :do to be given as option", fn ->
+      defmodule NoExpectedMatchOptions do
+        use Plug.Router
+
+        plug :match
+        plug :dispatch
+
+        match "/", foo: :bar
+      end
+    end
+  end
+
+  test "error is raised with expected message when no routes are defined" do
+    assert_raise RuntimeError,
+                 "no routes defined in module Plug.RouterTest.NoRoutes using Plug.Router",
+                 fn ->
+                   defmodule NoRoutes do
+                     use Plug.Router
+
+                     plug :match
+                     plug :dispatch
+                   end
+                 end
+  end
+
   defp attach(handler_id, event) do
     :telemetry.attach(
       handler_id,
