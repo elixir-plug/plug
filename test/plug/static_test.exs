@@ -313,6 +313,29 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "vary") == ["Accept-Encoding"]
   end
 
+  test "call/2 serves files from the app directory using a :from with an application name and directory" do
+    app_dir = Application.app_dir(:plug)
+    fixture = Path.join(app_dir, "tmp.txt")
+
+    try do
+      :ok = File.write!(fixture, "ABCD")
+
+      opts = [
+        at: "priv/static",
+        from: {:plug, "."}
+      ]
+
+      conn =
+        conn(:get, "/priv/static/tmp.txt")
+        |> call(opts)
+
+      assert conn.status == 200
+      assert conn.resp_body == "ABCD"
+    after
+      :ok = File.rm!(fixture)
+    end
+  end
+
   test "raises an exception if :from isn't a binary or an atom" do
     assert_raise ArgumentError, fn ->
       defmodule ExceptionPlug do
