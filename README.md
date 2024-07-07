@@ -1,7 +1,8 @@
 # Plug
 
 [![Build Status](https://github.com/elixir-plug/plug/workflows/CI/badge.svg)](https://github.com/elixir-plug/plug/actions?query=workflow%3A%22CI%22)
-[![Inline docs](https://inch-ci.org/github/elixir-plug/plug.svg?branch=master)](http://inch-ci.org/github/elixir-plug/plug)
+[![hex.pm](https://img.shields.io/hexpm/v/plug.svg)](https://hex.pm/packages/plug)
+[![hexdocs.pm](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/plug/)
 
 Plug is:
 
