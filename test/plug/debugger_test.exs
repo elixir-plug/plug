@@ -332,7 +332,7 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "&lt;script&gt;oops&lt;/script&gt;"
   end
 
-  test "uses PLUG_EDITOR" do
+  test "uses PLUG_EDITOR with __FILE__" do
     System.put_env("PLUG_EDITOR", "hello://open?file=__FILE__&line=__LINE__")
 
     conn = stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
@@ -342,6 +342,16 @@ defmodule Plug.DebuggerTest do
     conn = stack([{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}])
     file = Path.expand(GenServer.__info__(:compile)[:source])
     assert conn.resp_body =~ "hello://open?file=#{file}&amp;line=10000"
+  end
+
+  test "uses PLUG_EDITOR with __RELATIVEFILE__" do
+    System.put_env("PLUG_EDITOR", "hello://open?file=__RELATIVEFILE__&line=__LINE__")
+
+    conn = stack([{Plug.Conn, :unknown, 1, file: "lib/plug/conn.ex", line: 1}])
+    assert conn.resp_body =~ "hello://open?file=lib/plug/conn.ex&amp;line=1"
+
+    conn = stack([{GenServer, :call, 2, file: "lib/gen_server.ex", line: 10_000}])
+    assert conn.resp_body =~ "hello://open?file=lib/gen_server.ex&amp;line=10000"
   end
 
   test "styles can be overridden" do
