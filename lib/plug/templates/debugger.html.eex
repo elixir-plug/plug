@@ -277,7 +277,8 @@
 
     .frame-info > details.meta > ol > li:before {
         content: counter(item) ". ";
-        color: <%= @style.accent %>;
+        color: <%= @style.primary %>;
+        filter: saturate(50%);
     }
 
     /*
