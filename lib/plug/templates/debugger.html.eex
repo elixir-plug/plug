@@ -580,10 +580,6 @@
         margin: 0;
     }
 
-    .code-quote > li {
-        padding: 6px 0;
-    }
-
     .code.-padded {
         padding: 0 16px 16px 16px;
     }
