@@ -149,9 +149,8 @@
         font-size: <%= :math.pow(1.3, -1) %>em;
     }
 
-    .wrap-text-checkbox-container {
-        display: flex;
-        gap: 6px;
+    .exception-details-text {
+        white-space: pre-wrap;
      }
 
     /*
@@ -682,10 +681,7 @@
                 <small>at <%= h method(@conn) %></small>
                 <small class="path"><%= h @conn.request_path %></small>
             </h5>
-            <code><pre role="exception-details-text"><%= h @message %></pre></code>
-            <div class="wrap-text-checkbox-container">
-                <input role="wrap-text-checkbox" type="checkbox" value="wrap_text">Wrap text?
-            </div>
+            <code><pre class="exception-details-text"><%= h @message %></pre></code>
         </header>
 
         <%= for %{label: label, encoded_handler: encoded_handler} <- @actions do %>
@@ -845,8 +841,6 @@
         var $copyBtn = document.querySelector('[role~="copy-to-markdown"]')
         var $copyBtnText = document.querySelector('[role~="copy-to-markdown-text"]')
         var $copy = document.querySelector('[role~="copy-contents"]')
-        var $exceptionDetailsText = document.querySelector('[role~="exception-details-text"]')
-        var $wrapTextCheckbox = document.querySelector('[role~="wrap-text-checkbox"]')
 
         each($items, function ($item) {
             on($item, 'click', itemOnclick)
@@ -854,17 +848,8 @@
 
         on($toggle, 'click', toggleOnclick)
         on($copyBtn, 'click', copyToClipboard)
-        on($wrapTextCheckbox, 'click', toggleWrapExceptionText)
 
         restoreToggle()
-
-        function toggleWrapExceptionText () {
-            if ($exceptionDetailsText.style.whiteSpace === 'pre-wrap') {
-                $exceptionDetailsText.style.whiteSpace = '';
-            } else {
-                $exceptionDetailsText.style.whiteSpace = 'pre-wrap';
-            }
-        }
 
         function copyToClipboard () {
           if(navigator.clipboard) {
