@@ -267,22 +267,31 @@ defmodule Plug.Router do
     init_mode = Module.get_attribute(env.module, :plug_builder_opts)[:init_mode]
 
     defs =
-      for {callback, {mod, opts}} <- router_to do
-        if init_mode == :runtime do
-          quote do
-            defp unquote(callback)(conn, _opts) do
-              unquote(mod).call(conn, unquote(mod).init(unquote(Macro.escape(opts))))
+      for {callback, {target, opts}} <- router_to do
+        case {init_mode, Atom.to_string(target)} do
+          {:runtime, "Elixir." <> _} ->
+            quote do
+              defp unquote(callback)(conn, _opts) do
+                unquote(target).call(conn, unquote(target).init(unquote(Macro.escape(opts))))
+              end
             end
-          end
-        else
-          opts = mod.init(opts)
 
-          quote do
-            defp unquote(callback)(conn, _opts) do
-              require unquote(mod)
-              unquote(mod).call(conn, unquote(Macro.escape(opts)))
+          {_, "Elixir." <> _} ->
+            opts = target.init(opts)
+
+            quote do
+              defp unquote(callback)(conn, _opts) do
+                require unquote(target)
+                unquote(target).call(conn, unquote(Macro.escape(opts)))
+              end
             end
-          end
+
+          _ ->
+            quote do
+              defp unquote(callback)(conn, _opts) do
+                unquote(target)(conn, unquote(Macro.escape(opts)))
+              end
+            end
         end
       end
 
@@ -575,6 +584,7 @@ defmodule Plug.Router do
     router_to = Module.get_attribute(module, :plug_router_to)
     callback = :"plug_router_to_#{map_size(router_to)}"
     router_to = Map.put(router_to, callback, {to, init_opts})
+
     Module.put_attribute(module, :plug_router_to, router_to)
     {Macro.var(callback, nil), options}
   end
