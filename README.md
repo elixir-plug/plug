@@ -9,7 +9,7 @@ Plug is:
   1. A specification for composing web applications with functions
   2. Connection adapters for different web servers in the Erlang VM
 
-[Documentation for Plug is available online](http://hexdocs.pm/plug/).
+In other words, Plug allows you to build web applications from small pieces and run them on different web servers. Plug is used by web frameworks such as [Phoenix](https://phoenixframework.org) to manage requests, responses, and websockets. This documentation will show some high-level examples and introduce the Plug's main building blocks.
 
 ## Installation
 
@@ -67,6 +67,10 @@ Process.sleep(:infinity)
 
 Save that snippet to a file and execute it as `elixir hello_world.exs`.
 Access <http://localhost:4000/> and you should be greeted!
+
+In the example above, we wrote our first **module plug**, called `MyPlug`.
+Module plugs must define the `init/1` function and the `call/2` function.
+`call/2` is invoked with the connection and the options returned by `init/1`.
 
 ## Hello world: websockets
 
@@ -131,9 +135,13 @@ Save that snippet to a file and execute it as `elixir websockets.exs`.
 Access <http://localhost:4000/> and you should see messages in your browser
 console.
 
-As you can see, Plug abstracts the different webservers. When booting
-up your application, the difference is between choosing Plug.Cowboy
-or Bandit.
+This time, we used `Plug.Router`, which allows us to define the routes
+used by our web application and a series of steps/plugs, such as
+`plug Plug.Logger`, to be executed on every request.
+
+Furthermore, as you can see, Plug abstracts the different webservers.
+When booting up your application, the difference is between choosing
+`Plug.Cowboy` or `Bandit`.
 
 For now, we have directly started the server in a throw-away supervisor but,
 for production deployments, you want to start them in application
@@ -185,40 +193,9 @@ Finally create `lib/my_app/my_plug.ex` with the `MyPlug` module.
 
 Now run `mix run --no-halt` and it will start your application with a web server running at <http://localhost:4001>.
 
-## Supported Versions
+## Plugs and the `Plug.Conn` struct
 
-| Branch | Support                  |
-|--------|--------------------------|
-| v1.15  | Bug fixes                |
-| v1.14  | Security patches only    |
-| v1.13  | Security patches only    |
-| v1.12  | Security patches only    |
-| v1.11  | Security patches only    |
-| v1.10  | Security patches only    |
-| v1.9   | Unsupported from 10/2023 |
-| v1.8   | Unsupported from 01/2023 |
-| v1.7   | Unsupported from 01/2022 |
-| v1.6   | Unsupported from 01/2022 |
-| v1.5   | Unsupported from 03/2021 |
-| v1.4   | Unsupported from 12/2018 |
-| v1.3   | Unsupported from 12/2018 |
-| v1.2   | Unsupported from 06/2018 |
-| v1.1   | Unsupported from 01/2018 |
-| v1.0   | Unsupported from 05/2017 |
-
-## The `Plug.Conn` struct
-
-In the hello world example, we defined our first plug. What is a plug after all?
-
-A plug takes two shapes. A function plug receives a connection and a set of options as arguments and returns the connection:
-
-```elixir
-def hello_world_plug(conn, _opts) do
-  conn
-  |> put_resp_content_type("text/plain")
-  |> send_resp(200, "Hello world")
-end
-```
+In the hello world example, we defined our first plug called `MyPlug`. There are two types of plugs, module plugs and function plugs.
 
 A module plug implements an `init/1` function to initialize the options and a `call/2` function which receives the connection and initialized options and returns the connection:
 
@@ -229,7 +206,17 @@ defmodule MyPlug do
 end
 ```
 
-As per the specification above, a connection is represented by the `Plug.Conn` struct:
+A function plug takes the connection, a set of options as arguments, and returns the connection:
+
+```elixir
+def hello_world_plug(conn, _opts) do
+  conn
+  |> put_resp_content_type("text/plain")
+  |> send_resp(200, "Hello world")
+end
+```
+
+A connection is represented by the `%Plug.Conn{}` struct:
 
 ```elixir
 %Plug.Conn{
@@ -351,6 +338,27 @@ Use the [issue tracker][issues] for bug reports or feature requests. Open a [pul
 If you are planning to contribute documentation, [please check our best practices for writing documentation][writing-docs].
 
 Finally, remember all interactions in our official spaces follow our [Code of Conduct][code-of-conduct].
+
+## Supported Versions
+
+| Branch | Support                  |
+|--------|--------------------------|
+| v1.15  | Bug fixes                |
+| v1.14  | Security patches only    |
+| v1.13  | Security patches only    |
+| v1.12  | Security patches only    |
+| v1.11  | Security patches only    |
+| v1.10  | Security patches only    |
+| v1.9   | Unsupported from 10/2023 |
+| v1.8   | Unsupported from 01/2023 |
+| v1.7   | Unsupported from 01/2022 |
+| v1.6   | Unsupported from 01/2022 |
+| v1.5   | Unsupported from 03/2021 |
+| v1.4   | Unsupported from 12/2018 |
+| v1.3   | Unsupported from 12/2018 |
+| v1.2   | Unsupported from 06/2018 |
+| v1.1   | Unsupported from 01/2018 |
+| v1.0   | Unsupported from 05/2017 |
 
 ## License
 
