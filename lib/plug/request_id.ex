@@ -14,10 +14,10 @@ defmodule Plug.RequestId do
 
   The request ID is added to the `Logger` metadata as `:request_id`, and to the
   response as the configured HTTP response header (see options below). To see the
-  request ID in your log output, configure your logger backends to include the `:request_id`
+  request ID in your log output, configure your logger formatter to include the `:request_id`
   metadata. For example:
 
-      config :logger, :console, metadata: [:request_id]
+      config :logger, :default_formatter, metadata: [:request_id]
 
   We recommend to include this metadata configuration in your production
   configuration file.
