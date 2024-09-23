@@ -20,7 +20,8 @@ defmodule Plug.RequestId do
       config :logger, :default_formatter, metadata: [:request_id]
 
   We recommend to include this metadata configuration in your production
-  configuration file.
+  configuration file. You can also configure a custom metadata key using 
+  `:metadata_as` (see below).
 
   > #### Programmatic access to the request ID {: .tip}
   >
@@ -47,6 +48,12 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, assign_as: :plug_request_id
 
+    * `:metadata_as` - The key to use when storing the request ID in Logger metadata.
+      Default value is `:request_id`.
+
+          plug Plug.RequestId, metadata_as: :correlation_id
+
+
   """
 
   require Logger
@@ -57,15 +64,16 @@ defmodule Plug.RequestId do
   def init(opts) do
     {
       Keyword.get(opts, :http_header, "x-request-id"),
+      Keyword.get(opts, :metadata_as, :request_id),
       Keyword.get(opts, :assign_as)
     }
   end
 
   @impl true
-  def call(conn, {header, assign_as}) do
+  def call(conn, {header, metadata_as, assign_as}) do
     request_id = get_request_id(conn, header)
 
-    Logger.metadata(request_id: request_id)
+    Logger.metadata([{metadata_as, request_id}])
     conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
 
     Conn.put_resp_header(conn, header, request_id)
