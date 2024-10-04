@@ -13,6 +13,17 @@ defmodule Plug.Session do
   When using `Plug.Session`, also consider using `Plug.CSRFProtection`
   to avoid Cross Site Request Forgery attacks.
 
+  If you require session options to be set at runtime, you can use
+  an MFA tuple. The function it designates must return a keyword list.
+
+      plug Plug.Session, {__MODULE__, :runtime_opts, []}
+
+      # ...
+
+      def runtime_opts() do
+        Keyword.put(@session_options, :domain, host())
+      end
+
   ## Session stores
 
   See `Plug.Session.Store` for the specification session stores are required to
@@ -49,6 +60,17 @@ defmodule Plug.Session do
   @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra, :same_site]
 
   @impl true
+  def init({module, function, args} = _mfa) do
+    case apply(module, function, args) do
+      session_config when is_list(session_config) ->
+        init(session_config)
+
+      other ->
+        raise ArgumentError,
+              "the MFA given to `Plug.Session` must return a keyword list, got: #{inspect(other)}"
+    end
+  end
+
   def init(opts) do
     store = Plug.Session.Store.get(Keyword.fetch!(opts, :store))
     key = Keyword.fetch!(opts, :key)
