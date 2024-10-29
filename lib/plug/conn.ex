@@ -41,10 +41,8 @@ defmodule Plug.Conn do
     * `cookies`- the request cookies with the response cookies
     * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
     * `query_params` - the request query params, populated through `fetch_query_params/2`
-    * `path_params` - the request path params, populated by routers such as `Plug.Router`
-    * `params` - the request params, the result of merging the `:path_params` on top of
-       `:body_params` on top of `:query_params`
-    * `req_cookies` - the request cookies (without the response ones)
+    * `params` - the request params, the result of merging `:body_params` on top of
+      `:query_params` alongsaide any further changes (such as the ones done by `Plug.Router`)
 
   ## Session vs Assigns
 
@@ -118,6 +116,11 @@ defmodule Plug.Conn do
 
     * `adapter` - holds the adapter information in a tuple
     * `private` - shared library data as a map
+
+  ## Deprecated fields
+
+    * `path_params` - the request path params, populated by routers such as `Plug.Router`
+    * `req_cookies` - the decoded request cookies (without decrypting or verifying them)
 
   ## Custom status codes
 
