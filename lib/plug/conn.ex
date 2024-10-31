@@ -95,7 +95,6 @@ defmodule Plug.Conn do
   ## Connection fields
 
     * `assigns` - shared user data as a map
-    * `owner` - the Elixir process that owns the connection
     * `halted` - the boolean status on whether the pipeline was halted
     * `secret_key_base` - a secret key used to verify and encrypt cookies.
       These features require manual field setup. Data must be kept in the
@@ -118,12 +117,13 @@ defmodule Plug.Conn do
 
   ## Deprecated fields
 
+    * `owner` - the Elixir process that handles the request.
+    * `cookies`- the request cookies with the response cookies.
+      Use `get_cookies/1` instead.
     * `path_params` - the request path params, populated by routers such as `Plug.Router`.
       Use `conn.params` instead.
     * `req_cookies` - the decoded request cookies (without decrypting or verifying them).
       Use `get_req_header/2` or `get_cookies/1` instead.
-    * `cookies`- the request cookies with the response cookies.
-      Use `get_cookies/1` instead.
     * `resp_cookies`- the request cookies with the response cookies.
       Use `get_resp_cookies/1` instead.
 
@@ -178,7 +178,6 @@ defmodule Plug.Conn do
   @type headers :: [{binary, binary}]
   @type host :: binary
   @type int_status :: non_neg_integer | nil
-  @type owner :: pid
   @type method :: binary
   @type query_param :: binary | %{optional(binary) => query_param} | [query_param]
   @type query_params :: %{optional(binary) => query_param}
@@ -200,7 +199,7 @@ defmodule Plug.Conn do
           halted: halted,
           host: host,
           method: method,
-          owner: owner,
+          owner: pid | nil,
           params: params | Unfetched.t(),
           path_info: segments,
           path_params: query_params,
@@ -451,7 +450,7 @@ defmodule Plug.Conn do
     {:ok, body, payload} =
       adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
 
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
   end
 
@@ -502,7 +501,7 @@ defmodule Plug.Conn do
     {:ok, body, payload} =
       adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
 
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :file, resp_body: body}
   end
 
@@ -530,7 +529,7 @@ defmodule Plug.Conn do
     conn = %{conn | status: Plug.Conn.Status.code(status), resp_body: nil}
     conn = run_before_send(conn, :set_chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :chunked, resp_body: body}
   end
 
