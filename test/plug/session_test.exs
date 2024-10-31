@@ -10,7 +10,7 @@ defmodule Plug.SessionTest do
     opts = Plug.Session.init(store: ProcessStore, key: "foobar")
     conn = conn |> Plug.Session.call(opts) |> fetch_session()
     conn = send_resp(conn, 200, "")
-    assert conn.resp_cookies == %{}
+    assert get_resp_cookies(conn) == %{}
 
     conn = fetch_cookies(conn(:get, "/"))
 
@@ -28,9 +28,9 @@ defmodule Plug.SessionTest do
     conn = send_resp(conn, 200, "")
 
     assert %{"foobar" => %{value: _, secure: true, path: "some/path", extra: "extra"}} =
-             conn.resp_cookies
+             get_resp_cookies(conn)
 
-    refute Map.has_key?(conn.resp_cookies["foobar"], :http_only)
+    refute Map.has_key?(get_resp_cookies(conn)["foobar"], :http_only)
 
     conn = fetch_cookies(conn(:get, "/"))
 
@@ -47,7 +47,7 @@ defmodule Plug.SessionTest do
     conn = send_resp(conn, 200, "")
 
     assert %{"unsafe_foobar" => %{value: _, http_only: false, path: "some/path"}} =
-             conn.resp_cookies
+             get_resp_cookies(conn)
   end
 
   test "put session" do
@@ -83,7 +83,7 @@ defmodule Plug.SessionTest do
     conn = configure_session(conn, drop: true)
     conn = send_resp(conn, 200, "")
 
-    assert conn.resp_cookies ==
+    assert get_resp_cookies(conn) ==
              %{"foobar" => %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}}}
   end
 
@@ -94,7 +94,7 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = configure_session(conn, drop: true)
     conn = send_resp(conn, 200, "")
-    assert conn.resp_cookies == %{}
+    assert get_resp_cookies(conn) == %{}
   end
 
   test "renew session" do
@@ -107,8 +107,8 @@ defmodule Plug.SessionTest do
     conn = configure_session(conn, renew: true)
     conn = send_resp(conn, 200, "")
 
-    assert match?(%{"foobar" => %{value: _}}, conn.resp_cookies)
-    refute match?(%{"foobar" => %{value: "sid"}}, conn.resp_cookies)
+    assert match?(%{"foobar" => %{value: _}}, get_resp_cookies(conn))
+    refute match?(%{"foobar" => %{value: "sid"}}, get_resp_cookies(conn))
   end
 
   test "ignore changes to session" do
@@ -119,7 +119,7 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
 
-    assert conn.resp_cookies == %{}
+    assert get_resp_cookies(conn) == %{}
   end
 
   test "reuses sid and as such does not generate new cookie" do
@@ -131,7 +131,7 @@ defmodule Plug.SessionTest do
     conn = conn |> Plug.Session.call(opts) |> fetch_session()
     conn = send_resp(conn, 200, "")
 
-    assert conn.resp_cookies == %{}
+    assert get_resp_cookies(conn) == %{}
   end
 
   test "generates sid" do
@@ -142,7 +142,7 @@ defmodule Plug.SessionTest do
     conn = put_session(conn, "foo", "bar")
     conn = send_resp(conn, 200, "")
 
-    assert %{value: sid} = conn.resp_cookies["foobar"]
+    assert %{value: sid} = get_resp_cookies(conn)["foobar"]
     assert Process.get({:session, sid}) == %{"foo" => "bar"}
   end
 

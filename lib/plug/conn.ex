@@ -32,13 +32,12 @@ defmodule Plug.Conn do
   ## Fetchable fields
 
   Fetchable fields do not populate with request information until the corresponding
-  prefixed 'fetch_' function retrieves them, e.g., the `fetch_cookies/2` function
-  retrieves the `cookies` field.
+  prefixed 'fetch_' function retrieves them, e.g., the `fetch_query_params/2` function
+  retrieves the `query_params` field.
 
   If you access these fields before fetching them, they will be returned as
   `Plug.Conn.Unfetched` structs.
 
-    * `cookies`- the request cookies with the response cookies
     * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
     * `query_params` - the request query params, populated through `fetch_query_params/2`
     * `params` - the request params, the result of merging `:body_params` on top of
@@ -119,8 +118,14 @@ defmodule Plug.Conn do
 
   ## Deprecated fields
 
-    * `path_params` - the request path params, populated by routers such as `Plug.Router`
-    * `req_cookies` - the decoded request cookies (without decrypting or verifying them)
+    * `path_params` - the request path params, populated by routers such as `Plug.Router`.
+      Use `conn.params` instead.
+    * `req_cookies` - the decoded request cookies (without decrypting or verifying them).
+      Use `get_req_header/2` or `get_cookies/1` instead.
+    * `cookies`- the request cookies with the response cookies.
+      Use `get_cookies/1` instead.
+    * `resp_cookies`- the request cookies with the response cookies.
+      Use `get_resp_cookies/1` instead.
 
   ## Custom status codes
 
@@ -1545,6 +1550,30 @@ defmodule Plug.Conn do
         acc
       end
     end)
+  end
+
+  @doc """
+  Returns a map with both request and response cookies.
+
+  Raises if cookies have not been fetched.
+  """
+  @spec get_cookies(t) :: %{optional(binary) => term}
+  def get_cookies(conn) do
+    case conn.cookies do
+      %Unfetched{} -> raise ArgumentError, "cookies not fetched, call fetch_cookies/2"
+      %{} = cookies -> cookies
+    end
+  end
+
+  @doc """
+  Returns a map with response cookies.
+
+  Each response cookie is represented as a map with the
+  metadata to be sent as part of the response.
+  """
+  @spec get_resp_cookies(t) :: %{optional(binary) => map}
+  def get_resp_cookies(conn) do
+    conn.resp_cookies
   end
 
   @doc """

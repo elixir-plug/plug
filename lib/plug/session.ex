@@ -74,7 +74,7 @@ defmodule Plug.Session do
 
     fn conn ->
       {sid, session} =
-        if cookie = conn.cookies[key] do
+        if cookie = Plug.Conn.get_cookies(conn)[key] do
           store.get(conn, cookie, store_config)
         else
           {nil, %{}}

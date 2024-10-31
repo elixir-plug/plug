@@ -241,7 +241,7 @@ defmodule Plug.Test do
     req_cookies = Plug.Conn.fetch_cookies(old_conn).req_cookies
 
     resp_cookies =
-      Enum.reduce(old_conn.resp_cookies, req_cookies, fn {key, opts}, acc ->
+      Enum.reduce(Plug.Conn.get_resp_cookies(old_conn), req_cookies, fn {key, opts}, acc ->
         if value = Map.get(opts, :value) do
           Map.put(acc, key, value)
         else

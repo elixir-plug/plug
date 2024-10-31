@@ -271,7 +271,7 @@ defmodule Plug.ConnTest do
       |> register_before_send(&put_resp_cookie(&1, "hello", "world"))
       |> send_resp(200, "")
 
-    assert conn.resp_cookies["hello"] == %{value: "world"}
+    assert get_resp_cookies(conn)["hello"] == %{value: "world"}
   end
 
   test "send_resp/1 raises if the connection was unset" do
@@ -981,7 +981,7 @@ defmodule Plug.ConnTest do
 
     conn = conn(:get, "/") |> put_resp_cookie("foo", "baz", path: "/baz") |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz"}
+    assert get_resp_cookies(conn)["foo"] == %{value: "baz", path: "/baz"}
     assert get_resp_header(conn, "set-cookie") == ["foo=baz; path=/baz; HttpOnly"]
 
     conn =
@@ -990,7 +990,7 @@ defmodule Plug.ConnTest do
       |> delete_resp_cookie("foo", path: "/baz")
       |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"] ==
+    assert get_resp_cookies(conn)["foo"] ==
              %{max_age: 0, universal_time: {{1970, 1, 1}, {0, 0, 0}}, path: "/baz"}
 
     assert get_resp_header(conn, "set-cookie") ==
@@ -1019,14 +1019,14 @@ defmodule Plug.ConnTest do
       |> put_resp_cookie("foo", "baz", path: "/baz")
       |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", secure: true}
+    assert get_resp_cookies(conn)["foo"] == %{value: "baz", path: "/baz", secure: true}
 
     conn =
       conn(:get, "https://example.com/")
       |> put_resp_cookie("foo", "baz", path: "/baz", secure: false)
       |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"] == %{value: "baz", path: "/baz", secure: false}
+    assert get_resp_cookies(conn)["foo"] == %{value: "baz", path: "/baz", secure: false}
   end
 
   test "delete_resp_cookie/3 ignores max_age and universal_time" do
@@ -1041,8 +1041,8 @@ defmodule Plug.ConnTest do
       |> delete_resp_cookie("foo", cookie_opts)
       |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"].max_age == 0
-    assert conn.resp_cookies["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
+    assert get_resp_cookies(conn)["foo"].max_age == 0
+    assert get_resp_cookies(conn)["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
   end
 
   test "delete_resp_cookie/3 uses connection scheme to detect secure" do
@@ -1057,9 +1057,9 @@ defmodule Plug.ConnTest do
       |> delete_resp_cookie("foo", cookie_opts)
       |> send_resp(200, "ok")
 
-    assert conn.resp_cookies["foo"].secure == true
-    assert conn.resp_cookies["foo"].max_age == 0
-    assert conn.resp_cookies["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
+    assert get_resp_cookies(conn)["foo"].secure == true
+    assert get_resp_cookies(conn)["foo"].max_age == 0
+    assert get_resp_cookies(conn)["foo"].universal_time == {{1970, 1, 1}, {0, 0, 0}}
   end
 
   test "put_resp_cookie/4 and delete_resp_cookie/3 raise when the connection was already sent" do
@@ -1098,7 +1098,7 @@ defmodule Plug.ConnTest do
 
     conn = conn(:get, "/") |> recycle_cookies(conn) |> fetch_cookies()
 
-    assert conn.cookies == %{
+    assert get_cookies(conn) == %{
              "req_cookie" => "req_cookie",
              "over_cookie" => "pos_cookie",
              "resp_cookie" => "resp_cookie"
@@ -1107,24 +1107,24 @@ defmodule Plug.ConnTest do
 
   test "fetch_cookies/2 loaded early" do
     conn = put_req_cookie(conn(:get, "/"), "foo", "bar")
-    assert conn.cookies == %Plug.Conn.Unfetched{aspect: :cookies}
+    assert_raise ArgumentError, fn -> get_cookies(conn) end
 
     conn = fetch_cookies(conn)
-    assert conn.cookies["foo"] == "bar"
+    assert get_cookies(conn)["foo"] == "bar"
 
     conn = put_resp_cookie(conn, "bar", "baz")
-    assert conn.cookies["bar"] == "baz"
+    assert get_cookies(conn)["bar"] == "baz"
 
     conn = put_resp_cookie(conn, "foo", "baz")
-    assert conn.cookies["foo"] == "baz"
+    assert get_cookies(conn)["foo"] == "baz"
 
     conn = delete_resp_cookie(conn, "foo")
-    refute conn.cookies["foo"]
+    refute get_cookies(conn)["foo"]
   end
 
   test "fetch_cookies/2 loaded late" do
     conn = conn(:get, "/") |> put_req_cookie("foo", "bar") |> put_req_cookie("bar", "baz")
-    assert conn.cookies == %Plug.Conn.Unfetched{aspect: :cookies}
+    assert_raise ArgumentError, fn -> get_cookies(conn) end
 
     conn =
       conn
@@ -1133,9 +1133,9 @@ defmodule Plug.ConnTest do
       |> delete_resp_cookie("bar")
       |> fetch_cookies
 
-    assert conn.cookies["foo"] == "baz"
-    assert conn.cookies["baz"] == "bat"
-    refute conn.cookies["bar"]
+    assert get_cookies(conn)["foo"] == "baz"
+    assert get_cookies(conn)["baz"] == "bat"
+    refute get_cookies(conn)["bar"]
   end
 
   describe "signed and encrypted cookies" do
@@ -1150,10 +1150,10 @@ defmodule Plug.ConnTest do
         |> put_resp_cookie("foo", {:signed, :cookie}, sign: true)
         |> send_resp(200, "OK")
 
-      # The non-signed value is stored in the conn.cookies and
-      # the signed value in conn.resp_cookies
-      assert conn.cookies["foo"] == {:signed, :cookie}
-      value = conn.resp_cookies["foo"][:value]
+      # The non-signed value is stored in the get_cookies(conn) and
+      # the signed value in get_resp_cookies(conn)
+      assert get_cookies(conn)["foo"] == {:signed, :cookie}
+      value = get_resp_cookies(conn)["foo"][:value]
       assert value =~ ~r"[\w\_\.]+"
 
       [set_cookie] = get_resp_header(conn, "set-cookie")
@@ -1162,13 +1162,13 @@ defmodule Plug.ConnTest do
       # Recycling can handle signed cookies and they can be verified on demand
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies()
       assert new_conn.req_cookies["foo"] == value
-      assert new_conn.cookies["foo"] == value
+      assert get_cookies(new_conn)["foo"] == value
       assert fetch_cookies(new_conn, signed: "foo").cookies["foo"] == {:signed, :cookie}
 
       # Recycling can handle signed cookies and they can be verified upfront
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies(signed: ~w(foo))
       assert new_conn.req_cookies["foo"] == value
-      assert new_conn.cookies["foo"] == {:signed, :cookie}
+      assert get_cookies(new_conn)["foo"] == {:signed, :cookie}
     end
 
     test "put_resp_cookie/4 with encrypt: true" do
@@ -1178,10 +1178,10 @@ defmodule Plug.ConnTest do
         |> put_resp_cookie("foo", {:encrypted, :cookie}, encrypt: true)
         |> send_resp(200, "OK")
 
-      # The decrypted value is stored in the conn.cookies and
-      # the encrypted value in conn.resp_cookies
-      assert conn.cookies["foo"] == {:encrypted, :cookie}
-      value = conn.resp_cookies["foo"][:value]
+      # The decrypted value is stored in the get_cookies(conn) and
+      # the encrypted value in get_resp_cookies(conn)
+      assert get_cookies(conn)["foo"] == {:encrypted, :cookie}
+      value = get_resp_cookies(conn)["foo"][:value]
       assert value =~ ~r"[\w\_\.]+"
 
       [set_cookie] = get_resp_header(conn, "set-cookie")
@@ -1190,13 +1190,13 @@ defmodule Plug.ConnTest do
       # Recycling can handle encrypted cookies and they can be decrypted on demand
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies()
       assert new_conn.req_cookies["foo"] == value
-      assert new_conn.cookies["foo"] == value
+      assert get_cookies(new_conn)["foo"] == value
       assert fetch_cookies(new_conn, encrypted: "foo").cookies["foo"] == {:encrypted, :cookie}
 
       # Recycling can handle encrypted cookies and they can be decrypted upfront
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies(encrypted: ~w(foo))
       assert new_conn.req_cookies["foo"] == value
-      assert new_conn.cookies["foo"] == {:encrypted, :cookie}
+      assert get_cookies(new_conn)["foo"] == {:encrypted, :cookie}
     end
 
     test "put_resp_cookie/4 with sign: true and max_age: 0" do
@@ -1206,12 +1206,12 @@ defmodule Plug.ConnTest do
         |> put_resp_cookie("foo", {:signed, :cookie}, sign: true, max_age: 0)
         |> send_resp(200, "OK")
 
-      assert conn.cookies["foo"] == {:signed, :cookie}
-      assert conn.resp_cookies["foo"][:value] =~ ~r"[\w\_\.]+"
+      assert get_cookies(conn)["foo"] == {:signed, :cookie}
+      assert get_resp_cookies(conn)["foo"][:value] =~ ~r"[\w\_\.]+"
 
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies()
-      assert new_conn.req_cookies["foo"] == conn.resp_cookies["foo"][:value]
-      assert new_conn.cookies["foo"] == conn.resp_cookies["foo"][:value]
+      assert new_conn.req_cookies["foo"] == get_resp_cookies(conn)["foo"][:value]
+      assert get_cookies(new_conn)["foo"] == get_resp_cookies(conn)["foo"][:value]
       refute Map.has_key?(fetch_cookies(new_conn, signed: "foo").cookies, "foo")
     end
 
@@ -1223,7 +1223,7 @@ defmodule Plug.ConnTest do
         |> send_resp(200, "OK")
 
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies(signed: ~w(foo))
-      assert Map.get(new_conn.cookies, "foo") == {:signed, :cookie}
+      assert Map.get(get_cookies(new_conn), "foo") == {:signed, :cookie}
     end
 
     test "put_resp_cookie/4 with encrypt: true and max_age: 0" do
@@ -1233,12 +1233,12 @@ defmodule Plug.ConnTest do
         |> put_resp_cookie("foo", {:encrypted, :cookie}, encrypt: true, max_age: 0)
         |> send_resp(200, "OK")
 
-      assert conn.cookies["foo"] == {:encrypted, :cookie}
-      assert conn.resp_cookies["foo"][:value] =~ ~r"[\w\_\.]+"
+      assert get_cookies(conn)["foo"] == {:encrypted, :cookie}
+      assert get_resp_cookies(conn)["foo"][:value] =~ ~r"[\w\_\.]+"
 
       new_conn = secret_conn() |> recycle_cookies(conn) |> fetch_cookies()
-      assert new_conn.req_cookies["foo"] == conn.resp_cookies["foo"][:value]
-      assert new_conn.cookies["foo"] == conn.resp_cookies["foo"][:value]
+      assert new_conn.req_cookies["foo"] == get_resp_cookies(conn)["foo"][:value]
+      assert get_cookies(new_conn)["foo"] == get_resp_cookies(conn)["foo"][:value]
       refute Map.has_key?(fetch_cookies(new_conn, encrypted: "foo").cookies, "foo")
     end
   end
