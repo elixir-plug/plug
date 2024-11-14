@@ -21,7 +21,8 @@ defmodule Plug.SSL do
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
 
-  For further details refer to `Plug.RewriteOn`.
+  Rewriting happens on all requests, before the SSL options are processed.
+  For further details, refer to `Plug.RewriteOn`.
 
   ## Plug Options
 
