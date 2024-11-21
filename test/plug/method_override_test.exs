@@ -1,6 +1,7 @@
 defmodule Plug.MethodOverrideTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   def urlencoded_conn(method, body) do
     method

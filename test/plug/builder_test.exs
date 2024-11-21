@@ -82,7 +82,8 @@ defmodule Plug.BuilderTest do
   end
 
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   test "exports the init/1 function" do
     assert Sample.init(:ok) == :ok

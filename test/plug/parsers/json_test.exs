@@ -1,6 +1,7 @@
 defmodule Plug.Parsers.JSONTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   defmodule JSON do
     def decode!("[1, 2, 3]") do

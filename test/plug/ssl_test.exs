@@ -1,6 +1,7 @@
 defmodule Plug.SSLTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   describe "configure" do
     import Plug.SSL, only: [configure: 1]

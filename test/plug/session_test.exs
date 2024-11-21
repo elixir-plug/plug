@@ -1,6 +1,7 @@
 defmodule Plug.SessionTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   alias Plug.ProcessStore
   doctest Plug.Session.Store
