@@ -1,5 +1,6 @@
 defmodule Plug.Adapters.Test.Conn do
   @behaviour Plug.Conn.Adapter
+  @already_sent Plug.Conn.Adapter.already_sent()
   @moduledoc false
 
   ## Test helpers
@@ -43,7 +44,6 @@ defmodule Plug.Adapters.Test.Conn do
       | adapter: {__MODULE__, state},
         host: uri.host || conn.host || "www.example.com",
         method: method,
-        owner: owner,
         path_info: split_path(uri.path),
         port: uri.port || conn_port,
         remote_ip: conn.remote_ip || {127, 0, 0, 1},
@@ -88,7 +88,10 @@ defmodule Plug.Adapters.Test.Conn do
     do_send(state, status, headers, data)
   end
 
-  def send_chunked(state, _status, _headers), do: {:ok, "", %{state | chunks: ""}}
+  def send_chunked(%{owner: owner} = state, _status, _headers) do
+    send(owner, @already_sent)
+    {:ok, "", %{state | chunks: ""}}
+  end
 
   def chunk(%{method: "HEAD"} = state, _body), do: {:ok, "", state}
 
@@ -98,6 +101,7 @@ defmodule Plug.Adapters.Test.Conn do
   end
 
   defp do_send(%{owner: owner, ref: ref} = state, status, headers, body) do
+    send(owner, @already_sent)
     send(owner, {ref, {status, headers, body}})
     {:ok, body, state}
   end
