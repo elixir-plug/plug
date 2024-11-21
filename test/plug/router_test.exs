@@ -226,7 +226,8 @@ defmodule Plug.RouterTest do
   end
 
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   test "dispatch root" do
     conn = call(Sample, conn(:get, "/"))

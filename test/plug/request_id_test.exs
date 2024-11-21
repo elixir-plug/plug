@@ -1,6 +1,7 @@
 defmodule Plug.RequestIdTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   defp call(conn, opts) do
     Plug.RequestId.call(conn, Plug.RequestId.init(opts))

@@ -1,6 +1,7 @@
 defmodule Plug.ConnTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   alias Plug.Conn
   alias Plug.ProcessStore

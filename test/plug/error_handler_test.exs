@@ -1,6 +1,7 @@
 defmodule Plug.ErrorHandlerTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   defmodule ForbiddenError do
     defexception plug_status: 403, message: "oops"

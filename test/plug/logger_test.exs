@@ -1,6 +1,7 @@
 defmodule Plug.LoggerTest do
   use ExUnit.Case
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   import ExUnit.CaptureLog
 

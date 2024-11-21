@@ -2,7 +2,7 @@ Application.ensure_all_started(:telemetry)
 
 defmodule Plug.TelemetryTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
 
   defmodule MyPlug do
     use Plug.Builder

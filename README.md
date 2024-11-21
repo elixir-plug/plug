@@ -284,8 +284,9 @@ Plug ships with a `Plug.Test` module that makes testing your plugs easy. Here is
 ```elixir
 defmodule MyPlugTest do
   use ExUnit.Case, async: true
-  use Plug.Test
-
+  import Plug.Test
+  import Plug.Conn
+  
   @opts MyRouter.init([])
 
   test "returns hello world" do
