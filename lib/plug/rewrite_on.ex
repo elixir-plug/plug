@@ -36,25 +36,25 @@ defmodule Plug.RewriteOn do
   @impl true
   def call(conn, [:x_forwarded_for | rewrite_on]) do
     conn
-    |> put_remote_ip(get_req_header(conn, "x-forwarded-for"))
+    |> put_remote_ip(get_first_header_value(conn, "x-forwarded-for"))
     |> call(rewrite_on)
   end
 
   def call(conn, [:x_forwarded_proto | rewrite_on]) do
     conn
-    |> put_scheme(get_req_header(conn, "x-forwarded-proto"))
+    |> put_scheme(get_first_header_value(conn, "x-forwarded-proto"))
     |> call(rewrite_on)
   end
 
   def call(conn, [:x_forwarded_port | rewrite_on]) do
     conn
-    |> put_port(get_req_header(conn, "x-forwarded-port"))
+    |> put_port(get_first_header_value(conn, "x-forwarded-port"))
     |> call(rewrite_on)
   end
 
   def call(conn, [:x_forwarded_host | rewrite_on]) do
     conn
-    |> put_host(get_req_header(conn, "x-forwarded-host"))
+    |> put_host(get_first_header_value(conn, "x-forwarded-host"))
     |> call(rewrite_on)
   end
 
@@ -70,43 +70,53 @@ defmodule Plug.RewriteOn do
     call(conn, apply(mod, fun, args))
   end
 
-  defp put_scheme(%{scheme: :http, port: 80} = conn, ["https"]),
+  defp put_scheme(%{scheme: :http, port: 80} = conn, "https"),
     do: %{conn | scheme: :https, port: 443}
 
-  defp put_scheme(conn, ["https"]),
+  defp put_scheme(conn, "https"),
     do: %{conn | scheme: :https}
 
-  defp put_scheme(%{scheme: :https, port: 443} = conn, ["http"]),
+  defp put_scheme(%{scheme: :https, port: 443} = conn, "http"),
     do: %{conn | scheme: :http, port: 80}
 
-  defp put_scheme(conn, ["http"]),
+  defp put_scheme(conn, "http"),
     do: %{conn | scheme: :http}
 
   defp put_scheme(conn, _scheme),
     do: conn
 
-  defp put_host(conn, [proper_host]),
+  defp put_host(conn, proper_host) when is_binary(proper_host),
     do: %{conn | host: proper_host}
 
   defp put_host(conn, _),
     do: conn
 
-  defp put_port(conn, headers) do
-    with [header] <- headers,
-         {port, ""} <- Integer.parse(header) do
+  defp put_port(conn, value) when is_binary(value) do
+    with {port, ""} <- Integer.parse(value) do
       %{conn | port: port}
     else
       _ -> conn
     end
   end
 
-  defp put_remote_ip(conn, headers) do
-    with [header] <- headers,
-         [client | _] <- :binary.split(header, ","),
-         {:ok, remote_ip} <- :inet.parse_address(String.to_charlist(client)) do
+  defp put_port(conn, _),
+    do: conn
+
+  defp put_remote_ip(conn, value) when is_binary(value) do
+    with {:ok, remote_ip} <- :inet.parse_address(String.to_charlist(value)) do
       %{conn | remote_ip: remote_ip}
     else
       _ -> conn
+    end
+  end
+
+  defp put_remote_ip(conn, _),
+    do: conn
+
+  defp get_first_header_value(conn, header) do
+    with [value] <- get_req_header(conn, header),
+         [first | _] <- :binary.split(value, ",") do
+      first
     end
   end
 end

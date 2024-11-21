@@ -25,6 +25,14 @@ defmodule Plug.RewriteOnTest do
 
     assert conn.scheme == :https
     assert conn.port == 443
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-proto", "https,http")
+      |> call(:x_forwarded_proto)
+
+    assert conn.scheme == :https
+    assert conn.port == 443
   end
 
   test "doesn't change the port when it doesn't match the scheme" do
@@ -44,6 +52,13 @@ defmodule Plug.RewriteOnTest do
       |> call(:x_forwarded_host)
 
     assert conn.host == "truessl.example.com"
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-host", "first.example.com,second.example.com")
+      |> call(:x_forwarded_host)
+
+    assert conn.host == "first.example.com"
   end
 
   test "rewrites port with a x-forwarded-port header" do
@@ -53,6 +68,13 @@ defmodule Plug.RewriteOnTest do
       |> call(:x_forwarded_port)
 
     assert conn.port == 3030
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-port", "4040,3030")
+      |> call(:x_forwarded_port)
+
+    assert conn.port == 4040
   end
 
   test "rewrites remote_ip with a x-forwarded-for header" do
