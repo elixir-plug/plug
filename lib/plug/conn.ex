@@ -65,15 +65,13 @@ defmodule Plug.Conn do
   More can be stored in a session cookie, but be careful: this makes requests
   and responses heavier, and clients may reject cookies beyond a certain size.
   Also, session cookie are not shared between a user's different browsers or devices.
-
-  If the session is stored elsewhere, such as with `Plug.Session.ETS`, session
-  data lookup still needs a key, e.g., a user's id. Unlike session data, `assigns`
-  data fields only last a single request.
+  If the session is stored elsewhere, such as a database, the browser only has to
+  store the session key and therefore more data can be stored in the session.
 
   A typical use case would be for an authentication plug to look up a user by id
-  and keep the state of the user's credentials by storing them in `assigns`.
-  Other plugs will then also have access through the `assigns` storage. This is
-  an important point because the session data disappears on the next request.
+  and keep the user information stored in `assigns`. Other plugs will then also
+  have access to it via `assigns`. This is an important point because the assign
+  data disappears on the next request.
 
   To summarize: `assigns` is for storing data to be accessed during the current
   request, and the session is for storing data to be accessed in subsequent
