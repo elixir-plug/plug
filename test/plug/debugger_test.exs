@@ -54,7 +54,8 @@ defmodule Plug.DebuggerTest do
 
     get "/bad_match" do
       _ = conn
-      bad_match(:six, :one)
+      # Code.eval_quoted/2 to avoid typing violations at compile time.
+      Code.eval_quoted(quote do: unquote(__MODULE__).bad_match(:six, :one))
     end
 
     get "/send_and_wrapped" do
@@ -77,14 +78,18 @@ defmodule Plug.DebuggerTest do
       raise ActionableError
     end
 
-    defp returns_nil, do: nil
+    # Code.eval_quoted/2 to avoid typing violations at compile time.
+    defp returns_nil do
+      {result, _bindings} = Code.eval_quoted(quote do: nil)
+      result
+    end
 
     defp add_csp(conn, _opts),
       do: Plug.Conn.put_resp_header(conn, "content-security-policy", "abcdef")
 
-    defp bad_match(:one, :two), do: :ok
-    defp bad_match(:three, :four), do: :ok
-    defp bad_match(:five, :six), do: :ok
+    def bad_match(:one, :two), do: :ok
+    def bad_match(:three, :four), do: :ok
+    def bad_match(:five, :six), do: :ok
   end
 
   defmodule StyledRouter do
