@@ -56,6 +56,14 @@ defmodule Plug.Conn.Cookies do
 
   @doc """
   Encodes the given cookies as expected in a response header.
+
+  ## Examples
+
+      iex> encode("key1", %{value: "value1"})
+      "key1=value1; path=/; HttpOnly"
+
+      iex> encode("key1", %{value: "value1", secure: true, path: "/example", http_only: false})
+      "key1=value1; path=/example; secure"
   """
   def encode(key, opts \\ %{}) when is_map(opts) do
     value = Map.get(opts, :value)
