@@ -30,18 +30,34 @@ defmodule Plug.Static do
 
   ## Cache mechanisms
 
-  `Plug.Static` uses etags for HTTP caching. This means browsers/clients
-  should cache assets on the first request and validate the cache on
-  following requests, not downloading the static asset once again if it
-  has not changed. The cache-control for etags is specified by the
-  `cache_control_for_etags` option and defaults to `"public"`.
+  `Plug.Static` uses HTTP caching mechanisms such as `ETag` and `Last-Modified`.
 
-  However, `Plug.Static` also supports direct cache control by using
-  versioned query strings. If the request query string starts with
-  "?vsn=", `Plug.Static` assumes the application is versioning assets
-  and does not set the `ETag` header, meaning the cache behaviour will
-  be specified solely by the `cache_control_for_vsn_requests` config,
-  which defaults to `"public, max-age=31536000"`.
+  The `ETag` header allows browsers/clients to cache assets on the first request
+  and validate the cache on subsequent requests. If the asset has not changed,
+  the browser avoids downloading it again. The cache-control for `ETag` is
+  specified by the `cache_control_for_etags` option, which defaults to `"public"`.
+
+  In addition to `ETag`, `Plug.Static` sets the `Last-Modified` HTTP header.
+  This allows browsers to use a heuristic expiration value, as defined by
+  [RFC 9111](https://datatracker.ietf.org/doc/html/rfc9111#section-4.2.2-4), to
+  decide when to revalidate the cache. During the calculated validity period,
+  browsers may serve cached content without validation, reducing roundtrips to
+  the server and decreasing server load.
+
+  > #### Note {: .info}
+  >
+  > In earlier versions, `Plug.Static` did not set the `Last-Modified` header,
+  > which caused browsers to validate the cache on every request. If you prefer
+  > the previous behaviour, you can achieve it by setting `cache_control_for_etags`
+  > to `"public, no-cache"`.
+
+  For applications that use versioned assets, `Plug.Static` offers direct cache
+  control. If the request query string starts with `"?vsn="`, `Plug.Static`
+  assumes the application is versioning assets and does not set the `ETag` header.
+  Instead, the cache behaviour is specified solely by the
+  `cache_control_for_vsn_requests` config, which defaults to
+  `"public, max-age=31536000, immutable"`. This signals that the asset will not
+  change, ensuring efficient caching and reducing unnecessary revalidation.
 
   ## Options
 
@@ -74,7 +90,7 @@ defmodule Plug.Static do
 
     * `:cache_control_for_vsn_requests` - sets the cache header for
       requests starting with "?vsn=" in the query string. Defaults to
-      `"public, max-age=31536000"`.
+      `"public, max-age=31536000, immutable"`.
 
     * `:only` - filters which requests to serve. This is useful to avoid
       file system access on every request when this plug is mounted
@@ -354,6 +370,7 @@ defmodule Plug.Static do
       conn
       |> put_resp_header("cache-control", et_cache)
       |> put_resp_header("etag", etag)
+      |> put_resp_header("last-modified", last_modified(file_info))
 
     if etag in get_req_header(conn, "if-none-match") do
       {:fresh, conn}
@@ -375,6 +392,10 @@ defmodule Plug.Static do
         file_info(size: size, mtime: mtime) = file_info
         <<?", {size, mtime} |> :erlang.phash2() |> Integer.to_string(16)::binary, ?">>
     end
+  end
+
+  defp last_modified(file_info(mtime: mtime)) do
+    mtime |> NaiveDateTime.from_erl!() |> Calendar.strftime("%a, %d %b %Y %X GMT")
   end
 
   defp file_encoding(conn, path, [_range], _encodings) do
@@ -403,7 +424,7 @@ defmodule Plug.Static do
   end
 
   defp regular_file_info(path) do
-    case :prim_file.read_file_info(path) do
+    case :prim_file.read_file_info(path, time: :universal) do
       {:ok, file_info(type: :regular) = file_info} ->
         file_info
 

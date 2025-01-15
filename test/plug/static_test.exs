@@ -193,6 +193,20 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "x-custom") == ["x-value"]
   end
 
+  test "sets the last modified header" do
+    last_modifed =
+      Path.expand("../fixtures/static.txt", __DIR__)
+      |> File.stat!(time: :universal)
+      |> Map.get(:mtime)
+      |> NaiveDateTime.from_erl!()
+      |> Calendar.strftime("%a, %d %b %Y %X GMT")
+
+    conn = call(conn(:get, "/public/fixtures/static.txt"))
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+    assert get_resp_header(conn, "last-modified") == [last_modifed]
+  end
+
   test "passes through on other paths" do
     conn = call(conn(:get, "/another/fallback.txt"))
     assert conn.status == 404
