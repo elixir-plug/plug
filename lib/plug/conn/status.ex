@@ -49,7 +49,7 @@ defmodule Plug.Conn.Status do
     417 => "Expectation Failed",
     418 => "I'm a teapot",
     421 => "Misdirected Request",
-    422 => "Unprocessable Entity",
+    422 => "Unprocessable Content",
     423 => "Locked",
     424 => "Failed Dependency",
     425 => "Too Early",
