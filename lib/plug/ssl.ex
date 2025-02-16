@@ -195,7 +195,7 @@ defmodule Plug.SSL do
 
   defp normalize_ssl_files(options) do
     ssl_files = [:keyfile, :certfile, :cacertfile, :dhfile]
-    Enum.reduce(ssl_files, options, &normalize_ssl_file(&1, &2))
+    Enum.reduce(ssl_files, options, &normalize_ssl_file(&1, &2, options[:otp_app]))
   end
 
   defp normalize_certs_keys_ssl_files(options) do
@@ -204,17 +204,21 @@ defmodule Plug.SSL do
 
       updated_certs_keys =
         Enum.map(certs_keys, fn cert_key ->
-          Enum.reduce(ssl_files, Map.to_list(cert_key), &normalize_ssl_file(&1, &2))
+          Enum.reduce(
+            ssl_files,
+            Map.to_list(cert_key),
+            &normalize_ssl_file(&1, &2, options[:otp_app])
+          )
           |> Map.new()
         end)
 
-      Keyword.put(options, :certs_keys, updated_certs_keys)
+      List.keystore(options, :certs_keys, 0, {:certs_keys, updated_certs_keys})
     else
       options
     end
   end
 
-  defp normalize_ssl_file(key, options) do
+  defp normalize_ssl_file(key, options, otp_app) do
     value = options[key]
 
     cond do
@@ -225,7 +229,7 @@ defmodule Plug.SSL do
         put_ssl_file(options, key, value)
 
       true ->
-        put_ssl_file(options, key, Path.expand(value, otp_app(options)))
+        put_ssl_file(options, key, Path.expand(value, resolve_otp_app(otp_app)))
     end
   end
 
@@ -243,9 +247,9 @@ defmodule Plug.SSL do
     List.keystore(options, key, 0, {key, value})
   end
 
-  defp otp_app(options) do
-    if app = options[:otp_app] do
-      Application.app_dir(app)
+  defp resolve_otp_app(otp_app) do
+    if otp_app do
+      Application.app_dir(otp_app)
     else
       fail("the :otp_app option is required when setting relative SSL certfiles")
     end
