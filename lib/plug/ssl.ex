@@ -208,7 +208,7 @@ defmodule Plug.SSL do
           |> Map.new()
         end)
 
-      List.keystore(options, :certs_keys, 0, {:certs_keys, updated_certs_keys})
+      Keyword.put(options, :certs_keys, updated_certs_keys)
     else
       options
     end
