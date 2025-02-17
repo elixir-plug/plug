@@ -4,6 +4,17 @@ defmodule Plug.SSLTest do
   import Plug.Conn
 
   describe "configure" do
+    # make sure some dummy files used for the keyfile and certfile
+    # tests are removed after each test.
+    setup do
+      on_exit(fn ->
+        File.rm("_build/test/lib/plug/abcdef")
+        File.rm("_build/test/lib/plug/ghijkl")
+      end)
+
+      []
+    end
+
     import Plug.SSL, only: [configure: 1]
 
     test "sets secure_renegotiate and reuse_sessions to true depending on the version" do
@@ -95,6 +106,67 @@ defmodule Plug.SSLTest do
       assert :inet6 in opts
       assert {:key, "abcdef"} in opts
       assert {:cert, "ghijkl"} in opts
+    end
+
+    test "fails to configure if keyfile and certfile aren't absolute paths and otp_app is missing" do
+      assert {:error, message} = configure([:inet6, keyfile: "abcdef", certfile: "ghijkl"])
+      assert message == "the :otp_app option is required when setting relative SSL certfiles"
+    end
+
+    test "fails to configure if the keyfile doesn't exist" do
+      assert {:error, message} =
+               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
+
+      assert message =~
+               ":keyfile either does not exist, or the application does not have permission to access it"
+    end
+
+    test "fails to configure if the certfile doesn't exist" do
+      File.touch("_build/test/lib/plug/abcdef")
+
+      assert {:error, message} =
+               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
+
+      assert message =~
+               ":certfile either does not exist, or the application does not have permission to access it"
+    end
+
+    test "expands the paths to the keyfile and certfile using the otp_app" do
+      File.touch("_build/test/lib/plug/abcdef")
+      File.touch("_build/test/lib/plug/ghijkl")
+
+      assert {:ok, opts} =
+               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
+
+      assert to_string(opts[:keyfile]) =~ "_build/test/lib/plug/abcdef"
+      assert to_string(opts[:certfile]) =~ "_build/test/lib/plug/ghijkl"
+    end
+
+    test "supports the certs_keys ssl config option" do
+      assert {:ok, opts} =
+               configure([:inet6, certs_keys: [%{key: "abcdef", cert: "ghijkl"}]])
+
+      assert :inet6 in opts
+      assert opts[:certs_keys] == [%{key: "abcdef", cert: "ghijkl"}]
+    end
+
+    test "expands the paths for keyfile and certfile in the certs_keys ssl config option" do
+      File.touch("_build/test/lib/plug/abcdef")
+      File.touch("_build/test/lib/plug/ghijkl")
+
+      assert {:ok, opts} =
+               configure([
+                 :inet6,
+                 certs_keys: [%{keyfile: "abcdef", certfile: "ghijkl"}],
+                 otp_app: :plug
+               ])
+
+      assert :inet6 in opts
+
+      [%{keyfile: keyfile, certfile: certfile}] = opts[:certs_keys]
+
+      assert to_string(keyfile) =~ "_build/test/lib/plug/abcdef"
+      assert to_string(certfile) =~ "_build/test/lib/plug/ghijkl"
     end
 
     test "errors when an invalid cipher is given" do
