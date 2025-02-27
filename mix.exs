@@ -26,7 +26,8 @@ defmodule Plug.MixProject do
         groups_for_extras: groups_for_extras(),
         source_ref: "v#{@version}",
         source_url: "https://github.com/elixir-plug/plug"
-      ]
+      ],
+      test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")]
     ]
   end
 
