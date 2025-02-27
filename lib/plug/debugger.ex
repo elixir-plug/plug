@@ -575,16 +575,13 @@ defmodule Plug.Debugger do
   defp maybe_format_function_reference(text), do: h(text)
 
   def get_mfa(capture) do
-    with [function_path, arity] <- String.split(capture, "/"),
-         {arity, ""} <- Integer.parse(arity),
-         parts = String.split(function_path, "."),
-         {function_str, parts} <- List.pop_at(parts, -1),
-         module = Module.concat(parts),
-         function = String.to_existing_atom(function_str) do
-      {:ok, module, function, arity}
-    else
-      _ -> :error
-    end
+    [function_path, arity] = String.split(capture, "/")
+    {arity, ""} = Integer.parse(arity)
+    parts = String.split(function_path, ".")
+    {function_str, parts} = List.pop_at(parts, -1)
+    module = Module.safe_concat(parts)
+    function = String.to_existing_atom(function_str)
+    {:ok, module, function, arity}
   rescue
     _ -> :error
   end
