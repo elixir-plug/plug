@@ -884,7 +884,7 @@
                 <small>at <%= h method(@conn) %></small>
                 <small class="path"><%= h @conn.request_path %></small>
             </h5>
-            <code><pre class="exception-details-text"><%= h @message %></pre></code>
+            <code><pre class="exception-details-text"><%= @message %></pre></code>
         </header>
 
         <%= for %{label: label, encoded_handler: encoded_handler} <- @actions do %>
