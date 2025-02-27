@@ -233,7 +233,7 @@ defmodule Plug.Debugger do
       assigns =
         Keyword.merge(assigns,
           conn: conn,
-          message: message,
+          message: maybe_autolink(message),
           markdown: markdown,
           style: style,
           banner: banner,
@@ -548,5 +548,52 @@ defmodule Plug.Debugger do
 
   defp maybe_merge_dark_styles(style, default_dark_style) do
     Map.put(style, :dark, default_dark_style)
+  end
+
+  defp maybe_autolink(message) do
+    splitted = Regex.split(~r/`([^`]+)`/, message, include_captures: true, trim: true)
+
+    Enum.map(splitted, &maybe_format_function_reference/1)
+    |> IO.iodata_to_binary()
+  end
+
+  defp maybe_format_function_reference("`" <> reference = text) do
+    reference = String.trim_trailing(reference, "`")
+
+    with true <- function_reference?(reference),
+         {:ok, m, f, a} <- get_mfa(reference),
+         url when is_binary(url) <- get_doc(m, f, a, Application.get_application(m)) do
+      ~s[<a href="#{url}" target="_blank">`#{h(reference)}`</a>]
+    else
+      _ -> h(text)
+    end
+  end
+
+  defp maybe_format_function_reference(text), do: text
+
+  defp function_reference?(text) do
+    Regex.match?(~r/^[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+$/, text)
+  end
+
+  def get_mfa(capture) do
+    with [function_path, arity] <- String.split(capture, "/"),
+         {arity, ""} <- Integer.parse(arity),
+         index when is_integer(index) <- rindex(function_path, "."),
+         module <- String.slice(function_path, 0, index) |> String.split(".") |> Module.concat(),
+         function <- String.slice(function_path, (index + 1)..-1) |> String.to_atom() do
+      {:ok, module, function, arity}
+    else
+      _ -> :error
+    end
+  end
+
+  defp rindex(string, pattern) do
+    string
+    |> String.reverse()
+    |> :binary.match(pattern)
+    |> case do
+      {index, _} -> String.length(string) - index - String.length(pattern)
+      :nomatch -> nil
+    end
   end
 end
