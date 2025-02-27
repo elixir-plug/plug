@@ -580,7 +580,7 @@ defmodule Plug.Debugger do
          {arity, ""} <- Integer.parse(arity),
          index when is_integer(index) <- rindex(function_path, "."),
          module <- String.slice(function_path, 0, index) |> String.split(".") |> Module.concat(),
-         function <- String.slice(function_path, (index + 1)..-1) |> String.to_atom() do
+         function <- String.slice(function_path, (index + 1)..-1//1) |> String.to_atom() do
       {:ok, module, function, arity}
     else
       _ -> :error

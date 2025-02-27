@@ -599,4 +599,14 @@ defmodule Plug.DebuggerTest do
 
     assert conn.resp_body =~ "<span class=\"code\">  end</span>"
   end
+
+  test "links to hexdocs" do
+    conn =
+      conn(:get, "/foo/bar")
+      |> put_req_header("accept", "text/html")
+      |> render([], fn -> raise "please use `Plug.Conn.send_resp/3` instead" end)
+
+    assert conn.resp_body =~
+             ~r(<a href="https://hexdocs.pm/plug/.*/Plug.Conn.html#send_resp/3" target="_blank">`Plug.Conn.send_resp/3`</a>)
+  end
 end
