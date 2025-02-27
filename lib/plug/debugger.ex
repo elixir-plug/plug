@@ -578,22 +578,13 @@ defmodule Plug.Debugger do
   def get_mfa(capture) do
     with [function_path, arity] <- String.split(capture, "/"),
          {arity, ""} <- Integer.parse(arity),
-         index when is_integer(index) <- rindex(function_path, "."),
-         module <- String.slice(function_path, 0, index) |> String.split(".") |> Module.concat(),
-         function <- String.slice(function_path, (index + 1)..-1//1) |> String.to_atom() do
+         parts = String.split(function_path, "."),
+         {function_str, parts} <- List.pop_at(parts, -1),
+         module = Module.concat(parts),
+         function = String.to_atom(function_str) do
       {:ok, module, function, arity}
     else
       _ -> :error
-    end
-  end
-
-  defp rindex(string, pattern) do
-    string
-    |> String.reverse()
-    |> :binary.match(pattern)
-    |> case do
-      {index, _} -> String.length(string) - index - String.length(pattern)
-      :nomatch -> nil
     end
   end
 end
