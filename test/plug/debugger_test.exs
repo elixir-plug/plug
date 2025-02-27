@@ -609,4 +609,14 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~
              ~r(<a href="https://hexdocs.pm/plug/.*/Plug.Conn.html#send_resp/3" target="_blank">`Plug.Conn.send_resp/3`</a>)
   end
+
+  test "does not create new atoms" do
+    conn =
+      conn(:get, "/foo/bar")
+      |> put_req_header("accept", "text/html")
+      |> render([], fn -> raise "please use `NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1` instead" end)
+
+    assert conn.resp_body =~ ~r(`NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1`)
+    assert_raise ArgumentError, fn -> String.to_existing_atom("not_existing_atom_for_test_does_not_create_new_atom") end
+  end
 end

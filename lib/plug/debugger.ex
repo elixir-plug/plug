@@ -551,7 +551,7 @@ defmodule Plug.Debugger do
   end
 
   defp maybe_autolink(message) do
-    splitted = Regex.split(~r/`([^`]+)`/, message, include_captures: true, trim: true)
+    splitted = Regex.split(~r/`[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+`/, message, include_captures: true, trim: true)
 
     Enum.map(splitted, &maybe_format_function_reference/1)
     |> IO.iodata_to_binary()
@@ -560,8 +560,7 @@ defmodule Plug.Debugger do
   defp maybe_format_function_reference("`" <> reference = text) do
     reference = String.trim_trailing(reference, "`")
 
-    with true <- function_reference?(reference),
-         {:ok, m, f, a} <- get_mfa(reference),
+    with {:ok, m, f, a} <- get_mfa(reference),
          url when is_binary(url) <- get_doc(m, f, a, Application.get_application(m)) do
       ~s[<a href="#{url}" target="_blank">`#{h(reference)}`</a>]
     else
@@ -571,20 +570,18 @@ defmodule Plug.Debugger do
 
   defp maybe_format_function_reference(text), do: h(text)
 
-  defp function_reference?(text) do
-    Regex.match?(~r/^[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+$/, text)
-  end
-
   def get_mfa(capture) do
     with [function_path, arity] <- String.split(capture, "/"),
          {arity, ""} <- Integer.parse(arity),
          parts = String.split(function_path, "."),
          {function_str, parts} <- List.pop_at(parts, -1),
          module = Module.concat(parts),
-         function = String.to_atom(function_str) do
+         function = String.to_existing_atom(function_str) do
       {:ok, module, function, arity}
     else
       _ -> :error
     end
+  rescue
+    _ -> :error
   end
 end
