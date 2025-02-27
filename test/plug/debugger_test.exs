@@ -614,9 +614,15 @@ defmodule Plug.DebuggerTest do
     conn =
       conn(:get, "/foo/bar")
       |> put_req_header("accept", "text/html")
-      |> render([], fn -> raise "please use `NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1` instead" end)
+      |> render([], fn ->
+        raise "please use `NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1` instead"
+      end)
 
-    assert conn.resp_body =~ ~r(`NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1`)
-    assert_raise ArgumentError, fn -> String.to_existing_atom("not_existing_atom_for_test_does_not_create_new_atom") end
+    assert conn.resp_body =~
+             ~r(`NotExisting.not_existing_atom_for_test_does_not_create_new_atom/1`)
+
+    assert_raise ArgumentError, fn ->
+      String.to_existing_atom("not_existing_atom_for_test_does_not_create_new_atom")
+    end
   end
 end

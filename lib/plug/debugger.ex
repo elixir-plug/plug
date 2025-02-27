@@ -551,7 +551,11 @@ defmodule Plug.Debugger do
   end
 
   defp maybe_autolink(message) do
-    splitted = Regex.split(~r/`[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+`/, message, include_captures: true, trim: true)
+    splitted =
+      Regex.split(~r/`[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+`/, message,
+        include_captures: true,
+        trim: true
+      )
 
     Enum.map(splitted, &maybe_format_function_reference/1)
     |> IO.iodata_to_binary()
