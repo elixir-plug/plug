@@ -569,7 +569,7 @@ defmodule Plug.Debugger do
     end
   end
 
-  defp maybe_format_function_reference(text), do: text
+  defp maybe_format_function_reference(text), do: h(text)
 
   defp function_reference?(text) do
     Regex.match?(~r/^[A-Z][A-Za-z0-9_.]+\.[a-z][A-Za-z0-9_!?]*\/\d+$/, text)
