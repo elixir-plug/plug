@@ -206,9 +206,15 @@ defmodule Plug.RouterTest do
     forward "/plug/init_opts", to: plug, init_opts: opts, private: %{baz: :qux}
 
     forward "/plug/forward_local", to: :forward_local
+    match "/plug/match_local", to: :match_local
     forward "/plug/forward_local_opts", to: :forward_local, init_opts: opts, private: %{baz: :qux}
+    match "/plug/match_local_opts", to: :match_local, init_opts: opts, private: %{baz: :qux}
 
     def forward_local(conn, opts) do
+      resp(conn, 200, "#{inspect(opts)}")
+    end
+
+    def match_local(conn, opts) do
       resp(conn, 200, "#{inspect(opts)}")
     end
 
@@ -587,8 +593,19 @@ defmodule Plug.RouterTest do
     assert conn.resp_body == "[]"
   end
 
+  test "matches to a function plug" do
+    conn = call(Sample, conn(:get, "/plug/match_local"))
+    assert conn.resp_body == "[]"
+  end
+
   test "forwards to a function plug with options" do
     conn = call(Sample, conn(:get, "/plug/forward_local_opts"))
+    assert conn.private[:baz] == :qux
+    assert conn.resp_body == ":hello"
+  end
+
+  test "matches to a function plug with options" do
+    conn = call(Sample, conn(:get, "/plug/match_local_opts"))
     assert conn.private[:baz] == :qux
     assert conn.resp_body == ":hello"
   end
