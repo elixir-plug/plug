@@ -31,11 +31,11 @@ Code:
 ### Request info
 
   * URI: <%= url(@conn) %>
-  * Query string: <%= @conn.query_string %>
+  * Query string: <%= Plug.HTML.html_escape @conn.query_string %>
 
 ### Headers
   <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-  * <%= key %>: <%= value %><% end %>
+  * <%= Plug.HTML.html_escape "#{key}: #{value}" %><% end %>
 
 ### Session
 
