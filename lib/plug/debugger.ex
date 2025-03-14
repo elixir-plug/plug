@@ -234,7 +234,7 @@ defmodule Plug.Debugger do
         Keyword.merge(assigns,
           conn: conn,
           message: maybe_autolink(message),
-          markdown: markdown,
+          markdown: h(markdown),
           style: style,
           banner: banner,
           actions: actions,
