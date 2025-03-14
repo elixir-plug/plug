@@ -1057,7 +1057,7 @@
         function copyToClipboard () {
           if(navigator.clipboard) {
             // For those working on localhost or HTTPS
-            navigator.clipboard.writeText($copy.innerHTML).then(copiedClipboard).catch(() => {})
+            navigator.clipboard.writeText($copy.textContent).then(copiedClipboard).catch(() => {})
           } else {
             // For those working on HTTP
             $copy.select()
