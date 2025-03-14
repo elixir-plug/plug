@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.16.2 (2025-03-14)
+
+### Bug fixes
+
+  * Avoid XSS injection in the debug error page
+
 ## v1.16.1 (2024-06-20)
 
 ### Enhancements
