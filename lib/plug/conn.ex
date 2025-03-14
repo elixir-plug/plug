@@ -38,8 +38,9 @@ defmodule Plug.Conn do
   If you access these fields before fetching them, they will be returned as
   `Plug.Conn.Unfetched` structs.
 
-    * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
+    * `body_params` - the request body params, populated through a `Plug.Parsers` parser
     * `query_params` - the request query params, populated through `fetch_query_params/2`
+    * `path_params` - the request path params, populated by routers such as `Plug.Router`
     * `params` - the request params, the result of merging `:body_params` on top of
       `:query_params` alongsaide any further changes (such as the ones done by `Plug.Router`)
 
@@ -84,7 +85,6 @@ defmodule Plug.Conn do
     * `resp_body` - the response body is an empty string by default. It is set
       to nil after the response is sent, except for test connections. The response
       charset defaults to "utf-8".
-    * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, `cache-control`
       is set to `"max-age=0, private, must-revalidate"` by default.
       Note: Use all lowercase for response headers.
@@ -93,7 +93,6 @@ defmodule Plug.Conn do
   ## Connection fields
 
     * `assigns` - shared user data as a map
-    * `owner` - the Elixir process that owns the connection
     * `halted` - the boolean status on whether the pipeline was halted
     * `secret_key_base` - a secret key used to verify and encrypt cookies.
       These features require manual field setup. Data must be kept in the
@@ -116,12 +115,11 @@ defmodule Plug.Conn do
 
   ## Deprecated fields
 
-    * `path_params` - the request path params, populated by routers such as `Plug.Router`.
-      Use `conn.params` instead.
-    * `req_cookies` - the decoded request cookies (without decrypting or verifying them).
-      Use `get_req_header/2` or `get_cookies/1` instead.
     * `cookies`- the request cookies with the response cookies.
       Use `get_cookies/1` instead.
+    * `owner` - the Elixir process that owns the connection.
+    * `req_cookies` - the decoded request cookies (without decrypting or verifying them).
+      Use `get_req_header/2` or `get_cookies/1` instead.
     * `resp_cookies`- the request cookies with the response cookies.
       Use `get_resp_cookies/1` instead.
 
