@@ -26,7 +26,7 @@ Code:
 
 ### Params
 
-    <%= inspect(@params) %>
+    <%= Plug.HTML.html_escape inspect(@params) %>
 
 ### Request info
 
