@@ -26,16 +26,16 @@ Code:
 
 ### Params
 
-    <%= Plug.HTML.html_escape inspect(@params) %>
+    <%= inspect(@params) %>
 
 ### Request info
 
   * URI: <%= url(@conn) %>
-  * Query string: <%= Plug.HTML.html_escape @conn.query_string %>
+  * Query string: <%= @conn.query_string %>
 
 ### Headers
   <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
-  * <%= Plug.HTML.html_escape "#{key}: #{value}" %><% end %>
+  * <%= key %>: <%= value %><% end %>
 
 ### Session
 
