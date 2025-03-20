@@ -50,8 +50,8 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
 
-  Webservers must send a `{:plug_conn, :already_sent}`
-  message to the process that called `Plug.Conn.Adapter.conn/5`.
+  Webservers must send a `{:plug_conn, :sent}` message to the
+  process that called `Plug.Conn.Adapter.conn/5`.
   """
   @callback send_resp(
               payload,
@@ -73,8 +73,8 @@ defmodule Plug.Conn.Adapter do
   test implementation returns the actual body so it can
   be used during testing.
 
-  Webservers must send a `{:plug_conn, :already_sent}`
-  message to the process that called `Plug.Conn.Adapter.conn/5`.
+  Webservers must send a `{:plug_conn, :sent}` message to the
+  process that called `Plug.Conn.Adapter.conn/5`.
   """
   @callback send_file(
               payload,
@@ -96,8 +96,8 @@ defmodule Plug.Conn.Adapter do
   body returned by subsequent calls to the test implementation's
   `chunk/2` function
 
-  Webservers must send a `{:plug_conn, :already_sent}`
-  message to the process that called `Plug.Conn.Adapter.conn/5`.
+  Webservers must send a `{:plug_conn, :sent}` message to the
+  process that called `Plug.Conn.Adapter.conn/5`.
   """
   @callback send_chunked(payload, status :: Conn.status(), headers :: Conn.headers()) ::
               {:ok, sent_body :: binary | nil, payload}
