@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.17.0 (2025-03-14)
+
+### Enhancements
+
+  * [Plug.Debugger] Add dark mode and other UI improvements
+  * [Plug.Debugger] Link `Module.function/arity` to hexdocs in exception messages
+  * [Plug.Debugger] Support `__RELATIVEFILE__` to `PLUG_EDITOR` replacements
+  * [Plug.SSL] Add SSL validation support for `certs_keys`
+
+### Deprecations
+
+  * [Plug.Conn.Adapter] Make `push` an optional callback as it is no longer supported by browsers
+  * [Plug.Conn] Deprecate `req_cookies`, `cookies`, and `resp_cookies` fields in favor of functions
+  * [Plug.Conn] Deprecate `owner` field. Tracking responses is now part of adapters
+  * [Plug.Test] Deprecate `use Plug.Test` in favor of imports
+
+## v1.16.2 (2025-03-14)
+
+### Bug fixes
+
+  * Avoid XSS injection in the debug error page
+
 ## v1.16.1 (2024-06-20)
 
 ### Enhancements

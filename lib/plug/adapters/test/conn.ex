@@ -5,7 +5,7 @@ defmodule Plug.Adapters.Test.Conn do
 
   ## Test helpers
 
-  def conn(conn, method, uri, body_or_params) do
+  def conn(%Plug.Conn{} = conn, method, uri, body_or_params) do
     maybe_flush()
     uri = URI.parse(uri)
 
@@ -39,7 +39,7 @@ defmodule Plug.Adapters.Test.Conn do
 
     conn_port = if conn.port != 0, do: conn.port, else: 80
 
-    %Plug.Conn{
+    %{
       conn
       | adapter: {__MODULE__, state},
         host: uri.host || conn.host || "www.example.com",

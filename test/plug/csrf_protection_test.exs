@@ -1,6 +1,7 @@
 defmodule Plug.CSRFProtectionTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   alias Plug.CSRFProtection
   alias Plug.CSRFProtection.InvalidCSRFTokenError

@@ -21,7 +21,8 @@ defmodule Plug.SSL do
 
       plug Plug.SSL, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
 
-  For further details refer to `Plug.RewriteOn`.
+  Rewriting happens on all requests, before the SSL options are processed.
+  For further details, refer to `Plug.RewriteOn`.
 
   ## Plug Options
 
@@ -168,6 +169,7 @@ defmodule Plug.SSL do
     |> check_for_missing_keys()
     |> validate_ciphers()
     |> normalize_ssl_files()
+    |> normalize_certs_keys_ssl_files()
     |> convert_to_charlist()
     |> set_secure_defaults()
     |> configure_managed_tls()
@@ -178,24 +180,45 @@ defmodule Plug.SSL do
   end
 
   defp check_for_missing_keys(options) do
+    has_certs_keys? = List.keymember?(options, :certs_keys, 0)
     has_sni? = List.keymember?(options, :sni_hosts, 0) or List.keymember?(options, :sni_fun, 0)
     has_key? = List.keymember?(options, :key, 0) or List.keymember?(options, :keyfile, 0)
     has_cert? = List.keymember?(options, :cert, 0) or List.keymember?(options, :certfile, 0)
 
     cond do
       has_sni? -> options
-      not has_key? -> fail("missing option :key/:keyfile")
-      not has_cert? -> fail("missing option :cert/:certfile")
+      not (has_key? or has_certs_keys?) -> fail("missing option :key/:keyfile/:certs_keys")
+      not (has_cert? or has_certs_keys?) -> fail("missing option :cert/:certfile/:certs_keys")
       true -> options
     end
   end
 
   defp normalize_ssl_files(options) do
     ssl_files = [:keyfile, :certfile, :cacertfile, :dhfile]
-    Enum.reduce(ssl_files, options, &normalize_ssl_file(&1, &2))
+    Enum.reduce(ssl_files, options, &normalize_ssl_file(&1, &2, options[:otp_app]))
   end
 
-  defp normalize_ssl_file(key, options) do
+  defp normalize_certs_keys_ssl_files(options) do
+    if certs_keys = options[:certs_keys] do
+      ssl_files = [:keyfile, :certfile]
+
+      updated_certs_keys =
+        Enum.map(certs_keys, fn cert_key ->
+          Enum.reduce(
+            ssl_files,
+            Map.to_list(cert_key),
+            &normalize_ssl_file(&1, &2, options[:otp_app])
+          )
+          |> Map.new()
+        end)
+
+      List.keystore(options, :certs_keys, 0, {:certs_keys, updated_certs_keys})
+    else
+      options
+    end
+  end
+
+  defp normalize_ssl_file(key, options, otp_app) do
     value = options[key]
 
     cond do
@@ -206,7 +229,7 @@ defmodule Plug.SSL do
         put_ssl_file(options, key, value)
 
       true ->
-        put_ssl_file(options, key, Path.expand(value, otp_app(options)))
+        put_ssl_file(options, key, Path.expand(value, resolve_otp_app(otp_app)))
     end
   end
 
@@ -224,9 +247,9 @@ defmodule Plug.SSL do
     List.keystore(options, key, 0, {key, value})
   end
 
-  defp otp_app(options) do
-    if app = options[:otp_app] do
-      Application.app_dir(app)
+  defp resolve_otp_app(otp_app) do
+    if otp_app do
+      Application.app_dir(otp_app)
     else
       fail("the :otp_app option is required when setting relative SSL certfiles")
     end

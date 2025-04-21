@@ -1,6 +1,7 @@
 defmodule Plug.RewriteOnTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   defp call(conn, rewrite) do
     Plug.RewriteOn.call(conn, Plug.RewriteOn.init(rewrite))

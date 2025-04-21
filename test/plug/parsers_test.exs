@@ -1,7 +1,8 @@
 defmodule Plug.ParsersTest do
   use ExUnit.Case, async: true
 
-  use Plug.Test
+  import Plug.Test
+  import Plug.Conn
 
   defmodule BodyReader do
     def read_body(conn, opts) do

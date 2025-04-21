@@ -1,6 +1,6 @@
 defmodule Plug.Conn.WrapperErrorTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Test
 
   test "reraise/3" do
     conn = conn(:get, "/")
