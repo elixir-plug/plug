@@ -47,6 +47,13 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, assign_as: :plug_request_id
 
+    * `:logger_metadata_key` - The name of the key that will be used to store the
+      discovered or generated request id in `Logger` metadata. If not provided,
+      the request ID Logger metadata will be stored as `:request_id`. *Available
+      since v1.18.0*.
+
+          plug Plug.RequestId, logger_metadata_key: :my_request_id
+
   """
 
   require Logger
@@ -57,15 +64,16 @@ defmodule Plug.RequestId do
   def init(opts) do
     {
       Keyword.get(opts, :http_header, "x-request-id"),
-      Keyword.get(opts, :assign_as)
+      Keyword.get(opts, :assign_as),
+      Keyword.get(opts, :logger_metadata_key, :request_id)
     }
   end
 
   @impl true
-  def call(conn, {header, assign_as}) do
+  def call(conn, {header, assign_as, logger_metadata_key}) do
     request_id = get_request_id(conn, header)
 
-    Logger.metadata(request_id: request_id)
+    Logger.metadata([{logger_metadata_key, request_id}])
     conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
 
     Conn.put_resp_header(conn, header, request_id)

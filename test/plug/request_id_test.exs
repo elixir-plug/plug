@@ -82,6 +82,20 @@ defmodule Plug.RequestIdTest do
     assert res_request_id == meta_request_id
   end
 
+  test "adds the request id to Logger metadata with the given log key" do
+    request_id = "existingidthatislongenough"
+
+    conn =
+      conn(:get, "/")
+      |> put_req_header("x-request-id", request_id)
+      |> call(logger_metadata_key: :plug_request_id)
+
+    [res_request_id] = get_resp_header(conn, "x-request-id")
+    meta_request_id = Logger.metadata()[:plug_request_id]
+    assert generated_request_id?(res_request_id)
+    assert res_request_id == meta_request_id
+  end
+
   defp generated_request_id?(request_id) do
     Regex.match?(~r/\A[A-Za-z0-9-_]+\z/, request_id)
   end
