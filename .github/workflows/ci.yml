@@ -17,8 +17,8 @@ jobs:
       matrix:
         include:
           # Earliest-supported Elixir/Erlang pair.
-          - elixir: "1.11"
-            otp: "23.3"
+          - elixir: "1.12"
+            otp: "24.3"
             PLUG_CRYPTO_2_0: "false"
 
           # Latest-supported Elixir/Erlang pair.
