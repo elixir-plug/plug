@@ -88,7 +88,7 @@ defmodule Plug.RequestIdTest do
     conn =
       conn(:get, "/")
       |> put_req_header("x-request-id", request_id)
-      |> call(log_as: :plug_request_id)
+      |> call(logger_metadata_key: :plug_request_id)
 
     [res_request_id] = get_resp_header(conn, "x-request-id")
     meta_request_id = Logger.metadata()[:plug_request_id]
