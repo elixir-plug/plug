@@ -126,6 +126,12 @@ defmodule Plug.ConnTest do
              port: 111_317,
              ssl_cert: nil
            }
+
+    assert get_connection_data(conn) == %{
+             peer_data: %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: nil},
+             sock_data: %{address: {127, 0, 0, 2}, port: 111_318, ssl_cert: nil},
+             ssl_data: nil
+           }
   end
 
   test "path_info" do

@@ -631,11 +631,20 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Returns information such as the peer and local address, port and SSL cert as well as
+  details of the negotiated SSL connection, if present.
+  """
+  @spec get_connection_data(t) :: Plug.Conn.Adapter.connection_data()
+  def get_connection_data(%Conn{adapter: {adapter, payload}}) do
+    adapter.get_connection_data(payload)
+  end
+
+  @doc """
   Returns the request peer data if one is present.
   """
-  @spec get_peer_data(t) :: Plug.Conn.Adapter.peer_data()
-  def get_peer_data(%Conn{adapter: {adapter, payload}}) do
-    adapter.get_peer_data(payload)
+  @spec get_peer_data(t) :: Plug.Conn.Adapter.endpoint_data()
+  def get_peer_data(conn) do
+    get_connection_data(conn)[:peer_data]
   end
 
   @doc """

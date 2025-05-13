@@ -6,7 +6,12 @@ defmodule Plug.Conn.Adapter do
 
   @type http_protocol :: :"HTTP/1" | :"HTTP/1.1" | :"HTTP/2" | atom
   @type payload :: term
-  @type peer_data :: %{
+  @type connection_data :: %{
+          peer_data: endpoint_data(),
+          sock_data: endpoint_data(),
+          ssl_data: :ssl.connection_info()
+        }
+  @type endpoint_data :: %{
           address: :inet.ip_address(),
           port: :inet.port_number(),
           ssl_cert: binary | nil
@@ -162,9 +167,10 @@ defmodule Plug.Conn.Adapter do
   @callback upgrade(payload, protocol :: atom, opts :: term) :: {:ok, payload} | {:error, term}
 
   @doc """
-  Returns peer information such as the address, port and ssl cert.
+  Returns connection information such as the peer and local address, port and SSL cert as well as
+  details of the negotiated SSL connection, if present.
   """
-  @callback get_peer_data(payload) :: peer_data()
+  @callback get_connection_data(payload) :: endpoint_data()
 
   @doc """
   Returns the HTTP protocol and its version.
