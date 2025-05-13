@@ -179,10 +179,15 @@ defmodule Plug.Adapters.Test.ConnTest do
              ~s(the URI path used in plug tests must start with "/", got: "foo")
   end
 
-  test "use custom peer data" do
-    peer_data = %{address: {127, 0, 0, 1}, port: 111_317}
-    conn = conn(:get, "/") |> put_peer_data(peer_data)
-    assert peer_data == Plug.Conn.get_peer_data(conn)
+  test "use custom connection data" do
+    connection_data = %{
+      peer_data: %{address: {127, 0, 0, 1}, port: 111_317},
+      sock_data: %{address: {127, 0, 0, 2}, port: 111_318},
+      ssl_data: %{ssl_info: :its_here}
+    }
+
+    conn = conn(:get, "/") |> put_connection_data(connection_data)
+    assert connection_data == Plug.Conn.get_connection_data(conn)
   end
 
   test "push/3 sends message including path and headers" do

@@ -200,11 +200,11 @@ defmodule Plug.Test do
   end
 
   @doc """
-  Puts the peer data.
+  Puts the connection data.
   """
-  def put_peer_data(conn, peer_data) do
+  def put_connection_data(conn, connection_data) do
     update_in(conn.adapter, fn {adapter, payload} ->
-      {adapter, Map.put(payload, :peer_data, peer_data)}
+      {adapter, Map.put(payload, :connection_data, connection_data)}
     end)
   end
 

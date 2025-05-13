@@ -28,11 +28,11 @@ defmodule Plug.Adapters.Test.Conn do
       ref: make_ref(),
       owner: owner,
       http_protocol: get_from_adapter(conn, :get_http_protocol, :"HTTP/1.1"),
-      peer_data:
-        get_from_adapter(conn, :get_peer_data, %{
-          address: {127, 0, 0, 1},
-          port: 111_317,
-          ssl_cert: nil
+      connection_data:
+        get_from_adapter(conn, :get_connection_data, %{
+          peer_data: %{address: {127, 0, 0, 1}, port: 111_317, ssl_cert: nil},
+          sock_data: %{address: {127, 0, 0, 2}, port: 111_318, ssl_cert: nil},
+          ssl_data: nil
         })
     }
 
@@ -136,8 +136,8 @@ defmodule Plug.Adapters.Test.Conn do
     :ok
   end
 
-  def get_peer_data(payload) do
-    Map.fetch!(payload, :peer_data)
+  def get_connection_data(payload) do
+    Map.fetch!(payload, :connection_data)
   end
 
   def get_http_protocol(payload) do
