@@ -5,7 +5,7 @@ defmodule Plug.RequestId do
   The generated request ID will be in the format:
 
   ```
-  uq8hs30oafhj5vve8ji5pmp7mtopc08f
+  GEBMr97eLMHtGWsAAAVj
   ```
 
   If a request ID already exists in a configured HTTP request header (see options below),
