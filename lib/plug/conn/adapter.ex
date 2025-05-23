@@ -11,6 +11,11 @@ defmodule Plug.Conn.Adapter do
           port: :inet.port_number(),
           ssl_cert: binary | nil
         }
+  @type sock_data :: %{
+          address: :inet.ip_address(),
+          port: :inet.port_number()
+        }
+  @type ssl_data :: :ssl.connection_info() | nil
 
   @doc """
   Function used by adapters to create a new connection.
@@ -167,9 +172,20 @@ defmodule Plug.Conn.Adapter do
   @callback get_peer_data(payload) :: peer_data()
 
   @doc """
+  Returns sock (local-side) information such as the address and port.
+  """
+  @callback get_sock_data(payload) :: sock_data()
+
+  @doc """
+  Returns details of the negotiated SSL connection, if present. If the connection is not SSL,
+  returns nil
+  """
+  @callback get_ssl_data(payload) :: ssl_data()
+
+  @doc """
   Returns the HTTP protocol and its version.
   """
   @callback get_http_protocol(payload) :: http_protocol
 
-  @optional_callbacks push: 3
+  @optional_callbacks push: 3, get_sock_data: 1, get_ssl_data: 1
 end

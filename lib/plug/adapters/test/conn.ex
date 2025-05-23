@@ -33,7 +33,13 @@ defmodule Plug.Adapters.Test.Conn do
           address: {127, 0, 0, 1},
           port: 111_317,
           ssl_cert: nil
-        })
+        }),
+      sock_data:
+        get_from_adapter(conn, :get_sock_data, %{
+          address: {127, 0, 0, 1},
+          port: 111_318
+        }),
+      ssl_data: get_from_adapter(conn, :get_ssl_data, nil)
     }
 
     conn_port = if conn.port != 0, do: conn.port, else: 80
@@ -138,6 +144,14 @@ defmodule Plug.Adapters.Test.Conn do
 
   def get_peer_data(payload) do
     Map.fetch!(payload, :peer_data)
+  end
+
+  def get_sock_data(payload) do
+    Map.fetch!(payload, :sock_data)
+  end
+
+  def get_ssl_data(payload) do
+    Map.fetch!(payload, :ssl_data)
   end
 
   def get_http_protocol(payload) do
