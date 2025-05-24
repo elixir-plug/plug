@@ -653,7 +653,11 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns SSL data for the connection if present. If the connection is not SSL, returns nil
+  Returns SSL data for the connection.
+
+  If the connection is not SSL, returns nil.
+
+  It raises if the adapter does not provide this metadata.
   """
   @spec get_ssl_data(t) :: Plug.Conn.Adapter.ssl_data()
   def get_ssl_data(%Conn{adapter: {adapter, payload}}) do
