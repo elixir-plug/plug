@@ -185,6 +185,18 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert peer_data == Plug.Conn.get_peer_data(conn)
   end
 
+  test "use custom sock data" do
+    sock_data = %{address: {127, 0, 0, 1}, port: 111_318}
+    conn = conn(:get, "/") |> put_sock_data(sock_data)
+    assert sock_data == Plug.Conn.get_sock_data(conn)
+  end
+
+  test "use custom ssl data" do
+    ssl_data = %{address: {127, 0, 0, 1}, port: 111_317}
+    conn = conn(:get, "/") |> put_ssl_data(ssl_data)
+    assert ssl_data == Plug.Conn.get_ssl_data(conn)
+  end
+
   test "push/3 sends message including path and headers" do
     ref = make_ref()
 

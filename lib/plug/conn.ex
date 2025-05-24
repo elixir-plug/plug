@@ -639,6 +639,36 @@ defmodule Plug.Conn do
   end
 
   @doc """
+  Returns the request sock (local) data.
+
+  It raises if the adapter does not provide this metadata.
+  """
+  @spec get_sock_data(t) :: Plug.Conn.Adapter.sock_data()
+  def get_sock_data(%Conn{adapter: {adapter, payload}}) do
+    if function_exported?(adapter, :get_sock_data, 1) do
+      adapter.get_sock_data(payload)
+    else
+      raise "get_sock_data not supported by #{inspect(adapter)}"
+    end
+  end
+
+  @doc """
+  Returns SSL data for the connection.
+
+  If the connection is not SSL, returns nil.
+
+  It raises if the adapter does not provide this metadata.
+  """
+  @spec get_ssl_data(t) :: Plug.Conn.Adapter.ssl_data()
+  def get_ssl_data(%Conn{adapter: {adapter, payload}}) do
+    if function_exported?(adapter, :get_ssl_data, 1) do
+      adapter.get_ssl_data(payload)
+    else
+      raise "get_ssl_data not supported by #{inspect(adapter)}"
+    end
+  end
+
+  @doc """
   Returns the HTTP protocol and version.
 
   ## Examples
