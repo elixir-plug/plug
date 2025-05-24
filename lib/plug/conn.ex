@@ -648,9 +648,7 @@ defmodule Plug.Conn do
     if function_exported?(adapter, :get_sock_data, 1) do
       adapter.get_sock_data(payload)
     else
-      raise "get_sock_data not supported by #{inspect(adapter)}." <>
-              "You should either delete the call to `get_sock_data/1` or switch to an " <>
-              "adapter that does support this call such as Bandit."
+      raise "get_sock_data not supported by #{inspect(adapter)}"
     end
   end
 
@@ -666,9 +664,7 @@ defmodule Plug.Conn do
     if function_exported?(adapter, :get_ssl_data, 1) do
       adapter.get_ssl_data(payload)
     else
-      raise "get_ssl_data not supported by #{inspect(adapter)}." <>
-              "You should either delete the call to `get_ssl_data/1` or switch to an " <>
-              "adapter that does support this call such as Bandit."
+      raise "get_ssl_data not supported by #{inspect(adapter)}"
     end
   end
 
