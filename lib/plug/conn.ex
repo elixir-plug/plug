@@ -639,7 +639,9 @@ defmodule Plug.Conn do
   end
 
   @doc """
-  Returns the request sock (local) data if one is present.
+  Returns the request sock (local) data.
+
+  It raises if the adapter does not provide this metadata.
   """
   @spec get_sock_data(t) :: Plug.Conn.Adapter.sock_data()
   def get_sock_data(%Conn{adapter: {adapter, payload}}) do
