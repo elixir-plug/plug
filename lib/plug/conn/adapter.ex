@@ -1,6 +1,13 @@
 defmodule Plug.Conn.Adapter do
   @moduledoc """
   Specification of the connection adapter API implemented by webservers.
+
+  ## Implementation recommendations
+
+  The `owner` field of `Plug.Conn` is deprecated and no longer needs to
+  be set by adapters. If you don't set the `owner` field, it is the
+  responsibility of the adapters to track the owner and send the
+  `already_sent/0` message below on any of the `send_*` callbacks.
   """
   alias Plug.Conn
 
@@ -13,6 +20,13 @@ defmodule Plug.Conn.Adapter do
         }
 
   @doc """
+  The message to send to the request process on send callbacks.
+  """
+  def already_sent do
+    {:plug_conn, :sent}
+  end
+
+  @doc """
   Function used by adapters to create a new connection.
   """
   def conn(adapter, method, uri, remote_ip, req_headers) do
@@ -22,7 +36,6 @@ defmodule Plug.Conn.Adapter do
       adapter: adapter,
       host: host,
       method: method,
-      owner: self(),
       path_info: split_path(path),
       port: port,
       remote_ip: remote_ip,
