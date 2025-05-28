@@ -325,7 +325,7 @@ Require Elixir v1.10+.
 ### Enhancements
 
   * [Plug.Conn] Add `get_session/1` for retrieving the whole session
-  * [Plug.CSRFProtection] Add `Plug.CSRFPRotection.load_state/2` and `Plug.CSRFPRotection.dump_state/0` to allow tokens to be generated in other processes
+  * [Plug.CSRFProtection] Add `Plug.CSRFProtection.load_state/2` and `Plug.CSRFProtection.dump_state/0` to allow tokens to be generated in other processes
   * [Plug.Parsers] Allow unnamed parts in multipart parser via `:include_unnamed_parts_at`
   * [Plug.Router] Wrap router dispatch in a connection checkpoint to avoid losing information attached to the connection in error cases
   * [Plug.Telemetry] Add `Plug.Telemetry` to facilitate with telemetry integration
