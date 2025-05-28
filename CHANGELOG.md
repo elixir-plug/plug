@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.18.0 (2025-05-28)
+
+### Enhancements
+
+  * [Plug.Conn] Define optional `get_sock_data/1` and `get_ssl_data/1` callbacks
+  * [Plug.RequestID] Allow metadata key to be customizable
+  * [Plug.Router] Allow match to dispatch to function plugs
+
 ## v1.17.0 (2025-03-14)
 
 ### Enhancements
