@@ -300,7 +300,7 @@ defmodule Plug.Debugger do
   defp accepts_html?(_accept_header = []), do: false
 
   defp accepts_html?(_accept_header = [header | _]) do
-    accept_header
+    header
     |> String.split(",", trim: true)
     |> Enum.map(&Plug.Conn.Utils.media_type/1)
     |> Enum.any?(fn
