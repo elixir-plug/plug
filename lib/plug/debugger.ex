@@ -300,24 +300,22 @@ defmodule Plug.Debugger do
   defp accepts_html?(_accept_header = []), do: false
 
   defp accepts_html?(_accept_header = [header | _]) do
-    parse_accect_header(header)
-    |> Enum.any?(&accept_html_media_type?/1)
-  end
-
-  defp parse_accect_header(accept_header) do
     accept_header
     |> String.split(",", trim: true)
     |> Enum.map(&Plug.Conn.Utils.media_type/1)
-    |> Enum.filter(&match?({:ok, _, _, _}, &1))
-    |> Enum.map(fn {:ok, type, subtype, params} ->
-      {type, subtype, Map.get(params, "q", 1)}
+    |> Enum.any?(fn
+      {:ok, type, subtype, params} ->
+        accept_html_media_type?(type, subtype, Map.get(params, "q", 1))
+
+      _ ->
+        false
     end)
   end
 
-  defp accept_html_media_type?({"text", "html", 1}), do: true
-  defp accept_html_media_type?({"text", "*", 1}), do: true
-  defp accept_html_media_type?({"*", "*", 1}), do: true
-  defp accept_html_media_type?({_type, _subtype, _q}), do: false
+  defp accept_html_media_type?("text", "html", 1), do: true
+  defp accept_html_media_type?("text", "*", 1), do: true
+  defp accept_html_media_type?("*", "*", 1), do: true
+  defp accept_html_media_type?(_type, _subtype, _q), do: false
 
   defp maybe_fetch_session(conn) do
     if conn.private[:plug_session_fetch] do
