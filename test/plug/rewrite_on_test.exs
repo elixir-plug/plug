@@ -31,7 +31,7 @@ defmodule Plug.RewriteOnTest do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-proto", "https")
-      |> call([scheme: "custom-forwarded-proto"])
+      |> call({:scheme, "custom-forwarded-proto"})
 
     assert conn.scheme == :https
     assert conn.port == 443
@@ -60,7 +60,7 @@ defmodule Plug.RewriteOnTest do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-host", "truessl.example.com")
-      |> call([host: "custom-forwarded-host"])
+      |> call({:host, "custom-forwarded-host"})
 
     assert conn.host == "truessl.example.com"
   end
@@ -78,7 +78,7 @@ defmodule Plug.RewriteOnTest do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-port", "3030")
-      |> call([port: "custom-forwarded-port"])
+      |> call({:port, "custom-forwarded-port"})
 
     assert conn.port == 3030
   end
@@ -118,28 +118,28 @@ defmodule Plug.RewriteOnTest do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-for", "bad")
-      |> call([remote_ip: "custom-forwarded-for"])
+      |> call({:remote_ip, "custom-forwarded-for"})
 
     assert conn.remote_ip == {127, 0, 0, 1}
 
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-for", "4.3.2.1")
-      |> call([remote_ip: "custom-forwarded-for"])
+      |> call({:remote_ip, "custom-forwarded-for"})
 
     assert conn.remote_ip == {4, 3, 2, 1}
 
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-for", "1.2.3.4,::1")
-      |> call([remote_ip: "custom-forwarded-for"])
+      |> call({:remote_ip, "custom-forwarded-for"})
 
     assert conn.remote_ip == {1, 2, 3, 4}
 
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-for", "::1,1.2.3.4")
-      |> call([remote_ip: "custom-forwarded-for"])
+      |> call({:remote_ip, "custom-forwarded-for"})
 
     assert conn.remote_ip == {0, 0, 0, 0, 0, 0, 0, 1}
   end

@@ -37,7 +37,7 @@ defmodule Plug.RewriteOn do
   import Plug.Conn, only: [get_req_header: 2]
 
   @impl true
-  def init(header) when is_tuple(header), do: header
+  def init({_m, _f, _a} = header), do: header
   def init(header), do: List.wrap(header)
 
   @impl true
