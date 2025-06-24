@@ -10,10 +10,17 @@ defmodule Plug.RewriteOn do
 
   The supported values are:
 
-    * `:x_forwarded_for` - to override the remote ip based on the "x-forwarded-for" header
+    * `:x_forwarded_for` - to override the remote IP based on the "x-forwarded-for" header
     * `:x_forwarded_host` - to override the host based on the "x-forwarded-host" header
     * `:x_forwarded_port` - to override the port based on the "x-forwarded-port" header
     * `:x_forwarded_proto` - to override the protocol based on the "x-forwarded-proto" header
+
+  Some HTTPS proxies use nonstandard headers, which can be specified in the list via tuples:
+
+    * `{:remote_ip, header}` - to override the remote IP based on a custom header
+    * `{:host, header}` - to override the host based on a custom header
+    * `{:port, header}` - to override the port based on a custom header
+    * `{:scheme, header}` - to override the protocol based on a custom header
 
   A tuple representing a Module-Function-Args can also be given as argument
   instead of a list.
@@ -30,31 +37,47 @@ defmodule Plug.RewriteOn do
   import Plug.Conn, only: [get_req_header: 2]
 
   @impl true
-  def init(header) when is_tuple(header), do: header
+  def init({_m, _f, _a} = header), do: header
   def init(header), do: List.wrap(header)
 
   @impl true
   def call(conn, [:x_forwarded_for | rewrite_on]) do
-    conn
-    |> put_remote_ip(get_req_header(conn, "x-forwarded-for"))
-    |> call(rewrite_on)
+    call(conn, [{:remote_ip, "x-forwarded-for"} | rewrite_on])
   end
 
   def call(conn, [:x_forwarded_proto | rewrite_on]) do
-    conn
-    |> put_scheme(get_req_header(conn, "x-forwarded-proto"))
-    |> call(rewrite_on)
+    call(conn, [{:scheme, "x-forwarded-proto"} | rewrite_on])
   end
 
   def call(conn, [:x_forwarded_port | rewrite_on]) do
-    conn
-    |> put_port(get_req_header(conn, "x-forwarded-port"))
-    |> call(rewrite_on)
+    call(conn, [{:port, "x-forwarded-port"} | rewrite_on])
   end
 
   def call(conn, [:x_forwarded_host | rewrite_on]) do
+    call(conn, [{:host, "x-forwarded-host"} | rewrite_on])
+  end
+
+  def call(conn, [{:remote_ip, header} | rewrite_on]) do
     conn
-    |> put_host(get_req_header(conn, "x-forwarded-host"))
+    |> put_remote_ip(get_req_header(conn, header))
+    |> call(rewrite_on)
+  end
+
+  def call(conn, [{:scheme, header} | rewrite_on]) do
+    conn
+    |> put_scheme(get_req_header(conn, header))
+    |> call(rewrite_on)
+  end
+
+  def call(conn, [{:port, header} | rewrite_on]) do
+    conn
+    |> put_port(get_req_header(conn, header))
+    |> call(rewrite_on)
+  end
+
+  def call(conn, [{:host, header} | rewrite_on]) do
+    conn
+    |> put_host(get_req_header(conn, header))
     |> call(rewrite_on)
   end
 
