@@ -113,7 +113,6 @@ defmodule Plug.RewriteOnTest do
     assert conn.remote_ip == {0, 0, 0, 0, 0, 0, 0, 1}
   end
 
-
   test "rewrites remote_ip with a custom header" do
     conn =
       conn(:get, "http://example.com/")
@@ -144,7 +143,6 @@ defmodule Plug.RewriteOnTest do
     assert conn.remote_ip == {0, 0, 0, 0, 0, 0, 0, 1}
   end
 
-
   test "rewrites the host, the port, and the protocol" do
     conn =
       conn(:get, "http://example.com/")
@@ -158,16 +156,17 @@ defmodule Plug.RewriteOnTest do
     assert conn.scheme == :https
   end
 
-
   test "rewrites the host, the port, and the protocol with custom headers" do
     conn =
       conn(:get, "http://example.com/")
       |> put_req_header("custom-forwarded-host", "truessl.example.com")
       |> put_req_header("custom-forwarded-port", "3030")
       |> put_req_header("custom-forwarded-proto", "https")
-      |> call([host: "custom-forwarded-host",
-               port: "custom-forwarded-port",
-               scheme: "custom-forwarded-proto"])
+      |> call(
+        host: "custom-forwarded-host",
+        port: "custom-forwarded-port",
+        scheme: "custom-forwarded-proto"
+      )
 
     assert conn.host == "truessl.example.com"
     assert conn.port == 3030
@@ -178,8 +177,9 @@ defmodule Plug.RewriteOnTest do
     assert_raise RuntimeError, "unknown rewrite: :x_forwarded_other", fn ->
       call(conn(:get, "http://example.com/"), :x_forwarded_other)
     end
+
     assert_raise RuntimeError, "unknown rewrite: {:other, \"value\"}", fn ->
-      call(conn(:get, "http://example.com/"), [other: "value"])
+      call(conn(:get, "http://example.com/"), other: "value")
     end
   end
 end
