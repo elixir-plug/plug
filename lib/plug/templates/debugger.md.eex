@@ -15,6 +15,10 @@ Exception:
   * URI: <%= url(@conn) %>
   * Query string: <%= @conn.query_string %>
 
-### Session
+<%= if @full_version do %>### Headers
+  <%= for {key, value} <- Enum.sort(@conn.req_headers) do %>
+  * <%= key %>: <%= value %><% end %>
+
+<% end %>### Session
 
     <%= inspect(@session) %>

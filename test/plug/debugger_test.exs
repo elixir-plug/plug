@@ -316,6 +316,10 @@ defmodule Plug.DebuggerTest do
       |> render([], fn -> raise "oops" end)
 
     assert conn.resp_body =~ "Copy markdown"
+
+    # Does not include Headers in markdown though
+    refute conn.resp_body =~ "Code:"
+    refute conn.resp_body =~ "### Headers"
   end
 
   defp stack(stack) do
@@ -395,7 +399,6 @@ defmodule Plug.DebuggerTest do
       end)
 
     assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
-
     assert get_resp_header(conn, "content-security-policy") == ["abcdef"]
 
     assert conn.resp_body =~ "# Plug.Parsers.UnsupportedMediaTypeError at GET /"

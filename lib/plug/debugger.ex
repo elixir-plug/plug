@@ -206,6 +206,7 @@ defmodule Plug.Debugger do
     session = maybe_fetch_session(conn)
     params = maybe_fetch_query_params(conn)
     {title, message} = info(kind, reason)
+    html? = accepts_html?(get_req_header(conn, "accept"))
 
     assigns = [
       conn: conn,
@@ -213,12 +214,12 @@ defmodule Plug.Debugger do
       formatted: Exception.format(kind, reason, stack),
       session: session,
       params: params,
-      frames: frames(:md, stack, opts)
+      full_version: not html?
     ]
 
     markdown = template_markdown(assigns)
 
-    if accepts_html?(get_req_header(conn, "accept")) do
+    if html? do
       conn =
         conn
         |> put_resp_content_type("text/html")
