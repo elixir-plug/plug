@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.18.1 (2025-07-01)
+
+### Enhancements
+
+  * [Plug.Debugger] Do not include code snippets in rendered markdown
+  * [Plug.RewriteOn] Add support to rewrite nonstandard headers
+
 ## v1.18.0 (2025-05-28)
 
 ### Enhancements
