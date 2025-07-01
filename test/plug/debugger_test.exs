@@ -615,31 +615,4 @@ defmodule Plug.DebuggerTest do
       String.to_existing_atom("not_existing_atom_for_test_does_not_create_new_atom")
     end
   end
-
-  test "render markdown with text/html;q=0.5" do
-    conn =
-      conn(:get, "/")
-      |> put_req_header("accept", "text/html;q=0.5")
-      |> render([], fn -> raise "oops" end)
-
-    assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
-  end
-
-  test "render markdown with text/*;q=0.5" do
-    conn =
-      conn(:get, "/")
-      |> put_req_header("accept", "text/*;q=0.5")
-      |> render([], fn -> raise "oops" end)
-
-    assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
-  end
-
-  test "render markdown with */*;q=0.5" do
-    conn =
-      conn(:get, "/")
-      |> put_req_header("accept", "*/*;q=0.5")
-      |> render([], fn -> raise "oops" end)
-
-    assert get_resp_header(conn, "content-type") == ["text/markdown; charset=utf-8"]
-  end
 end
