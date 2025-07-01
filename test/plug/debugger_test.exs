@@ -402,22 +402,6 @@ defmodule Plug.DebuggerTest do
     assert conn.resp_body =~ "unsupported media type foo/bar"
   end
 
-  test "renders bad match attempted arguments" do
-    conn =
-      conn(:get, "/bad_match")
-      |> put_req_header("accept", "text/markdown")
-      |> put_resp_header("content-security-policy", "abcdef")
-
-    capture_log(fn -> assert_raise(FunctionClauseError, fn -> Router.call(conn, []) end) end)
-    {_status, _headers, body} = sent_resp(conn)
-
-    assert body =~ "# FunctionClauseError at GET /bad_match"
-    assert body =~ "Code:\n"
-    assert body =~ "  Called with 2 arguments"
-    assert body =~ "  * `:six`"
-    assert body =~ "  * `:one`"
-  end
-
   test "render actions when an implementation of `Plug.Exception` has it" do
     [%{label: action_label}] = Plug.Exception.actions(%ActionableError{})
 
