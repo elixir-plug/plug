@@ -5,6 +5,10 @@ defmodule Plug.Conn.Status do
 
   custom_statuses = Application.compile_env(:plug, :statuses, %{})
 
+  aliased_statuses = [
+    {422, :unprocessable_entity}
+  ]
+
   statuses = %{
     100 => "Continue",
     101 => "Switching Protocols",
@@ -49,7 +53,7 @@ defmodule Plug.Conn.Status do
     417 => "Expectation Failed",
     418 => "I'm a teapot",
     421 => "Misdirected Request",
-    422 => "Unprocessable Entity",
+    422 => "Unprocessable Content",
     423 => "Locked",
     424 => "Failed Dependency",
     425 => "Too Early",
@@ -118,6 +122,10 @@ defmodule Plug.Conn.Status do
   for {code, reason_phrase} <- statuses do
     atom = reason_phrase_to_atom.(reason_phrase)
     def code(unquote(atom)), do: unquote(code)
+  end
+
+  for {code, aliased_status} <- aliased_statuses do
+    def code(unquote(aliased_status)), do: unquote(code)
   end
 
   # This ensures that both the default and custom statuses will work

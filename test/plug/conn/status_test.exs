@@ -13,10 +13,15 @@ defmodule Plug.Conn.StatusTest do
     assert Status.code(:ok) == 200
     assert Status.code(:non_authoritative_information) == 203
     assert Status.code(:not_found) == 404
+    assert Status.code(:unprocessable_content) == 422
   end
 
   test "code for custom status return the numeric code" do
     assert Status.code(:not_an_rfc_status_code) == 998
+  end
+
+  test "code for aliased statuses" do
+    assert Status.code(:unprocessable_entity) == 422
   end
 
   test "code with both a built_in and custom code return the numeric code" do
