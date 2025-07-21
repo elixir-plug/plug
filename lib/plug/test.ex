@@ -282,7 +282,7 @@ defmodule Plug.Test do
   If the session has already been initialized, the new contents will be merged
   with the previous ones.
   """
-  @spec init_test_session(Conn.t(), %{optional(String.t() | atom) => any}) :: Conn.t()
+  @spec init_test_session(Conn.t(), %{optional(String.t() | atom) => any} | keyword) :: Conn.t()
   def init_test_session(conn, session) do
     conn =
       if conn.private[:plug_session_fetch] do
