@@ -35,7 +35,7 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
     * `:exclude` - exclude the given hosts from redirecting to the `https`
-      scheme. Defaults to `["localhost"]`. It may be set to a list of binaries
+      scheme. Defaults to `["localhost", "127.0.0.1"]`. It may be set to a list of binaries
       or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
@@ -356,7 +356,7 @@ defmodule Plug.SSL do
 
     rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
     log = Keyword.get(opts, :log, :info)
-    exclude = Keyword.get(opts, :exclude, ["localhost"])
+    exclude = Keyword.get(opts, :exclude, ["localhost", "127.0.0.1"])
     {hsts_header(opts), exclude, host, rewrite_on, log}
   end
 
