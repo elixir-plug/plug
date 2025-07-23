@@ -282,6 +282,16 @@ defmodule Plug.ConnTest do
     assert get_resp_cookies(conn)["hello"] == %{value: "world"}
   end
 
+  test "send_resp/2 sets the body to empty string" do
+    conn = conn(:get, "/foo")
+    assert conn.state == :unset
+    assert conn.resp_body == nil
+    conn = send_resp(conn, 204)
+    assert conn.status == 204
+    assert conn.resp_body == ""
+    assert conn.state == :sent
+  end
+
   test "send_resp/1 raises if the connection was unset" do
     conn = conn(:get, "/goo")
 
