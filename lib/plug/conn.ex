@@ -42,7 +42,7 @@ defmodule Plug.Conn do
     * `query_params` - the request query params, populated through `fetch_query_params/2`
     * `path_params` - the request path params, populated by routers such as `Plug.Router`
     * `params` - the request params, the result of merging `:body_params` on top of
-      `:query_params` alongsaide any further changes (such as the ones done by `Plug.Router`)
+      `:query_params` alongside any further changes (such as the ones done by `Plug.Router`)
 
   ## Session vs Assigns
 
