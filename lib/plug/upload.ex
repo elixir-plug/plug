@@ -116,7 +116,7 @@ defmodule Plug.Upload do
 
   defp generate_tmp_dir() do
     {tmp_roots, suffix} = :persistent_term.get(__MODULE__)
-    sec = System.system_time(:second)
+    sec = System.system_time(:second) |> div(1024 * 1024)
     subdir = "/plug-" <> i(sec) <> "-" <> suffix
 
     if tmp = Enum.find_value(tmp_roots, &make_tmp_dir(&1 <> subdir)) do
