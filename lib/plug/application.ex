@@ -8,7 +8,7 @@ defmodule Plug.Application do
     Plug.Keys = :ets.new(Plug.Keys, [:named_table, :public, read_concurrency: true])
 
     children = [
-      Plug.Upload
+      Plug.Upload.Supervisor
     ]
 
     Supervisor.start_link(children, name: __MODULE__, strategy: :one_for_one)
