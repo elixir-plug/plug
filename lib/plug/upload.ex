@@ -116,8 +116,8 @@ defmodule Plug.Upload do
 
   defp generate_tmp_dir() do
     {tmp_roots, suffix} = :persistent_term.get(__MODULE__)
-    {mega, _, _} = :os.timestamp()
-    subdir = "/plug-" <> i(mega) <> "-" <> suffix
+    sec = System.system_time(:second) |> div(1024 * 1024)
+    subdir = "/plug-" <> i(sec) <> "-" <> suffix
 
     if tmp = Enum.find_value(tmp_roots, &make_tmp_dir(&1 <> subdir)) do
       {:ok, tmp}
@@ -151,7 +151,7 @@ defmodule Plug.Upload do
   end
 
   defp path(prefix, tmp) do
-    sec = :os.system_time(:second)
+    sec = System.system_time(:second)
     rand = :rand.uniform(999_999_999_999)
     scheduler_id = :erlang.system_info(:scheduler_id)
     tmp <> "/" <> prefix <> "-" <> i(sec) <> "-" <> i(rand) <> "-" <> i(scheduler_id)
