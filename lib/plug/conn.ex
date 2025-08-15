@@ -174,7 +174,6 @@ defmodule Plug.Conn do
   @type headers :: [{binary, binary}]
   @type host :: binary
   @type int_status :: non_neg_integer | nil
-  @type owner :: pid
   @type method :: binary
   @type query_param :: binary | %{optional(binary) => query_param} | [query_param]
   @type query_params :: %{optional(binary) => query_param}
@@ -196,7 +195,7 @@ defmodule Plug.Conn do
           halted: halted,
           host: host,
           method: method,
-          owner: owner,
+          owner: pid | nil,
           params: params | Unfetched.t(),
           path_info: segments,
           path_params: query_params,
@@ -447,7 +446,7 @@ defmodule Plug.Conn do
     {:ok, body, payload} =
       adapter.send_resp(payload, conn.status, conn.resp_headers, conn.resp_body)
 
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, resp_body: body, state: :sent}
   end
 
@@ -498,7 +497,7 @@ defmodule Plug.Conn do
     {:ok, body, payload} =
       adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
 
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :file, resp_body: body}
   end
 
@@ -526,7 +525,7 @@ defmodule Plug.Conn do
     conn = %{conn | status: Plug.Conn.Status.code(status), resp_body: nil}
     conn = run_before_send(conn, :set_chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
-    send(owner, @already_sent)
+    owner && send(owner, @already_sent)
     %{conn | adapter: {adapter, payload}, state: :chunked, resp_body: body}
   end
 
