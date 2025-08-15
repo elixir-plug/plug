@@ -35,7 +35,7 @@ defmodule Plug.UploadTest do
 
   test "terminate removes all files" do
     {:ok, path} = Plug.Upload.random_file("sample")
-    :ok = Plug.Upload.terminate(:shutdown, [])
+    :ok = Plug.Upload.Terminator.terminate(:shutdown, [])
     refute File.exists?(path)
   end
 
@@ -223,5 +223,55 @@ defmodule Plug.UploadTest do
         wait_until(fn -> not File.exists?(path) end)
         wait_until(fn -> not File.exists?(path1) end)
     end
+  end
+
+  test "give_away with invalid path returns error" do
+    result = Plug.Upload.give_away("/invalid/path", spawn(fn -> :ok end))
+    assert result == {:error, :unknown_path}
+  end
+
+  test "give_away when target process dies during transfer" do
+    {:ok, path} = Plug.Upload.random_file("target_dies")
+
+    # Create a process that dies immediately
+    pid = spawn(fn -> :ok end)
+
+    # This should still work but file will be cleaned up when dead process is detected
+    result = Plug.Upload.give_away(path, pid)
+    assert result == :ok
+    wait_until(fn -> not File.exists?(path) end)
+  end
+
+  test "routes uploads to correct partition based on process" do
+    parent = self()
+    num_processes = 10
+
+    # Create uploads from different processes and verify they get different servers
+    tasks =
+      Enum.map(1..num_processes, fn i ->
+        Task.async(fn ->
+          {:ok, path} = Plug.Upload.random_file("partition_test_#{i}")
+          server = PartitionSupervisor.whereis_name({Plug.Upload, self()})
+          send(parent, {:result, i, path, server})
+          path
+        end)
+      end)
+
+    # Collect results
+    results =
+      Enum.map(1..num_processes, fn _ ->
+        receive do
+          {:result, i, path, server} -> {i, path, server}
+        after
+          1_000 -> flunk("didn't get result")
+        end
+      end)
+
+    # Verify different processes got different servers (partitioning working)
+    servers = Enum.map(results, fn {_, _, server} -> server end)
+    assert length(Enum.uniq(servers)) > 1
+
+    # Cleanup
+    Enum.each(tasks, &Task.await/1)
   end
 end

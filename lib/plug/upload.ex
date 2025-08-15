@@ -40,7 +40,6 @@ defmodule Plug.Upload do
   @dir_table __MODULE__.Dir
   @path_table __MODULE__.Path
   @max_attempts 10
-  @temp_env_vars ~w(PLUG_TMPDIR TMPDIR TMP TEMP)s
 
   @doc """
   Requests a random file to be created in the upload directory
@@ -85,7 +84,7 @@ defmodule Plug.Upload do
           :ok
 
         [] ->
-          server = plug_server()
+          server = plug_server(to_pid)
           {:ok, tmp} = generate_tmp_dir()
           :ok = GenServer.call(server, {:give_away, to_pid, tmp, path})
           :ets.delete_object(@path_table, {from_pid, path})
@@ -105,7 +104,7 @@ defmodule Plug.Upload do
         {:ok, tmp}
 
       [] ->
-        server = plug_server()
+        server = plug_server(pid)
         GenServer.cast(server, {:monitor, pid})
 
         with {:ok, tmp} <- generate_tmp_dir() do
@@ -188,30 +187,23 @@ defmodule Plug.Upload do
     end
   end
 
-  defp plug_server do
-    Process.whereis(__MODULE__) ||
+  defp plug_server(pid) do
+    PartitionSupervisor.whereis_name({__MODULE__, pid})
+  rescue
+    ArgumentError ->
       raise Plug.UploadError,
             "could not find process Plug.Upload. Have you started the :plug application?"
   end
 
   @doc false
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    GenServer.start_link(__MODULE__, :ok)
   end
 
   ## Callbacks
 
   @impl true
   def init(:ok) do
-    Process.flag(:trap_exit, true)
-    tmp = Enum.find_value(@temp_env_vars, "/tmp", &System.get_env/1) |> Path.expand()
-    cwd = Path.join(File.cwd!(), "tmp")
-    # Add a tiny random component to avoid clashes between nodes
-    suffix = :crypto.strong_rand_bytes(3) |> Base.url_encode64()
-    :persistent_term.put(__MODULE__, {[tmp, cwd], suffix})
-
-    :ets.new(@dir_table, [:named_table, :public, :set])
-    :ets.new(@path_table, [:named_table, :public, :duplicate_bag])
     {:ok, %{}}
   end
 
@@ -253,12 +245,6 @@ defmodule Plug.Upload do
 
   def handle_info(_msg, state) do
     {:noreply, state}
-  end
-
-  @impl true
-  def terminate(_reason, _state) do
-    folder = fn entry, :ok -> delete_path(entry) end
-    :ets.foldl(folder, :ok, @path_table)
   end
 
   defp delete_path({_pid, path}) do
