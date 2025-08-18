@@ -510,7 +510,7 @@ defmodule Plug.Conn do
   the `chunk/2` function.
 
   HTTP/2 does not support chunking and will instead stream the response without a
-  transfer encoding. When using HTTP/1.1, the Cowboy adapter will stream the response
+  transfer encoding. When using HTTP/1.1, the underlying adapter will stream the response
   instead of emitting chunks if the `content-length` header has been set before calling
   `send_chunked/2`.
   """

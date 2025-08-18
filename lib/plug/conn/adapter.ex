@@ -105,7 +105,12 @@ defmodule Plug.Conn.Adapter do
 
   @doc """
   Sends the given status, headers as the beginning of
-  a chunked response to the client.
+  a chunked response to the client. If the connection uses a
+  protocol (such as HTTP/2) which does not support chunked encoding,
+  the response should be sent in a streaming manner using the
+  protocol's framing method. Likewise if the passed headers include
+  a `content-length` header, the response should be streamed using
+  content length framing.
 
   Webservers are advised to return `nil` as the sent_body,
   since this function does not actually produce a body.
