@@ -40,16 +40,13 @@ defmodule Plug.SSLTest do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :strong)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
-      assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
-      assert opts[:versions] == [:"tlsv1.2"]
+      assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
+      assert opts[:versions] == [:"tlsv1.3"]
 
       assert opts[:ciphers] == [
-               ~c"ECDHE-RSA-AES256-GCM-SHA384",
-               ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
-               ~c"ECDHE-RSA-AES128-GCM-SHA256",
-               ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
-               ~c"DHE-RSA-AES256-GCM-SHA384",
-               ~c"DHE-RSA-AES128-GCM-SHA256"
+               ~c"TLS_AES_256_GCM_SHA384",
+               ~c"TLS_CHACHA20_POLY1305_SHA256",
+               ~c"TLS_AES_128_GCM_SHA256"
              ]
     end
 
@@ -57,26 +54,21 @@ defmodule Plug.SSLTest do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :compatible)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
-      assert opts[:eccs] == [:secp256r1, :secp384r1, :secp521r1]
-      assert opts[:versions] == [:"tlsv1.2", :"tlsv1.1", :tlsv1]
+      assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
+      assert opts[:versions] == [:"tlsv1.3", :"tlsv1.2"]
 
       assert opts[:ciphers] == [
-               ~c"ECDHE-RSA-AES256-GCM-SHA384",
+               ~c"TLS_AES_256_GCM_SHA384",
+               ~c"TLS_CHACHA20_POLY1305_SHA256",
+               ~c"TLS_AES_128_GCM_SHA256",
                ~c"ECDHE-ECDSA-AES256-GCM-SHA384",
-               ~c"ECDHE-RSA-AES128-GCM-SHA256",
+               ~c"ECDHE-RSA-AES256-GCM-SHA384",
+               ~c"ECDHE-ECDSA-CHACHA20-POLY1305",
+               ~c"ECDHE-RSA-CHACHA20-POLY1305",
                ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
+               ~c"ECDHE-RSA-AES128-GCM-SHA256",
                ~c"DHE-RSA-AES256-GCM-SHA384",
-               ~c"DHE-RSA-AES128-GCM-SHA256",
-               ~c"ECDHE-RSA-AES256-SHA384",
-               ~c"ECDHE-ECDSA-AES256-SHA384",
-               ~c"ECDHE-RSA-AES128-SHA256",
-               ~c"ECDHE-ECDSA-AES128-SHA256",
-               ~c"DHE-RSA-AES256-SHA256",
-               ~c"DHE-RSA-AES128-SHA256",
-               ~c"ECDHE-RSA-AES256-SHA",
-               ~c"ECDHE-ECDSA-AES256-SHA",
-               ~c"ECDHE-RSA-AES128-SHA",
-               ~c"ECDHE-ECDSA-AES128-SHA"
+               ~c"DHE-RSA-AES128-GCM-SHA256"
              ]
     end
 
