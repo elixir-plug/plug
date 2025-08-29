@@ -135,9 +135,6 @@ defmodule Plug.SSL do
   options: `cipher_suite: :strong` and `cipher_suite: :compatible`. The Ciphers
   chosen and related configuration come from the [Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
 
-  [OWASP Cipher String Cheat
-  Sheet is DEPRECATED](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet)
-
   The **Strong** cipher suite supports TLSv1.3 as recommended by the Transport
   Layer Security Cheat Sheet. General purpose web applications should default to
   TLSv1.3 with ALL other protocols disabled.

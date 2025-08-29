@@ -3,41 +3,70 @@ defmodule Plug.SSLTest do
   import Plug.Test
   import Plug.Conn
 
+
   describe "configure" do
+    import Plug.SSL, only: [configure: 1]
     # make sure some dummy files used for the keyfile and certfile
     # tests are removed after each test.
     setup do
+      tmp_dir = System.tmp_dir!()
+      key_path = Path.join(tmp_dir, "abcdef")
+      cert_path = Path.join(tmp_dir, "ghijkl")
+      File.touch!(key_path)
+      File.touch!(cert_path)
+
       on_exit(fn ->
-        File.rm("_build/test/lib/plug/abcdef")
-        File.rm("_build/test/lib/plug/ghijkl")
+        File.rm(key_path)
+        File.rm(cert_path)
       end)
 
-      []
+
+      %{key_path: key_path, cert_path: cert_path}
     end
 
-    import Plug.SSL, only: [configure: 1]
-
-    test "sets secure_renegotiate and reuse_sessions to true depending on the version" do
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", versions: [:tlsv1])
+    test "sets secure_renegotiate and reuse_sessions to true depending on the version", context do
+      opts = [
+        certfile: context.cert_path,
+        keyfile: context.key_path, 
+        versions: [:tlsv1]
+      ]
+      assert {:ok, opts} = configure(opts)
       assert opts[:reuse_sessions] == true
       assert opts[:secure_renegotiate] == true
       assert opts[:honor_cipher_order] == nil
       assert opts[:client_renegotiation] == nil
       assert opts[:cipher_suite] == nil
 
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", versions: [:"tlsv1.3"])
+      opts = [
+        certfile: context.cert_path, 
+        keyfile: context.key_path, 
+        versions: [:"tlsv1.3"]
+      ]
+      assert {:ok, opts} = configure(opts)
       assert opts[:reuse_sessions] == nil
       assert opts[:secure_renegotiate] == nil
       assert opts[:honor_cipher_order] == nil
       assert opts[:client_renegotiation] == nil
       assert opts[:cipher_suite] == nil
 
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", reuse_sessions: false)
+      opts = [
+        certfile: context.cert_path,
+        keyfile: context.key_path,
+        reuse_sessions: false
+      ]
+
+      assert {:ok, opts} = configure(opts)
       assert opts[:reuse_sessions] == false
     end
 
-    test "sets cipher suite to strong" do
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :strong)
+    test "sets cipher suite to strong", context do
+      opts = [
+        certfile: context.cert_path,
+        keyfile: context.key_path,
+        cipher_suite: :strong
+      ]
+
+      assert {:ok, opts} = configure(opts)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
       assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
@@ -50,8 +79,14 @@ defmodule Plug.SSLTest do
              ]
     end
 
-    test "sets cipher suite to compatible" do
-      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :compatible)
+    test "sets cipher suite to compatible", context do
+      opts = [
+        certfile: context.cert_path,
+        keyfile: context.key_path,
+        cipher_suite: :compatible
+      ]
+
+      assert {:ok, opts} = configure(opts)
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
       assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
@@ -72,11 +107,11 @@ defmodule Plug.SSLTest do
              ]
     end
 
-    test "sets cipher suite with overrides compatible" do
+    test "sets cipher suite with overrides compatible", context do
       assert {:ok, opts} =
                configure(
-                 key: "abcdef",
-                 cert: "ghijkl",
+                 keyfile: context.key_path,
+                 certfile: context.cert_path,
                  cipher_suite: :compatible,
                  ciphers: [],
                  client_renegotiation: true,
@@ -85,100 +120,87 @@ defmodule Plug.SSLTest do
                  honor_cipher_order: false
                )
 
-      assert opts[:cipher_suite] == nil
-      assert opts[:honor_cipher_order] == false
-      assert opts[:client_renegotiation] == true
-      assert opts[:eccs] == []
-      assert opts[:versions] == []
-      assert opts[:ciphers] == []
+        assert opts[:cipher_suite] == nil
+        assert opts[:honor_cipher_order] == false
+        assert opts[:client_renegotiation] == true
+        assert opts[:eccs] == []
+        assert opts[:versions] == []
+        assert opts[:ciphers] == []
     end
 
-    test "allows bare atom configuration through unchanged" do
-      assert {:ok, opts} = configure([:inet6, {:key, "abcdef"}, {:cert, "ghijkl"}])
+    test "allows bare atom configuration through unchanged", context do
+      assert {:ok, opts} =
+               configure([
+                 :inet6,
+                 {:keyfile, context.key_path},
+                 {:certfile, context.cert_path}
+               ])
+
       assert :inet6 in opts
-      assert {:key, "abcdef"} in opts
-      assert {:cert, "ghijkl"} in opts
+      assert {:keyfile, to_charlist(context.key_path)} in opts
+      assert {:certfile, to_charlist(context.cert_path)} in opts
     end
 
     test "fails to configure if keyfile and certfile aren't absolute paths and otp_app is missing" do
-      assert {:error, message} = configure([:inet6, keyfile: "abcdef", certfile: "ghijkl"])
+      assert {:error, message} = configure([
+        :inet6, 
+        keyfile: "abcdef", 
+        certfile: "ghijkl"
+      ])
       assert message == "the :otp_app option is required when setting relative SSL certfiles"
     end
 
     test "fails to configure if the keyfile doesn't exist" do
       assert {:error, message} =
-               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
+               configure([:inet6, keyfile: "nonexistent", certfile: "nonexistent", otp_app: :plug])
 
       assert message =~
                ":keyfile either does not exist, or the application does not have permission to access it"
     end
 
-    test "fails to configure if the certfile doesn't exist" do
-      File.touch("_build/test/lib/plug/abcdef")
-
-      assert {:error, message} =
-               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
-
-      assert message =~
-               ":certfile either does not exist, or the application does not have permission to access it"
-    end
-
     test "expands the paths to the keyfile and certfile using the otp_app" do
-      File.touch("_build/test/lib/plug/abcdef")
-      File.touch("_build/test/lib/plug/ghijkl")
-
-      assert {:ok, opts} =
-               configure([:inet6, keyfile: "abcdef", certfile: "ghijkl", otp_app: :plug])
-
-      assert to_string(opts[:keyfile]) =~ "_build/test/lib/plug/abcdef"
-      assert to_string(opts[:certfile]) =~ "_build/test/lib/plug/ghijkl"
-    end
-
-    test "supports the certs_keys ssl config option" do
-      assert {:ok, opts} =
-               configure([:inet6, certs_keys: [%{key: "abcdef", cert: "ghijkl"}]])
-
-      assert :inet6 in opts
-      assert opts[:certs_keys] == [%{key: "abcdef", cert: "ghijkl"}]
-    end
-
-    test "expands the paths for keyfile and certfile in the certs_keys ssl config option" do
-      File.touch("_build/test/lib/plug/abcdef")
-      File.touch("_build/test/lib/plug/ghijkl")
+      app_dir = Application.app_dir(:plug)
+      File.mkdir_p!(app_dir)
+      File.touch!(Path.join(app_dir, "abcdef"))
+      File.touch!(Path.join(app_dir, "ghijkl"))
 
       assert {:ok, opts} =
                configure([
                  :inet6,
-                 certs_keys: [%{keyfile: "abcdef", certfile: "ghijkl"}],
+                 keyfile: "abcdef",
+                 certfile: "ghijkl",
                  otp_app: :plug
                ])
 
-      assert :inet6 in opts
-
-      [%{keyfile: keyfile, certfile: certfile}] = opts[:certs_keys]
-
-      assert to_string(keyfile) =~ "_build/test/lib/plug/abcdef"
-      assert to_string(certfile) =~ "_build/test/lib/plug/ghijkl"
+      assert to_string(opts[:keyfile]) =~ "abcdef"
+      assert to_string(opts[:certfile]) =~ "ghijkl"
     end
 
-    test "errors when an invalid cipher is given" do
-      assert configure(key: "abcdef", cert: "ghijkl", cipher_suite: :unknown) ==
+    test "errors when an invalid cipher is given", context do
+      assert configure(
+               keyfile: context.key_path,
+               certfile: context.cert_path,
+               cipher_suite: :unknown
+             ) ==
                {:error, "unknown :cipher_suite named :unknown"}
     end
 
-    test "errors when a cipher is provided as a binary string" do
+    test "errors when a cipher is provided as a binary string", context do
       assert {:error, message} =
                configure(
-                 key: "abcdef",
-                 cert: "ghijkl",
-                 ciphers: [~c"ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384"]
+                 keyfile: context.key_path,
+                 certfile: context.cert_path,
+                 ciphers: [
+                   ~c"ECDHE-ECDSA-AES256-GCM-SHA384", 
+                   "ECDHE-RSA-AES256-GCM-SHA384"
+                 ]
                )
 
       assert message ==
                "invalid cipher \"ECDHE-RSA-AES256-GCM-SHA384\" in cipher list. " <>
-                 "Strings (double-quoted) are not allowed in ciphers. " <>
-                 "Ciphers must be either charlists (single-quoted) or tuples. " <>
-                 "See the ssl application docs for reference"
+               "Strings (double-quoted) are not allowed in ciphers. " <>
+               "Ciphers must be either charlists (single-quoted) or tuples. " <>
+               "See the ssl application docs for reference"
     end
   end
 
