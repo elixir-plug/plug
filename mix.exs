@@ -10,7 +10,7 @@ defmodule Plug.MixProject do
     [
       app: :plug,
       version: @version,
-      elixir: "~> 1.10",
+      elixir: "~> 1.14",
       deps: deps(),
       package: package(),
       description: @description,

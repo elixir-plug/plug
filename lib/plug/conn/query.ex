@@ -143,22 +143,15 @@ defmodule Plug.Conn.Query do
   end
 
   defp decode_www_form(value, invalid_exception, validate_utf8) do
-    # TODO: Remove rescue as this can't fail from Elixir v1.13
-    try do
-      URI.decode_www_form(value)
-    rescue
-      ArgumentError ->
-        raise invalid_exception, "invalid urlencoded params, got #{value}"
-    else
-      binary ->
-        case validate_utf8 do
-          true -> Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
-          false -> :ok
-          module -> Plug.Conn.Utils.validate_utf8!(binary, module, "urlencoded params")
-        end
+    binary = URI.decode_www_form(value)
 
-        binary
+    case validate_utf8 do
+      true -> Plug.Conn.Utils.validate_utf8!(binary, invalid_exception, "urlencoded params")
+      false -> :ok
+      module -> Plug.Conn.Utils.validate_utf8!(binary, module, "urlencoded params")
     end
+
+    binary
   end
 
   @doc """

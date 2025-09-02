@@ -13,14 +13,7 @@ defmodule Plug.Router.Utils do
   Decodes path information for dispatching.
   """
   def decode_path_info!(conn) do
-    # TODO: Remove rescue as this can't fail from Elixir v1.13
-    try do
-      Enum.map(conn.path_info, &URI.decode/1)
-    rescue
-      e in ArgumentError ->
-        reason = %Plug.Router.MalformedURIError{message: e.message}
-        Plug.Conn.WrapperError.reraise(conn, :error, reason, __STACKTRACE__)
-    end
+    Enum.map(conn.path_info, &URI.decode/1)
   end
 
   @doc """

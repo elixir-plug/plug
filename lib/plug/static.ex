@@ -187,7 +187,7 @@ defmodule Plug.Static do
     segments = subset(at, conn.path_info)
 
     if allowed?(only_rules, segments) do
-      segments = Enum.map(segments, &uri_decode/1)
+      segments = Enum.map(segments, &URI.decode/1)
 
       if invalid_path?(segments) do
         raise InvalidPathError, "invalid path for static asset: #{conn.request_path}"
@@ -204,16 +204,6 @@ defmodule Plug.Static do
 
   def call(conn, _options) do
     conn
-  end
-
-  defp uri_decode(path) do
-    # TODO: Remove rescue as this can't fail from Elixir v1.13
-    try do
-      URI.decode(path)
-    rescue
-      ArgumentError ->
-        raise InvalidPathError
-    end
   end
 
   defp allowed?(_only_rules, []), do: false
