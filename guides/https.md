@@ -77,20 +77,27 @@ Additional options can be set by selecting a predefined profile or by setting `:
 
 To simplify configuration of TLS defaults Plug provides two preconfigured options: `cipher_suite: :strong` and `cipher_suite: :compatible`.
 
-The `:strong` profile enables AES-GCM ciphers with ECDHE or DHE key exchange, and TLS version 1.2 only. It is intended for typical installations with support for browsers and other modern clients.
+The `:strong` profile provides the highest level of security by enabling **TLS 1.3 only**. This configuration uses the official, modern cipher suites for TLS 1.3. This profile is for applications where maximum security is the priority and support for older clients is not a requirement. General-purpose web applications should default to this profile.
 
-The `:compatible` profile additionally enables AES-CBC ciphers, as well as TLS versions 1.1 and 1.0. Use this configuration to allow connections from older clients, such as older PC or mobile operating systems. Note that RSA key exchange is not enabled by this configuration, due to known weaknesses, so to support clients that do not support ECDHE or DHE it is necessary specify the ciphers explicitly (see [below](#manual-configuration)).
+The `:compatible` profile strikes a balance between strong security and broader compatibility by supporting both **TLS 1.3 and TLS 1.2**. This profile correctly turns off the insecure legacy protocols TLS 1.0 and 1.1, deprecated by [RFC 8996](https://www.rfc-editor.org/rfc/rfc8996.html). The cipher list includes modern AEAD ciphers that provide Perfect Forward Secrecy; the recommended choice for applications that need to support a wide range of modern clients without compromising on security.
 
 In addition, both profiles:
 
-* Configure the server to choose a cipher based on its own preferences rather than the client's (`honor_cipher_order` set to `true`); when specifying a custom cipher list, ensure the ciphers are listed in descending order of preference
-* Select the 'Prime' (SECP) curves for use in Elliptic Curve Cryptography (ECC)
+*   Configure the server to choose a cipher based on its own preferences rather than the client's (honor_cipher_order set to true). When specifying a custom cipher list, ensure the list of ciphers is in descending order of preference.
+*   Select a list of modern, strong elliptic curves for key exchange, including `:x25519`.
 
-All these parameters, including the global defaults mentioned above, can be overridden by specifying custom `:ssl` configuration options.
+Override any of these parameters by specifying custom `:ssl` configuration options.
 
 It is worth noting that the cipher lists and TLS protocol versions selected by the profiles are whitelists. If a new Erlang/OTP release introduces new TLS protocol versions or ciphers that are not included in the profile definition, they would have to be enabled explicitly by overriding the `:ciphers` and/or `:versions` options, until such time as they are added to the `Plug.SSL` profiles.
 
-The ciphers chosen and related configuration are based on [OWASP recommendations](https://www.owasp.org/index.php/TLS_Cipher_String_Cheat_Sheet), with some modifications as described in the `Plug.SSL.configure/1` documentation.
+#### Cipher Security: Modern AEAD Ciphers
+
+The cipher suites included in both the `strong` and `compatible` profiles include **AEAD (Authenticated Encryption with Associated Data)** ciphers only. AEAD ciphers, which utilize algorithms such as `AES-GCM` or `CHACHA20-POLY1305`, integrate encryption and data integrity checks into a single operation.
+
+Older **CBC-mode (Cipher Block Chaining)** ciphers (such as `ECDHE-RSA-AES256-SHA`) are excluded because CBC ciphers have historically been vulnerable to padding oracle attacks (like POODLE and Lucky 13). AEAD ciphers are the default to eliminate entire classes of vulnerabilities.
+
+The ciphers chosen and related configuration are based on the [OWASP Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html), as described in the `Plug.SSL.configure/1` documentation.
+
 
 ### Manual Configuration
 
@@ -104,12 +111,15 @@ Plug.Cowboy.https MyApp.MyPlug, [],
   certfile: "/etc/letsencrypt/live/example.net/cert.pem",
   keyfile: "/etc/letsencrypt/live/example.net/privkey.pem",
   cacertfile: "/etc/letsencrypt/live/example.net/chain.pem",
-  versions: [:"tlsv1.2", :"tlsv1.1"],
+  versions: [:"tlsv1.3", :"tlsv1.2"],
   ciphers: [
-    'ECDHE-RSA-AES256-GCM-SHA384',
-    'ECDHE-RSA-AES128-GCM-SHA256',
-    'DHE-RSA-AES256-GCM-SHA384',
-    'DHE-RSA-AES128-GCM-SHA256'
+    # TLS 1.3 Ciphersuites
+    ~c"TLS_AES_256_GCM_SHA384",
+    ~c"TLS_CHACHA20_POLY1305_SHA256",
+    ~c"TLS_AES_128_GCM_SHA256",
+    # Modern TLS 1.2 Ciphersuites
+    ~c"ECDHE-ECDSA-AES128-GCM-SHA256",
+    ~c"ECDHE-RSA-AES128-GCM-SHA256"
   ],
   honor_cipher_order: true,
   sni_fun: &MyPlug.ssl_opts_for_hostname/1
@@ -162,13 +172,26 @@ The certificate and CA chain can also be specified using DER binaries, using the
 
 ## Custom Diffie-Hellman Parameters
 
-It is recommended to generate a custom set of Diffie-Hellman parameters, to be used for the DHE key exchange. Use the following OpenSSL CLI command to create a `dhparam.pem` file:
+The Diffie-Hellman (DH) key exchange protocol is used by ciphers with "DHE" in their name. While modern clients strongly prefer the faster and more secure Elliptic-Curve Diffie-Hellman (ECDHE) protocol, you may still need to configure DH parameters for compatibility.
 
-`openssl dhparam -out dhparams.pem 4096`
+If no custom parameters are specified, Erlang's :ssl uses a secure built-in default (2048-bit 'group 14' from RFC 3526 since OTP 19). However, cryptographic bodies like the **US National Institute of Standards and Technology (NIST)** now recommends a minimum of **3072-bit parameters** for systems that need to remain secure into the future (beyond 2030). 
 
-On a slow machine (e.g. a cheap VPS) this may take several hours. You may want to run the command on a strong machine and copy the file over to the target server: the file does not need to be kept secret. It is best practice to rotate the file periodically.
+There are two primary ways to generate these parameters:
 
-Pass the (relative or absolute) path using the `:dhfile` option:
+**1. Recommended: Use a Standardized Group (Fast & Secure)**
+
+The **Internet Engineering Task Force (IETF)** in **RFC 7919** recommends using a standardized, well-vetted set of DH parameters instead of generating custom ones. Standard groups have undergone extensive public analysis to ensure their cryptographic strength. You can generate a file with 4096-bit `ffdeh4096` group using the following command:
+
+`openssl genpkey -genparam -algorithm DH -out dhparams.pem -pkeyopt group:ffdhe4096`
+
+This command is fast since it uses pre-vetted parameters.
+
+**2. Alternative: Generate Custom Parameters (Secure & Slow)**
+
+`openssl dhparam -out dhparams-4096.pem 4096`
+
+---
+Once you have generated your `dhparams.pem` file, pass the (relative or absolute) path using the `:dhfile` option:
 
 ```elixir
 Plug.Cowboy.https MyApp.MyPlug, [],
@@ -180,7 +203,7 @@ Plug.Cowboy.https MyApp.MyPlug, [],
   otp_app: :my_app
 ```
 
-If no custom parameters are specified, Erlang's `:ssl` uses its built-in defaults. Since OTP 19 this has been the 2048-bit 'group 14' from RFC3526.
+Given the security and speed benefits, using a standardized group is the preferred approach.
 
 ## Renewing Certificates
 
