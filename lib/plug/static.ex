@@ -96,6 +96,12 @@ defmodule Plug.Static do
       or "/favicon-high.ico". Such matches are useful when serving
       digested files at the root. Defaults to `nil` (no filtering).
 
+    * `:raise_on_missing_only` - when `true`, raises an exception if a static
+      file exists but does not match the `:only` list. This is useful in
+      development to catch missing entries, especially for digested files.
+      For example, if `favicon.ico` is in `:only` but the actual file is
+      `favicon-deadbeef.ico`, this option will raise an error. Defaults to `false`.
+
     * `:headers` - other headers to be set when serving static assets. Specify either
       an enum of key-value pairs or a `{module, function, args}` to return an enum. The
       `conn` will be passed to the function, as well as the `args`.
@@ -147,6 +153,10 @@ defmodule Plug.Static do
     defexception message: "invalid path for static asset", plug_status: 400
   end
 
+  defmodule MissingPathInOnlyFilterError do
+    defexception message: "static asset found but not specified in :only rule", plug_status: 400
+  end
+
   @impl true
   def init(opts) do
     from =
@@ -167,6 +177,7 @@ defmodule Plug.Static do
     %{
       encodings: encodings,
       only_rules: {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, [])},
+      raise_on_missing_only: Keyword.get(opts, :raise_on_missing_only, false),
       qs_cache:
         Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000, immutable"),
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
@@ -198,6 +209,7 @@ defmodule Plug.Static do
       encoding = file_encoding(conn, path, range, encodings)
       serve_static(encoding, conn, segments, range, options)
     else
+      maybe_raise_on_missing_only(segments, from, options)
       conn
     end
   end
@@ -212,6 +224,32 @@ defmodule Plug.Static do
   defp allowed?({full, prefix}, [h | _]) do
     h in full or (prefix != [] and match?({0, _}, :binary.match(h, prefix)))
   end
+
+  defp maybe_raise_on_missing_only([], _from, _options), do: :ok
+
+  defp maybe_raise_on_missing_only(segments, from, %{
+         raise_on_missing_only: true,
+         only_rules: {only, _only_matching}
+       })
+       when only != [] do
+    segments = Enum.map(segments, &URI.decode/1)
+
+    if not invalid_path?(segments) do
+      path = path(from, segments)
+
+      case :prim_file.read_file_info(path, [:posix]) do
+        {:ok, file_info(type: :regular)} ->
+          raise MissingPathInOnlyFilterError,
+                "static file exists but is not in the :only list: #{Enum.join(segments, "/")}. " <>
+                  "Add it to the :only list or use :only_matching for prefix matching"
+
+        _ ->
+          :ok
+      end
+    end
+  end
+
+  defp maybe_raise_on_missing_only(_segments, _from, _options), do: :ok
 
   defp maybe_put_content_type(conn, false, _), do: conn
 
