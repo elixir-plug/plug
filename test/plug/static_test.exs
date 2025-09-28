@@ -836,6 +836,34 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
   end
 
+  defmodule RaiseOnMissingOnlyPlug do
+    use Plug.Builder
+
+    plug Plug.Static,
+      at: "/",
+      from: Path.expand("../fixtures", __DIR__),
+      only: ~w(static.txt),
+      raise_on_missing_only: true
+
+    plug :passthrough
+
+    defp passthrough(conn, _), do: Plug.Conn.send_resp(conn, 404, "Passthrough")
+  end
+
+  test "raise_on_missing_only option validates static files against only list" do
+    assert_raise Plug.Static.MissingPathInOnlyFilterError,
+                 ~r/static file exists but is not in the :only list: file-deadbeef.txt/,
+                 fn ->
+                   RaiseOnMissingOnlyPlug.call(conn(:get, "/file-deadbeef.txt"), [])
+                 end
+
+    conn = RaiseOnMissingOnlyPlug.call(conn(:get, "/static.txt"), [])
+    assert conn.status == 200
+
+    conn = RaiseOnMissingOnlyPlug.call(conn(:get, "/nonexistent.txt"), [])
+    assert conn.status == 404
+  end
+
   defmodule HeaderGenerator do
     def generate(_conn, header) do
       [header]
