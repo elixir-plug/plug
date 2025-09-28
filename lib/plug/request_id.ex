@@ -56,7 +56,6 @@ defmodule Plug.RequestId do
 
   """
 
-  require Logger
   alias Plug.Conn
   @behaviour Plug
 

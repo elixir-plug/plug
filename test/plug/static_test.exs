@@ -851,7 +851,7 @@ defmodule Plug.StaticTest do
   end
 
   test "raise_on_missing_only option validates static files against only list" do
-    assert_raise Plug.Static.MissingPathInOnlyFilterError,
+    assert_raise Plug.Static.InvalidPathError,
                  ~r/static file exists but is not in the :only list: file-deadbeef.txt/,
                  fn ->
                    RaiseOnMissingOnlyPlug.call(conn(:get, "/file-deadbeef.txt"), [])

@@ -153,10 +153,6 @@ defmodule Plug.Static do
     defexception message: "invalid path for static asset", plug_status: 400
   end
 
-  defmodule MissingPathInOnlyFilterError do
-    defexception message: "static asset found but not specified in :only rule", plug_status: 400
-  end
-
   @impl true
   def init(opts) do
     from =
@@ -174,10 +170,17 @@ defmodule Plug.Static do
       |> maybe_add("br", ".br", Keyword.get(opts, :brotli, false))
       |> maybe_add("gzip", ".gz", Keyword.get(opts, :gzip, false))
 
+    only_status =
+      if Keyword.get(opts, :raise_on_missing_only, false) do
+        :raise
+      else
+        :forbidden
+      end
+
     %{
       encodings: encodings,
-      only_rules: {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, [])},
-      raise_on_missing_only: Keyword.get(opts, :raise_on_missing_only, false),
+      only_rules:
+        {Keyword.get(opts, :only, []), Keyword.get(opts, :only_matching, []), only_status},
       qs_cache:
         Keyword.get(opts, :cache_control_for_vsn_requests, "public, max-age=31536000, immutable"),
       et_cache: Keyword.get(opts, :cache_control_for_etags, "public"),
@@ -197,20 +200,33 @@ defmodule Plug.Static do
       when meth in @allowed_methods do
     segments = subset(at, conn.path_info)
 
-    if allowed?(only_rules, segments) do
-      segments = Enum.map(segments, &URI.decode/1)
+    case path_status(only_rules, segments) do
+      :forbidden ->
+        conn
 
-      if invalid_path?(segments) do
-        raise InvalidPathError, "invalid path for static asset: #{conn.request_path}"
-      end
+      status ->
+        segments = Enum.map(segments, &URI.decode/1)
 
-      path = path(from, segments)
-      range = get_req_header(conn, "range")
-      encoding = file_encoding(conn, path, range, encodings)
-      serve_static(encoding, conn, segments, range, options)
-    else
-      maybe_raise_on_missing_only(segments, from, options)
-      conn
+        if invalid_path?(segments) do
+          raise InvalidPathError, "invalid path for static asset: #{conn.request_path}"
+        end
+
+        path = path(from, segments)
+        range = get_req_header(conn, "range")
+
+        case file_encoding(conn, path, range, encodings) do
+          :error ->
+            conn
+
+          triplet ->
+            if status == :raise do
+              raise InvalidPathError,
+                    "static file exists but is not in the :only list: #{Enum.join(segments, "/")}. " <>
+                      "Add it to the :only list or use :only_matching for prefix matching"
+            end
+
+            serve_static(triplet, conn, segments, range, options)
+        end
     end
   end
 
@@ -218,38 +234,16 @@ defmodule Plug.Static do
     conn
   end
 
-  defp allowed?(_only_rules, []), do: false
-  defp allowed?({[], []}, _list), do: true
+  defp path_status(_only_rules, []), do: :forbidden
+  defp path_status({[], [], _}, _list), do: :allowed
 
-  defp allowed?({full, prefix}, [h | _]) do
-    h in full or (prefix != [] and match?({0, _}, :binary.match(h, prefix)))
-  end
-
-  defp maybe_raise_on_missing_only([], _from, _options), do: :ok
-
-  defp maybe_raise_on_missing_only(segments, from, %{
-         raise_on_missing_only: true,
-         only_rules: {only, _only_matching}
-       })
-       when only != [] do
-    segments = Enum.map(segments, &URI.decode/1)
-
-    if not invalid_path?(segments) do
-      path = path(from, segments)
-
-      case :prim_file.read_file_info(path, [:posix]) do
-        {:ok, file_info(type: :regular)} ->
-          raise MissingPathInOnlyFilterError,
-                "static file exists but is not in the :only list: #{Enum.join(segments, "/")}. " <>
-                  "Add it to the :only list or use :only_matching for prefix matching"
-
-        _ ->
-          :ok
-      end
+  defp path_status({full, prefix, status}, [h | _]) do
+    if h in full or (prefix != [] and match?({0, _}, :binary.match(h, prefix))) do
+      :allowed
+    else
+      status
     end
   end
-
-  defp maybe_raise_on_missing_only(_segments, _from, _options), do: :ok
 
   defp maybe_put_content_type(conn, false, _), do: conn
 
@@ -284,10 +278,6 @@ defmodule Plug.Static do
         |> send_resp(304, "")
         |> halt()
     end
-  end
-
-  defp serve_static(:error, conn, _segments, _range, _options) do
-    conn
   end
 
   defp serve_range(conn, file_info, path, [range], options) do
