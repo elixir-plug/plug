@@ -60,6 +60,20 @@ defmodule Plug.Router.UtilsTest do
              build_path_match("foo/bar:username")
   end
 
+  test "build match with escaped identifiers" do
+    assert quote(@opts, do: {[], ["foo", ":"]}) == build_path_match("foo/\\:")
+    assert quote(@opts, do: {[], ["foo", ":id"]}) == build_path_match("/foo/\\:id")
+    assert quote(@opts, do: {[], ["foo", ":username"]}) == build_path_match("foo/\\:username")
+
+    assert quote(@opts, do: {[:id, :post_id], ["foo", id, ":name", post_id]}) ==
+             build_path_match("/foo/:id/\\:name/:post_id")
+
+    assert quote(@opts, do: {[], ["foo", "bar-:id"]}) == build_path_match("/foo/bar-\\:id")
+
+    assert quote(@opts, do: {[], ["foo", "bar:batchDelete"]}) ==
+             build_path_match("foo/bar\\:batchDelete")
+  end
+
   test "build match only with glob" do
     assert quote(@opts, do: {[:bar], bar}) == build_path_match("*bar")
     assert quote(@opts, do: {[:glob], glob}) == build_path_match("/*glob")
@@ -68,6 +82,14 @@ defmodule Plug.Router.UtilsTest do
   test "build match with glob" do
     assert quote(@opts, do: {[:bar], ["foo" | bar]}) == build_path_match("/foo/*bar")
     assert quote(@opts, do: {[:glob], ["foo" | glob]}) == build_path_match("foo/*glob")
+  end
+
+  test "build match with escaped glob" do
+    assert quote(@opts, do: {[], ["*bar"]}) == build_path_match("\\*bar")
+    assert quote(@opts, do: {[], ["*glob"]}) == build_path_match("/\\*glob")
+
+    assert quote(@opts, do: {[], ["foo", "*bar"]}) == build_path_match("/foo/\\*bar")
+    assert quote(@opts, do: {[], ["foo", "*glob"]}) == build_path_match("foo/\\*glob")
   end
 
   test "build invalid match with empty matches" do

@@ -74,6 +74,14 @@ defmodule Plug.Router do
   The above will match `/hello/foo.json` but not `/hello/foo`.
   Other delimiters such as `-`, `@` may be used to denote suffixes.
 
+  Identifier matching can be escaped using the `\` character:
+
+      get "/hello/\\:greet" do
+        send_resp(conn, 200, "hello")
+      end
+
+  The above will only match `/hello/:greet`.
+
   Routes allow for globbing which will match the remaining parts
   of a route. A glob match is done with the `*` character followed
   by the variable name. Typically you prefix the variable name with
@@ -89,6 +97,15 @@ defmodule Plug.Router do
       get "/hello/*glob" do
         send_resp(conn, 200, "route after /hello: #{inspect glob}")
       end
+
+  Similarly to `:identifiers`, globs are also escaped using the
+  `\` character:
+
+      get "/hello/\\*glob" do
+        send_resp(conn, 200, "this is not a glob route")
+      end
+
+  The above will only match `/hello/*glob`.
 
   Opposite to `:identifiers`, globs do not allow prefix nor suffix
   matches.

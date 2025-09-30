@@ -127,7 +127,7 @@ defmodule Plug.Router.Utils do
   including the known parameters.
   """
   def build_path_clause(path, guard, context \\ nil) when is_binary(path) do
-    compiled = :binary.compile_pattern([":", "*"])
+    compiled = :binary.compile_pattern(["\\:", "\\*", ":", "*"])
 
     {params, match, guards, post_match} =
       path
@@ -147,6 +147,15 @@ defmodule Plug.Router.Utils do
     case :binary.matches(segment, compiled) do
       [] ->
         build_path_clause(rest, params, [segment | match], guards, post_match, context, compiled)
+
+      [{prefix_size, match_length}] when match_length == 2 ->
+        suffix_size = byte_size(segment) - prefix_size - 2
+
+        <<prefix::binary-size(prefix_size), ?\\, char, suffix::binary-size(suffix_size)>> =
+          segment
+
+        escaped_segment = [prefix <> <<char>> <> suffix | match]
+        build_path_clause(rest, params, escaped_segment, guards, post_match, context, compiled)
 
       [{prefix_size, _}] ->
         suffix_size = byte_size(segment) - prefix_size - 1
