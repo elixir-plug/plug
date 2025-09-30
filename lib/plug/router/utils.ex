@@ -127,7 +127,7 @@ defmodule Plug.Router.Utils do
   including the known parameters.
   """
   def build_path_clause(path, guard, context \\ nil) when is_binary(path) do
-    compiled = :binary.compile_pattern([":", "*"])
+    compiled = :binary.compile_pattern(["\\:", ":", "*"])
 
     {params, match, guards, post_match} =
       path
@@ -147,6 +147,31 @@ defmodule Plug.Router.Utils do
     case :binary.matches(segment, compiled) do
       [] ->
         build_path_clause(rest, params, [segment | match], guards, post_match, context, compiled)
+
+      [{prefix_size, match_length}] when match_length == 2 ->
+        suffix_size = byte_size(segment) - prefix_size - 2
+
+        <<prefix::binary-size(prefix_size), matched::binary-size(match_length),
+          suffix::binary-size(suffix_size)>> = segment
+
+        case matched do
+          "\\:" ->
+            escaped_segment = prefix <> ":" <> suffix
+
+            build_path_clause(
+              rest,
+              params,
+              [escaped_segment | match],
+              guards,
+              post_match,
+              context,
+              compiled
+            )
+
+          _ ->
+            raise Plug.Router.InvalidSpecError,
+                  "the path segment contains invalid characters, got: " <> inspect(segment)
+        end
 
       [{prefix_size, _}] ->
         suffix_size = byte_size(segment) - prefix_size - 1
