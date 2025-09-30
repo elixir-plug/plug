@@ -98,7 +98,7 @@ defmodule Plug.Router do
         send_resp(conn, 200, "route after /hello: #{inspect glob}")
       end
 
-  Similarly to `:identifiers`, globs are also escaped through the
+  Similarly to `:identifiers`, globs are also escaped using the
   `\` character:
 
       get "/hello/\\*glob" do
