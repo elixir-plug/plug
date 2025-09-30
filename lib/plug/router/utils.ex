@@ -150,8 +150,8 @@ defmodule Plug.Router.Utils do
 
       [{prefix_size, match_length}] when match_length == 2 ->
         suffix_size = byte_size(segment) - prefix_size - 2
-        <<prefix::binary-size(prefix_size), "\\:", suffix::binary-size(suffix_size)>> = segment
-        escaped_segment = [prefix <> ":" <> suffix | match]
+        <<prefix::binary-size(prefix_size), ?\\, char, suffix::binary-size(suffix_size)>> = segment
+        escaped_segment = [prefix <> <<char>> <> suffix | match]
         build_path_clause(rest, params, match, guards, post_match, context, compiled)
 
       [{prefix_size, _}] ->
