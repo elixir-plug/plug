@@ -24,6 +24,13 @@ defmodule Plug.UploadTest do
     end
   end
 
+  test "removes the random file on request" do
+    {:ok, path} = Plug.Upload.random_file("sample")
+    File.open!(path)
+    :ok = Plug.Upload.delete(path)
+    wait_until(fn -> not File.exists?(path) end)
+  end
+
   defp wait_until(fun) do
     if fun.() do
       :ok
