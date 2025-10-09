@@ -61,6 +61,9 @@ defmodule Plug.Upload do
 
   @doc """
   Deletes the given upload file.
+  
+  Uploads are automatically removed when the current process terminates,
+  but you may invoke this to request the file to be removed sooner.
   """
   @spec delete(t | binary) :: :ok | {:error, term}
   def delete(%__MODULE__{path: path}), do: delete(path)
