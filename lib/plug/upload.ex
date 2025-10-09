@@ -248,7 +248,7 @@ defmodule Plug.Upload do
   end
 
   defp delete_path({_pid, path}) do
-    :file.delete(path)
+    :file.delete(path, [:raw])
     :ok
   end
 end
