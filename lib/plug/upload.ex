@@ -60,6 +60,22 @@ defmodule Plug.Upload do
   end
 
   @doc """
+  Deletes the given upload file.
+  
+  Uploads are automatically removed when the current process terminates,
+  but you may invoke this to request the file to be removed sooner.
+  """
+  @spec delete(t | binary) :: :ok | {:error, term}
+  def delete(%__MODULE__{path: path}), do: delete(path)
+
+  def delete(path) when is_binary(path) do
+    with :ok <- :file.delete(path, [:raw]) do
+      :ets.delete_object(@path_table, {self(), path})
+      :ok
+    end
+  end
+
+  @doc """
   Assign ownership of the given upload file to another process.
 
   Useful if you want to do some work on an uploaded file in another process
