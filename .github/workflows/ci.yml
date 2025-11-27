@@ -18,17 +18,17 @@ jobs:
         include:
           # Earliest-supported Elixir/Erlang pair.
           - elixir: "1.14"
-            otp: "24.3"
+            otp: "24"
             PLUG_CRYPTO_2_0: "false"
 
           # Latest-supported Elixir/Erlang pair.
-          - elixir: "1.18"
-            otp: "27.3"
+          - elixir: "1.19"
+            otp: "28"
             lint: lint
             PLUG_CRYPTO_2_0: "true"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Erlang and Elixir
         uses: erlef/setup-beam@v1
