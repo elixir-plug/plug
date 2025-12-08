@@ -1,8 +1,21 @@
 # Changelog
 
-## v1.19.0-dev
+## v1.19.0 (2025-12-08)
 
 This release requires Elixir v1.14+ and it bumps the recommended :strong and :compatible SSL/TLS ciphers suite to align with modern security standards, prioritizing TLS 1.3 and 1.2. Support for the insecure TLS 1.0 and 1.1 protocols are removed in accordance with RFC 8996.
+
+### Enhancements
+
+  * [Plug.Router] Allow colon for named segments to be escaped
+  * [Plug.SSL] Prioritize TLS 1.3 and 1.2 ciphers
+  * [Plug.SSL] Allow excluding redirects based on hosts, paths, or the connection
+  * [Plug.Static] Add `:raise_on_missing_only`
+  * [Plug.Upload] Partition the uploader to improve performance
+  * [Plug.Upload] Add API for deleting files
+
+### Deprecations
+
+  * [Plug.Conn.Adapter] Deprecate `:owner` field
 
 ## v1.18.1 (2025-07-01)
 

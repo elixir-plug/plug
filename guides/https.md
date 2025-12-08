@@ -83,8 +83,8 @@ The `:compatible` profile strikes a balance between strong security and broader 
 
 In addition, both profiles:
 
-*   Configure the server to choose a cipher based on its own preferences rather than the client's (honor_cipher_order set to true). When specifying a custom cipher list, ensure the list of ciphers is in descending order of preference.
-*   Select a list of modern, strong elliptic curves for key exchange, including `:x25519`.
+* Configure the server to choose a cipher based on its own preferences rather than the client's (honor_cipher_order set to true). When specifying a custom cipher list, ensure the list of ciphers is in descending order of preference.
+* Select a list of modern, strong elliptic curves for key exchange, including `:x25519`.
 
 Override any of these parameters by specifying custom `:ssl` configuration options.
 
