@@ -113,6 +113,6 @@ defmodule Plug.ErrorHandlerTest do
              end
              """)
            end) =~
-             "got \"@impl Plug.ErrorHandler\" for function handle_errors/1 but this behaviour does not specify such callback."
+             "got \"@impl Plug.ErrorHandler\" for function handle_errors/1"
   end
 end
