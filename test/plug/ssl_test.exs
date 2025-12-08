@@ -182,9 +182,11 @@ defmodule Plug.SSLTest do
     end
   end
 
-  def excluded_host?(host) do
-    host == System.get_env("EXCLUDED_HOST")
-  end
+  def excluded_host?(%Plug.Conn{} = conn, field),
+    do: Map.fetch!(conn, field) == System.get_env("EXCLUDED_HOST")
+
+  def excluded_host?(host) when is_binary(host),
+    do: host == System.get_env("EXCLUDED_HOST")
 
   defp call(conn, opts \\ []) do
     opts = Keyword.put_new(opts, :log, false)
@@ -195,29 +197,6 @@ defmodule Plug.SSLTest do
     test "includes headers by default" do
       conn = call(conn(:get, "https://example.com/"))
       assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]
-      refute conn.halted
-    end
-
-    test "excludes localhost" do
-      conn = call(conn(:get, "https://localhost/"))
-      assert get_resp_header(conn, "strict-transport-security") == []
-      refute conn.halted
-    end
-
-    test "excludes custom" do
-      conn = call(conn(:get, "https://example.com/"), exclude: ["example.com"])
-      assert get_resp_header(conn, "strict-transport-security") == []
-      refute conn.halted
-    end
-
-    test "excludes tuple" do
-      System.put_env("EXCLUDED_HOST", "10.0.0.1")
-
-      conn =
-        conn(:get, "https://10.0.0.1/")
-        |> call(exclude: {__MODULE__, :excluded_host?, []})
-
-      assert get_resp_header(conn, "strict-transport-security") == []
       refute conn.halted
     end
 
@@ -261,6 +240,65 @@ defmodule Plug.SSLTest do
                ["max-age=31536000; preload; includeSubDomains"]
 
       refute conn.halted
+    end
+  end
+
+  describe ":exclude" do
+    test "excludes localhost by default" do
+      conn = call(conn(:get, "https://localhost/"))
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes hosts" do
+      conn = call(conn(:get, "https://localhost.com/"), exclude: [hosts: ["example.com"]])
+      assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]
+      refute conn.halted
+
+      conn = call(conn(:get, "https://example.com/"), exclude: [hosts: ["example.com"]])
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes paths" do
+      conn = call(conn(:get, "https://localhost/"), exclude: [paths: ["/health"]])
+      assert get_resp_header(conn, "strict-transport-security") == ["max-age=31536000"]
+      refute conn.halted
+
+      conn = call(conn(:get, "https://localhost/health"), exclude: [paths: ["/health"]])
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes conn mfargs" do
+      System.put_env("EXCLUDED_HOST", "10.0.0.1")
+
+      conn =
+        call(conn(:get, "https://10.0.0.1/"),
+          exclude: [conn: {__MODULE__, :excluded_host?, [:host]}]
+        )
+
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes deprecated binary" do
+      conn = call(conn(:get, "https://example.com/"), exclude: ["example.com"])
+      assert get_resp_header(conn, "strict-transport-security") == []
+      refute conn.halted
+    end
+
+    test "excludes deprecated tuple" do
+      System.put_env("EXCLUDED_HOST", "10.0.0.1")
+
+      ExUnit.CaptureIO.capture_io(:stderr, fn ->
+        conn =
+          conn(:get, "https://10.0.0.1/")
+          |> call(exclude: {__MODULE__, :excluded_host?, []})
+
+        assert get_resp_header(conn, "strict-transport-security") == []
+        refute conn.halted
+      end)
     end
   end
 

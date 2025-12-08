@@ -34,14 +34,14 @@ defmodule Plug.SSL do
       defaults to `false`
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to `false`
-    * `:exclude` - exclude the given hosts from redirecting to the `https`
-      scheme. Defaults to `["localhost", "127.0.0.1"]`. It may be set to a list of binaries
-      or a tuple [`{module, function, args}`](#module-excluded-hosts-tuple).
+    * `:exclude` - exclude certain request from redirecting to the `https` scheme.
+      It defaults to `[hosts: ["localhost", "127.0.0.1"]]`. See the
+      ["Exclude option"](#module-exclude-option) section below
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
     * `:log` - The log level at which this plug should log its request info.
-      Default is `:info`. Can be `false` to disable logging.
+      Default is `:info`. Can be `false` to disable logging
 
   ## Port
 
@@ -50,23 +50,37 @@ defmodule Plug.SSL do
   want to redirect to HTTPS on another port, you can sneak it alongside
   the host, for example: `host: "example.com:443"`.
 
-  ## Excluded hosts tuple
+  ## Exclude option
 
-  Tuple `{module, function, args}` can be passed to be invoked each time
-  the plug is checking whether to redirect host. Provided function needs
-  to receive at least one argument (`host`).
+  There are many situations where one may want to avoid `Plug.SSL` from
+  redirecting, such as requests coming from `localhost` or `127.0.0.1`,
+  or from health check endpoints.
+
+  This can be done via the `:exclude` option, which allows you to specify
+  conditions to skip the redirect. As long as any of the conditions match,
+  the route will be excluded, it must be one of:
+
+    * `[hosts: list_of_hosts, ...]` - skips redirection if the request
+      matches any of the given hosts
+
+    * `[paths: list_of_paths, ...]` - skips redirection if the request
+      matches any of the given paths
+
+    * `[conn: {mod, fun, args}, ...]` - calls the given `mod`, `fun`,
+      and `args` with `Plug.Conn` prepended to the list of arguments.
+      The plug will be excluded if the call returns `true`
+
+  The default value is `[hosts: ["localhost", "127.0.0.1"]]`. If you pass
+  any additional value, you must explicitly preserve the above if you want
+  the hosts to remain excluded.
 
   For example, you may define it as:
 
       plug Plug.SSL,
-        rewrite_on: [:x_forwarded_proto],
-        exclude: {__MODULE__, :excluded_host?, []}
-
-  where:
-
-      def excluded_host?(host) do
-        # Custom logic
-      end
+        exclude: [
+          hosts: ["localhost", "127.0.0.1"],
+          paths: ["/health"]
+        ]
 
   """
   @behaviour Plug
@@ -139,12 +153,12 @@ defmodule Plug.SSL do
   Layer Security Cheat Sheet. General purpose web applications should default to
   TLSv1.3 with ALL other protocols disabled.
 
-  The **Compatible** cipher suite supports TLSv1.2 and TLSv1.3. This 
-  suite provides strong security while maintaining compatibility with a wide 
-  range of modern clients. 
+  The **Compatible** cipher suite supports TLSv1.2 and TLSv1.3. This
+  suite provides strong security while maintaining compatibility with a wide
+  range of modern clients.
 
-  Legacy protocols TLSv1.1 and TLSv1.0 are officially deprecated by 
-  [RFC 8996](https://www.rfc-editor.org/rfc/rfc8996.html) and are 
+  Legacy protocols TLSv1.1 and TLSv1.0 are officially deprecated by
+  [RFC 8996](https://www.rfc-editor.org/rfc/rfc8996.html) and are
   considered insecure.
 
   [Test your ssl configuration](https://ssl-config.mozilla.org/)
@@ -343,10 +357,50 @@ defmodule Plug.SSL do
         :ok
     end
 
-    rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
+    exclude =
+      if exclude = Keyword.get(opts, :exclude) do
+        validate_exclude!(exclude)
+      else
+        [hosts: ["localhost", "127.0.0.1"]]
+      end
+
     log = Keyword.get(opts, :log, :info)
-    exclude = Keyword.get(opts, :exclude, ["localhost", "127.0.0.1"])
+    rewrite_on = Plug.RewriteOn.init(Keyword.get(opts, :rewrite_on))
     {hsts_header(opts), exclude, host, rewrite_on, log}
+  end
+
+  defp validate_exclude!(exclude) when is_list(exclude) do
+    Enum.map(exclude, fn
+      # TODO: Deprecate me on Plug v1.20
+      binary when is_binary(binary) ->
+        {:hosts, [binary]}
+
+      {:hosts, hosts} when is_list(hosts) ->
+        {:hosts, hosts}
+
+      {:paths, paths} when is_list(paths) ->
+        {:paths, Enum.map(paths, &Plug.Router.Utils.split/1)}
+
+      {:conn, {mod, fun, args}} when is_atom(mod) and is_atom(fun) and is_list(args) ->
+        {:conn, {mod, fun, args}}
+
+      other ->
+        raise ArgumentError,
+              "invalid entry in :exclude, expected host or path, got: #{inspect(other)}"
+    end)
+  end
+
+  defp validate_exclude!({m, f, a}) do
+    IO.warn(
+      "exclude: {mod, fun, args} is deprecated, " <>
+        "please use exclude: [conn: {mod, fun, args}], which will receive the whole connection instead"
+    )
+
+    {m, f, a}
+  end
+
+  defp validate_exclude!(exclude) do
+    raise ArgumentError, ":exclude must be a list, got: #{inspect(exclude)}"
   end
 
   @impl true
@@ -354,14 +408,21 @@ defmodule Plug.SSL do
     conn = Plug.RewriteOn.call(conn, rewrite_on)
 
     cond do
-      excluded?(conn.host, exclude) -> conn
+      excluded?(conn, exclude) -> conn
       conn.scheme == :https -> put_hsts_header(conn, hsts)
       true -> redirect_to_https(conn, host, log_level)
     end
   end
 
-  defp excluded?(host, list) when is_list(list), do: :lists.member(host, list)
-  defp excluded?(host, {mod, fun, args}), do: apply(mod, fun, [host | args])
+  defp excluded?(conn, list) when is_list(list) do
+    Enum.any?(list, fn
+      {:hosts, hosts} -> conn.host in hosts
+      {:paths, paths} -> conn.path_info in paths
+      {:conn, {mod, fun, args}} -> apply(mod, fun, [conn | args])
+    end)
+  end
+
+  defp excluded?(conn, {mod, fun, args}), do: apply(mod, fun, [conn.host | args])
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
