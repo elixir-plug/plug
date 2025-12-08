@@ -301,10 +301,25 @@ defmodule Plug.SSL do
   end
 
   defp set_strong_tls_defaults(options) do
-    options
-    |> set_managed_tls_defaults
-    |> keynew(:ciphers, 0, {:ciphers, @strong_tls_ciphers})
-    |> keynew(:versions, 0, {:versions, [:"tlsv1.3"]})
+    options =
+      options
+      |> set_managed_tls_defaults
+      |> keynew(:ciphers, 0, {:ciphers, @strong_tls_ciphers})
+      |> keynew(:versions, 0, {:versions, [:"tlsv1.3"]})
+
+    # secure_renegotiate and reuse_sessions are TLS 1.2 and earlier options.
+    # They must be removed for TLS 1.3-only configurations because OTP 28+
+    # validates that these options are not set when only TLS 1.3 is enabled.
+    # Only remove them if the final versions list has no pre-TLS 1.3 versions.
+    versions = options[:versions]
+
+    if Enum.any?([:tlsv1, :"tlsv1.1", :"tlsv1.2"], &(&1 in versions)) do
+      options
+    else
+      options
+      |> List.keydelete(:secure_renegotiate, 0)
+      |> List.keydelete(:reuse_sessions, 0)
+    end
   end
 
   defp set_compatible_tls_defaults(options) do

@@ -42,12 +42,31 @@ defmodule Plug.SSLTest do
       assert opts[:honor_cipher_order] == true
       assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
       assert opts[:versions] == [:"tlsv1.3"]
+      # secure_renegotiate and reuse_sessions must NOT be set for TLS 1.3-only
+      # configurations, as OTP 28+ rejects these options with TLS 1.3
+      assert opts[:secure_renegotiate] == nil
+      assert opts[:reuse_sessions] == nil
 
       assert opts[:ciphers] == [
                ~c"TLS_AES_256_GCM_SHA384",
                ~c"TLS_CHACHA20_POLY1305_SHA256",
                ~c"TLS_AES_128_GCM_SHA256"
              ]
+    end
+
+    test "sets cipher suite to strong but preserves secure_renegotiate when TLS 1.2 is included" do
+      # When user overrides versions to include TLS 1.2, secure_renegotiate should be preserved
+      assert {:ok, opts} =
+               configure(
+                 key: "abcdef",
+                 cert: "ghijkl",
+                 cipher_suite: :strong,
+                 versions: [:"tlsv1.3", :"tlsv1.2"]
+               )
+
+      assert opts[:versions] == [:"tlsv1.3", :"tlsv1.2"]
+      assert opts[:secure_renegotiate] == true
+      assert opts[:reuse_sessions] == true
     end
 
     test "sets cipher suite to compatible" do
