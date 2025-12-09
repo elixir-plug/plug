@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.19.1 (2025-12-09)
+
+### Bug fixes
+
+  * [Plug.SSL] Fix `cypher_suite: :strong` compatibility
+
 ## v1.19.0 (2025-12-08)
 
 This release requires Elixir v1.14+ and it bumps the recommended :strong and :compatible SSL/TLS ciphers suite to align with modern security standards, prioritizing TLS 1.3 and 1.2. Support for the insecure TLS 1.0 and 1.1 protocols are removed in accordance with RFC 8996.
