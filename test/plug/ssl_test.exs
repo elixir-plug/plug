@@ -38,6 +38,8 @@ defmodule Plug.SSLTest do
 
     test "sets cipher suite to strong" do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :strong)
+      assert opts[:reuse_sessions] == nil
+      assert opts[:secure_renegotiate] == nil
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
       assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
@@ -52,6 +54,8 @@ defmodule Plug.SSLTest do
 
     test "sets cipher suite to compatible" do
       assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", cipher_suite: :compatible)
+      assert opts[:reuse_sessions] == true
+      assert opts[:secure_renegotiate] == true
       assert opts[:cipher_suite] == nil
       assert opts[:honor_cipher_order] == true
       assert opts[:eccs] == [:x25519, :secp256r1, :secp384r1, :secp521r1]
