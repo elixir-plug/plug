@@ -54,6 +54,9 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, logger_metadata_key: :my_request_id
 
+    * `:prefix` - The prefix that will be appended on the request_id, if generated.
+
+          plug Plug.RequestId, prefix: :myapp
   """
 
   alias Plug.Conn
@@ -64,13 +67,14 @@ defmodule Plug.RequestId do
     {
       Keyword.get(opts, :http_header, "x-request-id"),
       Keyword.get(opts, :assign_as),
-      Keyword.get(opts, :logger_metadata_key, :request_id)
+      Keyword.get(opts, :logger_metadata_key, :request_id),
+      Keyword.get(opts, :prefix, false)
     }
   end
 
   @impl true
-  def call(conn, {header, assign_as, logger_metadata_key}) do
-    request_id = get_request_id(conn, header)
+  def call(conn, {header, assign_as, logger_metadata_key, prefix}) do
+    request_id = get_request_id(conn, header, prefix)
 
     Logger.metadata([{logger_metadata_key, request_id}])
     conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
@@ -78,22 +82,20 @@ defmodule Plug.RequestId do
     Conn.put_resp_header(conn, header, request_id)
   end
 
-  defp get_request_id(conn, header) do
+  defp get_request_id(conn, header, prefix) do
     case Conn.get_req_header(conn, header) do
-      [] -> generate_request_id()
-      [val | _] -> if valid_request_id?(val), do: val, else: generate_request_id()
+      [val | _] when byte_size(val) in 20..200 -> val
+      _ -> generate_request_id(prefix)
     end
   end
 
-  defp generate_request_id do
-    binary = <<
-      System.system_time(:nanosecond)::64,
-      :erlang.phash2({node(), self()}, 16_777_216)::24,
-      :erlang.unique_integer()::32
-    >>
+  defp generate_request_id(prefix) do
+    id =
+      Base.url_encode64(
+        <<System.system_time(:nanosecond)::64, :erlang.phash2({node(), self()}, 16_777_216)::24,
+          :erlang.unique_integer()::32>>
+      )
 
-    Base.url_encode64(binary)
+    if prefix, do: "#{prefix}-#{id}", else: id
   end
-
-  defp valid_request_id?(s), do: byte_size(s) in 20..200
 end

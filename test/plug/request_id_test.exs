@@ -7,6 +7,15 @@ defmodule Plug.RequestIdTest do
     Plug.RequestId.call(conn, Plug.RequestId.init(opts))
   end
 
+  test "generates new request id with prefix" do
+    conn = call(conn(:get, "/"), prefix: :myapp)
+    [res_request_id] = get_resp_header(conn, "x-request-id")
+    meta_request_id = Logger.metadata()[:request_id]
+    assert generated_request_id?(res_request_id)
+    assert res_request_id == meta_request_id
+    assert String.starts_with?(res_request_id, "myapp-")
+  end
+
   test "generates new request id if none exists" do
     conn = call(conn(:get, "/"), [])
     [res_request_id] = get_resp_header(conn, "x-request-id")
