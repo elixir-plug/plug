@@ -330,8 +330,6 @@ Modules that can be used after you use `Plug.Router` or `Plug.Builder` to help d
   * `Plug.Debugger` - shows a helpful debugging page every time there is a failure in a request;
   * `Plug.ErrorHandler` - allows developers to customize error pages in case of crashes instead of sending a blank one;
 
-During development, you can use `plug :dbg` to invoke [`dbg/2`](https://hexdocs.pm/elixir/Kernel.html#dbg/2) and print the conn at a specific point in the pipeline.
-
 ## Contributing
 
 We welcome everyone to contribute to Plug and help us tackle existing issues!

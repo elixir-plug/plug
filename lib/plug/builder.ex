@@ -123,6 +123,22 @@ defmodule Plug.Builder do
           halt(conn)
         end
       end
+
+  ## Debugging a pipeline
+
+  During development, you may wish to display the current state of the connection
+  at a certain point in the pipeline. This can be achieved by plugging the `dbg/2`
+  macro from Elixir kernel:
+
+      defmodule PlugWithDbg do
+        use Plug.Builder
+
+        plug Plug.RewriteOn
+        plug :dbg
+        plug Plug.MethodOverride
+        plug :dbg, charlists: :as_lists
+      end
+
   """
 
   @type plug :: module | atom
