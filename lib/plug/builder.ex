@@ -128,7 +128,8 @@ defmodule Plug.Builder do
 
   During development, you may wish to display the current state of the connection
   at a certain point in the pipeline. This can be achieved by plugging the `dbg/2`
-  macro from Elixir kernel:
+  macro from Elixir. Since it accepts and returns the connection as first argument,
+  and takes options as the second, it just works:
 
       defmodule PlugWithDbg do
         use Plug.Builder
