@@ -54,9 +54,12 @@ defmodule Plug.RequestId do
 
           plug Plug.RequestId, logger_metadata_key: :my_request_id
 
-    * `:generate_request_id` - The function used to generate the request ID, defaults to `generate_request_id/0`.
+    * `:generator` - The function used to generate the request ID, defaults to
+      `Plug.RequestId.generate/0`. When setting up a custom function, it is recommended
+      to be in the `&MyApp.custom_request_id/0` format, so it can be stored at compile-time.
+      The generated value must also have size between 20 and 200 bytes.
 
-          plug Plug.RequestId, generate_request_id: fn -> "myapp-" <> Plug.RequestId.generate_request_id() end
+          plug Plug.RequestId, generator: &MyApp.custom_request_id/0
   """
 
   alias Plug.Conn
@@ -68,13 +71,13 @@ defmodule Plug.RequestId do
       Keyword.get(opts, :http_header, "x-request-id"),
       Keyword.get(opts, :assign_as),
       Keyword.get(opts, :logger_metadata_key, :request_id),
-      Keyword.get(opts, :generate_request_id, &__MODULE__.generate_request_id/0)
+      Keyword.get(opts, :generator, &__MODULE__.generate/0)
     }
   end
 
   @impl true
-  def call(conn, {header, assign_as, logger_metadata_key, generate_request_id}) do
-    request_id = get_request_id(conn, header, generate_request_id)
+  def call(conn, {header, assign_as, logger_metadata_key, generator}) do
+    request_id = get_request_id(conn, header, generator)
 
     Logger.metadata([{logger_metadata_key, request_id}])
     conn = if assign_as, do: Conn.assign(conn, assign_as, request_id), else: conn
@@ -82,16 +85,18 @@ defmodule Plug.RequestId do
     Conn.put_resp_header(conn, header, request_id)
   end
 
-  defp get_request_id(conn, header, generate_request_id) do
+  defp get_request_id(conn, header, generator) do
     case Conn.get_req_header(conn, header) do
       [val | _] when byte_size(val) in 20..200 -> val
-      _ -> generate_request_id.()
+      _ -> generator.()
     end
   end
 
-  @doc "Generates Base64 encoded request ID."
-  @spec generate_request_id :: binary()
-  def generate_request_id do
+  @doc """
+  Generates a random Base64 encoded request ID.
+  """
+  @spec generate :: binary()
+  def generate do
     binary = <<
       System.system_time(:nanosecond)::64,
       :erlang.phash2({node(), self()}, 16_777_216)::24,

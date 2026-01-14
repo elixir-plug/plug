@@ -7,10 +7,10 @@ defmodule Plug.RequestIdTest do
     Plug.RequestId.call(conn, Plug.RequestId.init(opts))
   end
 
-  test "generates new request id with generate_request_id" do
+  test "generates new request id with generator" do
     conn =
       call(conn(:get, "/"),
-        generate_request_id: fn -> "myapp-" <> Plug.RequestId.generate_request_id() end
+        generator: fn -> "myapp-" <> Plug.RequestId.generate() end
       )
 
     [res_request_id] = get_resp_header(conn, "x-request-id")
