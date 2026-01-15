@@ -151,7 +151,7 @@ defmodule Plug.Router.Utils do
       [{prefix_size, match_length}] when match_length == 2 ->
         suffix_size = byte_size(segment) - prefix_size - 2
 
-        <<prefix::binary-size(prefix_size), ?\\, char, suffix::binary-size(suffix_size)>> =
+        <<prefix::binary-size(^prefix_size), ?\\, char, suffix::binary-size(^suffix_size)>> =
           segment
 
         escaped_segment = [prefix <> <<char>> <> suffix | match]
@@ -159,7 +159,7 @@ defmodule Plug.Router.Utils do
 
       [{prefix_size, _}] ->
         suffix_size = byte_size(segment) - prefix_size - 1
-        <<prefix::binary-size(prefix_size), char, suffix::binary-size(suffix_size)>> = segment
+        <<prefix::binary-size(^prefix_size), char, suffix::binary-size(^suffix_size)>> = segment
         {param, suffix} = parse_suffix(suffix)
         params = [param | params]
         var = Macro.var(String.to_atom(param), context)
