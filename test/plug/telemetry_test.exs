@@ -8,9 +8,9 @@ defmodule Plug.TelemetryTest do
     use Plug.Builder
 
     plug Plug.Telemetry, event_prefix: [:pipeline], extra_options: :hello
-    plug :send_resp, 200
+    plug :send_response, 200
 
-    defp send_resp(conn, status) do
+    defp send_response(conn, status) do
       Plug.Conn.send_resp(conn, status, "Response")
     end
   end
@@ -26,13 +26,13 @@ defmodule Plug.TelemetryTest do
 
     plug Plug.Telemetry, event_prefix: [:crashing, :pipeline]
     plug :raise_error
-    plug :send_resp, 200
+    plug :send_response, 200
 
     defp raise_error(_conn, _) do
       raise "Crash!"
     end
 
-    defp send_resp(conn, status) do
+    defp send_response(conn, status) do
       Plug.Conn.send_resp(conn, status, "Response")
     end
   end
