@@ -896,12 +896,68 @@ defmodule Plug.StaticTest do
     assert conn.status == 200
   end
 
-  test "raise_on_missing_only does not raise on non-matching paths with colons" do
-    conn =
-      conn(:get, "/public/resource:identifier")
-      |> call(only: ["assets"], raise_on_missing_only: true)
+  describe "raise_on_missing_only" do
+    test "passes through when path has colons and does not match :only" do
+      conn =
+        conn(:get, "/public/resource:identifier")
+        |> call(only: ["assets"], raise_on_missing_only: true)
 
-    assert conn.status == 404
-    assert conn.resp_body == "Passthrough"
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+
+    test "passes through when path has dot-dot segments and does not match :only" do
+      conn =
+        conn(:get, "/public/..%2Fsecret")
+        |> call(only: ["assets"], raise_on_missing_only: true)
+
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+
+    test "passes through when path has null bytes and does not match :only" do
+      conn =
+        conn(:get, "/public/file%00.txt")
+        |> call(only: ["assets"], raise_on_missing_only: true)
+
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+
+    test "passes through when non-existent file does not match :only" do
+      conn =
+        conn(:get, "/public/nonexistent.txt")
+        |> call(only: ["assets"], raise_on_missing_only: true)
+
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+
+    test "passes through with only_matching when path does not match prefix" do
+      conn =
+        conn(:get, "/public/resource:identifier")
+        |> call(only_matching: ["assets"], raise_on_missing_only: true)
+
+      assert conn.status == 404
+      assert conn.resp_body == "Passthrough"
+    end
+
+    test "raises when existing file is not in :only list" do
+      assert_raise Plug.Static.InvalidPathError,
+                   ~r/static file exists but is not in the :only list/,
+                   fn ->
+                     conn(:get, "/public/fixtures/static.txt")
+                     |> call(only: ["assets"], raise_on_missing_only: true)
+                   end
+    end
+
+    test "serves file normally when it matches :only list" do
+      conn =
+        conn(:get, "/public/fixtures/static.txt")
+        |> call(only: ["fixtures"], raise_on_missing_only: true)
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+    end
   end
 end
