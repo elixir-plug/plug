@@ -895,4 +895,13 @@ defmodule Plug.StaticTest do
 
     assert conn.status == 200
   end
+
+  test "raise_on_missing_only does not raise on non-matching paths with colons" do
+    conn =
+      conn(:get, "/public/resource:identifier")
+      |> call(only: ["assets"], raise_on_missing_only: true)
+
+    assert conn.status == 404
+    assert conn.resp_body == "Passthrough"
+  end
 end

@@ -204,7 +204,7 @@ defmodule Plug.Static do
       :forbidden ->
         conn
 
-      status ->
+      :allowed ->
         segments = Enum.map(segments, &URI.decode/1)
 
         if invalid_path?(segments) do
@@ -215,17 +215,19 @@ defmodule Plug.Static do
         range = get_req_header(conn, "range")
 
         case file_encoding(conn, path, range, encodings) do
-          :error ->
-            conn
+          :error -> conn
+          triplet -> serve_static(triplet, conn, segments, range, options)
+        end
 
-          triplet ->
-            if status == :raise do
-              raise InvalidPathError,
-                    "static file exists but is not in the :only list: #{Enum.join(segments, "/")}. " <>
-                      "Add it to the :only list or use :only_matching for prefix matching"
-            end
+      :raise ->
+        segments = Enum.map(segments, &URI.decode/1)
 
-            serve_static(triplet, conn, segments, range, options)
+        if not invalid_path?(segments) and regular_file_info(path(from, segments)) do
+          raise InvalidPathError,
+                "static file exists but is not in the :only list: #{Enum.join(segments, "/")}. " <>
+                  "Add it to the :only list or use :only_matching for prefix matching"
+        else
+          conn
         end
     end
   end
