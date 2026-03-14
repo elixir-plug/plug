@@ -228,11 +228,23 @@ defmodule Plug.Test do
 
   @doc """
   Puts a request cookie.
+
+  ## Options
+
+    * `:max_age` - the cookie max-age, in seconds. Unset by default.
+    * `:sign` - when true, signs the cookie.
+    * `:encrypt` - when true, encrypts the cookie.
+
   """
-  @spec put_req_cookie(Conn.t(), binary, binary) :: Conn.t()
-  def put_req_cookie(conn, key, value) when is_binary(key) and is_binary(value) do
+  @spec put_req_cookie(Conn.t(), binary, any, keyword) :: Conn.t()
+  def put_req_cookie(%Conn{} = conn, key, value, opts \\ [])
+      when is_binary(key) and is_list(opts) do
     conn = delete_req_cookie(conn, key)
-    %{conn | req_headers: [{"cookie", "#{key}=#{value}"} | conn.req_headers]}
+    opts = Keyword.take(opts, [:max_age, :sign, :encrypt])
+
+    {to_send_value, _opts} = Conn.maybe_sign_or_encrypt_cookie(conn, key, value, opts)
+
+    %{conn | req_headers: [{"cookie", "#{key}=#{to_send_value}"} | conn.req_headers]}
   end
 
   @doc """

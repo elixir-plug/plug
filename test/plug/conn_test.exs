@@ -1249,6 +1249,32 @@ defmodule Plug.ConnTest do
       assert get_cookies(new_conn)["foo"] == get_resp_cookies(conn)["foo"][:value]
       refute Map.has_key?(fetch_cookies(new_conn, encrypted: "foo").cookies, "foo")
     end
+
+    test "put_req_cookie/4 with sign: true" do
+      conn = secret_conn()
+      assert get_req_header(conn, "cookie") == []
+
+      conn = put_req_cookie(conn, "foo", "signed-bar", sign: true)
+      assert [cookie] = get_req_header(conn, "cookie")
+      assert cookie != "foo=signed-bar"
+      assert cookie =~ ~r"foo=[\w\_\.]+"
+
+      # indicates no options were set to the header, only the signed value
+      refute cookie =~ ~r/;/
+    end
+
+    test "put_req_cookie/4 with encrypt: true" do
+      conn = secret_conn()
+      assert get_req_header(conn, "cookie") == []
+
+      conn = put_req_cookie(conn, "foo", "encrypted-bar", encrypt: true)
+      assert [cookie] = get_req_header(conn, "cookie")
+      assert cookie != "foo=encrypted-bar"
+      assert cookie =~ ~r"foo=[\w\_\.]+"
+
+      # indicates no options were set to the header, only the encrypted value
+      refute cookie =~ ~r/;/
+    end
   end
 
   test "fetch_session/2 returns the same conn on subsequent calls" do

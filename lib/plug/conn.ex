@@ -1677,7 +1677,8 @@ defmodule Plug.Conn do
     update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
   end
 
-  defp maybe_sign_or_encrypt_cookie(conn, key, value, opts) do
+  @doc false
+  def maybe_sign_or_encrypt_cookie(%Conn{} = conn, key, value, opts) do
     {sign?, opts} = Keyword.pop(opts, :sign, false)
     {encrypt?, opts} = Keyword.pop(opts, :encrypt, false)
 
