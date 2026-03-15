@@ -37,6 +37,16 @@ defmodule Plug.RewriteOnTest do
     assert conn.port == 443
   end
 
+  test "rewrites http to https when x-forwarded-proto value wss" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-proto", "wss")
+      |> call(:x_forwarded_proto)
+
+    assert conn.scheme == :https
+    assert conn.port == 443
+  end
+
   test "doesn't change the port when it doesn't match the scheme" do
     conn =
       conn(:get, "http://example.com:1234/")

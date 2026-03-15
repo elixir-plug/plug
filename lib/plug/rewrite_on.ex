@@ -96,6 +96,9 @@ defmodule Plug.RewriteOn do
   defp put_scheme(%{scheme: :http, port: 80} = conn, ["https"]),
     do: %{conn | scheme: :https, port: 443}
 
+  defp put_scheme(%{scheme: :http, port: 80} = conn, ["wss"]),
+    do: %{conn | scheme: :https, port: 443}
+
   defp put_scheme(conn, ["https"]),
     do: %{conn | scheme: :https}
 
