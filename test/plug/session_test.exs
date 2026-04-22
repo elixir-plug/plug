@@ -198,4 +198,13 @@ defmodule Plug.SessionTest do
     assert get_session(conn, :other) == "other"
     assert get_session(conn, :bar) == "bar"
   end
+
+  test "accepts a function as key" do
+    conn = fetch_cookies(conn(:get, "/"))
+    opts = Plug.Session.init(store: ProcessStore, key: fn -> "foobar" end)
+    conn = conn |> Plug.Session.call(opts) |> fetch_session()
+    conn = put_session(conn, "foo", "bar")
+    conn = send_resp(conn, 200, "")
+    assert match?(%{"foobar" => %{value: _}}, get_resp_cookies(conn))
+  end
 end

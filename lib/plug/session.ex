@@ -26,7 +26,13 @@ defmodule Plug.Session do
   ## Options
 
     * `:store` - session store module (required);
-    * `:key` - session cookie key (required);
+    * `:key` - session cookie key (required); may be a 0-arity function,
+      evaluated at runtime on every request. Since browsers scope cookies
+      by domain only, not port, multiple apps running on the same host
+      can use this to avoid sharing session cookies:
+
+          key: fn -> "_my_app_\#{System.fetch_env!("PORT")}" end,
+
     * `:domain` - see `Plug.Conn.put_resp_cookie/4`;
     * `:max_age` - see `Plug.Conn.put_resp_cookie/4`;
     * `:path` - see `Plug.Conn.put_resp_cookie/4`;
@@ -69,10 +75,15 @@ defmodule Plug.Session do
     Conn.put_private(conn, :plug_session_fetch, fetch_session(config))
   end
 
+  defp resolve_key(key) when is_function(key, 0), do: key.()
+  defp resolve_key(key), do: key
+
   defp fetch_session(config) do
     %{store: store, store_config: store_config, key: key} = config
 
     fn conn ->
+      key = resolve_key(key)
+
       {sid, session} =
         if cookie = Plug.Conn.get_cookies(conn)[key] do
           store.get(conn, cookie, store_config)
@@ -133,8 +144,8 @@ defmodule Plug.Session do
     do: store.delete(conn, sid, store_config)
 
   defp put_cookie(value, conn, %{cookie_opts: cookie_opts, key: key}),
-    do: Conn.put_resp_cookie(conn, key, value, cookie_opts)
+    do: Conn.put_resp_cookie(conn, resolve_key(key), value, cookie_opts)
 
   defp delete_cookie(conn, %{cookie_opts: cookie_opts, key: key}),
-    do: Conn.delete_resp_cookie(conn, key, cookie_opts)
+    do: Conn.delete_resp_cookie(conn, resolve_key(key), cookie_opts)
 end
