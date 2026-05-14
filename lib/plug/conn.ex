@@ -1215,6 +1215,11 @@ defmodule Plug.Conn do
     * `:read_timeout` - sets the timeout for each socket read, defaults to
       `5_000` milliseconds
 
+  > #### Request length {: .warning}
+  >
+  > The `:length` option tracks the maximum length within a single call.
+  > When doing multiple across to `read_part_headers/2` and `read_part_body/2`,
+  > it is your responsability to track the overall response length.
   """
   @spec read_part_headers(t, Keyword.t()) ::
           {:ok, headers, t} | {:error, :too_large, t} | {:done, t}
@@ -1258,6 +1263,21 @@ defmodule Plug.Conn do
   if there is no more body.
 
   It accepts the same options as `read_body/2`.
+
+  ## Options
+
+    * `:length` - sets the maximum number of bytes to read from the body on
+      every call, defaults to `8_000_000` bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to `1_000_000` bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      `15_000` milliseconds
+
+  > #### Request length {: .warning}
+  >
+  > The `:length` option tracks the maximum length within a single call.
+  > When doing multiple across to `read_part_headers/2` and `read_part_body/2`,
+  > it is your responsability to track the overall response length.
   """
   @spec read_part_body(t, Keyword.t()) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
   def read_part_body(%Conn{adapter: {adapter, state}} = conn, opts) do

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.19.2 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
+
 ## v1.19.1 (2025-12-09)
 
 ### Bug fixes
@@ -23,6 +29,12 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
 
   * [Plug.Conn.Adapter] Deprecate `:owner` field
 
+## v1.18.2 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
+
 ## v1.18.1 (2025-07-01)
 
 ### Enhancements
@@ -37,6 +49,12 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
   * [Plug.Conn] Define optional `get_sock_data/1` and `get_ssl_data/1` callbacks
   * [Plug.RequestID] Allow metadata key to be customizable
   * [Plug.Router] Allow match to dispatch to function plugs
+
+## v1.17.1 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
 
 ## v1.17.0 (2025-03-14)
 
@@ -53,6 +71,12 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
   * [Plug.Conn] Deprecate `req_cookies`, `cookies`, and `resp_cookies` fields in favor of functions
   * [Plug.Conn] Deprecate `owner` field. Tracking responses is now part of adapters
   * [Plug.Test] Deprecate `use Plug.Test` in favor of imports
+
+## v1.16.3 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
 
 ## v1.16.2 (2025-03-14)
 
@@ -80,6 +104,12 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
   * Fix bug with discarded connection state in `Plug.Debugger`
   * Parse media types with underscores in them
   * Do not crash on `max_age` set to nil (for consistency)
+
+## v1.15.4 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
 
 ## v1.15.3 (2024-01-16)
 

@@ -342,24 +342,15 @@ Finally, remember all interactions in our official spaces follow our [Code of Co
 
 ## Supported Versions
 
+Bug fixes only for the current release. Security patches for the last four minor releases. For example:
+
 | Branch | Support                  |
 |--------|--------------------------|
-| v1.15  | Bug fixes                |
-| v1.14  | Security patches only    |
-| v1.13  | Security patches only    |
-| v1.12  | Security patches only    |
-| v1.11  | Security patches only    |
-| v1.10  | Security patches only    |
-| v1.9   | Unsupported from 10/2023 |
-| v1.8   | Unsupported from 01/2023 |
-| v1.7   | Unsupported from 01/2022 |
-| v1.6   | Unsupported from 01/2022 |
-| v1.5   | Unsupported from 03/2021 |
-| v1.4   | Unsupported from 12/2018 |
-| v1.3   | Unsupported from 12/2018 |
-| v1.2   | Unsupported from 06/2018 |
-| v1.1   | Unsupported from 01/2018 |
-| v1.0   | Unsupported from 05/2017 |
+| v1.20  | Bug fixes                |
+| v1.19  | Security patches only    |
+| v1.18  | Security patches only    |
+| v1.17  | Security patches only    |
+| v1.16  | Security patches only    |
 
 ## License
 
