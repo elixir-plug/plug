@@ -388,6 +388,25 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 413
   end
 
+  test "raises on multipart headers larger than the parser length" do
+    multipart =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\ncontent-type: ",
+        String.duplicate("a", 2_000),
+        "\r\n\r\nabc\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse(length: 1_000)
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
   test "raises when request cannot be processed" do
     message = "unsupported media type text/plain"
 

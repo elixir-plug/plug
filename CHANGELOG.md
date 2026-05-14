@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.16.3 (2026-05-14)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Consider overall length when decoding multipart headers
+
 ## v1.16.2 (2025-03-14)
 
 ### Bug fixes

@@ -894,6 +894,40 @@ defmodule Plug.ConnTest do
     assert {:more, _, _} = read_body(conn, length: 100)
   end
 
+  test "read_part_headers/2 returns too_large while accumulating multipart headers" do
+    body =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\ncontent-type: ",
+        String.duplicate("a", 2_000),
+        "\r\n\r\nabc\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    conn =
+      conn(:post, "/", body)
+      |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+
+    assert {:error, :too_large, _conn} = read_part_headers(conn, length: 1_000)
+  end
+
+  test "read_part_headers/2 returns too_large for buffered multipart headers over the limit" do
+    buffer =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\ncontent-type: ",
+        String.duplicate("a", 2_000),
+        "\r\n\r\nabc\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    conn =
+      conn(:post, "/", "")
+      |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+
+    conn = %{conn | private: Map.put(conn.private, :plug_multipart, {"deadbeef", buffer})}
+
+    assert {:error, :too_large, _conn} = read_part_headers(conn, length: 1_000)
+  end
+
   test "query_params/1 and fetch_query_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.query_params == %Plug.Conn.Unfetched{aspect: :query_params}
