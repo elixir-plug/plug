@@ -120,7 +120,7 @@ defmodule Plug.Parsers.MULTIPART do
       parse_multipart(conn, opts_tuple)
     rescue
       # Do not ignore upload errors
-      e in [Plug.UploadError, Plug.Parsers.BadEncodingError] ->
+      e in [Plug.UploadError, Plug.Parsers.BadEncodingError, Plug.Parsers.RequestTooLargeError] ->
         reraise e, __STACKTRACE__
 
       # All others are wrapped
@@ -153,21 +153,35 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart(conn, {m2p, limit, headers_opts, opts}) do
-    read_result = Plug.Conn.read_part_headers(conn, headers_opts)
-    {:ok, limit, acc, conn} = parse_multipart(read_result, limit, opts, headers_opts, [])
+    read_result = read_part_headers(conn, limit, headers_opts, opts)
 
-    if limit > 0 do
-      {mod, fun, args} = m2p
-      apply(mod, fun, [acc, conn | args])
-    else
-      {:error, :too_large, conn}
+    case parse_multipart(read_result, limit, opts, headers_opts, []) do
+      {:ok, limit, acc, conn} ->
+        if limit >= 0 do
+          {mod, fun, args} = m2p
+          apply(mod, fun, [acc, conn | args])
+        else
+          {:error, :too_large, conn}
+        end
+
+      {:error, :too_large, conn} ->
+        {:error, :too_large, conn}
     end
   end
 
   defp parse_multipart({:ok, headers, conn}, limit, opts, headers_opts, acc) when limit >= 0 do
     {conn, limit, acc} = parse_multipart_headers(headers, conn, limit, opts, acc)
-    read_result = Plug.Conn.read_part_headers(conn, headers_opts)
-    parse_multipart(read_result, limit, opts, headers_opts, acc)
+
+    if limit >= 0 do
+      read_result = read_part_headers(conn, limit, headers_opts, opts)
+      parse_multipart(read_result, limit, opts, headers_opts, acc)
+    else
+      {:ok, limit, acc, conn}
+    end
+  end
+
+  defp parse_multipart({:error, :too_large, conn}, _limit, _opts, _headers_opts, _acc) do
+    {:error, :too_large, conn}
   end
 
   defp parse_multipart({:ok, _headers, conn}, limit, _opts, _headers_opts, acc) do
@@ -313,5 +327,13 @@ defmodule Plug.Parsers.MULTIPART do
       {^key, value} -> value
       nil -> nil
     end
+  end
+
+  defp read_part_headers(conn, limit, headers_opts, opts) do
+    headers_length = min(limit, Keyword.get(headers_opts, :length, Keyword.fetch!(opts, :length)))
+
+    headers_opts
+    |> Keyword.put(:length, headers_length)
+    |> then(&Plug.Conn.read_part_headers(conn, &1))
   end
 end
