@@ -22,10 +22,6 @@ defmodule Plug.Parsers.MULTIPART do
   Besides the options supported by `Plug.Conn.read_body/2`, the multipart parser
   also checks for:
 
-    * `:headers` - containing the same `:length`, `:read_length`
-      and `:read_timeout` options which are used explicitly for parsing multipart
-      headers
-
     * `:validate_utf8` - specifies whether multipart body parts should be validated
       as utf8 binaries. It is either a boolean or a custom exception to raise
 
@@ -102,15 +98,12 @@ defmodule Plug.Parsers.MULTIPART do
     {read_length, opts} = Keyword.pop(opts, :read_length, 1_000_000)
     opts = [length: read_length, read_length: read_length] ++ opts
 
-    # The header options are handled individually.
-    {headers_opts, opts} = Keyword.pop(opts, :headers, [])
-
     unless is_integer(limit) do
       raise ":length option for Plug.Parsers.MULTIPART must be an integer"
     end
 
     m2p = opts[:multipart_to_params] || {__MODULE__, :multipart_to_params, [opts]}
-    {m2p, limit, headers_opts, opts}
+    {m2p, limit, opts}
   end
 
   @impl true
@@ -120,7 +113,7 @@ defmodule Plug.Parsers.MULTIPART do
       parse_multipart(conn, opts_tuple)
     rescue
       # Do not ignore upload errors
-      e in [Plug.UploadError, Plug.Parsers.BadEncodingError] ->
+      e in [Plug.UploadError, Plug.Parsers.BadEncodingError, Plug.Parsers.RequestTooLargeError] ->
         reraise e, __STACKTRACE__
 
       # All others are wrapped
@@ -146,29 +139,43 @@ defmodule Plug.Parsers.MULTIPART do
 
   ## Multipart
 
-  defp parse_multipart(conn, {m2p, limit, headers_opts, opts}) do
-    read_result = Plug.Conn.read_part_headers(conn, headers_opts)
-    {:ok, limit, acc, conn} = parse_multipart(read_result, limit, opts, headers_opts, [])
+  defp parse_multipart(conn, {m2p, limit, opts}) do
+    read_result = read_part_headers(conn, limit, opts)
 
-    if limit > 0 do
-      {mod, fun, args} = m2p
-      apply(mod, fun, [acc, conn | args])
-    else
-      {:error, :too_large, conn}
+    case parse_multipart(read_result, limit, opts, []) do
+      {:ok, limit, acc, conn} ->
+        if limit >= 0 do
+          {mod, fun, args} = m2p
+          apply(mod, fun, [acc, conn | args])
+        else
+          {:error, :too_large, conn}
+        end
+
+      {:error, :too_large, conn} ->
+        {:error, :too_large, conn}
     end
   end
 
-  defp parse_multipart({:ok, headers, conn}, limit, opts, headers_opts, acc) when limit >= 0 do
+  defp parse_multipart({:ok, headers, conn}, limit, opts, acc) when limit >= 0 do
     {conn, limit, acc} = parse_multipart_headers(headers, conn, limit, opts, acc)
-    read_result = Plug.Conn.read_part_headers(conn, headers_opts)
-    parse_multipart(read_result, limit, opts, headers_opts, acc)
+
+    if limit >= 0 do
+      read_result = read_part_headers(conn, limit, opts)
+      parse_multipart(read_result, limit, opts, acc)
+    else
+      {:ok, limit, acc, conn}
+    end
   end
 
-  defp parse_multipart({:ok, _headers, conn}, limit, _opts, _headers_opts, acc) do
+  defp parse_multipart({:error, :too_large, conn}, _limit, _opts, _acc) do
+    {:error, :too_large, conn}
+  end
+
+  defp parse_multipart({:ok, _headers, conn}, limit, _opts, acc) do
     {:ok, limit, acc, conn}
   end
 
-  defp parse_multipart({:done, conn}, limit, _opts, _headers_opts, acc) do
+  defp parse_multipart({:done, conn}, limit, _opts, acc) do
     {:ok, limit, acc, conn}
   end
 
@@ -295,5 +302,10 @@ defmodule Plug.Parsers.MULTIPART do
       {^key, value} -> value
       nil -> nil
     end
+  end
+
+  defp read_part_headers(conn, limit, opts) do
+    headers_length = min(limit, Keyword.fetch!(opts, :length))
+    Plug.Conn.read_part_headers(conn, Keyword.put(opts, :length, headers_length))
   end
 end
