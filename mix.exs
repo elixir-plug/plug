@@ -15,7 +15,7 @@ defmodule Plug.MixProject do
       package: package(),
       description: @description,
       name: "Plug",
-      xref: [exclude: @xref_exclude],
+      elixirc_options: [no_warn_undefined: @xref_exclude],
       consolidate_protocols: Mix.env() != :test,
       docs: [
         extras: [
