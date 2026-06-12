@@ -480,6 +480,15 @@ defmodule Plug.ConnTest do
     end)
   end
 
+  test "upgrade_adapter/3 runs before_send callbacks" do
+    conn =
+      conn(:get, "/foo")
+      |> register_before_send(&assign(&1, :ran_before_send, true))
+      |> upgrade_adapter(:supported, opt: :supported)
+
+    assert conn.assigns[:ran_before_send] == true
+  end
+
   test "chunk/2 raises if send_chunked/3 hasn't been called yet" do
     conn = conn(:get, "/")
 

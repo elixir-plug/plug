@@ -1469,7 +1469,8 @@ defmodule Plug.Conn do
       when state in @unsent do
     case adapter.upgrade(payload, protocol, args) do
       {:ok, payload} ->
-        %{conn | adapter: {adapter, payload}, state: :upgraded}
+        conn = run_before_send(conn, :upgraded)
+        %{conn | adapter: {adapter, payload}}
 
       {:error, :not_supported} ->
         raise ArgumentError, "upgrade to #{protocol} not supported by #{inspect(adapter)}"
