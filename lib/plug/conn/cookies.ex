@@ -107,15 +107,22 @@ defmodule Plug.Conn.Cookies do
     value = Map.get(opts, :value)
     path = Map.get(opts, :path, "/")
 
-    IO.iodata_to_binary([
-      "#{key}=#{value}; path=#{path}",
-      emit_if(opts[:domain], &["; domain=", &1]),
-      emit_if(opts[:max_age], &encode_max_age(&1, opts)),
-      emit_if(Map.get(opts, :secure, false), "; secure"),
-      emit_if(Map.get(opts, :http_only, true), "; HttpOnly"),
-      emit_if(Map.get(opts, :same_site, nil), &encode_same_site/1),
-      emit_if(opts[:extra], &["; ", &1])
-    ])
+    key = to_string(key)
+    value = to_string(value)
+    path = to_string(path)
+
+    acc = [key, ?=, value, "; path=", path]
+    acc = if domain = opts[:domain], do: [acc, "; domain=", domain], else: acc
+    acc = if max_age = opts[:max_age], do: [acc | encode_max_age(max_age, opts)], else: acc
+    acc = if Map.get(opts, :secure, false), do: [acc | "; secure"], else: acc
+    acc = if Map.get(opts, :http_only, true), do: [acc | "; HttpOnly"], else: acc
+
+    acc =
+      if same_site = Map.get(opts, :same_site), do: [acc | encode_same_site(same_site)], else: acc
+
+    acc = if extra = opts[:extra], do: [acc, "; ", extra], else: acc
+
+    IO.iodata_to_binary(acc)
   end
 
   defp encode_max_age(max_age, opts) do
@@ -124,23 +131,10 @@ defmodule Plug.Conn.Cookies do
     ["; expires=", rfc2822(time), "; max-age=", Integer.to_string(max_age)]
   end
 
-  defp encode_same_site(value) when is_binary(value), do: "; SameSite=#{value}"
+  defp encode_same_site(value) when is_binary(value), do: ["; SameSite=", value]
 
-  defp emit_if(value, fun_or_string) do
-    cond do
-      !value ->
-        []
-
-      is_function(fun_or_string) ->
-        fun_or_string.(value)
-
-      is_binary(fun_or_string) ->
-        fun_or_string
-    end
-  end
-
-  defp pad(number) when number in 0..9, do: <<?0, ?0 + number>>
-  defp pad(number), do: Integer.to_string(number)
+  defp pad(n) when n < 10, do: <<?0, ?0 + n>>
+  defp pad(n), do: <<?0 + div(n, 10), ?0 + rem(n, 10)>>
 
   defp rfc2822({{year, month, day} = date, {hour, minute, second}}) do
     # Sat, 17 Apr 2010 14:00:00 GMT
