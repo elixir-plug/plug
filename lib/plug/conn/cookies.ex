@@ -51,15 +51,18 @@ defmodule Plug.Conn.Cookies do
   defp decode_kv(<<h, t::binary>>, acc) when h in [?\s, ?\t], do: decode_kv(t, acc)
   defp decode_kv(kv, acc) when is_binary(kv), do: decode_key(kv, kv, 0, acc)
 
-  defp decode_key(<<h, t::binary>>, _key_rest, _len, acc) when h in [?\s, ?\t, ?\r, ?\n, ?\v, ?\f],
-    do: skip_until_cc(t, acc)
+  defp decode_key(<<h, t::binary>>, _key_rest, _len, acc)
+       when h in [?\s, ?\t, ?\r, ?\n, ?\v, ?\f],
+       do: skip_until_cc(t, acc)
 
   defp decode_key(<<?;, t::binary>>, _key_rest, _len, acc), do: decode_kv(t, acc)
   defp decode_key(<<?=, t::binary>>, _key_rest, 0, acc), do: skip_until_cc(t, acc)
+
   defp decode_key(<<?=, t::binary>>, key_rest, len, acc) do
     key = binary_part(key_rest, 0, len)
     decode_value(t, t, 0, 0, key, acc)
   end
+
   defp decode_key(<<_, t::binary>>, key_rest, len, acc), do: decode_key(t, key_rest, len + 1, acc)
   defp decode_key(<<>>, _key_rest, _len, acc), do: acc
 
@@ -67,14 +70,19 @@ defmodule Plug.Conn.Cookies do
     value = binary_part(val_rest, 0, len - spaces)
     decode_kv(t, [{key, value} | acc])
   end
+
   defp decode_value(<<?\s, t::binary>>, val_rest, len, spaces, key, acc) do
     decode_value(t, val_rest, len + 1, spaces + 1, key, acc)
   end
-  defp decode_value(<<h, t::binary>>, _val_rest, _len, _spaces, _key, acc) when h in [?\t, ?\r, ?\n, ?\v, ?\f],
-    do: skip_until_cc(t, acc)
+
+  defp decode_value(<<h, t::binary>>, _val_rest, _len, _spaces, _key, acc)
+       when h in [?\t, ?\r, ?\n, ?\v, ?\f],
+       do: skip_until_cc(t, acc)
+
   defp decode_value(<<_, t::binary>>, val_rest, len, _spaces, key, acc) do
     decode_value(t, val_rest, len + 1, 0, key, acc)
   end
+
   defp decode_value(<<>>, val_rest, len, spaces, key, acc) do
     value = binary_part(val_rest, 0, len - spaces)
     [{key, value} | acc]
