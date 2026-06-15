@@ -321,7 +321,6 @@ defmodule Plug.Conn.Utils do
     :ok
   end
 
-
   ## Helpers
 
   defp strip_spaces("\r\n" <> t), do: strip_spaces(t)
