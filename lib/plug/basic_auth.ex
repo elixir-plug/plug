@@ -31,7 +31,7 @@ defmodule Plug.BasicAuth do
   Both approaches shown above rely on static configuration. Let's see
   alternatives.
 
-  ## Runtime-time usage
+  ## Runtime usage
 
   As any other Plug, we can use the `basic_auth` at runtime by simply
   wrapping it in a function:

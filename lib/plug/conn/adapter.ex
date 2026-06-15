@@ -173,7 +173,7 @@ defmodule Plug.Conn.Adapter do
   @doc """
   Attempt to upgrade the connection with the client.
 
-  If the adapter does not support the indicated upgrade, then `{:error, :not_supported}` should be
+  If the adapter does not support the indicated upgrade, then `{:error, :not_supported}` should
   be returned.
 
   If the adapter supports the indicated upgrade but is unable to proceed with it (due to

@@ -125,9 +125,9 @@ defmodule Plug.Router do
   Handling request data can be done through the
   [`Plug.Parsers`](https://hexdocs.pm/plug/Plug.Parsers.html#content) plug. It
   provides support for parsing URL-encoded, form-data, and JSON data as well as
-  providing a behaviour that others parsers can adopt.
+  providing a behaviour that other parsers can adopt.
 
-  Here is an example of `Plug.Parsers` can be used in a `Plug.Router` router to
+  Here is an example of how `Plug.Parsers` can be used in a `Plug.Router` router to
   parse the JSON-encoded body of a POST request:
 
       defmodule AppRouter do

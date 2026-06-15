@@ -31,7 +31,7 @@ defmodule Plug.Parsers.MULTIPART do
   ## Multipart to params
 
   Once all multiparts are collected, they must be converted to params and this
-  can be customize with a MFA. The default implementation of this function
+  can be customized with an MFA. The default implementation of this function
   is equivalent to:
 
       def multipart_to_params(parts, conn) do
@@ -62,7 +62,7 @@ defmodule Plug.Parsers.MULTIPART do
 
   ## Dynamic configuration
 
-  If you need to dynamically configure how `Plug.Parsers.MULTIPART` behave,
+  If you need to dynamically configure how `Plug.Parsers.MULTIPART` behaves,
   for example, based on the connection or another system parameter, one option
   is to create your own parser that wraps it:
 

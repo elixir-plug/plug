@@ -3,7 +3,7 @@ defmodule Plug.Application do
   use Application
 
   def start(_, _) do
-    # While Plug.Crypto provides its own cache, Plug ship its own too,
+    # While Plug.Crypto provides its own cache, Plug ships its own too,
     # both to keep storages separate and for backwards compatibility.
     Plug.Keys = :ets.new(Plug.Keys, [:named_table, :public, read_concurrency: true])
 

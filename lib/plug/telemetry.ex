@@ -14,7 +14,7 @@ defmodule Plug.Telemetry do
       options given to the plug under `:options`.
 
     * `[:my, :plug, :stop]` - emitted right before the response is sent.
-      The event carries a single measurement, `:duration`,  which is the
+      The event carries a single measurement, `:duration`, which is the
       monotonic time difference between the stop and start events.
       It has the same metadata as the start event, except the connection
       has been updated.

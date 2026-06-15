@@ -1,4 +1,4 @@
-defmodule Plug.HTMlTest do
+defmodule Plug.HTMLTest do
   use ExUnit.Case, async: true
   doctest Plug.HTML
 

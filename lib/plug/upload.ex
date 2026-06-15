@@ -225,7 +225,7 @@ defmodule Plug.Upload do
 
   @impl true
   def handle_call({:give_away, pid, tmp, path}, _from, state) do
-    # Since we are writing in behalf of another process, we need to make sure
+    # Since we are writing on behalf of another process, we need to make sure
     # the monitor and writing to the tables happen within the same operation.
     Process.monitor(pid)
     :ets.insert_new(@dir_table, {pid, tmp})

@@ -65,7 +65,7 @@ defmodule Plug.Conn do
 
   More can be stored in a session cookie, but be careful: this makes requests
   and responses heavier, and clients may reject cookies beyond a certain size.
-  Also, session cookie are not shared between a user's different browsers or devices.
+  Also, session cookies are not shared between a user's different browsers or devices.
   If the session is stored elsewhere, such as a database, the browser only has to
   store the session key and therefore more data can be stored in the session.
 
@@ -125,7 +125,7 @@ defmodule Plug.Conn do
 
   ## Custom status codes
 
-  `Plug` allows status codes to be overridden or added and allow new codes not directly
+  `Plug` allows status codes to be overridden or added and allows new codes not directly
   specified by `Plug` or its adapters. The `:plug` application's Mix config can add or
   override a status code.
 
@@ -1218,8 +1218,8 @@ defmodule Plug.Conn do
   > #### Request length {: .warning}
   >
   > The `:length` option tracks the maximum length within a single call.
-  > When doing multiple across to `read_part_headers/2` and `read_part_body/2`,
-  > it is your responsability to track the overall response length.
+  > When doing multiple calls to `read_part_headers/2` and `read_part_body/2`,
+  > it is your responsibility to track the overall response length.
   """
   @spec read_part_headers(t, Keyword.t()) ::
           {:ok, headers, t} | {:error, :too_large, t} | {:done, t}
@@ -1276,8 +1276,8 @@ defmodule Plug.Conn do
   > #### Request length {: .warning}
   >
   > The `:length` option tracks the maximum length within a single call.
-  > When doing multiple across to `read_part_headers/2` and `read_part_body/2`,
-  > it is your responsability to track the overall response length.
+  > When doing multiple calls to `read_part_headers/2` and `read_part_body/2`,
+  > it is your responsibility to track the overall response length.
   """
   @spec read_part_body(t, Keyword.t()) :: {:ok, binary, t} | {:more, binary, t} | {:done, t}
   def read_part_body(%Conn{adapter: {adapter, state}} = conn, opts) do
@@ -1456,7 +1456,7 @@ defmodule Plug.Conn do
   If the upgrade is accepted by the adapter, the returned `Plug.Conn` will have a `state` of
   `:upgraded`. This state is considered equivalently to a 'sent' state, and is subject to the same
   limitation on subsequent mutating operations. Note that there is no guarantee or expectation
-  that the actual upgrade process has succeeded, or event that it is undertaken within this
+  that the actual upgrade process has succeeded, or even that it is undertaken within this
   function; it is entirely possible (likely, even) that the server will only do the actual upgrade
   later in the connection lifecycle.
 

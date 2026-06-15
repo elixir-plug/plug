@@ -131,7 +131,7 @@ defmodule Plug.SSL do
   This function accepts all options defined
   [in Erlang/OTP `:ssl` documentation](http://erlang.org/doc/man/ssl.html).
 
-  Besides the options from `:ssl`, this function adds on extra option:
+  Besides the options from `:ssl`, this function adds one extra option:
 
     * `:cipher_suite` - it may be `:strong` or `:compatible`,
       as outlined in the following section
@@ -141,7 +141,7 @@ defmodule Plug.SSL do
     * `secure_renegotiate: true` - to avoid certain types of man-in-the-middle attacks
     * `reuse_sessions: true` - for improved handshake performance of recurring connections
 
-  For a complete guide on HTTPS and best pratices, see [our Plug HTTPS Guide](https.html).
+  For a complete guide on HTTPS and best practices, see [our Plug HTTPS Guide](https.html).
 
   ## Cipher Suites
 

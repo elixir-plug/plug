@@ -4,7 +4,7 @@ defmodule Plug do
 
   ## Types of plugs
 
-  There are two kind of plugs: function plugs and module plugs.
+  There are two kinds of plugs: function plugs and module plugs.
 
   ### Function plugs
 
@@ -77,7 +77,7 @@ defmodule Plug do
   Run a series of plugs at runtime.
 
   The plugs given here can be either a tuple, representing a module plug
-  and their options, or a simple function that receives a connection and
+  and its options, or a simple function that receives a connection and
   returns a connection.
 
   If any plug halts, the connection won't invoke the remaining plugs. If the

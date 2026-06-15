@@ -236,7 +236,7 @@ So far this document has focused on configuring Plug to handle TLS within the ap
 
 ### Pros and Cons
 
-Offloading might be done to achieve higher throughput, or to stick to the more widely used OpenSSL implementation of the TLS protocol. The Erlang/OTP implementation depends on OpenSSL for the underlying cryptography, but it implements its own message framing and protocol state machine. While it is not clear that one implementation is inherently more secure than the other, just patching OpenSSL along with everybody else in case of vulnerabilities might give peace of mind, compared to than having to research the implications on the Erlang/OTP implementation.
+Offloading might be done to achieve higher throughput, or to stick to the more widely used OpenSSL implementation of the TLS protocol. The Erlang/OTP implementation depends on OpenSSL for the underlying cryptography, but it implements its own message framing and protocol state machine. While it is not clear that one implementation is inherently more secure than the other, just patching OpenSSL along with everybody else in case of vulnerabilities might give peace of mind, compared to having to research the implications on the Erlang/OTP implementation.
 
 On the other hand, the proxy solution might not support end-to-end HTTP 2, limiting the benefits of the new protocol. It can also introduce operational complexities and new resource constraints, especially for long-lived connections such as WebSockets.
 

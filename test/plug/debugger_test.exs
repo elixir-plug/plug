@@ -163,7 +163,7 @@ defmodule Plug.DebuggerTest do
     assert {200, _headers, "oops"} = sent_resp(conn)
   end
 
-  test "call/2 is overridden and unwrapps wrapped errors" do
+  test "call/2 is overridden and unwraps wrapped errors" do
     conn = put_req_header(conn(:get, "/send_and_wrapped"), "accept", "text/html")
 
     capture_log(fn ->
@@ -426,7 +426,7 @@ defmodule Plug.DebuggerTest do
     assert body =~ action_label
   end
 
-  test "does not render actions when the exception don't implement `Plug.Exception`" do
+  test "does not render actions when the exception doesn't implement `Plug.Exception`" do
     conn =
       conn(:get, "/soft_boom")
       |> put_req_header("accept", "text/html")
@@ -506,7 +506,7 @@ defmodule Plug.DebuggerTest do
     assert body =~ ~s|<input type="hidden" name="last_path" value="#{referer}">|
   end
 
-  test "sets last path as / when request is not a GET and tehre is no referer" do
+  test "sets last path as / when request is not a GET and there is no referer" do
     conn =
       conn(:post, "/actionable_exception")
       |> put_req_header("accept", "text/html")

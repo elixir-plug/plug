@@ -128,7 +128,7 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert child_conn.host == "www.elixir-lang.org"
   end
 
-  test "inform adds to the informational responses to the list" do
+  test "inform adds the informational responses to the list" do
     conn =
       conn(:get, "/")
       |> Plug.Conn.inform(:early_hints, [{"link", "</style.css>; rel=preload; as=style"}])
@@ -140,7 +140,7 @@ defmodule Plug.Adapters.Test.ConnTest do
     assert {103, [{"link", "</script.js>; rel=preload; as=script"}]} in informational_requests
   end
 
-  test "upgrade the supported upgrade request to the list" do
+  test "upgrade adds the supported upgrade request to the list" do
     conn =
       conn(:get, "/")
       |> Plug.Conn.upgrade_adapter(:supported, opt: :supported_value)

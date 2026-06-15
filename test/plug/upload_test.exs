@@ -111,7 +111,7 @@ defmodule Plug.UploadTest do
     end
   end
 
-  test "give_away/3 assigns ownership to other pid fro third party pid" do
+  test "give_away/3 assigns ownership to other pid from third party pid" do
     parent = self()
 
     {other_pid, other_ref} =

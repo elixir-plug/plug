@@ -18,7 +18,7 @@ defmodule Plug.Session.COOKIE do
 
   ## Options
 
-    * `:secret_key_base` - the secret key base to built the cookie
+    * `:secret_key_base` - the secret key base to build the cookie
       signing/encryption on top of. If one is given on initialization,
       the cookie store can precompute all relevant values at compilation
       time. Otherwise, the value is taken from `conn.secret_key_base`

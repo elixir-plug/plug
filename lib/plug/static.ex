@@ -66,7 +66,7 @@ defmodule Plug.Static do
       that use etags. Defaults to `"public"`.
 
     * `:etag_generation` - specify a `{module, function, args}` to be used
-      to generate   an etag. The `path` of the resource will be passed to
+      to generate an etag. The `path` of the resource will be passed to
       the function, as well as the `args`. If this option is not supplied,
       etags will be generated based off of file size and modification time.
       Note it is [recommended for the etag value to be quoted](https://tools.ietf.org/html/rfc7232#section-2.3),

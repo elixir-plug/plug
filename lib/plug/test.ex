@@ -13,7 +13,7 @@ defmodule Plug.Test do
     * import all the functions from this module
     * import all the functions from the `Plug.Conn` module
 
-  By default, Plug tests checks for invalid header keys, e.g. header keys which
+  By default, Plug tests check for invalid header keys, e.g. header keys which
   include uppercase letters, and raises a `Plug.Conn.InvalidHeaderError` when
   it finds one. To disable it, set `:validate_header_keys_during_test` to
   false on the app config.
@@ -143,7 +143,7 @@ defmodule Plug.Test do
   ## Examples
 
       conn = conn(:get, "/foo", "bar=10")
-      upgrades = Plug.Test.send_upgrades(conn)
+      upgrades = Plug.Test.sent_upgrades(conn)
       assert {:websocket, [opt: :value]} in upgrades
 
   """
