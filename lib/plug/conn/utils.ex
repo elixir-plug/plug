@@ -297,27 +297,33 @@ defmodule Plug.Conn.Utils do
   def validate_utf8!(binary, exception, context)
 
   def validate_utf8!(<<binary::binary>>, exception, context) do
-    do_validate_utf8!(binary, exception, context)
+    if byte_size(binary) < 12 do
+      do_validate_utf8_small!(binary, exception, context)
+    else
+      do_validate_utf8_swar!(binary, exception, context)
+    end
   end
 
-  defp do_validate_utf8!(<<w::56, b, rest::bits>>, exception, context)
+  # SWAR loop
+  defp do_validate_utf8_swar!(<<w::56, b, rest::bits>>, exception, context)
        when b <= 127 and ascii_swar?(w) do
-    do_validate_utf8!(rest, exception, context)
+    do_validate_utf8_swar!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<b, rest::bits>>, exception, context) when b <= 127 do
-    do_validate_utf8!(rest, exception, context)
+  defp do_validate_utf8_swar!(rest, exception, context) do
+    do_validate_utf8_small!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context) do
-    do_validate_utf8!(rest, exception, context)
+  # Small loop (identical to original character loop)
+  defp do_validate_utf8_small!(<<_::utf8, rest::bits>>, exception, context) do
+    do_validate_utf8_small!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
+  defp do_validate_utf8_small!(<<byte, _::bits>>, exception, context) do
     raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
   end
 
-  defp do_validate_utf8!(<<>>, _exception, _context) do
+  defp do_validate_utf8_small!(<<>>, _exception, _context) do
     :ok
   end
 
