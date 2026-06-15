@@ -172,7 +172,7 @@ defmodule Plug.Conn.Utils do
   @spec params(binary) :: params
   def params(t) do
     t
-    |> split_semicolon("", [], false)
+    |> split_semicolon(t, 0, [], false, 0)
     |> Enum.reduce(%{}, &params/2)
   end
 
@@ -327,15 +327,24 @@ defmodule Plug.Conn.Utils do
   defp downcase_char(char) when char in @upper, do: char + 32
   defp downcase_char(char), do: char
 
-  defp split_semicolon(<<>>, <<>>, acc, _), do: acc
-  defp split_semicolon(<<>>, buffer, acc, _), do: [buffer | acc]
+  defp split_semicolon(<<?", rest::binary>>, original, start, acc, quoted?, len) do
+    split_semicolon(rest, original, start, acc, not quoted?, len + 1)
+  end
 
-  defp split_semicolon(<<?", rest::binary>>, buffer, acc, quoted?),
-    do: split_semicolon(rest, <<buffer::binary, ?">>, acc, not quoted?)
+  defp split_semicolon(<<?;, rest::binary>>, original, start, acc, false, len) do
+    part = binary_part(original, start, len)
+    split_semicolon(rest, original, start + len + 1, [part | acc], false, 0)
+  end
 
-  defp split_semicolon(<<?;, rest::binary>>, buffer, acc, false),
-    do: split_semicolon(rest, <<>>, [buffer | acc], false)
+  defp split_semicolon(<<_, rest::binary>>, original, start, acc, quoted?, len) do
+    split_semicolon(rest, original, start, acc, quoted?, len + 1)
+  end
 
-  defp split_semicolon(<<char, rest::binary>>, buffer, acc, quoted?),
-    do: split_semicolon(rest, <<buffer::binary, char>>, acc, quoted?)
+  defp split_semicolon(<<>>, _original, _start, acc, _quoted?, 0) do
+    acc
+  end
+
+  defp split_semicolon(<<>>, original, start, acc, _quoted?, len) do
+    [binary_part(original, start, len) | acc]
+  end
 end
