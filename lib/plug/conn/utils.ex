@@ -286,21 +286,39 @@ defmodule Plug.Conn.Utils do
         do: stripped
   end
 
+  # 56-bit SWAR guard: all 7 bytes are ASCII (< 128)
+  defguardp ascii_swar?(w)
+            when Bitwise.band(w, 0x80808080808080) == 0
+
   @doc """
   Validates the given binary is valid UTF-8.
   """
   @spec validate_utf8!(binary, module, binary) :: :ok | no_return
-  def validate_utf8!(binary, exception, context)
-
   def validate_utf8!(<<binary::binary>>, exception, context) do
-    case :unicode.characters_to_binary(binary) do
-      ^binary ->
-        :ok
-
-      {_, _, <<byte, _::binary>>} ->
-        raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
-    end
+    do_validate_utf8!(binary, exception, context)
   end
+
+  defp do_validate_utf8!(<<w::56, b, rest::binary>>, exception, context)
+       when b <= 127 and ascii_swar?(w) do
+    do_validate_utf8!(rest, exception, context)
+  end
+
+  defp do_validate_utf8!(<<b, rest::binary>>, exception, context) when b <= 127 do
+    do_validate_utf8!(rest, exception, context)
+  end
+
+  defp do_validate_utf8!(<<_::utf8, rest::binary>>, exception, context) do
+    do_validate_utf8!(rest, exception, context)
+  end
+
+  defp do_validate_utf8!(<<byte, _::binary>>, exception, context) do
+    raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
+  end
+
+  defp do_validate_utf8!(<<>>, _exception, _context) do
+    :ok
+  end
+
 
   ## Helpers
 
