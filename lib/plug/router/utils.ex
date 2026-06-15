@@ -55,7 +55,7 @@ defmodule Plug.Router.Utils do
   def build_host_match(host) do
     cond do
       is_nil(host) -> quote do: _
-      String.last(host) == "." -> quote do: unquote(host) <> _
+      String.ends_with?(host, ".") -> quote do: unquote(host) <> _
       is_binary(host) -> host
     end
   end
