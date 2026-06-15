@@ -104,11 +104,11 @@ defmodule Plug.Conn.Cookies do
       "key1=value1; path=/example; secure"
   """
   def encode(key, opts \\ %{}) when is_map(opts) do
-    value = Map.get(opts, :value)
+    value = Map.get(opts, :value) || ""
     path = Map.get(opts, :path, "/")
 
     IO.iodata_to_binary([
-      "#{key}=#{value}; path=#{path}",
+      key, ?=, value, "; path=", path,
       emit_if(opts[:domain], &["; domain=", &1]),
       emit_if(opts[:max_age], &encode_max_age(&1, opts)),
       emit_if(Map.get(opts, :secure, false), "; secure"),
