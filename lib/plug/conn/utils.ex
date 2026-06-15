@@ -294,24 +294,26 @@ defmodule Plug.Conn.Utils do
   Validates the given binary is valid UTF-8.
   """
   @spec validate_utf8!(binary, module, binary) :: :ok | no_return
+  def validate_utf8!(binary, exception, context)
+
   def validate_utf8!(<<binary::binary>>, exception, context) do
     do_validate_utf8!(binary, exception, context)
   end
 
-  defp do_validate_utf8!(<<w::56, b, rest::binary>>, exception, context)
+  defp do_validate_utf8!(<<w::56, b, rest::bits>>, exception, context)
        when b <= 127 and ascii_swar?(w) do
     do_validate_utf8!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<b, rest::binary>>, exception, context) when b <= 127 do
+  defp do_validate_utf8!(<<b, rest::bits>>, exception, context) when b <= 127 do
     do_validate_utf8!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<_::utf8, rest::binary>>, exception, context) do
+  defp do_validate_utf8!(<<_::utf8, rest::bits>>, exception, context) do
     do_validate_utf8!(rest, exception, context)
   end
 
-  defp do_validate_utf8!(<<byte, _::binary>>, exception, context) do
+  defp do_validate_utf8!(<<byte, _::bits>>, exception, context) do
     raise exception, "invalid UTF-8 on #{context}, got byte #{byte}"
   end
 
