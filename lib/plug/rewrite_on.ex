@@ -93,6 +93,7 @@ defmodule Plug.RewriteOn do
 
   defp put_port(conn, headers) do
     with [header] <- headers,
+         true <- byte_size(header) <= 5,
          {port, ""} <- Integer.parse(header) do
       %{conn | port: port}
     else
