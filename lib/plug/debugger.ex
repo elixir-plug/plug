@@ -577,6 +577,7 @@ defmodule Plug.Debugger do
 
   def get_mfa(capture) do
     [function_path, arity] = String.split(capture, "/")
+    true = byte_size(arity) <= 3
     {arity, ""} = Integer.parse(arity)
     parts = String.split(function_path, ".")
     {function_str, parts} = List.pop_at(parts, -1)
