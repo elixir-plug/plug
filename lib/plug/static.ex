@@ -255,6 +255,8 @@ defmodule Plug.Static do
     file_info(size: file_size) = file_info
 
     with %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
+         # 41 bytes covers two 64 bit byte offsets, enough to address files up to 16 EiB.
+         true <- byte_size(bytes) <= 41,
          {range_start, range_end} <- start_and_end(bytes, file_size) do
       send_range(conn, path, range_start, range_end, file_size, options)
     else

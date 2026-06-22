@@ -44,6 +44,15 @@ defmodule Plug.RewriteOnTest do
     assert conn.port == 3030
   end
 
+  test "does not rewrite port with more than 5 bytes" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-port", "303030")
+      |> call(:x_forwarded_port)
+
+    assert conn.port == 80
+  end
+
   test "rewrites the host, the port, and the protocol" do
     conn =
       conn(:get, "http://example.com/")
