@@ -422,6 +422,19 @@ defmodule Plug.StaticTest do
       assert get_resp_header(conn, "content-range") == ["bytes 4-4/5"]
     end
 
+    test "returns entire file if range is longer than 41 bytes" do
+      too_large = String.duplicate("1", 42)
+
+      conn =
+        conn(:get, "/public/fixtures/static.txt", [])
+        |> put_req_header("range", "bytes=#{too_large}")
+        |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "content-type") == ["text/plain"]
+    end
+
     test "returns entire file if range does not contain either start or end" do
       conn =
         conn(:get, "/public/fixtures/static.txt", [])

@@ -613,6 +613,13 @@ defmodule Plug.DebuggerTest do
              ~r(<a href="https://hexdocs.pm/plug/.*/Plug.Conn.html#send_resp/3" target="_blank">`Plug.Conn.send_resp/3`</a>)
   end
 
+  test "does not parse function references with arities longer than 3 bytes" do
+    assert Plug.Debugger.get_mfa("Plug.Conn.send_resp/333") ==
+             {:ok, Plug.Conn, :send_resp, 333}
+
+    assert Plug.Debugger.get_mfa("Plug.Conn.send_resp/3333") == :error
+  end
+
   test "does not create new atoms" do
     conn =
       conn(:get, "/foo/bar")
