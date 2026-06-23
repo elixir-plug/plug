@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.15.5 (2026-06-23)
+
+### Security
+
+  * [Plug.Conn.Query] Force a maximum depth when decoding queries (CVE-2026-54892)
+
+### Bug fixes
+
+  * [Plug.Conn] Validate headers on `inform`
+  * [Plug.Static] Enforce size on range requests
+
 ## v1.15.4 (2026-05-14)
 
 ### Security
