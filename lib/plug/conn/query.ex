@@ -90,6 +90,8 @@ defmodule Plug.Conn.Query do
   @typedoc since: "1.16.0"
   @opaque decoder() :: map()
 
+  @max_nesting 32
+
   @doc """
   Decodes the given `query`.
 
@@ -204,7 +206,7 @@ defmodule Plug.Conn.Query do
         value = binary_part(key, 0, pos)
         pos = pos + 1
         rest = binary_part(key, pos, byte_size(key) - pos)
-        split_keys(rest, key, pos, pos, value, [{:root, value}])
+        split_keys(rest, key, pos, pos, value, [{:root, value}], 1)
       else
         _ -> [{:root, key}]
       end
@@ -212,23 +214,39 @@ defmodule Plug.Conn.Query do
     insert_keys(keys, value, map)
   end
 
-  defp split_keys(<<?], ?[, rest::binary>>, binary, current_pos, start_pos, level, acc) do
+  defp split_keys(<<?], ?[, rest::binary>>, binary, current_pos, start_pos, level, acc, count) do
+    count = count + 1
+    check_nesting!(count)
+
     value = split_key(binary, current_pos, start_pos)
     next_level = binary_part(binary, 0, current_pos + 1)
-    split_keys(rest, binary, current_pos + 2, current_pos + 2, next_level, [{level, value} | acc])
+    current_pos = current_pos + 2
+    acc = [{level, value} | acc]
+    split_keys(rest, binary, current_pos, current_pos, next_level, acc, count)
   end
 
-  defp split_keys(<<?]>>, binary, current_pos, start_pos, level, acc) do
+  defp split_keys(<<?]>>, binary, current_pos, start_pos, level, acc, count) do
+    count = count + 1
+    check_nesting!(count)
+
     value = split_key(binary, current_pos, start_pos)
     [{level, value} | acc]
   end
 
-  defp split_keys(<<_, rest::binary>>, binary, current_pos, start_pos, level, acc) do
-    split_keys(rest, binary, current_pos + 1, start_pos, level, acc)
+  defp split_keys(<<_, rest::binary>>, binary, current_pos, start_pos, level, acc, count) do
+    check_nesting!(count)
+    split_keys(rest, binary, current_pos + 1, start_pos, level, acc, count)
   end
 
   defp split_key(_binary, start, start), do: nil
   defp split_key(binary, current, start), do: binary_part(binary, start, current - start)
+
+  defp check_nesting!(count) when count > @max_nesting do
+    message = "maximum query nesting is #{@max_nesting}, got a query with #{count} keys"
+    raise Plug.Conn.InvalidQueryError, message: message
+  end
+
+  defp check_nesting!(_count), do: :ok
 
   defp insert_keys([{level, key} | rest], value, map) do
     case map do
@@ -312,48 +330,58 @@ defmodule Plug.Conn.Query do
       #
       #     users[address][street #=> [ "users", "address][street" ]
       #
-      assign_split(:binary.split(subkey, "["), value, acc, :binary.compile_pattern("]["))
+      pattern = :binary.compile_pattern("][")
+      parts = :binary.split(subkey, "[")
+      assign_split(parts, value, acc, pattern, 1)
     else
       assign_map(acc, key, value)
     end
   end
 
-  defp assign_split(["", rest], value, acc, pattern) do
+  defp assign_split(["", rest], value, acc, pattern, count) do
+    check_nesting!(count)
     parts = :binary.split(rest, pattern)
 
     case acc do
-      [_ | _] -> [assign_split(parts, value, :none, pattern) | acc]
-      :none -> [assign_split(parts, value, :none, pattern)]
+      [_ | _] -> [assign_split(parts, value, :none, pattern, count + 1) | acc]
+      :none -> [assign_split(parts, value, :none, pattern, count + 1)]
       _ -> acc
     end
   end
 
-  defp assign_split([key, rest], value, acc, pattern) do
+  defp assign_split([key, rest], value, acc, pattern, count) do
+    check_nesting!(count)
     parts = :binary.split(rest, pattern)
 
     case acc do
       %{^key => current} when is_list(current) or is_map(current) ->
-        Map.put(acc, key, assign_split(parts, value, current, pattern))
+        value = assign_split(parts, value, current, pattern, count + 1)
+        Map.put(acc, key, value)
 
       %{^key => _} ->
         acc
 
       %{} ->
-        Map.put(acc, key, assign_split(parts, value, :none, pattern))
+        value = assign_split(parts, value, :none, pattern, count + 1)
+        Map.put(acc, key, value)
 
       _ ->
-        %{key => assign_split(parts, value, :none, pattern)}
+        %{key => assign_split(parts, value, :none, pattern, count + 1)}
     end
   end
 
-  defp assign_split([""], nil, acc, _pattern) do
+  defp assign_split([""], nil, acc, _pattern, count) do
+    check_nesting!(count)
+
     case acc do
       [_ | _] -> acc
       _ -> []
     end
   end
 
-  defp assign_split([""], value, acc, _pattern) do
+  defp assign_split([""], value, acc, _pattern, count) do
+    check_nesting!(count)
+
     case acc do
       [_ | _] -> [value | acc]
       :none -> [value]
@@ -361,7 +389,8 @@ defmodule Plug.Conn.Query do
     end
   end
 
-  defp assign_split([key], value, acc, _pattern) do
+  defp assign_split([key], value, acc, _pattern, count) do
+    check_nesting!(count)
     assign_map(acc, key, value)
   end
 
