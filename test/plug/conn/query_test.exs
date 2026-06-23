@@ -45,6 +45,30 @@ defmodule Plug.Conn.QueryTest do
       assert decode("x[][][]=1") == %{"x" => [[["1"]]]}
     end
 
+    test "raises on queries nested more than 32 keys" do
+      valid_key = "x" <> String.duplicate("[x]", 31)
+      invalid_key = "x" <> String.duplicate("[x]", 32)
+      message = "maximum query nesting is 32, got a query with 33 keys"
+
+      assert get_in(decode("#{valid_key}=1"), List.duplicate("x", 32)) == "1"
+
+      assert_raise Plug.Conn.InvalidQueryError, message, fn ->
+        decode("#{invalid_key}=1")
+      end
+    end
+
+    test "raises on mixed list and map queries nested more than 32 keys" do
+      valid_key = mixed_key(31)
+      invalid_key = mixed_key(32)
+      message = "maximum query nesting is 32, got a query with 33 keys"
+
+      assert get_in(decode("#{valid_key}=1"), mixed_path(31)) == "1"
+
+      assert_raise Plug.Conn.InvalidQueryError, message, fn ->
+        decode("#{invalid_key}=1")
+      end
+    end
+
     test "empty pairs" do
       assert decode("&x=1&&y=2&") == %{"x" => "1", "y" => "2"}
     end
@@ -180,10 +204,48 @@ defmodule Plug.Conn.QueryTest do
       assert params["foo"] == ["bar", "baz"]
     end
 
+    test "raises on queries nested more than 32 keys" do
+      valid_key = "x" <> String.duplicate("[x]", 31)
+      invalid_key = "x" <> String.duplicate("[x]", 32)
+      message = "maximum query nesting is 32, got a query with 33 keys"
+
+      assert get_in(decode_pair([{valid_key, "1"}]), List.duplicate("x", 32)) == "1"
+
+      assert_raise Plug.Conn.InvalidQueryError, message, fn ->
+        decode_pair([{invalid_key, "1"}])
+      end
+    end
+
+    test "raises on mixed list and map queries nested more than 32 keys" do
+      valid_key = mixed_key(31)
+      invalid_key = mixed_key(32)
+      message = "maximum query nesting is 32, got a query with 33 keys"
+
+      assert get_in(decode_pair([{valid_key, "1"}]), mixed_path(31)) == "1"
+
+      assert_raise Plug.Conn.InvalidQueryError, message, fn ->
+        decode_pair([{invalid_key, "1"}])
+      end
+    end
+
     defp decode_pair(pairs) do
       pairs
       |> Enum.reduce(Plug.Conn.Query.decode_init(), &Plug.Conn.Query.decode_each/2)
       |> Plug.Conn.Query.decode_done()
     end
+  end
+
+  defp mixed_key(n) do
+    Enum.reduce(1..n, "a", fn
+      index, acc when rem(index, 2) == 1 -> acc <> "[]"
+      _index, acc -> acc <> "[foo]"
+    end)
+  end
+
+  defp mixed_path(n) do
+    Enum.reduce(1..n, ["a"], fn
+      index, acc when rem(index, 2) == 1 -> acc ++ [Access.at(0)]
+      _index, acc -> acc ++ ["foo"]
+    end)
   end
 end
