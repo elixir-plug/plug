@@ -446,6 +446,28 @@ defmodule Plug.ConnTest do
     )
   end
 
+  test "inform/3 raises when invalid header value given" do
+    value = "</style.css>\r\nBAR"
+
+    message =
+      ~S[value for header "link" contains control feed (\r), newline (\n) or null (\x00): ] <>
+        inspect(value)
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
+      inform(conn(:get, "/foo"), 103, [{"link", value}])
+    end
+
+    value = "</style.css>\0BAR"
+
+    message =
+      ~S[value for header "link" contains control feed (\r), newline (\n) or null (\x00): ] <>
+        inspect(value)
+
+    assert_raise Plug.Conn.InvalidHeaderError, message, fn ->
+      inform(conn(:get, "/foo"), 103, [{"link", value}])
+    end
+  end
+
   test "inform!/3 performs an informational request" do
     conn = conn(:get, "/foo") |> inform!(103, [{"link", "</style.css>; rel=preload; as=style"}])
     assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
