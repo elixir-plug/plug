@@ -150,6 +150,16 @@ defmodule Plug.ParsersTest do
     assert conn.params["foo"] == "baz"
   end
 
+  test "parses QUERY request bodies" do
+    conn =
+      conn(:query, "/?foo=bar", "foo=baz")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse()
+
+    assert conn.params["foo"] == "baz"
+    assert conn.body_params["foo"] == "baz"
+  end
+
   test "parses multipart bodies with test params" do
     conn = parse(conn(:post, "/?foo=bar"))
     assert conn.params == %{"foo" => "bar"}

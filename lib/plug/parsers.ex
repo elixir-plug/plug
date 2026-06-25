@@ -70,6 +70,7 @@ defmodule Plug.Parsers do
 
   This plug only parses the body if the request method is one of the following:
 
+    * `QUERY`
     * `POST`
     * `PUT`
     * `PATCH`
@@ -247,7 +248,7 @@ defmodule Plug.Parsers do
               | {:next, Conn.t()}
 
   @behaviour Plug
-  @methods ~w(POST PUT PATCH DELETE)
+  @methods ~w(QUERY POST PUT PATCH DELETE)
 
   @impl true
   def init(opts) do

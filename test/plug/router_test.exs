@@ -175,6 +175,10 @@ defmodule Plug.RouterTest do
       resp(conn, 200, "")
     end
 
+    query "/query" do
+      resp(conn, 200, "")
+    end
+
     post "/post" do
       resp(conn, 200, "")
     end
@@ -559,6 +563,11 @@ defmodule Plug.RouterTest do
 
   test "declare and call OPTIONS requests" do
     conn = call(Sample, conn(:options, "/options"))
+    assert conn.status == 200
+  end
+
+  test "declare and call QUERY requests" do
+    conn = call(Sample, conn(:query, "/query"))
     assert conn.status == 200
   end
 

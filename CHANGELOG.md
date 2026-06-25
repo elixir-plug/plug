@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.21.0
+
+### Enhancements
+
+  * [Plug.Router] Add the `query/3` macro for routing HTTP QUERY (RFC 10008) requests
+  * [Plug.Parsers] Parse request bodies for the HTTP QUERY method (RFC 10008)
+  * [Plug.CSRFProtection] Treat the safe, idempotent HTTP QUERY method (RFC 10008) as unprotected
+
 ## v1.20.1 (2026-06-23)
 
 ### Bug fixes

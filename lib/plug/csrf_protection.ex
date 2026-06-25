@@ -108,7 +108,7 @@ defmodule Plug.CSRFProtection do
   alias Plug.Crypto.MessageVerifier
 
   @behaviour Plug
-  @unprotected_methods ~w(HEAD GET OPTIONS)
+  @unprotected_methods ~w(QUERY HEAD GET OPTIONS)
   @digest Base.url_encode64("HS256", padding: false) <> "."
 
   # The token size value should not generate padding

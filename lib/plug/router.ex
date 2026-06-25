@@ -44,7 +44,7 @@ defmodule Plug.Router do
 
   In the example above, a request will only match if it is a `GET`
   request and the route is "/hello". The supported HTTP methods are
-  `get`, `post`, `put`, `patch`, `delete` and `options`.
+  `get`, `query`, `post`, `put`, `patch`, `delete` and `options`.
 
   A route can also specify parameters which will then be available
   in the function body:
@@ -387,6 +387,14 @@ defmodule Plug.Router do
   """
   defmacro head(path, options, contents \\ []) do
     compile(:head, path, options, contents, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if the request is a QUERY request.
+  See `match/3` for more examples.
+  """
+  defmacro query(path, options, contents \\ []) do
+    compile(:query, path, options, contents, __CALLER__)
   end
 
   @doc """

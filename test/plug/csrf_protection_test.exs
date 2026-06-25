@@ -205,6 +205,10 @@ defmodule Plug.CSRFProtectionTest do
     refute conn.halted
     refute get_session(conn, "_csrf_token")
 
+    conn = call(conn(:query, "/"))
+    refute conn.halted
+    refute get_session(conn, "_csrf_token")
+
     conn = call(conn(:head, "/"))
     refute conn.halted
     refute get_session(conn, "_csrf_token")
