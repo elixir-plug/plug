@@ -1471,7 +1471,7 @@ defmodule Plug.Conn do
   @spec upgrade_adapter(t, atom, term) :: t
   def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, args)
       when state in @unsent do
-    conn = run_before_send(conn, :set_upgrade)
+    conn = run_before_send(%{conn | status: 101}, :set_upgrade)
 
     case adapter.upgrade(payload, protocol, args) do
       {:ok, payload} ->

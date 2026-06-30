@@ -512,6 +512,7 @@ defmodule Plug.ConnTest do
       conn(:get, "/foo")
       |> register_before_send(fn conn ->
         send(self(), {:state, conn.state})
+        assert conn.status == 101
 
         conn
         |> put_resp_header("x-test", "UPGRADE")
