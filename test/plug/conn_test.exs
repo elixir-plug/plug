@@ -468,6 +468,11 @@ defmodule Plug.ConnTest do
     end
   end
 
+  test "inform/3 accepts atom header keys (e.g. for websocket upgrades)" do
+    conn = conn(:get, "/foo") |> inform(101, [{:upgrade, "websocket"}, {:connection, "Upgrade"}])
+    assert {101, [{:upgrade, "websocket"}, {:connection, "Upgrade"}]} in sent_informs(conn)
+  end
+
   test "inform!/3 performs an informational request" do
     conn = conn(:get, "/foo") |> inform!(103, [{"link", "</style.css>; rel=preload; as=style"}])
     assert {103, [{"link", "</style.css>; rel=preload; as=style"}]} in sent_informs(conn)
