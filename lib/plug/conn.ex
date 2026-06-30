@@ -294,7 +294,7 @@ defmodule Plug.Conn do
   alias Plug.Conn
   @epoch {{1970, 1, 1}, {0, 0, 0}}
   @already_sent {:plug_conn, :sent}
-  @unsent [:unset, :set, :set_chunked, :set_file]
+  @unsent [:unset, :set, :set_upgrade, :set_chunked, :set_file]
 
   @doc """
   Assigns a value to a key in the connection.
@@ -1471,10 +1471,11 @@ defmodule Plug.Conn do
   @spec upgrade_adapter(t, atom, term) :: t
   def upgrade_adapter(%Conn{adapter: {adapter, payload}, state: state} = conn, protocol, args)
       when state in @unsent do
+    conn = run_before_send(%{conn | status: 101}, :set_upgrade)
+
     case adapter.upgrade(payload, protocol, args) do
       {:ok, payload} ->
-        conn = run_before_send(conn, :upgraded)
-        %{conn | adapter: {adapter, payload}}
+        %{conn | state: :upgraded, adapter: {adapter, payload}}
 
       {:error, :not_supported} ->
         raise ArgumentError, "upgrade to #{protocol} not supported by #{inspect(adapter)}"

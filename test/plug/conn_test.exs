@@ -510,9 +510,19 @@ defmodule Plug.ConnTest do
   test "upgrade_adapter/3 runs before_send callbacks" do
     conn =
       conn(:get, "/foo")
-      |> register_before_send(&assign(&1, :ran_before_send, true))
+      |> register_before_send(fn conn ->
+        send(self(), {:state, conn.state})
+        assert conn.status == 101
+
+        conn
+        |> put_resp_header("x-test", "UPGRADE")
+        |> assign(:ran_before_send, true)
+      end)
       |> upgrade_adapter(:supported, opt: :supported)
 
+    assert_receive {:state, :set_upgrade}
+
+    assert {"x-test", "UPGRADE"} in conn.resp_headers
     assert conn.assigns[:ran_before_send] == true
   end
 
