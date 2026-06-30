@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.4 (2026-06-30)
+
+### Bug fixes
+
+  * [Plug.Conn] Allow atom header keys on `inform`
+
 ## v1.18.3 (2026-06-23)
 
 ### Security
