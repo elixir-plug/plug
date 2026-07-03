@@ -1205,7 +1205,7 @@ defmodule Plug.Conn do
   defp read_part_headers(conn, data, length, boundary, adapter, state, opts) do
     case :plug_multipart.parse_headers(data, boundary) do
       {:ok, _headers, rest} when byte_size(data) - byte_size(rest) > length ->
-        {:error, :too_large, store_multipart(conn, {boundary, data}, adapter, state)}
+        {:error, :too_large, store_multipart(conn, {boundary, rest}, adapter, state)}
 
       {:ok, headers, rest} ->
         {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
