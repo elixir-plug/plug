@@ -180,6 +180,8 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_headers(headers, conn, limit, opts, acc) do
+    limit = limit - headers_size(headers)
+
     case multipart_type(headers) do
       {:binary, name} ->
         {:ok, limit, body, conn} =
@@ -208,6 +210,9 @@ defmodule Plug.Parsers.MULTIPART do
         {conn, limit, [{name, headers, uploaded} | acc]}
 
       :skip ->
+        {:ok, limit, conn} =
+          parse_multipart_skip(Plug.Conn.read_part_body(conn, opts), limit, opts)
+
         {conn, limit, acc}
     end
   end
@@ -249,6 +254,25 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_file({:ok, tail, conn}, limit, _opts, _file) do
+    {:ok, limit - byte_size(tail), conn}
+  end
+
+  defp parse_multipart_skip({:more, tail, conn}, limit, opts)
+       when limit >= byte_size(tail) do
+    read_result = Plug.Conn.read_part_body(conn, opts)
+    parse_multipart_skip(read_result, limit - byte_size(tail), opts)
+  end
+
+  defp parse_multipart_skip({:more, tail, conn}, limit, _opts) do
+    {:ok, limit - byte_size(tail), conn}
+  end
+
+  defp parse_multipart_skip({:ok, tail, conn}, limit, _opts)
+       when limit >= byte_size(tail) do
+    {:ok, limit - byte_size(tail), conn}
+  end
+
+  defp parse_multipart_skip({:ok, tail, conn}, limit, _opts) do
     {:ok, limit - byte_size(tail), conn}
   end
 
@@ -302,6 +326,12 @@ defmodule Plug.Parsers.MULTIPART do
       {^key, value} -> value
       nil -> nil
     end
+  end
+
+  defp headers_size(headers) do
+    Enum.reduce(headers, 0, fn {key, value}, acc ->
+      acc + byte_size(key) + byte_size(value)
+    end)
   end
 
   defp read_part_headers(conn, limit, opts) do

@@ -418,6 +418,92 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 413
   end
 
+  test "raises when cumulative multipart headers exceed the parser length" do
+    multipart =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\n\r\n",
+        "\r\n",
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"y\"\r\n\r\n",
+        "\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse(length: 80)
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
+  test "raises when skipped multipart bodies exceed the parser length" do
+    multipart =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"; filename=\"\"\r\n\r\n",
+        String.duplicate("a", 100),
+        "\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse(length: 80)
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
+  test "raises when skipped multipart headers exceed the parser length" do
+    multipart =
+      [
+        "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"; filename=\"\"\r\n",
+        "x-large: ",
+        String.duplicate("a", 100),
+        "\r\n\r\n",
+        "\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse(length: 80)
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
+  test "raises when retained file headers exceed the parser length" do
+    filename = "sample.txt"
+    content_type = "text/plain"
+
+    headers =
+      "--deadbeef\r\ncontent-disposition: form-data; name=\"x\"; filename=\"" <>
+        filename <> "\"\r\ncontent-type: " <> content_type <> "\r\n\r\n"
+
+    multipart = headers <> "\r\n--deadbeef--\r\n"
+
+    limit =
+      byte_size("content-disposition") +
+        byte_size("form-data; name=\"x\"; filename=\"" <> filename <> "\"") +
+        byte_size("content-type") +
+        byte_size(content_type) - 1
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse(length: limit)
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
   test "raises when request cannot be processed" do
     message = "unsupported media type text/plain"
 
