@@ -97,4 +97,20 @@ defmodule Plug.Conn.CookiesTest do
     assert encode("foo", %{value: "bar", extra: "SameSite=Lax"}) ==
              "foo=bar; path=/; HttpOnly; SameSite=Lax"
   end
+
+  test "raises on invalid cookie fields" do
+    fields = [
+      {"key", fn value -> encode(value, %{value: "bar"}) end},
+      {"value", fn value -> encode("foo", %{value: value}) end},
+      {"path", fn value -> encode("foo", %{value: "bar", path: value}) end},
+      {"domain", fn value -> encode("foo", %{value: "bar", domain: value}) end},
+      {"same_site", fn value -> encode("foo", %{value: "bar", same_site: value}) end}
+    ]
+
+    for {field, fun} <- fields do
+      assert_raise ArgumentError, ~r/cookie #{field} contains/, fn ->
+        fun.("foo;bar")
+      end
+    end
+  end
 end
