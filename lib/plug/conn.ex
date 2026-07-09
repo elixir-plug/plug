@@ -1700,7 +1700,9 @@ defmodule Plug.Conn do
     * `:secure` - if the cookie must be sent only over https. Defaults
       to true when the connection is HTTPS
     * `:extra` - string to append to cookie. Use this to take advantage of
-      non-standard cookie attributes.
+      non-standard cookie attributes. Since this option may append multiple
+      attributes, callers must not pass user input. If user input must be
+      passed, callers must validate it against semicolon (`;`).
     * `:sign` - when true, signs the cookie
     * `:encrypt` - when true, encrypts the cookie
     * `:same_site` - set the cookie SameSite attribute to a string value.

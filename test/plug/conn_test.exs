@@ -1099,6 +1099,18 @@ defmodule Plug.ConnTest do
       |> put_resp_cookie("foo", "bar\nbaz")
       |> send_resp(200, "OK")
     end
+
+    assert_raise Plug.Conn.InvalidHeaderError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "bar", domain: "example.com\n")
+      |> send_resp(200, "OK")
+    end
+
+    assert_raise Plug.Conn.InvalidHeaderError, fn ->
+      conn(:get, "/")
+      |> put_resp_cookie("foo", "bar", extra: "SameSite=Lax\n")
+      |> send_resp(200, "OK")
+    end
   end
 
   test "put_resp_cookie/4 is secure on https" do

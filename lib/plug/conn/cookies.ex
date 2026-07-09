@@ -3,6 +3,8 @@ defmodule Plug.Conn.Cookies do
   Conveniences for encoding and decoding cookies.
   """
 
+  @invalid_cookie_field [";"]
+
   @doc false
   def sign_or_encrypt(%Plug.Conn{} = conn, key, value, opts) do
     {sign?, opts} = Keyword.pop(opts, :sign, false)
@@ -92,8 +94,13 @@ defmodule Plug.Conn.Cookies do
   defp skip_until_cc(<<_, t::binary>>, acc), do: skip_until_cc(t, acc)
   defp skip_until_cc(<<>>, acc), do: acc
 
-  @doc """
+  @doc ~S"""
   Encodes the given cookies as expected in a response header.
+
+  Raises if the cookie key, value, path, domain, or same-site option contains
+  semicolon (`;`). It does not validate against control feed (`\r`), newline
+  (`\n`), or null (`\x00`) characters as this is expected to be done by the
+  caller when the cookie is added as a header.
 
   ## Examples
 
@@ -104,6 +111,8 @@ defmodule Plug.Conn.Cookies do
       "key1=value1; path=/example; secure"
   """
   def encode(key, opts \\ %{}) when is_map(opts) do
+    invalid_cookie_field = :binary.compile_pattern(@invalid_cookie_field)
+
     value = Map.get(opts, :value)
     path = Map.get(opts, :path, "/")
 
@@ -111,14 +120,29 @@ defmodule Plug.Conn.Cookies do
     value = to_string(value)
     path = to_string(path)
 
+    validate_cookie_field!("key", key, invalid_cookie_field)
+    validate_cookie_field!("value", value, invalid_cookie_field)
+    validate_cookie_field!("path", path, invalid_cookie_field)
+
     acc = [key, ?=, value, "; path=", path]
-    acc = if domain = opts[:domain], do: [acc, "; domain=", domain], else: acc
+
+    acc =
+      if domain = opts[:domain],
+        do: [
+          acc,
+          "; domain=",
+          validate_cookie_field!("domain", to_string(domain), invalid_cookie_field)
+        ],
+        else: acc
+
     acc = if max_age = opts[:max_age], do: [acc | encode_max_age(max_age, opts)], else: acc
     acc = if Map.get(opts, :secure, false), do: [acc | "; secure"], else: acc
     acc = if Map.get(opts, :http_only, true), do: [acc | "; HttpOnly"], else: acc
 
     acc =
-      if same_site = Map.get(opts, :same_site), do: [acc | encode_same_site(same_site)], else: acc
+      if same_site = Map.get(opts, :same_site),
+        do: [acc | encode_same_site(same_site, invalid_cookie_field)],
+        else: acc
 
     acc = if extra = opts[:extra], do: [acc, "; ", extra], else: acc
 
@@ -131,7 +155,19 @@ defmodule Plug.Conn.Cookies do
     ["; expires=", rfc2822(time), "; max-age=", Integer.to_string(max_age)]
   end
 
-  defp encode_same_site(value) when is_binary(value), do: ["; SameSite=", value]
+  defp encode_same_site(value, invalid_cookie_field) when is_binary(value),
+    do: ["; SameSite=", validate_cookie_field!("same_site", value, invalid_cookie_field)]
+
+  defp validate_cookie_field!(field, value, invalid_cookie_field) do
+    case :binary.match(value, invalid_cookie_field) do
+      :nomatch ->
+        value
+
+      _ ->
+        raise ArgumentError,
+              "cookie #{field} contains semicolon (;): " <> inspect(value)
+    end
+  end
 
   defp pad(n) when n < 10, do: <<?0, ?0 + n>>
   defp pad(n), do: <<?0 + div(n, 10), ?0 + rem(n, 10)>>
