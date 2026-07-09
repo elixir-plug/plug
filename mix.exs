@@ -1,8 +1,7 @@
 defmodule Plug.MixProject do
   use Mix.Project
 
-
-  @version "1.18.4"
+  @version "1.18.5"
   @description "Compose web applications with functions"
   @xref_exclude [Plug.Cowboy, :ssl]
   @source_url "https://github.com/elixir-plug/plug"
