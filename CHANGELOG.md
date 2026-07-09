@@ -8,6 +8,13 @@
   * [Plug.Parsers] Parse request bodies for the HTTP QUERY method (RFC 10008)
   * [Plug.CSRFProtection] Treat the safe, idempotent HTTP QUERY method (RFC 10008) as unprotected
 
+## v1.20.3 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
 ## v1.20.2 (2026-06-30)
 
 ### Bug fixes
@@ -44,6 +51,19 @@ This release requires Elixir v1.15+.
   * [Plug.Conn.Utils] Optimize `validate_utf8!/3`
   * [Plug.Conn.Utils] Optimize splitting by semicolons
   * [Plug.Router] Optimize host matching
+
+## v1.19.5 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
+## v1.19.4 (2026-06-30)
+
+### Bug fixes
+
+  * [Plug.Conn] Allow atom header keys on `inform`
 
 ## v1.19.3 (2026-06-23)
 
@@ -85,6 +105,19 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
 
   * [Plug.Conn.Adapter] Deprecate `:owner` field
 
+## v1.18.5 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
+## v1.18.4 (2026-06-30)
+
+### Bug fixes
+
+  * [Plug.Conn] Allow atom header keys on `inform`
+
 ## v1.18.3 (2026-06-23)
 
 ### Security
@@ -116,6 +149,19 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
   * [Plug.Conn] Define optional `get_sock_data/1` and `get_ssl_data/1` callbacks
   * [Plug.RequestID] Allow metadata key to be customizable
   * [Plug.Router] Allow match to dispatch to function plugs
+
+## v1.17.4 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
+## v1.17.3 (2026-06-30)
+
+### Bug fixes
+
+  * [Plug.Conn] Allow atom header keys on `inform`
 
 ## v1.17.2 (2026-06-23)
 
@@ -149,6 +195,19 @@ This release requires Elixir v1.14+ and it bumps the recommended :strong and :co
   * [Plug.Conn] Deprecate `req_cookies`, `cookies`, and `resp_cookies` fields in favor of functions
   * [Plug.Conn] Deprecate `owner` field. Tracking responses is now part of adapters
   * [Plug.Test] Deprecate `use Plug.Test` in favor of imports
+
+## v1.16.6 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
+## v1.16.5 (2026-06-30)
+
+### Bug fixes
+
+  * [Plug.Conn] Allow atom header keys on `inform`
 
 ## v1.16.4 (2026-06-23)
 
