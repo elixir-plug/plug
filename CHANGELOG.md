@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.19.5 (2026-07-09)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count files and skipped multipart parts towards the length limit (CVE-2026-56814)
+  * [Plug.Conn.Cookies] Raise if `;` is present in cookie attributes (CVE-2026-56813)
+
 ## v1.19.4 (2026-06-30)
 
 ### Bug fixes
