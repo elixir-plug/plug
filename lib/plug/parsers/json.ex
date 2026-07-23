@@ -28,12 +28,23 @@ defmodule Plug.Parsers.JSON do
 
   @behaviour Plug.Parsers
 
+  @decoder_key {__MODULE__, :decoder}
+  @body_reader_key {__MODULE__, :body_reader}
+
   @impl true
   def init(opts) do
     {decoder, opts} = Keyword.pop(opts, :json_decoder)
     {body_reader, opts} = Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
-    decoder = validate_decoder!(decoder)
-    {body_reader, decoder, opts}
+
+    decoder_fun = build_decoder_fun(validate_decoder!(decoder))
+    body_reader_fun = build_body_reader_fun(validate_body_reader!(body_reader))
+
+    :persistent_term.put(@decoder_key, decoder_fun)
+    :persistent_term.put(@body_reader_key, body_reader_fun)
+
+    nest_all = Keyword.get(opts, :nest_all_json, false)
+
+    {nest_all, opts}
   end
 
   defp validate_decoder!(nil) do
@@ -59,58 +70,99 @@ defmodule Plug.Parsers.JSON do
     mfa
   end
 
-  defp validate_decoder!(decoder) when is_atom(decoder) do
-    validate_decoder!({decoder, :decode!, []})
+  defp validate_decoder!(module) when is_atom(module) do
+    ensure_compiled_and_exported(module, :decode!, 1)
   end
 
-  defp validate_decoder!(decoder) do
-    raise ArgumentError,
+  defp validate_decoder!(other) do
+     raise ArgumentError,
           "the :json_decoder option expects a module, or a three-element " <>
-            "tuple in the form of {module, function, extra_args}, got: #{inspect(decoder)}"
+            "tuple in the form of {module, function, extra_args}, got: #{inspect(other)}"
+  end
+
+  defp validate_body_reader!({module, fun, args} = mfa)
+       when is_atom(module) and is_atom(fun) and is_list(args) do
+    ensure_compiled_and_exported(module, fun, length(args) + 2)
+    mfa
+  end
+
+  defp ensure_compiled_and_exported(module, fun, arity) do
+    if Code.ensure_compiled(module) != {:module, module} do
+      raise ArgumentError,
+            "invalid :json_decoder option. The module #{inspect(module)} is not " <>
+              "loaded and could not be found"
+    end
+
+    if function_exported?(module, fun, arity) do
+      module
+    else
+      raise ArgumentError,
+            "invalid :json_decoder option. The module #{inspect(module)} must implement #{fun}/#{arity}"
+    end
+  end
+
+  # Fast path: module.decode!/1
+  defp build_decoder_fun(module) when is_atom(module) do
+    fn body -> module.decode!(body) end
+  end
+
+  # MFA path: apply(module, fun, [body | args])
+  defp build_decoder_fun({module, fun, args}) do
+    fn body ->
+      apply(module, fun, [body | args])
+    end
+  end
+
+  defp build_body_reader_fun({module, fun, args}) do
+    fn conn, opts ->
+      apply(module, fun, [conn, opts | args])
+    end
   end
 
   @impl true
-  def parse(conn, "application", subtype, _headers, {{mod, fun, args}, decoder, opts}) do
-    if subtype == "json" or String.ends_with?(subtype, "+json") do
-      apply(mod, fun, [conn, opts | args]) |> decode(decoder, opts)
-    else
-      {:next, conn}
+  def parse(conn, "application", subtype, _headers, {nest_all, opts})
+      when subtype == "json" or binary_part(subtype, byte_size(subtype) - 5, 5) == "+json" do
+
+    body_reader_fun = :persistent_term.get(@body_reader_key)
+
+    case body_reader_fun.(conn, opts) do
+      {:ok, "", conn} ->
+        {:ok, %{}, conn}
+
+      {:ok, body, conn} ->
+        decode_body(body, conn, nest_all)
+
+      {:more, _, conn} ->
+        {:error, :too_large, conn}
+
+      {:error, :timeout} ->
+        raise Plug.TimeoutError
+
+      {:error, _} ->
+        raise Plug.BadRequestError
     end
   end
 
-  def parse(conn, _type, _subtype, _headers, _opts) do
+  def parse(conn, _type, _subtype, _headers, _state) do
     {:next, conn}
   end
 
-  defp decode({:ok, "", conn}, _decoder, _opts) do
-    {:ok, %{}, conn}
-  end
-
-  defp decode({:ok, body, conn}, {module, fun, args}, opts) do
-    nest_all = Keyword.get(opts, :nest_all_json, false)
+  defp decode_body(body, conn, nest_all) do
+    decoder_fun = :persistent_term.get(@decoder_key)
 
     try do
-      apply(module, fun, [body | args])
+      terms = decoder_fun.(body)
+
+      cond do
+        is_map(terms) and not nest_all ->
+          {:ok, terms, conn}
+
+        true ->
+          {:ok, %{"_json" => terms}, conn}
+      end
     rescue
-      e -> raise Plug.Parsers.ParseError, exception: e
-    else
-      terms when is_map(terms) and not nest_all ->
-        {:ok, terms, conn}
-
-      terms ->
-        {:ok, %{"_json" => terms}, conn}
+      e ->
+        raise Plug.Parsers.ParseError, exception: e
     end
-  end
-
-  defp decode({:more, _, conn}, _decoder, _opts) do
-    {:error, :too_large, conn}
-  end
-
-  defp decode({:error, :timeout}, _decoder, _opts) do
-    raise Plug.TimeoutError
-  end
-
-  defp decode({:error, _}, _decoder, _opts) do
-    raise Plug.BadRequestError
   end
 end
