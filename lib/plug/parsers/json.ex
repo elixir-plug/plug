@@ -31,7 +31,7 @@ defmodule Plug.Parsers.JSON do
   @impl true
   def init(opts) do
     {decoder, opts} = Keyword.pop(opts, :json_decoder)
-    {body_reader, opts} = Keyword.pop(opts, :body_reader, {Plug.Conn, :read_body, []})
+    {body_reader, opts} = Keyword.pop(opts, :body_reader, nil)
     decoder = validate_decoder!(decoder)
     {body_reader, decoder, opts}
   end
@@ -70,9 +70,9 @@ defmodule Plug.Parsers.JSON do
   end
 
   @impl true
-  def parse(conn, "application", subtype, _headers, {{mod, fun, args}, decoder, opts}) do
+  def parse(conn, "application", subtype, _headers, {body_reader_or_nil, decoder, opts}) do
     if subtype == "json" or String.ends_with?(subtype, "+json") do
-      apply(mod, fun, [conn, opts | args]) |> decode(decoder, opts)
+      read_body(body_reader_or_nil, conn, opts) |> decode(decoder, opts)
     else
       {:next, conn}
     end
@@ -82,15 +82,21 @@ defmodule Plug.Parsers.JSON do
     {:next, conn}
   end
 
+  defp read_body(nil, conn, opts), do: Plug.Conn.read_body(conn, opts)
+  defp read_body({mod, fun, args}, conn, opts), do: apply(mod, fun, [conn, opts | args])
+
   defp decode({:ok, "", conn}, _decoder, _opts) do
     {:ok, %{}, conn}
   end
 
-  defp decode({:ok, body, conn}, {module, fun, args}, opts) do
+  defp decode({:ok, body, conn}, mfa_or_mod, opts) do
     nest_all = Keyword.get(opts, :nest_all_json, false)
 
     try do
-      apply(module, fun, [body | args])
+      case mfa_or_mod do
+        module when is_atom(module) -> module.decode!(body)
+        {module, fun, args} -> apply(module, fun, [body | args])
+      end
     rescue
       e -> raise Plug.Parsers.ParseError, exception: e
     else
