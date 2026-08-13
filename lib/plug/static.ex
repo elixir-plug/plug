@@ -478,7 +478,7 @@ defmodule Plug.Static do
   end
 
   defp invalid_path?([h | _], _match) when h in [".", "..", ""], do: true
-  defp invalid_path?([h | t], match), do: String.contains?(h, match) or invalid_path?(t)
+  defp invalid_path?([h | t], match), do: String.contains?(h, match) or invalid_path?(t, match)
   defp invalid_path?([], _match), do: false
 
   defp merge_headers(conn, {module, function, args}) do
