@@ -104,6 +104,14 @@ defmodule Plug.SSLTest do
       assert {:cert, "ghijkl"} in opts
     end
 
+    test "normalizes truthy passwords and preserves false" do
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", password: "cowboy")
+      assert opts[:password] == ~c"cowboy"
+
+      assert {:ok, opts} = configure(key: "abcdef", cert: "ghijkl", password: false)
+      assert opts[:password] == false
+    end
+
     test "fails to configure if keyfile and certfile aren't absolute paths and otp_app is missing" do
       assert {:error, message} = configure([:inet6, keyfile: "abcdef", certfile: "ghijkl"])
       assert message == "the :otp_app option is required when setting relative SSL certfiles"

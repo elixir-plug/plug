@@ -173,7 +173,7 @@ defmodule Plug.SSL do
     |> validate_ciphers()
     |> normalize_ssl_files()
     |> normalize_certs_keys_ssl_files()
-    |> convert_to_charlist()
+    |> normalize_password()
     |> configure_managed_tls()
     |> set_secure_defaults()
   catch
@@ -258,14 +258,12 @@ defmodule Plug.SSL do
     end
   end
 
-  defp convert_to_charlist(options) do
-    Enum.reduce([:password], options, fn key, acc ->
-      if value = acc[key] do
-        List.keystore(acc, key, 0, {key, to_charlist(value)})
-      else
-        acc
-      end
-    end)
+  defp normalize_password(options) do
+    if password = options[:password] do
+      List.keystore(options, :password, 0, {:password, to_charlist(password)})
+    else
+      options
+    end
   end
 
   defp set_secure_defaults(options) do
