@@ -427,19 +427,17 @@ defmodule Plug.Conn.Query do
 
   # covers non-keyword lists
   defp encode_pair(parent_field, list, encoder) when is_list(list) do
-    mapper = fn
+    field = parent_field <> "[]"
+
+    Enum.map_intersperse(list, ?&, fn
       value when is_map(value) and map_size(value) != 1 ->
         raise ArgumentError,
               "cannot encode maps inside lists when the map has 0 or more than 1 element, " <>
                 "got: #{inspect(value)}"
 
       value ->
-        [?&, encode_pair(parent_field <> "[]", value, encoder)]
-    end
-
-    list
-    |> Enum.flat_map(mapper)
-    |> prune()
+        encode_pair(field, value, encoder)
+    end)
   end
 
   # covers nil
