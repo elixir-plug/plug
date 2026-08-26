@@ -52,8 +52,7 @@ defmodule Plug.Conn.Adapter do
   end
 
   defp split_path(path) do
-    segments = :binary.split(path, "/", [:global])
-    for segment <- segments, segment != "", do: segment
+    :binary.split(path, "/", [:global, :trim_all])
   end
 
   @doc """
