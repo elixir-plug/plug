@@ -227,8 +227,7 @@ defmodule Plug.Adapters.Test.Conn do
   defp split_path(nil), do: []
 
   defp split_path(path) do
-    segments = :binary.split(path, "/", [:global])
-    for segment <- segments, segment != "", do: segment
+    :binary.split(path, "/", [:global, :trim_all])
   end
 
   @already_sent {:plug_conn, :sent}

@@ -278,7 +278,7 @@ defmodule Plug.Router.Utils do
 
   """
   def split(bin) do
-    for segment <- String.split(bin, "/"), segment != "", do: segment
+    :binary.split(bin, "/", [:global, :trim_all])
   end
 
   @deprecated "Use Plug.forward/4 instead"
