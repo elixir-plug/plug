@@ -58,7 +58,7 @@ defmodule Plug.MethodOverride do
   end
 
   defp override_method(%Plug.Conn{} = conn, body_params) do
-    with method when is_binary(method) <- body_params["_method"] || "",
+    with method when is_binary(method) <- body_params["_method"],
          method = String.upcase(method, :ascii),
          true <- method in @allowed_methods do
       %{conn | method: method}
