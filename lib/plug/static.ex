@@ -449,10 +449,8 @@ defmodule Plug.Static do
   end
 
   defp accept_encoding?(conn, encoding) do
-    Enum.any?(
-      get_req_header(conn, "accept-encoding"),
-      &String.contains?(&1, [encoding, "*"])
-    )
+    encoding? = &String.contains?(&1, [encoding, "*"])
+    Enum.any?(get_req_header(conn, "accept-encoding"), encoding?)
   end
 
   defp maybe_add(list, key, value, true), do: list ++ [{key, value}]
