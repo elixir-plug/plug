@@ -589,10 +589,12 @@ defmodule Plug.Conn do
   ## Examples
 
       Plug.Conn.send_resp(conn, 404, "Not found")
+      Plug.Conn.send_resp(conn, 204)
 
   """
+  @spec send_resp(t, status) :: t | no_return
   @spec send_resp(t, status, body) :: t | no_return
-  def send_resp(%Conn{} = conn, status, body) do
+  def send_resp(%Conn{} = conn, status, body \\ "") do
     conn |> resp(status, body) |> send_resp()
   end
 
