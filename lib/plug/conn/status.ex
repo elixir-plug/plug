@@ -6,6 +6,9 @@ defmodule Plug.Conn.Status do
   custom_statuses = Application.compile_env(:plug, :statuses, %{})
 
   aliased_statuses = [
+    {413, :request_entity_too_large},
+    {414, :request_uri_too_long},
+    {416, :requested_range_not_satisfiable},
     {422, :unprocessable_entity}
   ]
 
@@ -46,10 +49,10 @@ defmodule Plug.Conn.Status do
     410 => "Gone",
     411 => "Length Required",
     412 => "Precondition Failed",
-    413 => "Request Entity Too Large",
-    414 => "Request-URI Too Long",
+    413 => "Content Too Large",
+    414 => "URI Too Long",
     415 => "Unsupported Media Type",
-    416 => "Requested Range Not Satisfiable",
+    416 => "Range Not Satisfiable",
     417 => "Expectation Failed",
     418 => "I'm a teapot",
     421 => "Misdirected Request",
