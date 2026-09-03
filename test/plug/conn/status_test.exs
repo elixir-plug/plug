@@ -14,6 +14,9 @@ defmodule Plug.Conn.StatusTest do
     assert Status.code(:non_authoritative_information) == 203
     assert Status.code(:not_found) == 404
     assert Status.code(:unprocessable_content) == 422
+    assert Status.code(:content_too_large) == 413
+    assert Status.code(:uri_too_long) == 414
+    assert Status.code(:range_not_satisfiable) == 416
   end
 
   test "code for custom status return the numeric code" do
@@ -22,6 +25,9 @@ defmodule Plug.Conn.StatusTest do
 
   test "code for aliased statuses" do
     assert Status.code(:unprocessable_entity) == 422
+    assert Status.code(:request_entity_too_large) == 413
+    assert Status.code(:request_uri_too_long) == 414
+    assert Status.code(:requested_range_not_satisfiable) == 416
   end
 
   test "code with both a built_in and custom code return the numeric code" do
