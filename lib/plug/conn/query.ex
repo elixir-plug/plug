@@ -70,6 +70,31 @@ defmodule Plug.Conn.Query do
       iex> encode(%{foo: %{bar: "baz"}})
       "foo[bar]=baz"
 
+  > #### Brackets in keys {: .warning}
+  >
+  > Avoid literal `[` and `]` characters in keys. Keys are percent-decoded
+  > before nesting is parsed, so percent-encoded brackets (`%5B` and `%5D`)
+  > are treated the same as unescaped brackets:
+  >
+  >     iex> decode("foo%5Bbar%5D=baz")
+  >     %{"foo" => %{"bar" => "baz"}}
+  >
+  > Brackets in keys are preserved when encoding as percent-encoded
+  > characters, so you can use `"foo[bar]"` as a key to build nested query
+  > parameters:
+  >
+  >     iex> query = encode(%{"foo[bar]" => "baz"})
+  >     "foo%5Bbar%5D=baz"
+  >     iex> decode(query)
+  >     %{"foo" => %{"bar" => "baz"}}
+  >
+  > However, encoding and then decoding keys containing brackets may change
+  > the structure. For example, `][` in a nested key is interpreted as a
+  > separator between nesting levels:
+  >
+  >     iex> decode(encode(%{"foo" => %{"bar][baz" => "bat"}}))
+  >     %{"foo" => %{"bar" => %{"baz" => "bat"}}}
+
   It is only possible to encode maps inside lists if those maps have exactly one element.
   In this case it is possible to encode the parameters using maps instead of lists:
 
@@ -99,6 +124,9 @@ defmodule Plug.Conn.Query do
   The format is decoded at first. Then, if `validate_utf8` is `true`, the decoded
   result is validated for proper UTF-8 encoding. `validate_utf8` may also be
   an atom with a custom exception to raise.
+
+  Percent-encoded brackets in keys are treated as nesting delimiters, just
+  like unescaped brackets. See the module documentation for limitations.
 
   `initial` is the initial "accumulator" where decoded values will be added.
 
@@ -404,6 +432,10 @@ defmodule Plug.Conn.Query do
 
   @doc """
   Encodes the given map or list of tuples.
+
+  Brackets in keys are preserved as percent-encoded characters, so keys such
+  as `"foo[bar]"` can be used to build nested query parameters. See the module
+  documentation for examples and limitations when decoding with `decode/4`.
   """
   @spec encode(Enumerable.t(), (term() -> binary())) :: binary()
   def encode(kv, encoder \\ &to_string/1) do
