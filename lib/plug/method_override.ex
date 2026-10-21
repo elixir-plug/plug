@@ -51,19 +51,15 @@ defmodule Plug.MethodOverride do
 
   def call(%Plug.Conn{} = conn, []), do: conn
 
-  defp override_method(conn, %Plug.Conn.Unfetched{}) do
-    # Just skip it because maybe it is a content-type that
-    # we could not parse as parameters (for example, text/gps)
-    conn
-  end
+  defp override_method(conn, %{"_method" => method}) when is_binary(method) do
+    method = String.upcase(method, :ascii)
 
-  defp override_method(%Plug.Conn{} = conn, body_params) do
-    with method when is_binary(method) <- body_params["_method"],
-         method = String.upcase(method, :ascii),
-         true <- method in @allowed_methods do
+    if method in @allowed_methods do
       %{conn | method: method}
     else
-      _ -> conn
+      conn
     end
   end
+
+  defp override_method(conn, _body_params), do: conn
 end
