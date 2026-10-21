@@ -262,7 +262,6 @@ defmodule Plug.Conn.Query do
   end
 
   defp split_keys(<<_, rest::binary>>, binary, current_pos, start_pos, level, acc, count) do
-    check_nesting!(count)
     split_keys(rest, binary, current_pos + 1, start_pos, level, acc, count)
   end
 
