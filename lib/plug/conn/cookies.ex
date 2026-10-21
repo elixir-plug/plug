@@ -46,53 +46,63 @@ defmodule Plug.Conn.Cookies do
 
   """
   def decode(cookie) when is_binary(cookie) do
-    Map.new(decode_kv(cookie, []))
+    Map.new(decode_kv(cookie, cookie, 0, []))
   end
 
-  defp decode_kv("", acc), do: acc
-  defp decode_kv(<<h, t::binary>>, acc) when h in [?\s, ?\t], do: decode_kv(t, acc)
-  defp decode_kv(kv, acc) when is_binary(kv), do: decode_key(kv, kv, 0, acc)
+  defp decode_kv(<<h, t::binary>>, cookie, pos, acc) when h in [?\s, ?\t, ?;],
+    do: decode_kv(t, cookie, pos + 1, acc)
 
-  defp decode_key(<<h, t::binary>>, _key_rest, _len, acc)
+  defp decode_kv(<<h, t::binary>>, cookie, pos, acc) when h in [?\r, ?\n, ?\v, ?\f, ?=],
+    do: skip_until_cc(t, cookie, pos + 1, acc)
+
+  defp decode_kv(<<_, t::binary>>, cookie, pos, acc), do: decode_key(t, cookie, pos, 1, acc)
+  defp decode_kv(<<>>, _cookie, _pos, acc), do: acc
+
+  defp decode_key(<<h, t::binary>>, cookie, pos, len, acc)
        when h in [?\s, ?\t, ?\r, ?\n, ?\v, ?\f],
-       do: skip_until_cc(t, acc)
+       do: skip_until_cc(t, cookie, pos + len + 1, acc)
 
-  defp decode_key(<<?;, t::binary>>, _key_rest, _len, acc), do: decode_kv(t, acc)
-  defp decode_key(<<?=, t::binary>>, _key_rest, 0, acc), do: skip_until_cc(t, acc)
+  defp decode_key(<<?;, t::binary>>, cookie, pos, len, acc),
+    do: decode_kv(t, cookie, pos + len + 1, acc)
 
-  defp decode_key(<<?=, t::binary>>, key_rest, len, acc) do
-    key = binary_part(key_rest, 0, len)
-    decode_value(t, t, 0, 0, key, acc)
+  defp decode_key(<<?=, t::binary>>, cookie, pos, len, acc) do
+    key = binary_part(cookie, pos, len)
+    decode_value(t, cookie, pos + len + 1, 0, 0, key, acc)
   end
 
-  defp decode_key(<<_, t::binary>>, key_rest, len, acc), do: decode_key(t, key_rest, len + 1, acc)
-  defp decode_key(<<>>, _key_rest, _len, acc), do: acc
+  defp decode_key(<<_, t::binary>>, cookie, pos, len, acc),
+    do: decode_key(t, cookie, pos, len + 1, acc)
 
-  defp decode_value(<<?;, t::binary>>, val_rest, len, spaces, key, acc) do
-    value = binary_part(val_rest, 0, len - spaces)
-    decode_kv(t, [{key, value} | acc])
+  defp decode_key(<<>>, _cookie, _pos, _len, acc), do: acc
+
+  defp decode_value(<<?;, t::binary>>, cookie, pos, len, spaces, key, acc) do
+    value = binary_part(cookie, pos, len - spaces)
+    decode_kv(t, cookie, pos + len + 1, [{key, value} | acc])
   end
 
-  defp decode_value(<<?\s, t::binary>>, val_rest, len, spaces, key, acc) do
-    decode_value(t, val_rest, len + 1, spaces + 1, key, acc)
+  defp decode_value(<<?\s, t::binary>>, cookie, pos, len, spaces, key, acc) do
+    decode_value(t, cookie, pos, len + 1, spaces + 1, key, acc)
   end
 
-  defp decode_value(<<h, t::binary>>, _val_rest, _len, _spaces, _key, acc)
+  defp decode_value(<<h, t::binary>>, cookie, pos, len, _spaces, _key, acc)
        when h in [?\t, ?\r, ?\n, ?\v, ?\f],
-       do: skip_until_cc(t, acc)
+       do: skip_until_cc(t, cookie, pos + len + 1, acc)
 
-  defp decode_value(<<_, t::binary>>, val_rest, len, _spaces, key, acc) do
-    decode_value(t, val_rest, len + 1, 0, key, acc)
+  defp decode_value(<<_, t::binary>>, cookie, pos, len, _spaces, key, acc) do
+    decode_value(t, cookie, pos, len + 1, 0, key, acc)
   end
 
-  defp decode_value(<<>>, val_rest, len, spaces, key, acc) do
-    value = binary_part(val_rest, 0, len - spaces)
+  defp decode_value(<<>>, cookie, pos, len, spaces, key, acc) do
+    value = binary_part(cookie, pos, len - spaces)
     [{key, value} | acc]
   end
 
-  defp skip_until_cc(<<?;, t::binary>>, acc), do: decode_kv(t, acc)
-  defp skip_until_cc(<<_, t::binary>>, acc), do: skip_until_cc(t, acc)
-  defp skip_until_cc(<<>>, acc), do: acc
+  defp skip_until_cc(<<?;, t::binary>>, cookie, pos, acc), do: decode_kv(t, cookie, pos + 1, acc)
+
+  defp skip_until_cc(<<_, t::binary>>, cookie, pos, acc),
+    do: skip_until_cc(t, cookie, pos + 1, acc)
+
+  defp skip_until_cc(<<>>, _cookie, _pos, acc), do: acc
 
   @doc ~S"""
   Encodes the given cookies as expected in a response header.
