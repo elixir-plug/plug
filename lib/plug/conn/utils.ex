@@ -239,23 +239,42 @@ defmodule Plug.Conn.Utils do
 
   """
   @spec token(binary) :: binary | false
-  def token(""), do: false
-  def token(<<?", quoted::binary>>), do: quoted_token(quoted, "")
-  def token(token), do: unquoted_token(token, "")
+  def token(token) when is_binary(token), do: do_token(token, token)
 
-  defp quoted_token(<<>>, _acc), do: false
+  defp do_token(<<token::binary>>, original), do: unquoted_token(token, original, 0)
+
   defp quoted_token(<<?", t::binary>>, acc), do: strip_spaces(t) == "" and acc
-  defp quoted_token(<<?\\, h, t::binary>>, acc), do: quoted_token(t, <<acc::binary, h>>)
+
+  defp quoted_token(<<?\\, rest::binary>>, acc) do
+    case rest do
+      <<h, t::binary>> -> quoted_token(t, <<acc::binary, h>>)
+      <<>> -> false
+    end
+  end
+
   defp quoted_token(<<h, t::binary>>, acc), do: quoted_token(t, <<acc::binary, h>>)
+  defp quoted_token(<<>>, _acc), do: false
 
-  defp unquoted_token(<<>>, acc), do: acc
-  defp unquoted_token("\r\n" <> t, acc), do: strip_spaces(t) == "" and acc
-  defp unquoted_token(<<h, t::binary>>, acc) when h in @space, do: strip_spaces(t) == "" and acc
+  defp unquoted_token(<<?", quoted::binary>>, _token, len),
+    do: len == 0 and quoted_token(quoted, "")
 
-  defp unquoted_token(<<h, _::binary>>, _acc) when h in @specials or h < 32 or h === 127,
+  defp unquoted_token(<<?\r, rest::binary>>, token, len) do
+    case rest do
+      <<?\n, t::binary>> -> strip_spaces(t) == "" and binary_part(token, 0, len)
+      _ -> false
+    end
+  end
+
+  defp unquoted_token(<<h, t::binary>>, token, len) when h in @space,
+    do: strip_spaces(t) == "" and binary_part(token, 0, len)
+
+  defp unquoted_token(<<h, _::binary>>, _token, _len) when h in @specials or h < 32 or h === 127,
     do: false
 
-  defp unquoted_token(<<h, t::binary>>, acc), do: unquoted_token(t, <<acc::binary, h>>)
+  defp unquoted_token(<<_, t::binary>>, token, len),
+    do: unquoted_token(t, token, len + 1)
+
+  defp unquoted_token(<<>>, token, len), do: len != 0 and token
 
   @doc """
   Parses a comma-separated list of header values.
