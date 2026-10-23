@@ -180,7 +180,7 @@ defmodule Plug.Parsers.MULTIPART do
   end
 
   defp parse_multipart_headers(headers, conn, limit, opts, acc) do
-    limit = limit - headers_size(headers)
+    limit = limit - headers_size(headers) - Map.get(conn.private, :plug_multipart_skipped, 0)
 
     case multipart_type(headers) do
       {:binary, name} ->

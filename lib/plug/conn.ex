@@ -1229,29 +1229,53 @@ defmodule Plug.Conn do
         opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
         length = Keyword.fetch!(opts, :length)
         {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
-        read_part_headers(conn, data, length, boundary, adapter, state, opts)
+        read_part_headers(conn, data, length, boundary, adapter, state, opts, 0)
 
       :done ->
         {:done, conn}
     end
   end
 
-  defp read_part_headers(conn, data, length, boundary, adapter, state, opts) do
+  # `skipped` counts preamble bytes already discarded for this part, so the
+  # length limit bounds everything consumed before the headers, not just the
+  # last chunk.
+  defp read_part_headers(conn, data, length, boundary, adapter, state, opts, skipped) do
     case :plug_multipart.parse_headers(data, boundary) do
-      {:ok, _headers, rest} when byte_size(data) - byte_size(rest) > length ->
+      {:ok, _headers, rest} when skipped + byte_size(data) - byte_size(rest) > length ->
         {:error, :too_large, store_multipart(conn, {boundary, rest}, adapter, state)}
 
       {:ok, headers, rest} ->
-        {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
+        skipped = skipped + preamble_size(data, boundary)
+        conn = store_multipart(conn, {boundary, rest}, adapter, state)
+        {:ok, headers, put_in(conn.private[:plug_multipart_skipped], skipped)}
 
       :more ->
-        read_part_headers_more(conn, data, length, boundary, adapter, state, opts)
+        read_part_headers_more(conn, data, length, boundary, adapter, state, opts, skipped)
 
       {:more, rest} ->
-        read_part_headers_more(conn, rest, length, boundary, adapter, state, opts)
+        skipped = skipped + byte_size(data) - byte_size(rest)
+
+        if skipped > length do
+          {:error, :too_large, store_multipart(conn, {boundary, rest}, adapter, state)}
+        else
+          read_part_headers_more(conn, rest, length, boundary, adapter, state, opts, skipped)
+        end
 
       {:done, _} ->
         {:done, store_multipart(conn, :done, adapter, state)}
+    end
+  end
+
+  defp preamble_size(data, boundary) do
+    prefix = "--" <> boundary
+
+    if String.starts_with?(data, prefix) do
+      0
+    else
+      case :binary.match(data, "\r\n" <> prefix) do
+        {pos, _} -> pos + 2
+        :nomatch -> 0
+      end
     end
   end
 
@@ -1352,14 +1376,14 @@ defmodule Plug.Conn do
     %{put_in(conn.private[:plug_multipart], multipart) | adapter: {adapter, state}}
   end
 
-  defp read_part_headers_more(conn, data, length, boundary, adapter, state, _opts)
-       when byte_size(data) >= length do
+  defp read_part_headers_more(conn, data, length, boundary, adapter, state, _opts, skipped)
+       when skipped + byte_size(data) >= length do
     {:error, :too_large, store_multipart(conn, {boundary, data}, adapter, state)}
   end
 
-  defp read_part_headers_more(conn, data, length, boundary, adapter, state, opts) do
+  defp read_part_headers_more(conn, data, length, boundary, adapter, state, opts, skipped) do
     {_, next, state} = next_multipart(adapter, state, opts)
-    read_part_headers(conn, data <> next, length, boundary, adapter, state, opts)
+    read_part_headers(conn, data <> next, length, boundary, adapter, state, opts, skipped)
   end
 
   defp read_multipart_from_buffer_or_adapter("", adapter, state, opts) do

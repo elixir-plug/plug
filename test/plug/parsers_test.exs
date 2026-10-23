@@ -418,6 +418,26 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 413
   end
 
+  test "raises when multipart preamble plus body exceeds the parser length" do
+    multipart =
+      [
+        String.duplicate("P", 800_000),
+        "\r\n--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\n\r\n",
+        String.duplicate("a", 7_500_000),
+        "\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    exception =
+      assert_raise Plug.Parsers.RequestTooLargeError, ~r/the request is too large/, fn ->
+        conn(:post, "/", multipart)
+        |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+        |> parse()
+      end
+
+    assert Plug.Exception.status(exception) == 413
+  end
+
   test "raises when cumulative multipart headers exceed the parser length" do
     multipart =
       [
