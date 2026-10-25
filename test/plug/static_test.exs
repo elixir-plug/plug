@@ -127,6 +127,32 @@ defmodule Plug.StaticTest do
     assert get_resp_header(conn, "etag") == [etag]
   end
 
+  test "performs etag negotiation with weak etags, lists and *" do
+    conn = call(conn(:get, "/public/fixtures/static.txt"))
+    assert [etag] = get_resp_header(conn, "etag")
+
+    for if_none_match <- ["W/" <> etag, ~s("other", ) <> etag, ~s("other",W/) <> etag, "*"] do
+      conn =
+        conn(:get, "/public/fixtures/static.txt", nil)
+        |> put_req_header("if-none-match", if_none_match)
+        |> call()
+
+      assert conn.status == 304, "expected 304 for #{if_none_match}"
+      assert conn.resp_body == ""
+      assert get_resp_header(conn, "etag") == [etag]
+    end
+
+    for if_none_match <- [~s("other"), ~s("other", W/"another")] do
+      conn =
+        conn(:get, "/public/fixtures/static.txt", nil)
+        |> put_req_header("if-none-match", if_none_match)
+        |> call()
+
+      assert conn.status == 200, "expected 200 for #{if_none_match}"
+      assert conn.resp_body == "HELLO"
+    end
+  end
+
   defmodule EtagGenerator do
     def generate(path, a, b) do
       {:ok, contents} = :prim_file.read_file(path)
