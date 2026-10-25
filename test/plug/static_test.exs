@@ -527,6 +527,46 @@ defmodule Plug.StaticTest do
       end
     end
 
+    test "serves the range only if if-range matches the etag" do
+      conn = call(conn(:get, "/public/fixtures/static.txt"))
+      assert [etag] = get_resp_header(conn, "etag")
+
+      conn =
+        conn(:get, "/public/fixtures/static.txt", [])
+        |> put_req_header("range", "bytes=0-1")
+        |> put_req_header("if-range", etag)
+        |> call()
+
+      assert conn.status == 206
+      assert conn.resp_body == "HE"
+      assert get_resp_header(conn, "content-range") == ["bytes 0-1/5"]
+
+      for if_range <- [~s("other"), "W/" <> etag, "Sun, 25 Oct 2026 00:00:00 GMT"],
+          range <- ["bytes=0-1", "bytes=10-20"] do
+        conn =
+          conn(:get, "/public/fixtures/static.txt", [])
+          |> put_req_header("range", range)
+          |> put_req_header("if-range", if_range)
+          |> call()
+
+        assert conn.status == 200, "expected 200 for #{if_range} and #{range}"
+        assert conn.resp_body == "HELLO"
+        assert get_resp_header(conn, "content-range") == []
+      end
+    end
+
+    test "ignores range if if-range is given and there is no etag" do
+      conn =
+        conn(:get, "/public/fixtures/static.txt?vsn=bar", [])
+        |> put_req_header("range", "bytes=0-1")
+        |> put_req_header("if-range", ~s("abc"))
+        |> call()
+
+      assert conn.status == 200
+      assert conn.resp_body == "HELLO"
+      assert get_resp_header(conn, "etag") == []
+    end
+
     test "performs etag negotiation" do
       conn =
         conn(:get, "/public/fixtures/static.txt")
