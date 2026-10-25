@@ -982,6 +982,21 @@ defmodule Plug.ConnTest do
     assert {:error, :too_large, _conn} = read_part_headers(conn, length: 1_000)
   end
 
+  test "read_part_headers/2 returns too_large for multipart preambles over the limit" do
+    body =
+      [
+        String.duplicate("P", 5_000),
+        "\r\n--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\n\r\nabc\r\n--deadbeef--\r\n"
+      ]
+      |> IO.iodata_to_binary()
+
+    conn =
+      conn(:post, "/", body)
+      |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+
+    assert {:error, :too_large, _conn} = read_part_headers(conn, length: 1_000)
+  end
+
   test "query_params/1 and fetch_query_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.query_params == %Plug.Conn.Unfetched{aspect: :query_params}
