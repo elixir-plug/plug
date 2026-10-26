@@ -285,7 +285,8 @@ defmodule Plug.Static do
   defp serve_range(conn, file_info, path, [range], options) do
     file_info(size: file_size) = file_info
 
-    with %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
+    with true <- if_range_matches?(conn),
+         %{"bytes" => bytes} <- Plug.Conn.Utils.params(range),
          # 41 bytes covers two 64 bit byte offsets, enough to address files up to 16 EiB.
          true <- byte_size(bytes) <= 41,
          {range_start, range_end} <- start_and_end(bytes, file_size) do
@@ -298,6 +299,16 @@ defmodule Plug.Static do
 
   defp serve_range(conn, _file_info, path, _range, options) do
     send_entire_file(conn, path, options)
+  end
+
+  # The range is only served if If-Range, when given, is the current strong
+  # ETag. Dates never match because no Last-Modified is sent. See RFC 9110, 13.1.5.
+  defp if_range_matches?(conn) do
+    case {get_req_header(conn, "if-range"), get_resp_header(conn, "etag")} do
+      {[], _} -> true
+      {[etag], [etag]} -> not String.starts_with?(etag, "W/")
+      _ -> false
+    end
   end
 
   defp start_and_end(_range, 0), do: :error
