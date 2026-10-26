@@ -391,7 +391,7 @@ defmodule Plug.Static do
       |> put_resp_header("cache-control", et_cache)
       |> put_resp_header("etag", etag)
 
-    if etag in get_req_header(conn, "if-none-match") do
+    if etag_matches?(get_req_header(conn, "if-none-match"), etag) do
       {:fresh, conn}
     else
       {:stale, conn}
@@ -401,6 +401,20 @@ defmodule Plug.Static do
   defp put_cache_header(conn, _, _, _, _, _) do
     {:stale, conn}
   end
+
+  # If-None-Match is "*" or a list of ETags, compared with the weak comparison
+  # function, so the W/ prefix is ignored. See RFC 9110, 13.1.2.
+  defp etag_matches?(if_none_match, etag) do
+    opaque_tag = strip_weak(etag)
+
+    Enum.any?(if_none_match, fn value ->
+      value == etag or
+        Enum.any?(Plug.Conn.Utils.list(value), &(&1 == "*" or strip_weak(&1) == opaque_tag))
+    end)
+  end
+
+  defp strip_weak("W/" <> etag), do: etag
+  defp strip_weak(etag), do: etag
 
   defp etag_for_path(file_info, et_generation, path) do
     case et_generation do
