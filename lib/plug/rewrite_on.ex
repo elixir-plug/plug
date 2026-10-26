@@ -11,14 +11,15 @@ defmodule Plug.RewriteOn do
   The supported values are:
 
     * `:x_forwarded_for` - to override the remote IP based on the "x-forwarded-for" header
-    * `:x_forwarded_host` - to override the host based on the "x-forwarded-host" header
+    * `:x_forwarded_host` - to override the host based on the "x-forwarded-host" header,
+      and the port if the header includes one
     * `:x_forwarded_port` - to override the port based on the "x-forwarded-port" header
     * `:x_forwarded_proto` - to override the protocol based on the "x-forwarded-proto" header
 
   Some HTTPS proxies use nonstandard headers, which can be specified in the list via tuples:
 
     * `{:remote_ip, header}` - to override the remote IP based on a custom header
-    * `{:host, header}` - to override the host based on a custom header
+    * `{:host, header}` - to override the host (and port) based on a custom header
     * `{:port, header}` - to override the port based on a custom header
     * `{:scheme, header}` - to override the protocol based on a custom header
 
@@ -114,11 +115,32 @@ defmodule Plug.RewriteOn do
   defp put_scheme(conn, _scheme),
     do: conn
 
-  defp put_host(conn, [proper_host]),
-    do: %{conn | host: proper_host}
+  defp put_host(conn, [proper_host]) do
+    case split_port(proper_host) do
+      {host, port} -> %{conn | host: host, port: port}
+      :error -> %{conn | host: proper_host}
+    end
+  end
 
   defp put_host(conn, _),
     do: conn
+
+  # The header may include the port, as in "example.com:8443" or "[::1]:8443"
+  defp split_port(host_port) do
+    with [_ | _] = colons <- :binary.matches(host_port, ":"),
+         {pos, 1} when pos > 0 <- List.last(colons),
+         true <- length(colons) == 1 or bracketed_ipv6?(host_port, pos),
+         port = binary_part(host_port, pos + 1, byte_size(host_port) - pos - 1),
+         true <- byte_size(port) in 1..5,
+         {port, ""} <- Integer.parse(port) do
+      {binary_part(host_port, 0, pos), port}
+    else
+      _ -> :error
+    end
+  end
+
+  defp bracketed_ipv6?(host_port, pos),
+    do: :binary.first(host_port) == ?[ and :binary.at(host_port, pos - 1) == ?]
 
   defp put_port(conn, headers) do
     with [header] <- headers,

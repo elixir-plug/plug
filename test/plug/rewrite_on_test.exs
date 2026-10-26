@@ -66,6 +66,52 @@ defmodule Plug.RewriteOnTest do
     assert conn.host == "truessl.example.com"
   end
 
+  test "rewrites host and port with a x-forwarded-host header that has a port" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-host", "truessl.example.com:8443")
+      |> call(:x_forwarded_host)
+
+    assert conn.host == "truessl.example.com"
+    assert conn.port == 8443
+
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-host", "[2001:db8::1]:8443")
+      |> call(:x_forwarded_host)
+
+    assert conn.host == "[2001:db8::1]"
+    assert conn.port == 8443
+  end
+
+  test "rewrites only the host with a x-forwarded-host header without a valid port" do
+    for host <- [
+          "[2001:db8::1]",
+          "2001:db8::1",
+          "truessl.example.com:",
+          "truessl.example.com:https"
+        ] do
+      conn =
+        conn(:get, "http://example.com/")
+        |> put_req_header("x-forwarded-host", host)
+        |> call(:x_forwarded_host)
+
+      assert conn.host == host
+      assert conn.port == 80
+    end
+  end
+
+  test "x-forwarded-port takes precedence over the port in x-forwarded-host" do
+    conn =
+      conn(:get, "http://example.com/")
+      |> put_req_header("x-forwarded-host", "truessl.example.com:8443")
+      |> put_req_header("x-forwarded-port", "9443")
+      |> call([:x_forwarded_host, :x_forwarded_port])
+
+    assert conn.host == "truessl.example.com"
+    assert conn.port == 9443
+  end
+
   test "rewrites host with a custom header" do
     conn =
       conn(:get, "http://example.com/")
