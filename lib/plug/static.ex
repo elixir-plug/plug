@@ -306,7 +306,7 @@ defmodule Plug.Static do
   defp if_range_matches?(conn) do
     case {get_req_header(conn, "if-range"), get_resp_header(conn, "etag")} do
       {[], _} -> true
-      {[etag], [etag]} -> not String.starts_with?(etag, "W/")
+      {[etag], [etag]} -> not match?("W/" <> _, etag)
       _ -> false
     end
   end
@@ -419,8 +419,8 @@ defmodule Plug.Static do
     opaque_tag = strip_weak(etag)
 
     Enum.any?(if_none_match, fn value ->
-      value == etag or
-        Enum.any?(Plug.Conn.Utils.list(value), &(&1 == "*" or strip_weak(&1) == opaque_tag))
+      value == etag or value == "*" or
+        Enum.any?(Plug.Conn.Utils.list(value), &(strip_weak(&1) == opaque_tag))
     end)
   end
 
