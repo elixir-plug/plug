@@ -1722,7 +1722,7 @@ defmodule Plug.Conn do
     {to_send_value, opts} = Plug.Conn.Cookies.sign_or_encrypt(conn, key, value, opts)
     cookie = [{:value, to_send_value} | opts] |> Map.new() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
-    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
+    update_cookies(conn, resp_cookies, &Map.put(&1, key, value))
   end
 
   defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
@@ -1741,7 +1741,7 @@ defmodule Plug.Conn do
     opts = opts ++ [universal_time: @epoch, max_age: 0]
     cookie = opts |> Map.new() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
-    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.delete(&1, key))
+    update_cookies(conn, resp_cookies, &Map.delete(&1, key))
   end
 
   @doc """
@@ -1953,12 +1953,15 @@ defmodule Plug.Conn do
     validate_header_key_value!("set-cookie", cookie)
   end
 
-  defp update_cookies(%Conn{state: state}, _fun) when state not in @unsent do
+  defp update_cookies(%Conn{state: state}, _resp_cookies, _fun) when state not in @unsent do
     raise AlreadySentError
   end
 
-  defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, _fun), do: conn
-  defp update_cookies(%Conn{cookies: cookies} = conn, fun), do: %{conn | cookies: fun.(cookies)}
+  defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, resp_cookies, _fun),
+    do: %{conn | resp_cookies: resp_cookies}
+
+  defp update_cookies(%Conn{cookies: cookies} = conn, resp_cookies, fun),
+    do: %{conn | resp_cookies: resp_cookies, cookies: fun.(cookies)}
 
   defp session_key(binary) when is_binary(binary), do: binary
   defp session_key(atom) when is_atom(atom), do: Atom.to_string(atom)
