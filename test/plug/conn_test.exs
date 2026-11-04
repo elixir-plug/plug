@@ -499,6 +499,21 @@ defmodule Plug.ConnTest do
     )
   end
 
+  defmodule UpgradeErrorAdapter do
+    def upgrade(_payload, _protocol, _args), do: {:error, :bad_args}
+  end
+
+  test "upgrade_adapter/3 raises an error on failed upgrades" do
+    assert_raise(
+      ArgumentError,
+      "upgrade to websocket failed in Plug.ConnTest.UpgradeErrorAdapter: :bad_args",
+      fn ->
+        %{conn(:get, "/foo") | adapter: {UpgradeErrorAdapter, nil}}
+        |> upgrade_adapter(:websocket, opt: :bad)
+      end
+    )
+  end
+
   test "upgrade_adapter/3 will raise if the response is sent before upgrading" do
     assert_raise(Plug.Conn.AlreadySentError, fn ->
       conn(:get, "/foo")

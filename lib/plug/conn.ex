@@ -1470,8 +1470,8 @@ defmodule Plug.Conn do
   function; it is entirely possible (likely, even) that the server will only do the actual upgrade
   later in the connection lifecycle.
 
-  If the adapter does not support the requested protocol this function will raise an
-  `ArgumentError`. The underlying adapter may also signal errors in the provided arguments by
+  If the adapter does not support the requested protocol, or if it returns any other error
+  for the requested upgrade, this function will raise an `ArgumentError`. The underlying adapter may also signal errors in the provided arguments by
   raising; consult the corresponding adapter documentation for details.
   """
   @spec upgrade_adapter(t, atom, term) :: t
@@ -1485,6 +1485,10 @@ defmodule Plug.Conn do
 
       {:error, :not_supported} ->
         raise ArgumentError, "upgrade to #{protocol} not supported by #{inspect(adapter)}"
+
+      {:error, reason} ->
+        raise ArgumentError,
+              "upgrade to #{protocol} failed in #{inspect(adapter)}: #{inspect(reason)}"
     end
   end
 
