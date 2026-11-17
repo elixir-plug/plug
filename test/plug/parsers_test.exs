@@ -426,6 +426,30 @@ defmodule Plug.ParsersTest do
     assert Plug.Exception.status(exception) == 413
   end
 
+  test "raises on many multipart parts without headers" do
+    multipart =
+      "--deadbeef\r\n\r\n" <>
+        String.duplicate("\r\n--deadbeef\r\n\r\n", 10_000) <> "\r\n--deadbeef--\r\n"
+
+    assert_raise Plug.Parsers.RequestTooLargeError, fn ->
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+      |> parse(length: 10_000)
+    end
+  end
+
+  test "raises on many empty multipart headers" do
+    multipart =
+      String.duplicate("--deadbeef\r\n" <> String.duplicate(":\r\n", 1_000) <> "\r\n\r\n", 10) <>
+        "--deadbeef--\r\n"
+
+    assert_raise Plug.Parsers.RequestTooLargeError, fn ->
+      conn(:post, "/", multipart)
+      |> put_req_header("content-type", "multipart/form-data; boundary=deadbeef")
+      |> parse(length: 10_000)
+    end
+  end
+
   test "raises when cumulative multipart headers exceed the parser length" do
     multipart =
       [
