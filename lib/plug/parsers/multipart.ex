@@ -333,10 +333,11 @@ defmodule Plug.Parsers.MULTIPART do
   #
   # Each part has 6 bytes of framing, "--" and "\r\n\r\n", plus the
   # boundary, which we estimate at 30 bytes. Each header has at least
-  # 3 bytes besides its name and value: ":" and "\r\n".
+  # 3 bytes besides its name and value: ":" and "\r\n" but they are
+  # represented as tuples of binaries, so count 7 words (56 bytes).
   defp headers_size(headers) do
     Enum.reduce(headers, 6 + 30, fn {key, value}, acc ->
-      acc + byte_size(key) + byte_size(value) + 3
+      acc + byte_size(key) + byte_size(value) + 56
     end)
   end
 
