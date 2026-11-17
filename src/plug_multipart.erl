@@ -187,9 +187,9 @@ skip_preamble(Stream, Boundary) ->
   case binary:match(Stream, <<"\r\n--", Boundary/bits >>) of
     %% No boundary, need more data.
     nomatch ->
-      %% We can safely skip the size of the stream
-      %% minus the last 3 bytes which may be a partial boundary.
-      SkipSize = byte_size(Stream) - 3,
+      %% We can safely skip the size of the stream minus the
+      %% last bytes which may be a partial "\r\n--" Boundary.
+      SkipSize = byte_size(Stream) - byte_size(Boundary) - 3,
       case SkipSize > 0 of
         false ->
           more;
@@ -205,10 +205,11 @@ skip_preamble(Stream, Boundary) ->
         << "--", Stream3/bits >> ->
           {done, Stream3};
         _ ->
-          case binary:match(Stream, <<"\r\n\r\n">>) of
-            %% We don't have the full headers.
+          case binary:match(Stream2, <<"\r\n\r\n">>) of
+            %% We don't have the full headers. Keep the boundary
+            %% so it is found again once more data arrives.
             nomatch ->
-              {more, Stream2};
+              {more, binary:part(Stream, Start, byte_size(Stream) - Start)};
             _ ->
               before_parse_headers(Stream2)
           end

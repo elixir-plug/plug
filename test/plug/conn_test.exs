@@ -1012,6 +1012,27 @@ defmodule Plug.ConnTest do
     assert {:error, :too_large, _conn} = read_part_headers(conn, length: 1_000)
   end
 
+  test "multipart preambles are skipped when split across reads" do
+    part =
+      "\r\n--deadbeef\r\ncontent-disposition: form-data; name=\"x\"\r\n\r\nabc\r\n--deadbeef--\r\n"
+
+    for preamble <- ["PPPPPPPPPPPPPPPPPPPP", "P\r\n\r\nPPPPPPPPPPPPPPP"], size <- 1..40 do
+      assert {:ok, [{"content-disposition", "form-data; name=\"x\""}], _rest} =
+               parse_split_headers("", preamble <> part, size)
+    end
+  end
+
+  # Feeds the multipart parser the way read_part_headers/2 does
+  defp parse_split_headers(data, body, size) do
+    {chunk, body} = String.split_at(body, size)
+
+    case :plug_multipart.parse_headers(data <> chunk, "deadbeef") do
+      :more -> parse_split_headers(data <> chunk, body, size)
+      {:more, rest} -> parse_split_headers(rest, body, size)
+      other -> other
+    end
+  end
+
   test "query_params/1 and fetch_query_params/1" do
     conn = conn(:get, "/foo?a=b&c=d")
     assert conn.query_params == %Plug.Conn.Unfetched{aspect: :query_params}
