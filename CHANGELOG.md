@@ -8,6 +8,12 @@
   * [Plug.Parsers] Parse request bodies for the HTTP QUERY method (RFC 10008)
   * [Plug.CSRFProtection] Treat the safe, idempotent HTTP QUERY method (RFC 10008) as unprotected
 
+## v1.20.4 (2026-11-17)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count empty headers towards the length limit (CVE-2026-120287)
+
 ## v1.20.3 (2026-07-09)
 
 ### Security
