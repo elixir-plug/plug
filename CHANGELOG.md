@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.20.4 (2026-11-17)
+
+### Security
+
+  * [Plug.Parsers.MULTIPART] Count empty headers towards the length limit (CVE-2026-120287)
+
 ## v1.20.3 (2026-07-09)
 
 ### Security
