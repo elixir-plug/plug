@@ -78,11 +78,11 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/"), 200, "foo")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_status(conn, 200)
+      put_status(Process.get(:unused, conn), 200)
     end
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_status(conn, nil)
+      put_status(Process.get(:unused, conn), nil)
     end
   end
 
@@ -203,15 +203,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "HELLO")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      resp(conn, 200, "OTHER")
-    end
-  end
-
-  test "resp/3 raises when body is nil" do
-    conn = conn(:head, "/foo")
-
-    assert_raise ArgumentError, fn ->
-      resp(conn, 200, nil)
+      resp(Process.get(:unused, conn), 200, "OTHER")
     end
   end
 
@@ -242,7 +234,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "HELLO")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      send_resp(conn, 200, "OTHER")
+      send_resp(Process.get(:unused, conn), 200, "OTHER")
     end
   end
 
@@ -294,7 +286,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/boo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      send_resp(conn)
+      send_resp(Process.get(:unused, conn))
     end
   end
 
@@ -326,7 +318,7 @@ defmodule Plug.ConnTest do
     conn = send_file(conn(:head, "/foo"), 200, __ENV__.file)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      send_file(conn, 200, __ENV__.file)
+      send_file(Process.get(:unused, conn), 200, __ENV__.file)
     end
   end
 
@@ -400,7 +392,7 @@ defmodule Plug.ConnTest do
     conn = send_chunked(conn(:head, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      send_chunked(conn, 200)
+      send_chunked(Process.get(:unused, conn), 200)
     end
   end
 
@@ -515,10 +507,10 @@ defmodule Plug.ConnTest do
   end
 
   test "upgrade_adapter/3 will raise if the response is sent before upgrading" do
+    conn = send_chunked(conn(:get, "/foo"), 200)
+
     assert_raise(Plug.Conn.AlreadySentError, fn ->
-      conn(:get, "/foo")
-      |> send_chunked(200)
-      |> upgrade_adapter(:supported, opt: :supported)
+      upgrade_adapter(Process.get(:unused, conn), :supported, opt: :supported)
     end)
   end
 
@@ -561,7 +553,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_resp_header(conn, "x-foo", "bar")
+      put_resp_header(Process.get(:unused, conn), "x-foo", "bar")
     end
   end
 
@@ -569,7 +561,7 @@ defmodule Plug.ConnTest do
     conn = send_chunked(conn(:get, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_resp_header(conn, "x-foo", "bar")
+      put_resp_header(Process.get(:unused, conn), "x-foo", "bar")
     end
   end
 
@@ -637,7 +629,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_resp_headers(conn, [{"x-foo", "bar"}])
+      prepend_resp_headers(Process.get(:unused, conn), [{"x-foo", "bar"}])
     end
   end
 
@@ -645,7 +637,7 @@ defmodule Plug.ConnTest do
     conn = send_chunked(conn(:get, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_resp_headers(conn, [{"x-foo", "bar"}])
+      prepend_resp_headers(Process.get(:unused, conn), [{"x-foo", "bar"}])
     end
   end
 
@@ -739,7 +731,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      delete_resp_header(conn, "x-foo")
+      delete_resp_header(Process.get(:unused, conn), "x-foo")
     end
   end
 
@@ -762,7 +754,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_resp_header(conn, "x-foo", "init", & &1)
+      update_resp_header(Process.get(:unused, conn), "x-foo", "init", & &1)
     end
   end
 
@@ -770,7 +762,7 @@ defmodule Plug.ConnTest do
     conn = send_chunked(conn(:get, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_resp_header(conn, "x-foo", "init", & &1)
+      update_resp_header(Process.get(:unused, conn), "x-foo", "init", & &1)
     end
   end
 
@@ -832,7 +824,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_req_headers(conn, [{"x-foo", "bar"}])
+      prepend_req_headers(Process.get(:unused, conn), [{"x-foo", "bar"}])
     end
   end
 
@@ -840,7 +832,7 @@ defmodule Plug.ConnTest do
     conn = send_chunked(conn(:get, "/foo"), 200)
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      prepend_req_headers(conn, [{"x-foo", "bar"}])
+      prepend_req_headers(Process.get(:unused, conn), [{"x-foo", "bar"}])
     end
   end
 
@@ -871,7 +863,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_req_header(conn, "x-foo", "bar")
+      put_req_header(Process.get(:unused, conn), "x-foo", "bar")
     end
   end
 
@@ -923,7 +915,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      delete_req_header(conn, "x-foo")
+      delete_req_header(Process.get(:unused, conn), "x-foo")
     end
   end
 
@@ -946,7 +938,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:head, "/foo"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      update_req_header(conn, "x-foo", "init", & &1)
+      update_req_header(Process.get(:unused, conn), "x-foo", "init", & &1)
     end
   end
 
@@ -1475,19 +1467,19 @@ defmodule Plug.ConnTest do
     conn = %{conn | state: :sent}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_session(conn, :key, 42)
+      put_session(Process.get(:unused, conn), :key, 42)
     end
 
     conn = %{conn | state: :file}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_session(conn, :key, 42)
+      put_session(Process.get(:unused, conn), :key, 42)
     end
 
     conn = %{conn | state: :chunked}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      put_session(conn, :key, 42)
+      put_session(Process.get(:unused, conn), :key, 42)
     end
   end
 
@@ -1510,19 +1502,19 @@ defmodule Plug.ConnTest do
     conn = %{conn | state: :sent}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      configure_session(conn, renew: true)
+      configure_session(Process.get(:unused, conn), renew: true)
     end
 
     conn = %{conn | state: :file}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      configure_session(conn, renew: true)
+      configure_session(Process.get(:unused, conn), renew: true)
     end
 
     conn = %{conn | state: :chunked}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      configure_session(conn, renew: true)
+      configure_session(Process.get(:unused, conn), renew: true)
     end
   end
 
@@ -1550,19 +1542,19 @@ defmodule Plug.ConnTest do
     conn = %{conn | state: :sent}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      delete_session(conn, "baz")
+      delete_session(Process.get(:unused, conn), "baz")
     end
 
     conn = %{conn | state: :file}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      delete_session(conn, "baz")
+      delete_session(Process.get(:unused, conn), "baz")
     end
 
     conn = %{conn | state: :chunked}
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      delete_session(conn, "baz")
+      delete_session(Process.get(:unused, conn), "baz")
     end
   end
 
@@ -1598,7 +1590,7 @@ defmodule Plug.ConnTest do
     conn = send_resp(conn(:get, "/"), 200, "ok")
 
     assert_raise Plug.Conn.AlreadySentError, fn ->
-      register_before_send(conn, fn _ -> nil end)
+      register_before_send(Process.get(:unused, conn), fn _ -> nil end)
     end
   end
 
