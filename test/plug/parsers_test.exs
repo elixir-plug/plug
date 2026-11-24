@@ -14,6 +14,12 @@ defmodule Plug.ParsersTest do
       {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
       {:ok, body <> "BAZ", conn}
     end
+
+    def read_body_and_heap_size(conn, opts) do
+      {:max_heap_size, max_heap_size} = Process.info(self(), :max_heap_size)
+      Process.put(:max_heap_size_while_parsing, max_heap_size)
+      Plug.Conn.read_body(conn, opts)
+    end
   end
 
   def parse(conn, opts \\ []) do
@@ -619,5 +625,60 @@ defmodule Plug.ParsersTest do
 
     assert conn.params["foo"] == "bar"
     assert conn.body_params == %Plug.Conn.Unfetched{aspect: :body_params}
+  end
+
+  describe ":max_heap_size" do
+    @max_heap_size %{size: 100_000, kill: true, error_logger: false}
+
+    test "kills the process when parsing goes over the limit" do
+      body = String.duplicate("list[]=1&", 100_000)
+
+      {pid, ref} =
+        spawn_monitor(fn ->
+          conn(:post, "/", body)
+          |> put_req_header("content-type", "application/x-www-form-urlencoded")
+          |> parse(max_heap_size: @max_heap_size)
+        end)
+
+      assert_receive {:DOWN, ^ref, :process, ^pid, :killed}, 5_000
+    end
+
+    test "applies the limit while parsing and restores the previous value" do
+      {:max_heap_size, previous} = Process.info(self(), :max_heap_size)
+
+      conn =
+        conn(:post, "/?query=elixir", "body=foo")
+        |> put_req_header("content-type", "application/x-www-form-urlencoded")
+        |> parse(
+          max_heap_size: @max_heap_size,
+          body_reader: {BodyReader, :read_body_and_heap_size, []}
+        )
+
+      assert conn.params == %{"query" => "elixir", "body" => "foo"}
+      assert %{size: 100_000} = Process.get(:max_heap_size_while_parsing)
+      assert Process.info(self(), :max_heap_size) == {:max_heap_size, previous}
+    end
+
+    test "restores the previous value when parsing raises" do
+      {:max_heap_size, previous} = Process.info(self(), :max_heap_size)
+
+      assert_raise Plug.Parsers.UnsupportedMediaTypeError, fn ->
+        conn(:post, "/", "foo")
+        |> put_req_header("content-type", "text/plain")
+        |> parse(max_heap_size: @max_heap_size)
+      end
+
+      assert Process.info(self(), :max_heap_size) == {:max_heap_size, previous}
+    end
+
+    test "does not change the process flag by default" do
+      {:max_heap_size, previous} = Process.info(self(), :max_heap_size)
+
+      conn(:post, "/", "body=foo")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(body_reader: {BodyReader, :read_body_and_heap_size, []})
+
+      assert Process.get(:max_heap_size_while_parsing) == previous
+    end
   end
 end

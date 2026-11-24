@@ -98,6 +98,12 @@ defmodule Plug.Parsers do
     * `:validate_utf8` - boolean that tells whether or not we want to
         validate that parsed binaries are utf8 strings.
 
+    * `:max_heap_size` - the maximum heap size, in words, of the process
+      while it reads and parses the request. It accepts any value supported
+      by `Process.flag(:max_heap_size, value)`, and the previous value is
+      restored after parsing. By default, no limit is set. See the
+      "Limiting memory usage" section below.
+
     * `:body_reader` - an optional replacement (or wrapper) for
       `Plug.Conn.read_body/2` to provide a function that gives access to the
       raw body before it is parsed and discarded. It is in the standard format
@@ -152,6 +158,37 @@ defmodule Plug.Parsers do
              :urlencoded,
              {:multipart, length: 20_000_000} # Increase to 20MB max upload
            ]
+
+  ## Limiting memory usage
+
+  The `:length` option limits the size of the request body, but the parsed
+  params may need much more memory than the body itself. For example, each
+  element of a JSON list of small integers, such as `1,`, takes 2 bytes in
+  the body and 16 bytes once decoded on 64-bit systems. A decoder may also
+  need several times the size of the decoded data while it runs.
+
+  The `:max_heap_size` option limits the memory a request can use while it
+  is parsed:
+
+      plug Plug.Parsers,
+           parsers: [:urlencoded, :multipart, :json],
+           json_decoder: Jason,
+           max_heap_size: 4_000_000
+
+  The size is given in words (8 bytes on 64-bit systems), so the example above
+  allows roughly 32MB. If the limit is exceeded, the process is killed, so no
+  error is raised and no response is sent by `Plug.Parsers`. The web server
+  decides how the connection ends. Large binaries, such as the raw request
+  body, are stored outside of the process heap and, by default, do not count
+  towards the limit.
+
+  The limit is checked during garbage collection against the whole heap of
+  the process, not only the parsed data. This includes data the process held
+  before parsing and garbage it has not collected yet, such as memory left
+  over from an earlier request on the same keep-alive connection. A process
+  that already uses more than the limit is killed at the first garbage
+  collection during parsing, even for a small body. Set the limit well above
+  the memory the process uses outside of parsing.
 
   ## Built-in parsers
 
@@ -255,13 +292,14 @@ defmodule Plug.Parsers do
     {parsers, opts} = Keyword.pop(opts, :parsers)
     {pass, opts} = Keyword.pop(opts, :pass, [])
     {query_string_length, opts} = Keyword.pop(opts, :query_string_length, 1_000_000)
+    {max_heap_size, opts} = Keyword.pop(opts, :max_heap_size)
     validate_utf8 = Keyword.get(opts, :validate_utf8, true)
 
     unless parsers do
       raise ArgumentError, "Plug.Parsers expects a set of parsers to be given in :parsers"
     end
 
-    {convert_parsers(parsers, opts), pass, query_string_length, validate_utf8}
+    {convert_parsers(parsers, opts), pass, query_string_length, validate_utf8, max_heap_size}
   end
 
   defp convert_parsers(parsers, root_opts) do
@@ -288,7 +326,32 @@ defmodule Plug.Parsers do
   @impl true
   def call(%{method: method, body_params: %Plug.Conn.Unfetched{}} = conn, options)
       when method in @methods do
-    {parsers, pass, query_string_length, validate_utf8} = options
+    {parsers, pass, query_string_length, validate_utf8, max_heap_size} = options
+
+    with_max_heap_size(max_heap_size, fn ->
+      parse_body(conn, parsers, pass, query_string_length, validate_utf8)
+    end)
+  end
+
+  def call(%{body_params: body_params} = conn, {_, _, query_string_length, validate_utf8, _}) do
+    body_params = make_empty_if_unfetched(body_params)
+    {conn, params} = merge_params(conn, body_params, query_string_length, validate_utf8)
+    %{conn | params: params, body_params: body_params}
+  end
+
+  defp with_max_heap_size(nil, fun), do: fun.()
+
+  defp with_max_heap_size(max_heap_size, fun) do
+    previous = Process.flag(:max_heap_size, max_heap_size)
+
+    try do
+      fun.()
+    after
+      Process.flag(:max_heap_size, previous)
+    end
+  end
+
+  defp parse_body(conn, parsers, pass, query_string_length, validate_utf8) do
     %{req_headers: req_headers} = conn
 
     conn =
@@ -321,12 +384,6 @@ defmodule Plug.Parsers do
 
         %{conn | params: params, body_params: %{}}
     end
-  end
-
-  def call(%{body_params: body_params} = conn, {_, _, query_string_length, validate_utf8}) do
-    body_params = make_empty_if_unfetched(body_params)
-    {conn, params} = merge_params(conn, body_params, query_string_length, validate_utf8)
-    %{conn | params: params, body_params: body_params}
   end
 
   defp reduce(
