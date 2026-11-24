@@ -79,6 +79,24 @@ defmodule Plug.Parsers do
   For requests with a different request method, this plug will only fetch the
   query params.
 
+  If the request has no `content-type` header, the body is not read and
+  `:body_params` is set to an empty map. RFC 10008 requires servers to
+  reject a `QUERY` request without a `content-type`, which this plug does
+  not do, as it cannot know how the body is going to be used (for example,
+  when it is passed through). Applications accepting `QUERY` requests should
+  check it themselves, for example with a plug placed before `Plug.Parsers`:
+
+      plug :require_query_content_type
+
+      defp require_query_content_type(%{method: "QUERY"} = conn, _opts) do
+        case get_req_header(conn, "content-type") do
+          [] -> conn |> send_resp(415, "") |> halt()
+          _ -> conn
+        end
+      end
+
+      defp require_query_content_type(conn, _opts), do: conn
+
   ## Options
 
     * `:parsers` - a list of modules or atoms of built-in parsers to be
