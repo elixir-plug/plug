@@ -98,11 +98,14 @@ defmodule Plug.Parsers do
     * `:validate_utf8` - boolean that tells whether or not we want to
         validate that parsed binaries are utf8 strings.
 
-    * `:max_heap_size` - the maximum heap size, in words, of the process
-      while it reads and parses the request. It accepts any value supported
-      by `Process.flag(:max_heap_size, value)`, and the previous value is
-      restored after parsing. By default, no limit is set. See the
-      "Limiting memory usage" section below.
+    * `:max_heap_size` - limits the memory the process may use while it reads
+      and parses the request. The value is the number of extra heap words
+      allowed on top of what the process already holds when parsing starts
+      (8 bytes per word on 64-bit systems). It also accepts a map in the shape
+      of `Process.flag(:max_heap_size, map)`, in which case `:size` is that
+      headroom. The previous flag value is restored after parsing. Defaults to
+      `4_000_000` (roughly 32MB of headroom); set it to `:infinity` to disable.
+      See the "Limiting memory usage" section below.
 
     * `:body_reader` - an optional replacement (or wrapper) for
       `Plug.Conn.read_body/2` to provide a function that gives access to the
@@ -167,28 +170,41 @@ defmodule Plug.Parsers do
   the body and 16 bytes once decoded on 64-bit systems. A decoder may also
   need several times the size of the decoded data while it runs.
 
-  The `:max_heap_size` option limits the memory a request can use while it
-  is parsed:
+  `Plug.Parsers` sets a `:max_heap_size` while it parses a request, defaulting
+  to `4_000_000` words (roughly 32MB). You can raise it, lower it, or disable
+  it:
 
       plug Plug.Parsers,
            parsers: [:urlencoded, :multipart, :json],
            json_decoder: Jason,
-           max_heap_size: 4_000_000
+           max_heap_size: 8_000_000
 
-  The size is given in words (8 bytes on 64-bit systems), so the example above
-  allows roughly 32MB. If the limit is exceeded, the process is killed, so no
-  error is raised and no response is sent by `Plug.Parsers`. The web server
-  decides how the connection ends. Large binaries, such as the raw request
-  body, are stored outside of the process heap and, by default, do not count
-  towards the limit.
+      # or, to turn the limit off entirely
+      plug Plug.Parsers, parsers: [...], max_heap_size: :infinity
 
-  The limit is checked during garbage collection against the whole heap of
-  the process, not only the parsed data. This includes data the process held
-  before parsing and garbage it has not collected yet, such as memory left
-  over from an earlier request on the same keep-alive connection. A process
-  that already uses more than the limit is killed at the first garbage
-  collection during parsing, even for a small body. Set the limit well above
-  the memory the process uses outside of parsing.
+  The size is in words (8 bytes on 64-bit systems). It is headroom on top of the
+  heap the process already holds when parsing starts, not an absolute ceiling:
+  the current heap size is read and the configured size is added to it. This way
+  a process that already holds memory, such as garbage left over from an earlier
+  request on the same keep-alive connection, is not killed while parsing a small
+  body.
+
+  If the limit is exceeded, the process is killed, so no error is raised and no
+  response is sent by `Plug.Parsers`. The web server decides how the connection
+  ends, and a warning is logged. Large binaries, such as the raw request body
+  and large string values, are stored outside of the process heap and, by
+  default, do not count towards the limit.
+
+  Pick the limit against the memory a single request legitimately needs to
+  parse, not the raw body size. A body made mostly of one large value (an
+  upload, a base64 field) costs almost no heap, because that value stays off the
+  heap. A body made of many small elements costs much more: decoding is a few
+  times the decoded size, and structured data expands further, so tens of
+  thousands of small fields or list elements are needed before the default
+  limit is reached. To keep a limit from killing legitimate large requests,
+  size it above the heap those requests need (or set `:infinity`), and pass a
+  map such as `%{size: 4_000_000, kill: true, error_logger: false}` if you want
+  to tune the kill or silence the log.
 
   ## Built-in parsers
 
@@ -292,7 +308,7 @@ defmodule Plug.Parsers do
     {parsers, opts} = Keyword.pop(opts, :parsers)
     {pass, opts} = Keyword.pop(opts, :pass, [])
     {query_string_length, opts} = Keyword.pop(opts, :query_string_length, 1_000_000)
-    {max_heap_size, opts} = Keyword.pop(opts, :max_heap_size)
+    {max_heap_size, opts} = Keyword.pop(opts, :max_heap_size, 4_000_000)
     validate_utf8 = Keyword.get(opts, :validate_utf8, true)
 
     unless parsers do
@@ -339,16 +355,36 @@ defmodule Plug.Parsers do
     %{conn | params: params, body_params: body_params}
   end
 
-  defp with_max_heap_size(nil, fun), do: fun.()
+  defp with_max_heap_size(limit, fun) when limit in [nil, :infinity], do: fun.()
 
   defp with_max_heap_size(max_heap_size, fun) do
-    previous = Process.flag(:max_heap_size, max_heap_size)
+    previous = Process.flag(:max_heap_size, add_current_heap_size(max_heap_size))
 
     try do
       fun.()
     after
       Process.flag(:max_heap_size, previous)
     end
+  end
+
+  # The configured size is extra headroom on top of what the process already
+  # holds, not an absolute ceiling. Adding the current heap size means a
+  # process that already holds memory (for example, garbage left over from an
+  # earlier request on the same keep-alive connection) is not killed while
+  # parsing a small body.
+  #
+  # A bare word count also enables the kill and a logged warning. A map is
+  # honored as given (so `:kill` and `:error_logger` can be set), except that
+  # its `:size` is likewise treated as headroom over the current heap.
+  defp add_current_heap_size(size) when is_integer(size),
+    do: %{size: size + current_heap_size(), kill: true, error_logger: true}
+
+  defp add_current_heap_size(%{size: size} = max_heap_size),
+    do: %{max_heap_size | size: size + current_heap_size()}
+
+  defp current_heap_size do
+    {:total_heap_size, size} = Process.info(self(), :total_heap_size)
+    size
   end
 
   defp parse_body(conn, parsers, pass, query_string_length, validate_utf8) do

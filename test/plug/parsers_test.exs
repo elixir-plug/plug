@@ -655,8 +655,37 @@ defmodule Plug.ParsersTest do
         )
 
       assert conn.params == %{"query" => "elixir", "body" => "foo"}
-      assert %{size: 100_000} = Process.get(:max_heap_size_while_parsing)
+
+      # The configured size is added on top of the current heap, so the flag
+      # applied while parsing is strictly larger than the 100_000 we asked for.
+      assert %{size: size, kill: true, error_logger: false} =
+               Process.get(:max_heap_size_while_parsing)
+
+      assert size > 100_000
       assert Process.info(self(), :max_heap_size) == {:max_heap_size, previous}
+    end
+
+    test "sets the limit relative to the current heap, not as an absolute ceiling" do
+      parent = self()
+
+      {_pid, _ref} =
+        spawn_monitor(fn ->
+          # Hold far more live data than the 100_000-word (~800 KB) headroom
+          # below. With an absolute max_heap_size this process would be killed
+          # at the first garbage collection, even for this tiny body; with
+          # headroom over the current heap it parses normally.
+          big = for i <- 1..200_000, do: {i, i + 1}
+          :erlang.garbage_collect()
+
+          conn =
+            conn(:post, "/?query=elixir", "body=foo")
+            |> put_req_header("content-type", "application/x-www-form-urlencoded")
+            |> parse(max_heap_size: @max_heap_size)
+
+          send(parent, {:parsed, conn.params, length(big)})
+        end)
+
+      assert_receive {:parsed, %{"query" => "elixir", "body" => "foo"}, 200_000}, 5_000
     end
 
     test "restores the previous value when parsing raises" do
@@ -671,14 +700,28 @@ defmodule Plug.ParsersTest do
       assert Process.info(self(), :max_heap_size) == {:max_heap_size, previous}
     end
 
-    test "does not change the process flag by default" do
-      {:max_heap_size, previous} = Process.info(self(), :max_heap_size)
-
+    test "applies the default limit while parsing" do
       conn(:post, "/", "body=foo")
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
       |> parse(body_reader: {BodyReader, :read_body_and_heap_size, []})
 
+      # Defaults to 4_000_000 words of headroom over the current heap, with the
+      # kill and a logged warning enabled.
+      assert %{size: size, kill: true, error_logger: true} =
+               Process.get(:max_heap_size_while_parsing)
+
+      assert size > 4_000_000
+    end
+
+    test "max_heap_size: :infinity disables the limit" do
+      {:max_heap_size, previous} = Process.info(self(), :max_heap_size)
+
+      conn(:post, "/", "body=foo")
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> parse(max_heap_size: :infinity, body_reader: {BodyReader, :read_body_and_heap_size, []})
+
       assert Process.get(:max_heap_size_while_parsing) == previous
+      assert Process.info(self(), :max_heap_size) == {:max_heap_size, previous}
     end
   end
 end
